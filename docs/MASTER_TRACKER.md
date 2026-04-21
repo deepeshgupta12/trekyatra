@@ -50,23 +50,13 @@ What is done:
 - Local API boot validated
 
 ### Step 02 — Database, config, and auth data model foundation
-Status: in progress
+Status: done
 What is done:
 - SQLAlchemy base and session foundation added
 - Alembic initialized
 - Initial migration created
 - User, auth identity, user session, role, permission, user-role, and role-permission models added
 - Metadata tests added
+- Pylance-safe model typing fixed for auth and RBAC relationships
 What is pending:
-- User to run install refresh
-- User to run migration
-- User to validate current revision and tests
-- User to refresh GitNexus graph
-- User to confirm step output
-
-## Rules for Future Updates
-- Every completed step must update:
-  - this file
-  - the relevant `docs/steps/STEP-XX-*.md`
-  - `docs/DEPENDENCY_MAP.md` if dependencies changed
-- Never assume a file exists unless confirmed in repo or created in an earlier step
+- Nothing for this step

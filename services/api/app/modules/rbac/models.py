@@ -1,10 +1,15 @@
 from __future__ import annotations
 
+from typing import TYPE_CHECKING
+
 from sqlalchemy import Boolean, String, Text, UniqueConstraint
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.db.base_class import Base, TimestampMixin, UUIDPrimaryKeyMixin
 from app.modules.rbac.associations import role_permissions, user_roles
+
+if TYPE_CHECKING:
+    from app.modules.auth.models import User
 
 
 class Role(UUIDPrimaryKeyMixin, TimestampMixin, Base):

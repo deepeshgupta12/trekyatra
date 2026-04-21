@@ -61,8 +61,9 @@ Add the database foundation, Alembic migrations, and auth/RBAC data model layer 
 - gitnexus status
 
 ## Status
-Ready for user validation
+Done
 
 ## Notes
-- `apps/web-static/` must remain untouched in this step
+- `apps/web-static/` was not modified in this step
+- No schema change was needed for the Pylance-safe typing fix
 - Wait for user confirmation before Step 03

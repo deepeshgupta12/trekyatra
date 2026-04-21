@@ -1,12 +1,17 @@
 from __future__ import annotations
 
+import uuid
 from datetime import datetime
+from typing import TYPE_CHECKING
 
-from sqlalchemy import Boolean, DateTime, ForeignKey, JSON, String, Text, UniqueConstraint
+from sqlalchemy import Boolean, DateTime, ForeignKey, JSON, String, UniqueConstraint
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.db.base_class import Base, TimestampMixin, UUIDPrimaryKeyMixin
 from app.modules.rbac.associations import user_roles
+
+if TYPE_CHECKING:
+    from app.modules.rbac.models import Role
 
 
 class User(UUIDPrimaryKeyMixin, TimestampMixin, Base):
@@ -43,10 +48,14 @@ class User(UUIDPrimaryKeyMixin, TimestampMixin, Base):
 class AuthIdentity(UUIDPrimaryKeyMixin, TimestampMixin, Base):
     __tablename__ = "auth_identities"
     __table_args__ = (
-        UniqueConstraint("provider", "provider_user_id", name="uq_auth_identities_provider_provider_user_id"),
+        UniqueConstraint(
+            "provider",
+            "provider_user_id",
+            name="uq_auth_identities_provider_provider_user_id",
+        ),
     )
 
-    user_id: Mapped[str] = mapped_column(
+    user_id: Mapped[uuid.UUID] = mapped_column(
         ForeignKey("users.id", ondelete="CASCADE"),
         index=True,
         nullable=False,
@@ -69,7 +78,7 @@ class AuthIdentity(UUIDPrimaryKeyMixin, TimestampMixin, Base):
 class UserSession(UUIDPrimaryKeyMixin, TimestampMixin, Base):
     __tablename__ = "user_sessions"
 
-    user_id: Mapped[str] = mapped_column(
+    user_id: Mapped[uuid.UUID] = mapped_column(
         ForeignKey("users.id", ondelete="CASCADE"),
         index=True,
         nullable=False,
