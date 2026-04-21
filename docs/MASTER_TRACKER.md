@@ -32,6 +32,7 @@ Do not modify any code file without first:
 - Nexus/GitNexus workflow setup: done
 - Public frontend data integration phase 1: done
 - Next.js frontend migration: done
+- User account foundation on frontend: done
 
 ## Step History
 
@@ -148,5 +149,23 @@ What is done:
 - All 85 pages build cleanly (`next build` passes)
 - `apps/web-static/` Vite reference app removed (migration complete)
 What remains:
-- Auth/account/admin pages are UI-only; real backend wiring (JWT, session, favourites) is a future step
 - Role-aware admin access enforcement is still pending
+
+### Step 09 — User account foundation on frontend
+Status: done
+What is done:
+- Created `apps/web-next/lib/auth-api.ts`: typed client-only fetch helpers for `/auth/me`, `/auth/login`, `/auth/signup`, `/auth/logout`
+- Created `apps/web-next/lib/auth-context.tsx`: React context with `AuthProvider` that bootstraps from `GET /me` on mount; exposes `user`, `isLoading`, `login()`, `signup()`, `logout()`, `refresh()`
+- Created `apps/web-next/middleware.ts`: Next.js middleware protecting `/account/*` routes (redirects to `/auth/sign-in?next=<path>`) and bouncing authenticated users from `/auth/sign-in` and `/auth/sign-up` to `/account`
+- Created `apps/web-next/components/account/UserGreeting.tsx`: client component reading `useAuth()` to display personalised welcome in account dashboard
+- Modified `apps/web-next/components/Providers.tsx`: wrapped children in `<AuthProvider>`
+- Modified `apps/web-next/app/(auth)/auth/sign-in/page.tsx`: wired to `login()` from `useAuth()`, `useSearchParams` redirect after login, `<Suspense>` boundary for static generation compatibility
+- Modified `apps/web-next/app/(auth)/auth/sign-up/page.tsx`: wired to `signup()` from `useAuth()`, redirects to `/auth/onboarding` on success
+- Modified `apps/web-next/components/layout/Header.tsx`: auth-aware desktop dropdown (avatar with initials, name/email, Dashboard link, Sign out) and mobile drawer (Dashboard link, Sign out)
+- Modified `apps/web-next/app/(public)/account/page.tsx`: replaced static greeting with `<UserGreeting />` component
+- All 85 pages build cleanly with Step 9 changes applied
+What remains:
+- Saved treks/downloads/enquiries wired to real user data (future step)
+- Onboarding form data persisted to backend (future step)
+- OTP and Google auth (backend stubs return 501; frontend UI exists)
+- Role-aware admin access enforcement (future step)

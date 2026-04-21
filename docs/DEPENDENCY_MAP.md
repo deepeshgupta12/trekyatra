@@ -34,16 +34,20 @@ This file tracks structural dependencies, source-of-truth modules, and Nexus/Git
 - `components/content/ContentPage.tsx` -> reusable content page with blocks
 - `components/success/SuccessHero.tsx` -> shared success state layout
 - `components/ui/*` -> shadcn/ui primitives (Button, etc.)
-- `components/Providers.tsx` -> QueryClient + TooltipProvider (client)
+- `components/Providers.tsx` -> QueryClient + AuthProvider + TooltipProvider (client)
+- `components/account/UserGreeting.tsx` -> client component reading useAuth() for personalised greeting
 - `data/treks.ts` -> static fallback trek dataset (12 treks, string image paths)
 - `lib/api.ts` -> universal fetch with server/client URL detection, 3s abort timeout
 - `lib/trekApi.ts` -> trek API adapter with mergeImage() and safe static fallback
+- `lib/auth-api.ts` -> typed client-only fetch helpers for all 4 auth endpoints (me/login/signup/logout)
+- `lib/auth-context.tsx` -> React AuthContext; bootstraps from GET /me on mount; exposes user, isLoading, login(), signup(), logout(), refresh()
+- `middleware.ts` -> Next.js route guard; protects /account/* and bounces authed users from /auth/sign-in, /auth/sign-up
 - `public/images/` -> local trek and hero images
 
 ## Frontend Runtime
 - `apps/web-next/` is the production Next.js 14 App Router frontend
 - Vite SPA (`apps/web-static/`) has been removed — migration is complete
-- All 85 routes build cleanly with `next build`
+- All 85 routes build cleanly with `next build` (verified after Step 9 auth wiring)
 - Dev server runs on port 3000 (`npm run dev` in `apps/web-next/`)
 - API calls proxy `/api/:path*` → `http://localhost:8000/api/:path*` via next.config.mjs rewrites
 

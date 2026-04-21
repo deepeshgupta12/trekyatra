@@ -3,7 +3,9 @@
 import { useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Search, Bookmark, User, Menu, X, ChevronDown, Mountain, Compass, Calendar, GitCompare, Backpack, FileCheck, Wallet, ShoppingBag, MapPin, Sparkles } from "lucide-react";
+import { Search, Bookmark, User, Menu, X, ChevronDown, Mountain, Compass, Calendar, GitCompare, Backpack, FileCheck, Wallet, ShoppingBag, MapPin, Sparkles, LogOut, LayoutDashboard } from "lucide-react";
+import { useAuth } from "@/lib/auth-context";
+import { useRouter } from "next/navigation";
 import { Logo } from "@/components/brand/Logo";
 import { Button } from "@/components/ui/button";
 
@@ -74,7 +76,16 @@ const mobileLinks = [
 export const Header = () => {
   const [megaOpen, setMegaOpen] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
+  const [userMenuOpen, setUserMenuOpen] = useState(false);
   const pathname = usePathname();
+  const { user, logout } = useAuth();
+  const router = useRouter();
+
+  async function handleLogout() {
+    await logout();
+    router.push("/");
+    router.refresh();
+  }
 
   return (
     <>
@@ -117,9 +128,47 @@ export const Header = () => {
               <Link href="/saved" className="hidden md:flex h-10 w-10 items-center justify-center rounded-full hover:bg-muted text-foreground/70 hover:text-foreground transition-colors" aria-label="Saved">
                 <Bookmark className="h-4 w-4" />
               </Link>
-              <Link href="/auth/sign-in" className="hidden md:flex h-10 w-10 items-center justify-center rounded-full hover:bg-muted text-foreground/70 hover:text-foreground transition-colors" aria-label="Account">
-                <User className="h-4 w-4" />
-              </Link>
+
+              {/* Desktop user menu */}
+              {user ? (
+                <div className="relative hidden md:block">
+                  <button
+                    onClick={() => setUserMenuOpen(o => !o)}
+                    className="h-10 w-10 rounded-full bg-accent text-white flex items-center justify-center text-sm font-semibold hover:bg-accent/90 transition-colors"
+                    aria-label="Account menu"
+                  >
+                    {(user.display_name || user.full_name || user.email || "U")[0].toUpperCase()}
+                  </button>
+                  {userMenuOpen && (
+                    <>
+                      <div className="fixed inset-0 z-40" onClick={() => setUserMenuOpen(false)} />
+                      <div className="absolute right-0 top-12 z-50 w-52 bg-surface border border-border rounded-2xl shadow-elevated p-1.5 animate-fade-up">
+                        <div className="px-3 py-2 border-b border-border mb-1">
+                          <p className="text-sm font-medium truncate">{user.display_name || user.full_name || "My Account"}</p>
+                          <p className="text-xs text-muted-foreground truncate">{user.email}</p>
+                        </div>
+                        <Link
+                          href="/account"
+                          onClick={() => setUserMenuOpen(false)}
+                          className="flex items-center gap-2 px-3 py-2 rounded-xl text-sm hover:bg-muted transition-colors"
+                        >
+                          <LayoutDashboard className="h-4 w-4 text-accent" /> Dashboard
+                        </Link>
+                        <button
+                          onClick={() => { setUserMenuOpen(false); handleLogout(); }}
+                          className="w-full flex items-center gap-2 px-3 py-2 rounded-xl text-sm hover:bg-muted transition-colors text-left text-destructive"
+                        >
+                          <LogOut className="h-4 w-4" /> Sign out
+                        </button>
+                      </div>
+                    </>
+                  )}
+                </div>
+              ) : (
+                <Link href="/auth/sign-in" className="hidden md:flex h-10 w-10 items-center justify-center rounded-full hover:bg-muted text-foreground/70 hover:text-foreground transition-colors" aria-label="Sign in">
+                  <User className="h-4 w-4" />
+                </Link>
+              )}
               <Link href="/plan" className="hidden md:block">
                 <Button variant="hero" size="default">
                   <Sparkles className="h-4 w-4" /> Plan My Trek
@@ -203,9 +252,24 @@ export const Header = () => {
                 <Link href="/saved" onClick={() => setMobileOpen(false)} className="flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-muted">
                   <Bookmark className="h-4 w-4" /> Saved Treks
                 </Link>
-                <Link href="/auth/sign-in" onClick={() => setMobileOpen(false)} className="flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-muted">
-                  <User className="h-4 w-4" /> Sign in
-                </Link>
+                {user ? (
+                  <>
+                    <Link href="/account" onClick={() => setMobileOpen(false)} className="flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-muted">
+                      <LayoutDashboard className="h-4 w-4 text-accent" />
+                      <span>{user.display_name || user.full_name || "My Account"}</span>
+                    </Link>
+                    <button
+                      onClick={() => { setMobileOpen(false); handleLogout(); }}
+                      className="w-full flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-muted text-destructive"
+                    >
+                      <LogOut className="h-4 w-4" /> Sign out
+                    </button>
+                  </>
+                ) : (
+                  <Link href="/auth/sign-in" onClick={() => setMobileOpen(false)} className="flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-muted">
+                    <User className="h-4 w-4" /> Sign in
+                  </Link>
+                )}
               </div>
             </nav>
             <div className="p-5">

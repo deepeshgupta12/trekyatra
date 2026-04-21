@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { fetchTreks } from "@/lib/trekApi";
 import { TrekCard } from "@/components/trek/TrekCard";
+import { UserGreeting } from "@/components/account/UserGreeting";
 import { Bookmark, BarChart2, Download, Bell } from "lucide-react";
 
 const STATS = [
@@ -18,7 +19,7 @@ export default async function AccountDashboard() {
     <div>
       <div className="mb-8">
         <h1 className="font-display text-3xl font-semibold mb-1">My Dashboard</h1>
-        <p className="text-muted-foreground">Your saved treks and planning workspace.</p>
+        <UserGreeting />
       </div>
 
       {/* Stats */}
