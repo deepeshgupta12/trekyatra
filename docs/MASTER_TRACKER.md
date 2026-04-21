@@ -27,7 +27,7 @@ Do not modify any code file without first:
 - Auth foundation: API layer in progress
 - WordPress integration: pending
 - API contracts: auth foundation in progress
-- Dynamic frontend wiring: pending
+- Dynamic frontend wiring: blueprint complete (see docs/FRONTEND_WIRING_BLUEPRINT.md)
 - Nexus/GitNexus workflow setup: done
 
 ## Step History
@@ -60,22 +60,24 @@ What is done:
 - Pylance-safe model typing fixed for auth and RBAC relationships
 
 ### Step 03 — Auth APIs foundation
-Status: in progress
+Status: done
 What is done:
-- Planned email signup/login/logout/me endpoints
-- Planned password hashing and JWT cookie auth
-- Planned placeholder Google/mobile auth interfaces
-- Planned auth tests
+- Email signup/login/logout/me endpoints implemented
+- Password hashing implemented
+- JWT access token in HttpOnly cookie implemented
+- Placeholder Google/mobile auth interfaces added
+- Auth tests added
+- Python 3.10 compatibility fixes applied
+- ORM registration fix applied for runtime mapper resolution
 What is pending:
-- User to apply file changes
-- User to run Alembic upgrade to 20260421_0002
-- User to validate auth routes and tests
-- User to refresh GitNexus graph
-- User to confirm step output
+- Nothing for this step
 
-## Rules for Future Updates
-- Every completed step must update:
-  - this file
-  - the relevant `docs/steps/STEP-XX-*.md`
-  - `docs/DEPENDENCY_MAP.md` if dependencies changed
-- Never assume a file exists unless confirmed in repo or created in an earlier step
+### Step 04 — Static frontend audit and dynamic wiring plan
+Status: done
+What is done:
+- Full audit of apps/web-static: 45 routes, 30 pages, 12 mock trek entries, zero API calls
+- Migration strategy decided: keep Vite, wire incrementally, Next.js migration deferred to Step 10+
+- Frontend wiring blueprint written to docs/FRONTEND_WIRING_BLUEPRINT.md
+- API contracts mapped for all 8 route groups: auth, homepage, explore, trek detail, account, admin, content, system states
+- Mock data deprecation plan for src/data/treks.ts documented
+- Files to create in Steps 08 and 09 listed

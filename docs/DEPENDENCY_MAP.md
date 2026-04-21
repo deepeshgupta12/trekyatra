@@ -32,6 +32,23 @@ This file tracks structural dependencies, source-of-truth modules, and Nexus/Git
 - `src/components/ui/*` -> shared UI primitives
 - `src/data/treks.ts` -> current mock content data
 
+## Frontend Runtime Decision
+- `apps/web-static/` is the current static design/source-reference frontend
+- It is NOT the long-term runtime frontend anymore
+- Full migration direction is now `Next.js`
+- Future runtime frontend will be created separately and mapped from the audited Vite structure
+- Until migration is complete, `apps/web-static/` remains the UI and dependency reference source
+
+## Step 04 Frontend Blast Radius Notes
+- `src/main.tsx` is the current Vite mount entry; reference only
+- `src/App.tsx` is the current provider/router hub; reference only
+- `src/components/layout/SiteLayout.tsx` is the public shell reference for Next.js shell design
+- `src/components/layout/Header.tsx` and `Footer.tsx` are shared public-shell references and must be migrated carefully
+- `src/pages/auth/*` use a separate auth shell and should become isolated auth route groups in Next.js
+- `src/pages/account/*` use SiteLayout today but should become protected account route groups later
+- `src/pages/admin/*` use a separate admin shell and should become protected admin route groups later
+- `src/data/treks.ts` currently feeds homepage, explore, trek detail, and dashboard; it must not be removed until trek APIs and the Next.js app are ready
+
 ## Backend Snapshot
 ### App entry chain
 - `services/api/app/main.py` -> FastAPI app entry and lifespan

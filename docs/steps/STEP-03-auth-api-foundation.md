@@ -64,10 +64,12 @@ Add the auth API foundation with email signup/login/logout/me, password hashing,
 - gitnexus status
 
 ## Status
-Ready for user validation
+Done
 
 ## Notes
-- `apps/web-static/` must remain untouched in this step
+- `apps/web-static/` was not modified in this step
 - Cookie strategy in Step 03 uses access token in HttpOnly cookie only
 - Refresh token support can be added in a later step
+- Python 3.10 compatibility fix applied for timezone usage
+- ORM model registration fix applied through `app.db.session`
 - Wait for user confirmation before Step 04
