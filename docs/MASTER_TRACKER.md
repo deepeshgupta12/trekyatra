@@ -22,9 +22,9 @@ Do not modify any code file without first:
 - Project repo scaffold: done
 - Static frontend zip unpacked into `apps/web-static`: done
 - Backend scaffold: done
-- Database scaffold: pending
+- Database scaffold: foundation done
 - Docker/local infra: done
-- Auth foundation: pending
+- Auth foundation: model layer done, API pending
 - WordPress integration: pending
 - API contracts: foundation done
 - Dynamic frontend wiring: pending
@@ -48,8 +48,21 @@ What is done:
 - Docker Compose added for Postgres and Redis
 - Health endpoints and tests added
 - Local API boot validated
+
+### Step 02 — Database, config, and auth data model foundation
+Status: in progress
+What is done:
+- SQLAlchemy base and session foundation added
+- Alembic initialized
+- Initial migration created
+- User, auth identity, user session, role, permission, user-role, and role-permission models added
+- Metadata tests added
 What is pending:
-- Nothing for this step
+- User to run install refresh
+- User to run migration
+- User to validate current revision and tests
+- User to refresh GitNexus graph
+- User to confirm step output
 
 ## Rules for Future Updates
 - Every completed step must update:
