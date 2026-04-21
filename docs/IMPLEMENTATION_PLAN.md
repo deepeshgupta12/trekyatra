@@ -35,19 +35,25 @@
 
 ## Step 06 — Content domain foundation
 - topics, clusters, briefs, drafts data model + APIs
+- local WordPress bootstrap stack and docs
 
 ## Step 07 — Internal admin foundation
 - backend support for dashboard summaries
-- wire static admin views to live placeholder APIs
+- expose placeholder admin summary APIs for static admin views
 
 ## Step 08 — Public frontend data integration phase 1
 - wire homepage/explore/trek detail to backend mock/live APIs
 
 ## Step 09 — User account foundation on frontend
-- sign in/up integration, dashboard wiring
+- sign in/up integration
+- dashboard wiring
+- auth context and route guards
 
 ## Step 10 — Publish, tracking, and validation workflows
-- publish logs, trackers, smoke tests, repo graph updates
+- publish logs
+- trackers
+- smoke tests
+- repo graph updates
 
 ## Rule
 Do not start the next step without user confirmation.

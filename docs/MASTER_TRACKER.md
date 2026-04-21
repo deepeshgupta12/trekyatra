@@ -5,7 +5,7 @@ This file is the source of truth for implementation progress. It must be read be
 
 ## Product Scope References
 - Master business/product scope: `/mnt/data/Travel_Blog.md`
-- Static frontend source of truth: `apps/web-static/`
+- Frontend source of truth: `apps/web-next/` (Next.js 14 App Router)
 - Process discipline: `docs/PROCESS_GUARDRAILS.md`
 - Dependency discipline: `docs/DEPENDENCY_MAP.md`
 - Step plan: `docs/IMPLEMENTATION_PLAN.md`
@@ -25,10 +25,13 @@ Do not modify any code file without first:
 - Database scaffold: foundation done
 - Docker/local infra: done
 - Auth foundation: done
-- WordPress integration: foundation in progress
-- API contracts: auth + wordpress foundation in progress
+- WordPress integration: foundation done
+- Content domain foundation: done
+- Internal admin summary APIs: done
 - Dynamic frontend wiring: blueprint done
 - Nexus/GitNexus workflow setup: done
+- Public frontend data integration phase 1: done
+- Next.js frontend migration: done
 
 ## Step History
 
@@ -81,15 +84,69 @@ What is done:
 - Mock data deprecation strategy documented
 
 ### Step 05 — WordPress integration foundation
-Status: in progress
+Status: done
 What is done:
-- Planned WordPress config model extension
-- Planned REST client skeleton
-- Planned health and connectivity test endpoints
-- Planned WordPress tests
+- WordPress config model extended
+- WordPress response schemas added
+- WordPress REST client skeleton added
+- WordPress service helpers added
+- WordPress health endpoint added
+- WordPress connectivity test endpoint added
+- WordPress tests added
+- Local WordPress fallback using `?rest_route=/` validated
+- Authenticated local WordPress connectivity validated
+
+### Step 06 — Content domain foundation
+Status: done
+What is done:
+- Topic, keyword cluster, content brief, and content draft ORM models added
+- Content-domain schemas added
+- Content-domain service helpers added
+- List/create APIs for topics, clusters, briefs, and drafts added
+- Alembic migration `20260421_0003_content_domain_foundation.py` added and validated
+- Content route tests added and passing
+- Local WordPress bootstrap compose file added
+- Local WordPress setup documentation added
+- Content insert stability fix applied
+- Manual topic create/list curl validation completed
+
+### Step 07 — Internal admin foundation
+Status: done
+What is done:
+- Admin summary schemas added
+- Admin service aggregation layer added
+- Admin routes added for dashboard, topics, clusters, briefs, drafts, and system summaries
+- Admin route tests added and passing
+- Manual curl validation completed for:
+  - `/api/v1/admin/dashboard/summary`
+  - `/api/v1/admin/topics/summary`
+  - `/api/v1/admin/clusters/summary`
+  - `/api/v1/admin/briefs/summary`
+  - `/api/v1/admin/drafts/summary`
+  - `/api/v1/admin/system/summary`
 What is pending:
-- User to apply Step 05 file changes
-- User to run tests
-- User to validate WordPress endpoints
-- User to refresh GitNexus graph
-- User to confirm step output
+- Static admin frontend remains unwired
+- Role-aware admin access enforcement is still pending for future steps
+
+### Step 08 — Public frontend data integration phase 1 + full Next.js migration
+Status: done
+What is done:
+- Added public trek read APIs (`GET /api/v1/treks`, `GET /api/v1/treks/{slug}`) in FastAPI
+- Added `services/api/app/modules/treks/` domain with in-memory data, service, and schemas
+- Added trek route tests (`test_treks.py`)
+- Completed full Next.js 14 App Router migration of all ~55 routes from Vite SPA
+- Created `apps/web-next/` with: root layout, Providers (QueryClient + Tooltip), globals.css design system, tailwind.config.ts
+- Migrated all public pages: homepage (SSG), explore (client), trek detail (SSG + generateStaticParams), compare, regions/[slug], seasons/[slug], all content pages, saved, search, no-results, empty-saved, under-review
+- Migrated all auth pages: sign-in, sign-up, otp, forgot-password, reset-password, verify-email, invalid-token, onboarding (multi-step wizard)
+- Migrated all success pages (5): newsletter, plan, checkout, password-reset, signup
+- Migrated account section: layout with responsive sidebar, dashboard, saved, compare, downloads, enquiries, settings
+- Migrated admin section: AdminLayout with dark sidebar, dashboard (KPIs + publish queue), topics, clusters, briefs, drafts, fact-check, linking, monetization, analytics, logs, settings
+- Universal `lib/api.ts` with server/client URL detection and 3-second abort timeout
+- `lib/trekApi.ts` with mergeImage() and safe static fallback
+- `data/treks.ts` with 12 treks using string image paths
+- Next.js rewrites proxy `/api/:path*` → `http://localhost:8000/api/:path*`
+- All 85 pages build cleanly (`next build` passes)
+- `apps/web-static/` Vite reference app removed (migration complete)
+What remains:
+- Auth/account/admin pages are UI-only; real backend wiring (JWT, session, favourites) is a future step
+- Role-aware admin access enforcement is still pending

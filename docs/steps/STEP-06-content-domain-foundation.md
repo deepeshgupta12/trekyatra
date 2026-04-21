@@ -57,14 +57,18 @@ Add the content domain foundation and local WordPress bootstrap support without 
 - curl -X POST http://localhost:8000/api/v1/topics -H "Content-Type: application/json" -d '{...}'
 - docker compose -f docker-compose.wordpress.yml up -d
 - curl http://localhost:8080/wp-json
+- curl "http://localhost:8080/?rest_route=/"
 - curl -X POST http://localhost:8000/api/v1/wordpress/test-connection
 - bash ./scripts/refresh_gitnexus.sh
 - gitnexus status
 
 ## Status
-Ready for user validation
+Done
 
 ## Notes
-- `apps/web-static/` must remain untouched in this step
-- local WordPress setup is intentionally isolated from the main infra stack
+- `apps/web-static/` remained untouched in this step
+- Local WordPress setup is intentionally isolated from the main infra stack
+- Native `/wp-json` did not resolve in the local setup, but the fallback `?rest_route=/` path was validated successfully
+- Authenticated local WordPress test connectivity was also validated successfully
+- Content route tests passed after insert stability fixes
 - Wait for user confirmation before Step 07
