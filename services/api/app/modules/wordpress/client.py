@@ -78,8 +78,34 @@ class WordPressClient:
             payload=payload,
         )
 
+    def _try_paths(self, *, paths: list[str], use_auth: bool) -> WordPressClientResult:
+        last_result: WordPressClientResult | None = None
+
+        for path in paths:
+            result = self._request(path=path, use_auth=use_auth)
+            if result.ok:
+                return result
+            last_result = result
+
+        if last_result is None:
+            raise WordPressClientError("No WordPress paths were attempted.")
+
+        return last_result
+
     def fetch_site_index(self) -> WordPressClientResult:
-        return self._request(path="/wp-json", use_auth=False)
+        return self._try_paths(
+            paths=[
+                "/wp-json",
+                "/?rest_route=/",
+            ],
+            use_auth=False,
+        )
 
     def fetch_current_user(self) -> WordPressClientResult:
-        return self._request(path="/wp-json/wp/v2/users/me", use_auth=True)
+        return self._try_paths(
+            paths=[
+                "/wp-json/wp/v2/users/me",
+                "/?rest_route=/wp/v2/users/me",
+            ],
+            use_auth=True,
+        )
