@@ -1,0 +1,42 @@
+services:
+  wordpress_db:
+    image: mariadb:11
+    container_name: trekyatra-wordpress-db
+    restart: unless-stopped
+    environment:
+      MARIADB_DATABASE: trekyatra_wp
+      MARIADB_USER: trekyatra_wp
+      MARIADB_PASSWORD: trekyatra_wp
+      MARIADB_ROOT_PASSWORD: trekyatra_wp_root
+    ports:
+      - "3307:3306"
+    volumes:
+      - wordpress_db_data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "healthcheck.sh", "--connect", "--innodb_initialized"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+  wordpress:
+    image: wordpress:6.5-php8.2-apache
+    container_name: trekyatra-wordpress
+    restart: unless-stopped
+    depends_on:
+      wordpress_db:
+        condition: service_healthy
+    environment:
+      WORDPRESS_DB_HOST: wordpress_db:3306
+      WORDPRESS_DB_NAME: trekyatra_wp
+      WORDPRESS_DB_USER: trekyatra_wp
+      WORDPRESS_DB_PASSWORD: trekyatra_wp
+      WORDPRESS_CONFIG_EXTRA: |
+        define('WP_ENVIRONMENT_TYPE', 'local');
+    ports:
+      - "8080:80"
+    volumes:
+      - wordpress_data:/var/www/html
+
+volumes:
+  wordpress_db_data:
+  wordpress_data:

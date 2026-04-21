@@ -12,6 +12,7 @@ This file tracks structural dependencies, source-of-truth modules, and Nexus/Git
 - `docs/` — implementation governance
 - root `package.json` — repo-level scripts including GitNexus commands
 - root `docker-compose.yml` — local infra for Postgres and Redis
+- root `docker-compose.wordpress.yml` — isolated local WordPress stack
 
 ## Source-of-Truth Rules
 - Current frontend source of truth: `apps/web-static/`
@@ -45,6 +46,7 @@ This file tracks structural dependencies, source-of-truth modules, and Nexus/Git
 - `services/api/app/api/routes/health.py` -> versioned health route
 - `services/api/app/api/routes/auth.py` -> auth route registration and handlers
 - `services/api/app/api/routes/wordpress.py` -> WordPress health and connectivity test handlers
+- `services/api/app/api/routes/content.py` -> topics, clusters, briefs, drafts APIs
 - `services/api/app/core/config.py` -> settings and connection URIs
 - `services/api/app/core/logging.py` -> structured logging
 - `services/api/app/core/security.py` -> password hashing, token creation, token parsing
@@ -53,20 +55,25 @@ This file tracks structural dependencies, source-of-truth modules, and Nexus/Git
 - `services/api/app/db/session.py` -> SQLAlchemy engine, session factory, DB dependency
 - `services/api/app/schemas/auth.py` -> auth request/response contracts
 - `services/api/app/schemas/wordpress.py` -> WordPress request/response contracts
+- `services/api/app/schemas/content.py` -> content-domain request/response contracts
 - `services/api/app/modules/auth/models.py` -> users, auth identities, sessions
 - `services/api/app/modules/auth/service.py` -> email auth business logic and session creation
 - `services/api/app/modules/auth/dependencies.py` -> current user/current session dependencies
 - `services/api/app/modules/wordpress/client.py` -> WordPress REST client skeleton
 - `services/api/app/modules/wordpress/service.py` -> WordPress health and connectivity service helpers
+- `services/api/app/modules/content/models.py` -> topic, cluster, brief, draft ORM models
+- `services/api/app/modules/content/service.py` -> content-domain create/list service helpers
 - `services/api/app/modules/rbac/associations.py` -> user_roles, role_permissions association tables
 - `services/api/app/modules/rbac/models.py` -> roles, permissions
 - `services/api/alembic/env.py` -> Alembic environment config
 - `services/api/alembic/versions/20260421_0001_initial_auth_and_rbac.py` -> initial schema migration
 - `services/api/alembic/versions/20260421_0002_add_password_hash_to_users.py` -> password auth migration
+- `services/api/alembic/versions/20260421_0003_content_domain_foundation.py` -> content domain migration
 - `services/api/tests/test_health.py` -> API health smoke tests
 - `services/api/tests/test_models.py` -> metadata table coverage test
 - `services/api/tests/test_auth.py` -> auth route tests
 - `services/api/tests/test_wordpress.py` -> WordPress route tests
+- `services/api/tests/test_content_routes.py` -> content route tests
 
 ## Dependency Discipline Rules
 Before editing any existing frontend file:
@@ -103,9 +110,11 @@ Before editing any backend file:
 - Never change shared shell/layout/auth/config files without documenting affected surfaces
 
 ## Current Blast Radius Notes
-### Step 05 planned blast radius
-- `app/api/router.py` change is additive and low risk if `api_router` remains intact
-- `app/core/config.py` is shared and must only be extended, not restructured
-- `app/modules/wordpress/*` is a new isolated backend domain
-- `app/api/routes/wordpress.py` adds new endpoints without affecting auth or health flows
+### Step 06 planned blast radius
+- `app/db/base.py` is the metadata registry and must include all new ORM models
+- `alembic/env.py` depends on `app.db.base`, so new models become part of migration metadata automatically
+- `app/api/router.py` change remains additive and low risk if `api_router` remains intact
+- `app/core/config.py` can remain stable for Step 06 unless local WordPress setup needs config extension
+- `docker-compose.yml` remains untouched
+- `docker-compose.wordpress.yml` isolates WordPress local runtime to avoid blast radius on existing Postgres/Redis infra
 - `apps/web-static/` must remain untouched in this step
