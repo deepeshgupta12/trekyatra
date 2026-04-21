@@ -31,6 +31,13 @@ class Settings(BaseSettings):
     sms_provider: str | None = None
     sms_api_key: str | None = None
 
+    auth_jwt_secret: str = "change-me-in-production"
+    auth_jwt_algorithm: str = "HS256"
+    auth_access_token_expire_minutes: int = 60
+    auth_cookie_name: str = "trekyatra_access_token"
+    auth_cookie_secure: bool = False
+    auth_cookie_samesite: str = "lax"
+
     model_config = SettingsConfigDict(
         env_file=".env",
         env_file_encoding="utf-8",

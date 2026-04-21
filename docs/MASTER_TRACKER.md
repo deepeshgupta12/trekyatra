@@ -24,9 +24,9 @@ Do not modify any code file without first:
 - Backend scaffold: done
 - Database scaffold: foundation done
 - Docker/local infra: done
-- Auth foundation: model layer done, API pending
+- Auth foundation: API layer in progress
 - WordPress integration: pending
-- API contracts: foundation done
+- API contracts: auth foundation in progress
 - Dynamic frontend wiring: pending
 - Nexus/GitNexus workflow setup: done
 
@@ -58,5 +58,24 @@ What is done:
 - User, auth identity, user session, role, permission, user-role, and role-permission models added
 - Metadata tests added
 - Pylance-safe model typing fixed for auth and RBAC relationships
+
+### Step 03 — Auth APIs foundation
+Status: in progress
+What is done:
+- Planned email signup/login/logout/me endpoints
+- Planned password hashing and JWT cookie auth
+- Planned placeholder Google/mobile auth interfaces
+- Planned auth tests
 What is pending:
-- Nothing for this step
+- User to apply file changes
+- User to run Alembic upgrade to 20260421_0002
+- User to validate auth routes and tests
+- User to refresh GitNexus graph
+- User to confirm step output
+
+## Rules for Future Updates
+- Every completed step must update:
+  - this file
+  - the relevant `docs/steps/STEP-XX-*.md`
+  - `docs/DEPENDENCY_MAP.md` if dependencies changed
+- Never assume a file exists unless confirmed in repo or created in an earlier step

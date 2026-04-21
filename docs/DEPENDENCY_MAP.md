@@ -37,18 +37,25 @@ This file tracks structural dependencies, source-of-truth modules, and Nexus/Git
 - `services/api/app/main.py` -> FastAPI app entry and lifespan
 - `services/api/app/api/router.py` -> API router registration
 - `services/api/app/api/routes/health.py` -> versioned health route
+- `services/api/app/api/routes/auth.py` -> auth route registration and handlers
 - `services/api/app/core/config.py` -> settings and connection URIs
 - `services/api/app/core/logging.py` -> structured logging
+- `services/api/app/core/security.py` -> password hashing, token creation, token parsing
 - `services/api/app/db/base_class.py` -> declarative base, naming convention, shared mixins
 - `services/api/app/db/base.py` -> model import registry for metadata
-- `services/api/app/db/session.py` -> SQLAlchemy engine and session factory
+- `services/api/app/db/session.py` -> SQLAlchemy engine, session factory, DB dependency
+- `services/api/app/schemas/auth.py` -> auth request/response contracts
 - `services/api/app/modules/auth/models.py` -> users, auth identities, sessions
+- `services/api/app/modules/auth/service.py` -> email auth business logic and session creation
+- `services/api/app/modules/auth/dependencies.py` -> current user/current session dependencies
 - `services/api/app/modules/rbac/associations.py` -> user_roles, role_permissions association tables
 - `services/api/app/modules/rbac/models.py` -> roles, permissions
 - `services/api/alembic/env.py` -> Alembic environment config
 - `services/api/alembic/versions/20260421_0001_initial_auth_and_rbac.py` -> initial schema migration
+- `services/api/alembic/versions/20260421_0002_add_password_hash_to_users.py` -> password auth migration
 - `services/api/tests/test_health.py` -> API health smoke tests
 - `services/api/tests/test_models.py` -> metadata table coverage test
+- `services/api/tests/test_auth.py` -> auth route tests
 
 ## Dependency Discipline Rules
 Before editing any existing frontend file:
@@ -71,7 +78,7 @@ Before editing any backend file:
 - `services/api/app/api/*` -> route registration and endpoints
 - `services/api/app/db/*` -> engine, base, metadata, models
 - `services/api/app/modules/*` -> domain modules
-- `services/api/app/schemas/*` -> Pydantic contracts (future)
+- `services/api/app/schemas/*` -> Pydantic contracts
 - `services/api/alembic/*` -> migrations
 - `services/api/tests/*` -> tests
 
@@ -100,3 +107,16 @@ Before editing any backend file:
 - `app/db/base.py` is the metadata import registry and must include all ORM models that should be migrated
 - Alembic environment depends on `app.core.config.settings` and `app.db.base.Base.metadata`
 - Future auth API work must respect current model relationships and association tables
+
+### Step 03 planned blast radius
+- `app/api/router.py` has a tight additive blast radius and can safely include auth routes if `api_router` remains intact
+- `app/main.py` should remain additive and not change interface shape
+- `app/modules/auth/models.py` is already referenced by metadata registration and must be extended, not redefined
+- `app/db/session.py` is currently a leaf and is the correct place for DB dependency wiring
+- Auth route work will touch:
+  - config
+  - router
+  - auth models
+  - db session dependency
+  - new auth service/dependencies/schemas/security files
+  - auth tests
