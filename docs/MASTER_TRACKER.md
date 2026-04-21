@@ -21,25 +21,38 @@ Do not modify any code file without first:
 ## Current Status
 - Project repo scaffold: done
 - Static frontend zip unpacked into `apps/web-static`: done
-- Backend scaffold: pending
+- Backend scaffold: done
 - Database scaffold: pending
-- Docker/local infra: pending
+- Docker/local infra: done
 - Auth foundation: pending
 - WordPress integration: pending
-- API contracts: pending
+- API contracts: foundation done
 - Dynamic frontend wiring: pending
-- Nexus/GitNexus workflow setup: pending
+- Nexus/GitNexus workflow setup: foundation done
 
 ## Step History
+
 ### Step 00 — Repo bootstrap, docs, and source-of-truth setup
-Status: in progress
+Status: done
 What is done:
 - Monorepo folders created
 - Uploaded frontend preserved untouched in `apps/web-static`
 - Tracker, process, dependency, and implementation docs created
+
+### Step 01 — Backend foundation and local infra scaffold
+Status: in progress
+What is done:
+- Root repo tooling added
+- GitNexus scripts added
+- Backend FastAPI scaffold added under `services/api`
+- Docker Compose added for Postgres and Redis
+- Health endpoints and tests added
 What is pending:
-- User to run bootstrap commands locally
-- User to confirm repository structure is created successfully
+- User to create files locally
+- User to install backend dependencies
+- User to start local infra
+- User to run health checks, tests, and GitNexus analyze
+- User to confirm step output
 
 ## Rules for Future Updates
 - Every completed step must update:

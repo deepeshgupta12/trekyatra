@@ -1,0 +1,46 @@
+# macOS
+.DS_Store
+
+# Node
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# Python
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.venv/
+venv/
+dist/
+build/
+*.egg-info/
+
+# Env
+.env
+.env.*
+!.env.example
+
+# IDE
+.vscode/*
+!.vscode/settings.json
+
+# Coverage / reports
+.coverage
+htmlcov/
+coverage.xml
+
+# Local infra
+postgres-data/
+redis-data/
+
+# GitNexus
+.gitnexus/
+
+# Generated docs
+AGENTS.md
+CLAUDE.md

@@ -1,0 +1,15 @@
+{
+  "name": "trekyatra-monorepo",
+  "version": "0.1.0",
+  "private": true,
+  "description": "TrekYatra monorepo with backend foundation, static frontend source-of-truth, and GitNexus integration",
+  "scripts": {
+    "gitnexus:analyze": "npx gitnexus analyze",
+    "gitnexus:analyze:force": "npx gitnexus analyze --force",
+    "gitnexus:status": "npx gitnexus status",
+    "gitnexus:clean": "npx gitnexus clean",
+    "gitnexus:wiki": "npx gitnexus wiki",
+    "gitnexus:refresh": "bash ./scripts/refresh_gitnexus.sh",
+    "gitnexus:setup": "bash ./scripts/setup_gitnexus.sh"
+  }
+}

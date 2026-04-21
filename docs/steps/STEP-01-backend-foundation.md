@@ -1,10 +1,16 @@
 # STEP 01 — backend-foundation
 
 ## Goal
-TBD
+Create the backend foundation, local infra scaffold, and real GitNexus workflow integration without touching the static frontend.
 
 ## Scope
-- TBD
+- Add FastAPI app foundation
+- Add app config and logging
+- Add versioned health routes
+- Add backend tests
+- Add Docker Compose for Postgres and Redis
+- Add root repo scripts for GitNexus
+- Update tracker and dependency map
 
 ## Preconditions
 - Read docs/MASTER_TRACKER.md
@@ -12,19 +18,54 @@ TBD
 - Read docs/DEPENDENCY_MAP.md
 
 ## Dependency Check
-- TBD
+- `apps/web-static/` remains untouched
+- Backend files are newly created under `services/api/`
+- Root tooling additions do not alter frontend behavior
+- Docker Compose only adds local infra support
+- GitNexus integration is repo-level and does not modify application runtime code
 
 ## Files to Create
-- TBD
+- .gitignore
+- package.json
+- docker-compose.yml
+- Makefile
+- scripts/setup_gitnexus.sh
+- scripts/refresh_gitnexus.sh
+- services/api/pyproject.toml
+- services/api/.env.example
+- services/api/README.md
+- services/api/app/__init__.py
+- services/api/app/main.py
+- services/api/app/core/__init__.py
+- services/api/app/core/config.py
+- services/api/app/core/logging.py
+- services/api/app/api/__init__.py
+- services/api/app/api/router.py
+- services/api/app/api/routes/__init__.py
+- services/api/app/api/routes/health.py
+- services/api/tests/test_health.py
 
 ## Files to Modify
-- TBD
+- docs/MASTER_TRACKER.md
+- docs/DEPENDENCY_MAP.md
+- docs/steps/STEP-01-backend-foundation.md
 
 ## Validation Commands
-- TBD
+- find services/api -maxdepth 4 | sort
+- cp services/api/.env.example services/api/.env
+- make venv
+- make install
+- make infra-up
+- make api
+- curl http://localhost:8000/health
+- curl http://localhost:8000/api/v1/health
+- make test
+- bash ./scripts/setup_gitnexus.sh
+- gitnexus status
 
 ## Status
-Not started
+Ready for user validation
 
 ## Notes
-- Update this file during the active step.
+- Do not modify `apps/web-static/` in this step
+- Wait for user confirmation before Step 02
