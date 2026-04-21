@@ -24,7 +24,7 @@ Create the backend foundation, local infra scaffold, and real GitNexus workflow 
 - Docker Compose only adds local infra support
 - GitNexus integration is repo-level and does not modify application runtime code
 
-## Files to Create
+## Files Created
 - .gitignore
 - package.json
 - docker-compose.yml
@@ -45,10 +45,13 @@ Create the backend foundation, local infra scaffold, and real GitNexus workflow 
 - services/api/app/api/routes/health.py
 - services/api/tests/test_health.py
 
-## Files to Modify
+## Files Modified
 - docs/MASTER_TRACKER.md
 - docs/DEPENDENCY_MAP.md
 - docs/steps/STEP-01-backend-foundation.md
+- docker-compose.yml
+- services/api/.env.example
+- services/api/app/core/config.py
 
 ## Validation Commands
 - find services/api -maxdepth 4 | sort
@@ -62,10 +65,14 @@ Create the backend foundation, local infra scaffold, and real GitNexus workflow 
 - make test
 - bash ./scripts/setup_gitnexus.sh
 - gitnexus status
+- docker exec -it trekyatra-redis redis-cli ping
 
 ## Status
-Ready for user validation
+Done
 
 ## Notes
-- Do not modify `apps/web-static/` in this step
+- `apps/web-static/` was not modified in this step
+- Host ports used to avoid local conflicts:
+  - Postgres on 5433
+  - Redis on 6380
 - Wait for user confirmation before Step 02

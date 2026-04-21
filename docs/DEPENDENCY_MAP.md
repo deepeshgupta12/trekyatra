@@ -79,3 +79,6 @@ Before editing any backend file:
 - New root tooling files affect repo-level workflows only
 - New backend files are isolated under `services/api/`
 - New Docker Compose affects local infra only
+- Host port mappings now use:
+  - Postgres: `5433 -> 5432`
+  - Redis: `6380 -> 6379`

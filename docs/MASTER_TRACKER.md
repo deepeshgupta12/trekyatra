@@ -28,7 +28,7 @@ Do not modify any code file without first:
 - WordPress integration: pending
 - API contracts: foundation done
 - Dynamic frontend wiring: pending
-- Nexus/GitNexus workflow setup: foundation done
+- Nexus/GitNexus workflow setup: done
 
 ## Step History
 
@@ -40,19 +40,16 @@ What is done:
 - Tracker, process, dependency, and implementation docs created
 
 ### Step 01 — Backend foundation and local infra scaffold
-Status: in progress
+Status: done
 What is done:
 - Root repo tooling added
-- GitNexus scripts added
+- GitNexus installed and initial graph indexed
 - Backend FastAPI scaffold added under `services/api`
 - Docker Compose added for Postgres and Redis
 - Health endpoints and tests added
+- Local API boot validated
 What is pending:
-- User to create files locally
-- User to install backend dependencies
-- User to start local infra
-- User to run health checks, tests, and GitNexus analyze
-- User to confirm step output
+- Nothing for this step
 
 ## Rules for Future Updates
 - Every completed step must update:

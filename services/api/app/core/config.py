@@ -19,7 +19,7 @@ class Settings(BaseSettings):
     postgres_password: str = "trekyatra"
 
     redis_host: str = "localhost"
-    redis_port: int = 6379
+    redis_port: int = 6380
     redis_db: int = 0
 
     wordpress_base_url: str = "http://localhost:8080"
