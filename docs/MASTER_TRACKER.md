@@ -24,10 +24,10 @@ Do not modify any code file without first:
 - Backend scaffold: done
 - Database scaffold: foundation done
 - Docker/local infra: done
-- Auth foundation: API layer in progress
-- WordPress integration: pending
-- API contracts: auth foundation in progress
-- Dynamic frontend wiring: blueprint complete (see docs/FRONTEND_WIRING_BLUEPRINT.md)
+- Auth foundation: done
+- WordPress integration: foundation in progress
+- API contracts: auth + wordpress foundation in progress
+- Dynamic frontend wiring: blueprint done
 - Nexus/GitNexus workflow setup: done
 
 ## Step History
@@ -69,15 +69,27 @@ What is done:
 - Auth tests added
 - Python 3.10 compatibility fixes applied
 - ORM registration fix applied for runtime mapper resolution
-What is pending:
-- Nothing for this step
 
-### Step 04 — Static frontend audit and dynamic wiring plan
+### Step 04 — Frontend audit and full Next.js migration blueprint
 Status: done
 What is done:
-- Full audit of apps/web-static: 45 routes, 30 pages, 12 mock trek entries, zero API calls
-- Migration strategy decided: keep Vite, wire incrementally, Next.js migration deferred to Step 10+
-- Frontend wiring blueprint written to docs/FRONTEND_WIRING_BLUEPRINT.md
-- API contracts mapped for all 8 route groups: auth, homepage, explore, trek detail, account, admin, content, system states
-- Mock data deprecation plan for src/data/treks.ts documented
-- Files to create in Steps 08 and 09 listed
+- Static frontend structure audited using GitNexus and file inventory
+- Frontend entry chain and blast radius documented
+- Migration direction finalized: full Next.js migration
+- Vite app reclassified as source-reference/design-reference only
+- API wiring groups mapped for auth, homepage, explore, trek detail, account, admin, and content surfaces
+- Mock data deprecation strategy documented
+
+### Step 05 — WordPress integration foundation
+Status: in progress
+What is done:
+- Planned WordPress config model extension
+- Planned REST client skeleton
+- Planned health and connectivity test endpoints
+- Planned WordPress tests
+What is pending:
+- User to apply Step 05 file changes
+- User to run tests
+- User to validate WordPress endpoints
+- User to refresh GitNexus graph
+- User to confirm step output

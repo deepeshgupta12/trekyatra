@@ -34,20 +34,9 @@ This file tracks structural dependencies, source-of-truth modules, and Nexus/Git
 
 ## Frontend Runtime Decision
 - `apps/web-static/` is the current static design/source-reference frontend
-- It is NOT the long-term runtime frontend anymore
-- Full migration direction is now `Next.js`
+- It is not the long-term runtime frontend
+- Full migration direction is `Next.js`
 - Future runtime frontend will be created separately and mapped from the audited Vite structure
-- Until migration is complete, `apps/web-static/` remains the UI and dependency reference source
-
-## Step 04 Frontend Blast Radius Notes
-- `src/main.tsx` is the current Vite mount entry; reference only
-- `src/App.tsx` is the current provider/router hub; reference only
-- `src/components/layout/SiteLayout.tsx` is the public shell reference for Next.js shell design
-- `src/components/layout/Header.tsx` and `Footer.tsx` are shared public-shell references and must be migrated carefully
-- `src/pages/auth/*` use a separate auth shell and should become isolated auth route groups in Next.js
-- `src/pages/account/*` use SiteLayout today but should become protected account route groups later
-- `src/pages/admin/*` use a separate admin shell and should become protected admin route groups later
-- `src/data/treks.ts` currently feeds homepage, explore, trek detail, and dashboard; it must not be removed until trek APIs and the Next.js app are ready
 
 ## Backend Snapshot
 ### App entry chain
@@ -55,6 +44,7 @@ This file tracks structural dependencies, source-of-truth modules, and Nexus/Git
 - `services/api/app/api/router.py` -> API router registration
 - `services/api/app/api/routes/health.py` -> versioned health route
 - `services/api/app/api/routes/auth.py` -> auth route registration and handlers
+- `services/api/app/api/routes/wordpress.py` -> WordPress health and connectivity test handlers
 - `services/api/app/core/config.py` -> settings and connection URIs
 - `services/api/app/core/logging.py` -> structured logging
 - `services/api/app/core/security.py` -> password hashing, token creation, token parsing
@@ -62,9 +52,12 @@ This file tracks structural dependencies, source-of-truth modules, and Nexus/Git
 - `services/api/app/db/base.py` -> model import registry for metadata
 - `services/api/app/db/session.py` -> SQLAlchemy engine, session factory, DB dependency
 - `services/api/app/schemas/auth.py` -> auth request/response contracts
+- `services/api/app/schemas/wordpress.py` -> WordPress request/response contracts
 - `services/api/app/modules/auth/models.py` -> users, auth identities, sessions
 - `services/api/app/modules/auth/service.py` -> email auth business logic and session creation
 - `services/api/app/modules/auth/dependencies.py` -> current user/current session dependencies
+- `services/api/app/modules/wordpress/client.py` -> WordPress REST client skeleton
+- `services/api/app/modules/wordpress/service.py` -> WordPress health and connectivity service helpers
 - `services/api/app/modules/rbac/associations.py` -> user_roles, role_permissions association tables
 - `services/api/app/modules/rbac/models.py` -> roles, permissions
 - `services/api/alembic/env.py` -> Alembic environment config
@@ -73,6 +66,7 @@ This file tracks structural dependencies, source-of-truth modules, and Nexus/Git
 - `services/api/tests/test_health.py` -> API health smoke tests
 - `services/api/tests/test_models.py` -> metadata table coverage test
 - `services/api/tests/test_auth.py` -> auth route tests
+- `services/api/tests/test_wordpress.py` -> WordPress route tests
 
 ## Dependency Discipline Rules
 Before editing any existing frontend file:
@@ -109,31 +103,9 @@ Before editing any backend file:
 - Never change shared shell/layout/auth/config files without documenting affected surfaces
 
 ## Current Blast Radius Notes
-### Step 01 additions
-- No changes to `apps/web-static/`
-- New root tooling files affect repo-level workflows only
-- New backend files are isolated under `services/api/`
-- New Docker Compose affects local infra only
-- Host port mappings:
-  - Postgres: `5433 -> 5432`
-  - Redis: `6380 -> 6379`
-
-### Step 02 additions
-- No changes to `apps/web-static/`
-- New DB and model files only affect backend metadata, migrations, and future auth/data layers
-- `app/db/base.py` is the metadata import registry and must include all ORM models that should be migrated
-- Alembic environment depends on `app.core.config.settings` and `app.db.base.Base.metadata`
-- Future auth API work must respect current model relationships and association tables
-
-### Step 03 planned blast radius
-- `app/api/router.py` has a tight additive blast radius and can safely include auth routes if `api_router` remains intact
-- `app/main.py` should remain additive and not change interface shape
-- `app/modules/auth/models.py` is already referenced by metadata registration and must be extended, not redefined
-- `app/db/session.py` is currently a leaf and is the correct place for DB dependency wiring
-- Auth route work will touch:
-  - config
-  - router
-  - auth models
-  - db session dependency
-  - new auth service/dependencies/schemas/security files
-  - auth tests
+### Step 05 planned blast radius
+- `app/api/router.py` change is additive and low risk if `api_router` remains intact
+- `app/core/config.py` is shared and must only be extended, not restructured
+- `app/modules/wordpress/*` is a new isolated backend domain
+- `app/api/routes/wordpress.py` adds new endpoints without affecting auth or health flows
+- `apps/web-static/` must remain untouched in this step

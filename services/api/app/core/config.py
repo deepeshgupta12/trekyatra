@@ -25,13 +25,15 @@ class Settings(BaseSettings):
     wordpress_base_url: str = "http://localhost:8080"
     wordpress_username: str = "admin"
     wordpress_app_password: str = "replace_me"
+    wordpress_timeout_seconds: float = 10.0
+    wordpress_verify_ssl: bool = True
 
     google_client_id: str | None = None
     google_client_secret: str | None = None
     sms_provider: str | None = None
     sms_api_key: str | None = None
 
-    auth_jwt_secret: str = "change-me-in-production"
+    auth_jwt_secret: str = "trekyatra-dev-secret-key-at-least-32-bytes-long"
     auth_jwt_algorithm: str = "HS256"
     auth_access_token_expire_minutes: int = 60
     auth_cookie_name: str = "trekyatra_access_token"
@@ -57,6 +59,16 @@ class Settings(BaseSettings):
     @property
     def redis_url(self) -> str:
         return f"redis://{self.redis_host}:{self.redis_port}/{self.redis_db}"
+
+    @computed_field  # type: ignore[prop-decorator]
+    @property
+    def wordpress_rest_base_url(self) -> str:
+        return f"{self.wordpress_base_url.rstrip('/')}/wp-json"
+
+    @computed_field  # type: ignore[prop-decorator]
+    @property
+    def wordpress_credentials_configured(self) -> bool:
+        return bool(self.wordpress_username and self.wordpress_app_password)
 
 
 @lru_cache(maxsize=1)
