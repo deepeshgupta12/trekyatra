@@ -43,7 +43,7 @@ export default function BriefReview() {
 
       <div className="space-y-4">
         {BRIEFS.map(b => (
-          <div key={b.title} className="bg-white/5 rounded-2xl border border-white/8 p-5">
+          <div key={b.title} className="bg-[#14161f] rounded-2xl border border-white/10 p-5">
             <div className="flex items-start justify-between gap-4 mb-3">
               <div>
                 <h3 className="text-white font-semibold mb-1">{b.title}</h3>

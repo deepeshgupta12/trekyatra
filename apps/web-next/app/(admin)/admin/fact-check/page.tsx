@@ -50,7 +50,7 @@ export default function FactCheck() {
         {CLAIMS.map((c, i) => {
           const { icon: Icon, color, bg, label } = verdictConfig[c.verdict as keyof typeof verdictConfig];
           return (
-            <div key={i} className="bg-white/5 rounded-2xl border border-white/8 p-5">
+            <div key={i} className="bg-[#14161f] rounded-2xl border border-white/10 p-5">
               <div className="flex items-start justify-between gap-4 mb-2">
                 <p className="text-white font-medium">&#8220;{c.claim}&#8221;</p>
                 <span className={`flex items-center gap-1.5 text-xs font-medium px-2.5 py-1 rounded-full flex-shrink-0 ${color} ${bg}`}>

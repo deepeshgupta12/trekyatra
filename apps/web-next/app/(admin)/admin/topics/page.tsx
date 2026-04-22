@@ -75,7 +75,7 @@ export default function TopicDiscovery() {
         </div>
       </div>
 
-      <div className="bg-white/5 rounded-2xl border border-white/8 overflow-hidden">
+      <div className="bg-[#14161f] rounded-2xl border border-white/10 overflow-hidden">
         <div className="px-5 py-4 border-b border-white/8">
           <p className="text-white/40 text-xs">
             Click <span className="text-white/60 font-medium">Discover trends</span> to trigger the

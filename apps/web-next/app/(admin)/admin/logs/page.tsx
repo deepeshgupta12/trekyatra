@@ -32,7 +32,7 @@ export default function AgentLogs() {
         </span>
       </div>
 
-      <div className="bg-white/5 rounded-2xl border border-white/8 overflow-hidden font-mono text-xs">
+      <div className="bg-[#14161f] rounded-2xl border border-white/10 overflow-hidden font-mono text-xs">
         <div className="px-5 py-3 border-b border-white/8 flex items-center gap-2">
           <Terminal className="h-3.5 w-3.5 text-white/30" />
           <span className="text-white/30">pipeline.log — live tail</span>

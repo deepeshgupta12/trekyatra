@@ -24,7 +24,7 @@ export default function Monetization() {
 
       <div className="grid grid-cols-2 xl:grid-cols-4 gap-4 mb-8">
         {KPIs.map(k => (
-          <div key={k.label} className="bg-white/5 rounded-2xl border border-white/8 p-5">
+          <div key={k.label} className="bg-[#14161f] rounded-2xl border border-white/10 p-5">
             <DollarSign className="h-4 w-4 text-amber-400 mb-3" />
             <p className="text-white font-display text-2xl font-semibold">{k.value}</p>
             <p className="text-white/40 text-xs mt-0.5">{k.label}</p>
@@ -33,7 +33,7 @@ export default function Monetization() {
         ))}
       </div>
 
-      <div className="bg-white/5 rounded-2xl border border-white/8 overflow-hidden">
+      <div className="bg-[#14161f] rounded-2xl border border-white/10 overflow-hidden">
         <div className="flex items-center justify-between px-5 py-4 border-b border-white/8">
           <h2 className="text-white font-semibold text-sm">Top Products</h2>
         </div>

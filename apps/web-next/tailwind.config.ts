@@ -19,6 +19,7 @@ export default {
         background: "hsl(var(--background))",
         foreground: "hsl(var(--foreground))",
         surface: { DEFAULT: "hsl(var(--surface))", muted: "hsl(var(--surface-muted))" },
+        pine: "hsl(162 50% 42%)",
         mist: "hsl(var(--mist))",
         sky: "hsl(var(--sky))",
         earth: "hsl(var(--earth))",

@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 
 function Section({ icon: Icon, title, children }: { icon: React.ElementType; title: string; children: React.ReactNode }) {
   return (
-    <div className="bg-white/5 rounded-2xl border border-white/8 p-6 mb-5">
+    <div className="bg-[#14161f] rounded-2xl border border-white/10 p-6 mb-5">
       <div className="flex items-center gap-2 mb-5">
         <Icon className="h-4 w-4 text-accent" />
         <h2 className="text-white font-semibold text-sm">{title}</h2>

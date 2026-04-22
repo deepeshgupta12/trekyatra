@@ -117,7 +117,7 @@ export default function KeywordClusters() {
 
       <div className="space-y-4">
         {CLUSTERS.map(c => (
-          <div key={c.name} className="bg-white/5 rounded-2xl border border-white/8 p-5">
+          <div key={c.name} className="bg-[#14161f] rounded-2xl border border-white/10 p-5">
             <div className="flex items-center justify-between mb-3">
               <div>
                 <h3 className="text-white font-semibold">{c.name}</h3>

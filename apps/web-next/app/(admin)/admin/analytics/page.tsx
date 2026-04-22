@@ -25,7 +25,7 @@ export default function Analytics() {
 
       <div className="grid grid-cols-2 xl:grid-cols-4 gap-4 mb-8">
         {METRICS.map(m => (
-          <div key={m.label} className="bg-white/5 rounded-2xl border border-white/8 p-5">
+          <div key={m.label} className="bg-[#14161f] rounded-2xl border border-white/10 p-5">
             <m.icon className="h-4 w-4 text-accent mb-3" />
             <p className="text-white font-display text-2xl font-semibold">{m.value}</p>
             <p className="text-white/40 text-xs mt-0.5">{m.label}</p>
@@ -35,7 +35,7 @@ export default function Analytics() {
       </div>
 
       {/* Sparkline placeholder */}
-      <div className="bg-white/5 rounded-2xl border border-white/8 p-5 mb-6">
+      <div className="bg-[#14161f] rounded-2xl border border-white/10 p-5 mb-6">
         <p className="text-white/40 text-xs mb-4">Pageviews — last 30 days</p>
         <div className="flex items-end gap-1 h-20">
           {[40, 55, 48, 62, 58, 70, 65, 80, 75, 88, 72, 90, 85, 95, 88, 100, 92, 98, 85, 110, 105, 120, 112, 130, 118, 140, 135, 150, 142, 160].map((h, i) => (
@@ -44,7 +44,7 @@ export default function Analytics() {
         </div>
       </div>
 
-      <div className="bg-white/5 rounded-2xl border border-white/8 overflow-hidden">
+      <div className="bg-[#14161f] rounded-2xl border border-white/10 overflow-hidden">
         <div className="px-5 py-4 border-b border-white/8">
           <h2 className="text-white font-semibold text-sm">Top Pages</h2>
         </div>

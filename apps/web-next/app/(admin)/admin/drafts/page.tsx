@@ -135,7 +135,7 @@ export default function DraftReview() {
             const busy = actionLoading[d.id];
             const nextStatus = NEXT_STATUS[d.status];
             return (
-              <div key={d.id} className="bg-white/5 rounded-2xl border border-white/8 p-5">
+              <div key={d.id} className="bg-[#14161f] rounded-2xl border border-white/10 p-5">
                 <div className="flex items-start justify-between gap-4 mb-4">
                   <div>
                     <h3 className="text-white font-semibold">{d.title}</h3>
