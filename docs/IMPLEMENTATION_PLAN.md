@@ -39,7 +39,7 @@
 
 ## V1 — Practical Launchable Product (Steps 11–24)
 
-### Step 11 — Worker and task queue infrastructure
+### Step 11 — Worker and task queue infrastructure [DONE]
 - Celery app + Redis broker setup
 - Base Task class with retry and dead-letter
 - Celery Beat scheduler
@@ -262,4 +262,4 @@
 
 ## Execution Rule
 Do not start the next step without user confirmation.
-Current next step: **Step 11 — Worker and task queue infrastructure**
+Current next step: **Step 12 — LangGraph agent framework + agent tracking**

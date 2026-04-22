@@ -62,6 +62,16 @@ class Settings(BaseSettings):
 
     @computed_field  # type: ignore[prop-decorator]
     @property
+    def celery_broker_url(self) -> str:
+        return f"redis://{self.redis_host}:{self.redis_port}/1"
+
+    @computed_field  # type: ignore[prop-decorator]
+    @property
+    def celery_result_backend(self) -> str:
+        return f"redis://{self.redis_host}:{self.redis_port}/1"
+
+    @computed_field  # type: ignore[prop-decorator]
+    @property
     def wordpress_rest_base_url(self) -> str:
         return f"{self.wordpress_base_url.rstrip('/')}/wp-json"
 

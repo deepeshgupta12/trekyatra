@@ -5,7 +5,7 @@ PYTEST := $(VENV)/bin/pytest
 UVICORN := $(VENV)/bin/uvicorn
 ALEMBIC := $(VENV)/bin/alembic
 
-.PHONY: help venv install api dev test infra-up infra-down gitnexus gitnexus-force db-upgrade db-current db-history
+.PHONY: help venv install api dev test infra-up infra-down worker beat gitnexus gitnexus-force db-upgrade db-current db-history
 
 help:
 	@echo "Available commands:"
@@ -14,6 +14,8 @@ help:
 	@echo "  make infra-up        Start Postgres and Redis"
 	@echo "  make infra-down      Stop Postgres and Redis"
 	@echo "  make api             Run FastAPI app"
+	@echo "  make worker          Run Celery worker (local)"
+	@echo "  make beat            Run Celery beat scheduler (local)"
 	@echo "  make test            Run backend tests"
 	@echo "  make db-upgrade      Run Alembic upgrade head"
 	@echo "  make db-current      Show current Alembic revision"
@@ -37,6 +39,12 @@ infra-down:
 
 api:
 	cd services/api && ../../$(UVICORN) app.main:app --reload --host 0.0.0.0 --port 8000
+
+worker:
+	cd services/api && ../../.venv/bin/celery -A app.worker.celery_app worker --loglevel=info
+
+beat:
+	cd services/api && ../../.venv/bin/celery -A app.worker.celery_app beat --loglevel=info
 
 test:
 	cd services/api && ../../$(PYTEST) -q

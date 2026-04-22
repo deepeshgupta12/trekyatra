@@ -87,6 +87,11 @@ This file tracks structural dependencies, source-of-truth modules, and Nexus/Git
 - `services/api/app/modules/admin/service.py` -> admin dashboard and summary aggregations
 - `services/api/app/modules/treks/data.py` -> additive mock/public trek source data
 - `services/api/app/modules/treks/service.py` -> public trek list/detail filtering logic
+- `services/api/app/worker/celery_app.py` -> Celery instance; broker/backend from settings; includes smoke task; beat_schedule stub
+- `services/api/app/worker/tasks/base.py` -> BaseTask; max_retries=3, backoff=60s, on_failure/on_retry hooks
+- `services/api/app/worker/tasks/smoke.py` -> smoke.ping task; end-to-end queue validation
+- `services/api/app/api/routes/worker.py` -> GET /api/v1/worker/health; checks Redis broker connectivity
+- `services/api/Dockerfile` -> minimal python:3.12-slim image for Docker-based worker/beat services
 - `services/api/app/modules/rbac/associations.py` -> user_roles, role_permissions association tables
 - `services/api/app/modules/rbac/models.py` -> roles, permissions
 - `services/api/alembic/env.py` -> Alembic environment config
@@ -180,6 +185,18 @@ Before editing any backend file:
 - `apps/web-next/lib/api.ts` is the new universal fetch layer (server + client)
 - `apps/web-next/lib/trekApi.ts` mirrors the previous Vite trekApi with Next.js-compatible image paths
 - Auth, account, and admin pages are UI-complete but backend wiring is deferred to a future step
+
+### Step 11 executed blast radius
+- `app/core/config.py` changed: `celery_broker_url` and `celery_result_backend` computed fields added — additive only; 12 existing importers of `Settings` unaffected
+- `app/api/router.py` changed: `worker_router` registered additively — no existing routes touched
+- `app/worker/` created: new module `celery_app.py`, `tasks/base.py`, `tasks/smoke.py` — no existing files depend on it; wired in future agent steps
+- `app/api/routes/worker.py` created: depends on `app.core.config.settings` and `redis` library only
+- `services/api/Dockerfile` created: new file; no existing code depends on it; used by docker-compose worker/beat services
+- `docker-compose.yml` changed: `worker` and `beat` services added under `profiles: [worker]` — existing `postgres` and `redis` services unchanged
+- `Makefile` changed: `worker` and `beat` targets added — additive only
+- `services/api/.env.example` changed: Celery env var documentation added — additive
+- No Alembic migration (no DB changes in Step 11)
+- GitNexus re-indexed post-step (counts in step doc Notes)
 
 ### Step 10 executed blast radius
 - `app/modules/content/models.py` changed: `PublishLog` model added; `ContentDraft` gained `published_at`, `wordpress_post_id`, and `publish_logs` relationship

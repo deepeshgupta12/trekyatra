@@ -68,11 +68,34 @@ cd services/api && celery -A app.worker.celery_app worker --loglevel=info
 npx gitnexus analyze --force
 ```
 
+## Files Created
+- `services/api/app/worker/__init__.py`
+- `services/api/app/worker/celery_app.py`
+- `services/api/app/worker/tasks/__init__.py`
+- `services/api/app/worker/tasks/base.py`
+- `services/api/app/worker/tasks/smoke.py`
+- `services/api/app/api/routes/worker.py`
+- `services/api/tests/test_worker.py`
+- `services/api/Dockerfile`
+
+## Files Modified
+- `services/api/app/core/config.py` — `celery_broker_url` and `celery_result_backend` computed fields added
+- `services/api/app/api/router.py` — `worker_router` registered
+- `docker-compose.yml` — `worker` and `beat` services added under `profiles: [worker]`
+- `Makefile` — `make worker` and `make beat` targets added
+- `services/api/.env.example` — Celery env vars documented
+- `docs/MASTER_TRACKER.md` — Step 11 marked done
+- `docs/DEPENDENCY_MAP.md` — Step 11 blast radius notes and new files added
+- `docs/IMPLEMENTATION_PLAN.md` — Step 11 marked [DONE]
+
 ## Status
-pending
+Done
 
 ## Notes
-- Use `redis://localhost:6379/1` as default broker to separate from cache on /0
-- Worker and beat should use arm64-safe Docker images for M1 compatibility
-- Dead-letter behavior: failed tasks after max_retries should set a `failed` flag in agent_runs (wired in Step 12)
-- Beat scheduler config lives in `celeryconfig.py` or inline in `celery_app.py`
+- Broker/backend use Redis DB 1 (`redis://localhost:6380/1`) to separate from main cache on DB 0
+- `celery_broker_url` and `celery_result_backend` are computed fields derived from `redis_host`/`redis_port` — no new env vars required
+- Worker and beat Docker services use `profiles: [worker]` so they are opt-in; `make worker` / `make beat` are the preferred local dev method
+- `services/api/Dockerfile` uses `python:3.12-slim` (arm64-compatible multi-arch image)
+- Dead-letter behavior: `BaseTask.on_failure` logs the failure; `agent_runs` table and `failed` flag wired in Step 12
+- Beat schedule stub in `celery_app.conf.beat_schedule` is empty; first real beat task added in Step 23 (refresh engine)
+- 54/54 backend tests pass after Step 11 (50 prior + 4 new worker tests)

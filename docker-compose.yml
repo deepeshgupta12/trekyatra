@@ -29,3 +29,35 @@ services:
       interval: 10s
       timeout: 5s
       retries: 5
+
+  worker:
+    build:
+      context: services/api
+    container_name: trekyatra-worker
+    command: celery -A app.worker.celery_app worker --loglevel=info --concurrency=2
+    environment:
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      POSTGRES_SERVER: postgres
+      POSTGRES_PORT: 5432
+    depends_on:
+      redis:
+        condition: service_healthy
+      postgres:
+        condition: service_healthy
+    profiles: ["worker"]
+
+  beat:
+    build:
+      context: services/api
+    container_name: trekyatra-beat
+    command: celery -A app.worker.celery_app beat --loglevel=info
+    environment:
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      POSTGRES_SERVER: postgres
+      POSTGRES_PORT: 5432
+    depends_on:
+      redis:
+        condition: service_healthy
+    profiles: ["worker"]

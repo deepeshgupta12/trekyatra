@@ -29,11 +29,11 @@ All V0 foundations are shipped. The stack is live locally with:
 - Admin summary APIs, smoke tests, GitNexus indexed
 
 ## V1 Status — In Progress
-**Current next step: Step 11 — Worker and task queue infrastructure**
+**Current next step: Step 12 — LangGraph agent framework + agent tracking**
 
 | Step | Title | Status |
 |------|-------|--------|
-| 11 | Worker and task queue infrastructure | pending |
+| 11 | Worker and task queue infrastructure | done |
 | 12 | LangGraph agent framework + agent tracking | pending |
 | 13 | Trend Discovery Agent + Keyword Cluster Agent | pending |
 | 14 | Content Brief Agent + brief approval workflow | pending |
@@ -184,6 +184,25 @@ What is required to activate:
 - Create OAuth 2.0 credentials at Google Cloud Console (Web application type)
 - Set Authorized JavaScript origins: `http://localhost:3000`
 - Copy Client ID → `apps/web-next/.env.local` as `NEXT_PUBLIC_GOOGLE_CLIENT_ID=<id>`
+
+### Step 11 — Worker and task queue infrastructure
+Status: done
+What is done:
+- `app/core/config.py` — `celery_broker_url` and `celery_result_backend` computed fields added (Redis DB 1)
+- `app/worker/celery_app.py` — Celery instance with broker/backend from settings; task serializer, UTC, acks_late, prefetch=1 configured; empty beat_schedule stub
+- `app/worker/tasks/base.py` — `BaseTask` with `max_retries=3`, `default_retry_delay=60s`, `on_failure` and `on_retry` hooks
+- `app/worker/tasks/smoke.py` — `smoke.ping` task using `BaseTask`; validates end-to-end queue flow
+- `app/api/routes/worker.py` — `GET /api/v1/worker/health`; checks Redis broker connectivity, returns broker status and URL
+- `app/api/router.py` — `worker_router` registered additively
+- `docker-compose.yml` — `worker` and `beat` services added under `profiles: [worker]`; arm64-safe `python:3.12-slim` base via Dockerfile
+- `services/api/Dockerfile` — minimal Python image for Docker-based worker/beat runs
+- `Makefile` — `make worker` and `make beat` targets for local host-based worker runs
+- `services/api/.env.example` — Celery broker/backend documented (derived automatically, override comment provided)
+- `tests/test_worker.py` — 4 new tests: 200 status, response shape, broker connected, broker URL uses DB 1
+- 54/54 backend tests pass; no Alembic migration (infra-only step)
+What remains:
+- `agent_runs` table and LangGraph wiring (Step 12)
+- Dead-letter `failed` flag on `agent_runs` referenced in base.py on_failure (wired in Step 12)
 
 ### Step 10 — Publish, tracking, and validation workflows
 Status: done
