@@ -28,6 +28,28 @@ def discover_trends_task(self, run_id: int, input_data: dict) -> dict:
         db.close()
 
 
+@celery_app.task(bind=True, base=BaseTask, name="agents.generate_brief")
+def generate_brief_task(self, run_id: int, input_data: dict) -> dict:
+    from app.modules.agents.content_brief.agent import ContentBriefAgent
+
+    db = SessionLocal()
+    try:
+        agent = ContentBriefAgent(db=db)
+        result = agent.run(input_data, run_id=run_id)
+        output = result.get("output", {})
+        errors = result.get("errors", [])
+        if errors:
+            agent_service.fail_run(db, run_id, "; ".join(errors))
+        else:
+            agent_service.complete_run(db, run_id, output)
+        return output
+    except Exception as exc:
+        agent_service.fail_run(db, run_id, str(exc))
+        raise
+    finally:
+        db.close()
+
+
 @celery_app.task(bind=True, base=BaseTask, name="agents.cluster_keywords")
 def cluster_keywords_task(self, run_id: int, input_data: dict) -> dict:
     from app.modules.agents.keyword_cluster.agent import KeywordClusterAgent

@@ -29,14 +29,14 @@ All V0 foundations are shipped. The stack is live locally with:
 - Admin summary APIs, smoke tests, GitNexus indexed
 
 ## V1 Status — In Progress
-**Current next step: Step 14 — Content Brief Agent + brief approval workflow**
+**Current next step: Step 15 — Content Writing Agent + SEO/AEO Optimization Agent**
 
 | Step | Title | Status |
 |------|-------|--------|
 | 11 | Worker and task queue infrastructure | done |
 | 12 | LangGraph agent framework + agent tracking | done |
 | 13 | Trend Discovery Agent + Keyword Cluster Agent | done |
-| 14 | Content Brief Agent + brief approval workflow | pending |
+| 14 | Content Brief Agent + brief approval workflow | done |
 | 15 | Content Writing Agent + SEO/AEO Optimization Agent | pending |
 | 16 | WordPress CMS full integration | pending |
 | 17 | Full publish orchestration pipeline | pending |
@@ -184,6 +184,29 @@ What is required to activate:
 - Create OAuth 2.0 credentials at Google Cloud Console (Web application type)
 - Set Authorized JavaScript origins: `http://localhost:3000`
 - Copy Client ID → `apps/web-next/.env.local` as `NEXT_PUBLIC_GOOGLE_CLIENT_ID=<id>`
+
+### Step 14 — Content Brief Agent + Brief Approval Workflow
+Status: done
+What is done:
+- Alembic migration `20260422_0006_brief_versions.py` — adds `structured_brief` (JSON) and `word_count_target` (int) to `content_briefs`; creates `brief_versions` table (id UUID PK, brief_id FK→content_briefs CASCADE, version_number, structured_brief, created_at)
+- `app/modules/content/models.py` — `ContentBrief` extended with `structured_brief`, `word_count_target`, `versions` relationship; new `BriefVersion` ORM model
+- `app/db/base.py` — `BriefVersion` registered in metadata
+- `app/schemas/content.py` — `ContentBriefCreate`/`ContentBriefResponse` extended; `BriefStatusPatch`, `BriefVersionResponse`, `BRIEF_STATUS_TRANSITIONS` state machine added
+- `app/modules/content/service.py` — `get_brief`, `update_brief_status` (state machine: draft→review→approved/rejected→scheduled), `create_brief_version`, `list_brief_versions`, `list_briefs` (status filter) added
+- `app/modules/agents/content_brief/__init__.py` — package init
+- `app/modules/agents/content_brief/schema.py` — `BriefStructure` TypedDict (all brief fields)
+- `app/modules/agents/content_brief/prompts.py` — Claude prompt for SEO+AEO execution-grade brief generation
+- `app/modules/agents/content_brief/agent.py` — `ContentBriefAgent`: 3-node LangGraph (fetch_context → generate_brief → store_results); fetches topic + cluster context, calls Claude, stores brief + version 1
+- `app/worker/tasks/agent_tasks.py` — `generate_brief_task` Celery task added (`agents.generate_brief`)
+- `app/api/routes/agent_triggers.py` — `POST /api/v1/admin/agents/generate-brief` added
+- `app/api/routes/content.py` — `GET /api/v1/admin/briefs/{id}`, `PATCH /api/v1/admin/briefs/{id}/status`, `GET /api/v1/admin/briefs/{id}/versions` added; `get_briefs` supports `?status_filter=`
+- `app/api/router.py` — `admin_router` moved before `content_router` to prevent route shadowing
+- `tests/test_brief_agent.py` — 15 tests: agent no-topic, invalid-topic, mocked-LLM creates brief+version, state machine valid/invalid/not-found, version increment, API detail/404, PATCH valid/invalid, versions empty/filled, trigger missing IDs, trigger dispatch
+- `apps/web-next/app/(admin)/admin/briefs/page.tsx` — fully wired to real API: loads briefs, approve/reject via PATCH, generate-brief trigger with topic UUID + keyword inputs
+- 84/84 backend tests pass; `next build` clean (zero errors)
+What remains:
+- Real LLM calls require ANTHROPIC_API_KEY in services/api/.env
+- Brief detail expanded view (structured_brief JSON viewer) deferred to a later step
 
 ### Step 13 — Trend Discovery Agent + Keyword Cluster Agent
 Status: done

@@ -19,6 +19,13 @@ class ClusterKeywordsRequest(BaseModel):
     topic_ids: list[str]
 
 
+class GenerateBriefRequest(BaseModel):
+    topic_id: str | None = None
+    cluster_id: str | None = None
+    target_keyword: str
+    page_type: str | None = None
+
+
 class AgentTriggerResponse(BaseModel):
     agent_run_id: int
     status: str
@@ -34,6 +41,23 @@ def trigger_discover_trends(
     input_data = payload.model_dump()
     run = agent_service.start_run(db, "trend_discovery", input_data)
     discover_trends_task.apply_async(args=[run.id, input_data])
+    return AgentTriggerResponse(agent_run_id=run.id, status=run.status)
+
+
+@router.post("/generate-brief", response_model=AgentTriggerResponse)
+def trigger_generate_brief(
+    payload: GenerateBriefRequest,
+    db: Session = Depends(get_db),
+) -> AgentTriggerResponse:
+    from app.worker.tasks.agent_tasks import generate_brief_task
+
+    if not payload.topic_id and not payload.cluster_id:
+        from fastapi import HTTPException
+        raise HTTPException(status_code=400, detail="Provide topic_id or cluster_id")
+
+    input_data = payload.model_dump()
+    run = agent_service.start_run(db, "content_brief", input_data)
+    generate_brief_task.apply_async(args=[run.id, input_data])
     return AgentTriggerResponse(agent_run_id=run.id, status=run.status)
 
 

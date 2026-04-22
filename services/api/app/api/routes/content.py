@@ -1,18 +1,26 @@
+import uuid
+
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 
 from app.db.session import get_db
 from app.modules.content.service import (
     create_brief,
+    create_brief_version,
     create_cluster,
     create_draft,
     create_topic,
+    get_brief,
+    list_brief_versions,
     list_briefs,
     list_clusters,
     list_drafts,
     list_topics,
+    update_brief_status,
 )
 from app.schemas.content import (
+    BriefStatusPatch,
+    BriefVersionResponse,
     ContentBriefCreate,
     ContentBriefResponse,
     ContentDraftCreate,
@@ -133,31 +141,12 @@ def post_cluster(
 
 
 @router.get("/briefs", response_model=list[ContentBriefResponse])
-def get_briefs(db: Session = Depends(get_db)) -> list[ContentBriefResponse]:
-    rows = list_briefs(db)
-    return [
-        ContentBriefResponse.model_validate(
-            {
-                "id": str(row.id),
-                "topic_opportunity_id": str(row.topic_opportunity_id) if row.topic_opportunity_id else None,
-                "keyword_cluster_id": str(row.keyword_cluster_id) if row.keyword_cluster_id else None,
-                "title": row.title,
-                "slug": row.slug,
-                "target_keyword": row.target_keyword,
-                "secondary_keywords": row.secondary_keywords,
-                "intent": row.intent,
-                "page_type": row.page_type,
-                "heading_outline": row.heading_outline,
-                "faqs": row.faqs,
-                "internal_link_targets": row.internal_link_targets,
-                "schema_recommendations": row.schema_recommendations,
-                "monetization_notes": row.monetization_notes,
-                "status": row.status,
-                "created_at": row.created_at,
-            }
-        )
-        for row in rows
-    ]
+def get_briefs(
+    status_filter: str | None = None,
+    db: Session = Depends(get_db),
+) -> list[ContentBriefResponse]:
+    rows = list_briefs(db, status_filter=status_filter)
+    return [_brief_to_response(row) for row in rows]
 
 
 @router.post(
@@ -174,26 +163,7 @@ def post_brief(
     except ValueError as exc:
         raise HTTPException(status_code=400, detail=str(exc)) from exc
 
-    return ContentBriefResponse.model_validate(
-        {
-            "id": str(row.id),
-            "topic_opportunity_id": str(row.topic_opportunity_id) if row.topic_opportunity_id else None,
-            "keyword_cluster_id": str(row.keyword_cluster_id) if row.keyword_cluster_id else None,
-            "title": row.title,
-            "slug": row.slug,
-            "target_keyword": row.target_keyword,
-            "secondary_keywords": row.secondary_keywords,
-            "intent": row.intent,
-            "page_type": row.page_type,
-            "heading_outline": row.heading_outline,
-            "faqs": row.faqs,
-            "internal_link_targets": row.internal_link_targets,
-            "schema_recommendations": row.schema_recommendations,
-            "monetization_notes": row.monetization_notes,
-            "status": row.status,
-            "created_at": row.created_at,
-        }
-    )
+    return _brief_to_response(row)
 
 
 @router.get("/drafts", response_model=list[ContentDraftResponse])
@@ -250,3 +220,84 @@ def post_draft(
             "created_at": row.created_at,
         }
     )
+
+
+def _brief_to_response(row) -> ContentBriefResponse:
+    return ContentBriefResponse.model_validate(
+        {
+            "id": str(row.id),
+            "topic_opportunity_id": str(row.topic_opportunity_id) if row.topic_opportunity_id else None,
+            "keyword_cluster_id": str(row.keyword_cluster_id) if row.keyword_cluster_id else None,
+            "title": row.title,
+            "slug": row.slug,
+            "target_keyword": row.target_keyword,
+            "secondary_keywords": row.secondary_keywords,
+            "intent": row.intent,
+            "page_type": row.page_type,
+            "heading_outline": row.heading_outline,
+            "faqs": row.faqs,
+            "internal_link_targets": row.internal_link_targets,
+            "schema_recommendations": row.schema_recommendations,
+            "monetization_notes": row.monetization_notes,
+            "structured_brief": row.structured_brief,
+            "word_count_target": row.word_count_target,
+            "status": row.status,
+            "created_at": row.created_at,
+        }
+    )
+
+
+@router.get("/admin/briefs/{brief_id}", response_model=ContentBriefResponse)
+def get_brief_detail(
+    brief_id: str,
+    db: Session = Depends(get_db),
+) -> ContentBriefResponse:
+    try:
+        uid = uuid.UUID(brief_id)
+    except ValueError:
+        raise HTTPException(status_code=400, detail="Invalid brief ID format")
+    row = get_brief(db, uid)
+    if row is None:
+        raise HTTPException(status_code=404, detail="Brief not found")
+    return _brief_to_response(row)
+
+
+@router.patch("/admin/briefs/{brief_id}/status", response_model=ContentBriefResponse)
+def patch_brief_status(
+    brief_id: str,
+    payload: BriefStatusPatch,
+    db: Session = Depends(get_db),
+) -> ContentBriefResponse:
+    try:
+        uid = uuid.UUID(brief_id)
+    except ValueError:
+        raise HTTPException(status_code=400, detail="Invalid brief ID format")
+    try:
+        row = update_brief_status(db, uid, payload)
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+    return _brief_to_response(row)
+
+
+@router.get("/admin/briefs/{brief_id}/versions", response_model=list[BriefVersionResponse])
+def get_brief_versions(
+    brief_id: str,
+    db: Session = Depends(get_db),
+) -> list[BriefVersionResponse]:
+    try:
+        uid = uuid.UUID(brief_id)
+    except ValueError:
+        raise HTTPException(status_code=400, detail="Invalid brief ID format")
+    rows = list_brief_versions(db, uid)
+    return [
+        BriefVersionResponse.model_validate(
+            {
+                "id": str(r.id),
+                "brief_id": str(r.brief_id),
+                "version_number": r.version_number,
+                "structured_brief": r.structured_brief,
+                "created_at": r.created_at,
+            }
+        )
+        for r in rows
+    ]

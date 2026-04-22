@@ -8,12 +8,15 @@ from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
 from app.modules.content.models import (
+    BriefVersion,
     ContentBrief,
     ContentDraft,
     KeywordCluster,
     TopicOpportunity,
 )
 from app.schemas.content import (
+    BRIEF_STATUS_TRANSITIONS,
+    BriefStatusPatch,
     ContentBriefCreate,
     ContentDraftCreate,
     KeywordClusterCreate,
@@ -92,10 +95,60 @@ def create_cluster(db: Session, payload: KeywordClusterCreate) -> KeywordCluster
     return cluster
 
 
-def list_briefs(db: Session) -> list[ContentBrief]:
+def list_briefs(db: Session, status_filter: str | None = None) -> list[ContentBrief]:
+    q = select(ContentBrief).order_by(ContentBrief.created_at.desc())
+    if status_filter:
+        q = q.where(ContentBrief.status == status_filter)
+    return list(db.scalars(q).all())
+
+
+def get_brief(db: Session, brief_id: uuid.UUID) -> ContentBrief | None:
+    return db.get(ContentBrief, brief_id)
+
+
+def update_brief_status(db: Session, brief_id: uuid.UUID, patch: BriefStatusPatch) -> ContentBrief:
+    brief = db.get(ContentBrief, brief_id)
+    if brief is None:
+        raise ValueError("Brief not found")
+    allowed = BRIEF_STATUS_TRANSITIONS.get(brief.status, [])
+    if patch.status not in allowed:
+        raise ValueError(
+            f"Cannot transition from '{brief.status}' to '{patch.status}'. "
+            f"Allowed: {allowed or 'none'}"
+        )
+    brief.status = patch.status
+    brief.updated_at = _utc_now()
+    db.commit()
+    db.refresh(brief)
+    return brief
+
+
+def create_brief_version(db: Session, brief_id: uuid.UUID, structured_brief: dict) -> BriefVersion:
+    from sqlalchemy import func as sqlfunc
+    max_version = db.scalar(
+        select(sqlfunc.max(BriefVersion.version_number)).where(BriefVersion.brief_id == brief_id)
+    )
+    next_version = (max_version or 0) + 1
+
+    version = BriefVersion(
+        id=uuid.uuid4(),
+        brief_id=brief_id,
+        version_number=next_version,
+        structured_brief=structured_brief,
+        created_at=_utc_now(),
+    )
+    db.add(version)
+    db.commit()
+    db.refresh(version)
+    return version
+
+
+def list_brief_versions(db: Session, brief_id: uuid.UUID) -> list[BriefVersion]:
     return list(
         db.scalars(
-            select(ContentBrief).order_by(ContentBrief.created_at.desc())
+            select(BriefVersion)
+            .where(BriefVersion.brief_id == brief_id)
+            .order_by(BriefVersion.version_number.desc())
         ).all()
     )
 
@@ -122,6 +175,8 @@ def create_brief(db: Session, payload: ContentBriefCreate) -> ContentBrief:
         internal_link_targets=payload.internal_link_targets,
         schema_recommendations=payload.schema_recommendations,
         monetization_notes=payload.monetization_notes,
+        structured_brief=payload.structured_brief,
+        word_count_target=payload.word_count_target,
         status=payload.status,
     )
     db.add(brief)

@@ -83,11 +83,29 @@ npx gitnexus analyze --force
 ```
 
 ## Status
-pending
+Done
+
+## Files Created
+- `services/api/alembic/versions/20260422_0006_brief_versions.py`
+- `services/api/app/modules/agents/content_brief/__init__.py`
+- `services/api/app/modules/agents/content_brief/schema.py`
+- `services/api/app/modules/agents/content_brief/prompts.py`
+- `services/api/app/modules/agents/content_brief/agent.py`
+- `services/api/tests/test_brief_agent.py` — 15 tests
+
+## Files Modified
+- `services/api/app/modules/content/models.py` — `structured_brief`, `word_count_target`, `versions` on ContentBrief; new `BriefVersion`
+- `services/api/app/db/base.py` — registered `BriefVersion`
+- `services/api/app/schemas/content.py` — `BriefStatusPatch`, `BriefVersionResponse`, `BRIEF_STATUS_TRANSITIONS`; extended ContentBriefCreate/Response
+- `services/api/app/modules/content/service.py` — `get_brief`, `update_brief_status`, `create_brief_version`, `list_brief_versions`, `list_briefs` (filter)
+- `services/api/app/worker/tasks/agent_tasks.py` — `generate_brief_task`
+- `services/api/app/api/routes/agent_triggers.py` — POST /admin/agents/generate-brief
+- `services/api/app/api/routes/content.py` — GET/PATCH /admin/briefs/{id}; GET /admin/briefs/{id}/versions
+- `services/api/app/api/router.py` — moved admin_router before content_router
+- `apps/web-next/app/(admin)/admin/briefs/page.tsx` — real API wired
 
 ## Notes
-- Brief JSON structure must be stored as JSONB column on content_briefs (not just rendered markdown)
-- Brief version table: brief_id, version_number, structured_brief, created_at, created_by
-- ContentBriefAgent must check that the topic has at least one keyword cluster before generating (fail with clear error otherwise)
-- The structured brief is the input contract for ContentWritingAgent in Step 15
-- Monetization slot suggestions: the agent should suggest where affiliate cards, lead forms, or newsletter captures would fit based on page type and intent
+- `BRIEF_STATUS_TRANSITIONS`: draft→review→approved/rejected; rejected→review; approved→scheduled
+- `brief_versions` CASCADE-deletes on ContentBrief deletion — no extra cleanup needed in test fixtures
+- Router order matters: admin_router must be before content_router so `/admin/briefs/summary` isn't shadowed by `/{brief_id}`
+- 84/84 tests pass; `next build` clean

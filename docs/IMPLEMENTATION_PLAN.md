@@ -60,12 +60,12 @@
 - Admin APIs: trigger discover-trends and cluster-keywords
 - Admin frontend: trigger + view results
 
-### Step 14 — Content Brief Agent + brief approval workflow
+### Step 14 — Content Brief Agent + brief approval workflow [DONE]
 - ContentBriefAgent (SEO+AEO structured brief from cluster/topic)
 - Brief template engine (heading structure, FAQ stubs, keywords, schema hints)
 - Brief approval API: PATCH /admin/briefs/{id}/status (review/approved/rejected)
-- Brief versioning
-- Admin UI: brief review queue wired to real API
+- Brief versioning (brief_versions table + create_brief_version service)
+- Admin UI: brief review queue fully wired to real API with approve/reject actions
 
 ### Step 15 — Content Writing Agent + SEO/AEO Optimization Agent
 - ContentWritingAgent: brief → full structured article draft (Claude API)

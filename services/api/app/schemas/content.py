@@ -71,6 +71,8 @@ class ContentBriefCreate(BaseModel):
     internal_link_targets: list[str] | None = None
     schema_recommendations: list[str] | None = None
     monetization_notes: dict | None = None
+    structured_brief: dict | None = None
+    word_count_target: int | None = None
     status: str = Field(default="draft", max_length=32)
 
 
@@ -91,7 +93,33 @@ class ContentBriefResponse(BaseModel):
     internal_link_targets: list[str] | None
     schema_recommendations: list[str] | None
     monetization_notes: dict | None
+    structured_brief: dict | None
+    word_count_target: int | None
     status: str
+    created_at: datetime
+
+
+BRIEF_STATUS_TRANSITIONS: dict[str, list[str]] = {
+    "draft": ["review"],
+    "review": ["approved", "rejected"],
+    "approved": ["scheduled"],
+    "rejected": ["review"],
+    "scheduled": [],
+    "new": ["review"],
+}
+
+
+class BriefStatusPatch(BaseModel):
+    status: str = Field(max_length=32)
+
+
+class BriefVersionResponse(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    id: str
+    brief_id: str
+    version_number: int
+    structured_brief: dict | None
     created_at: datetime
 
 

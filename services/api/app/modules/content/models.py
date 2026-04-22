@@ -5,7 +5,7 @@ from typing import TYPE_CHECKING
 
 from datetime import datetime
 
-from sqlalchemy import DateTime, Float, ForeignKey, Integer, JSON, String, Text
+from sqlalchemy import DateTime, Float, ForeignKey, Integer, JSON, String, Text, Uuid
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.db.base_class import Base, TimestampMixin, UUIDPrimaryKeyMixin
@@ -79,6 +79,8 @@ class ContentBrief(UUIDPrimaryKeyMixin, TimestampMixin, Base):
     schema_recommendations: Mapped[list[str] | None] = mapped_column(JSON, nullable=True)
     monetization_notes: Mapped[dict | None] = mapped_column(JSON, nullable=True)
     status: Mapped[str] = mapped_column(String(32), default="draft", nullable=False, index=True)
+    structured_brief: Mapped[dict | None] = mapped_column(JSON, nullable=True)
+    word_count_target: Mapped[int | None] = mapped_column(Integer, nullable=True)
 
     topic_opportunity: Mapped[TopicOpportunity | None] = relationship(back_populates="briefs")
     keyword_cluster: Mapped[KeywordCluster | None] = relationship(back_populates="briefs")
@@ -86,6 +88,12 @@ class ContentBrief(UUIDPrimaryKeyMixin, TimestampMixin, Base):
         back_populates="brief",
         cascade="all, delete-orphan",
         passive_deletes=True,
+    )
+    versions: Mapped[list["BriefVersion"]] = relationship(
+        back_populates="brief",
+        cascade="all, delete-orphan",
+        passive_deletes=True,
+        order_by="BriefVersion.version_number",
     )
 
 
@@ -133,3 +141,21 @@ class PublishLog(UUIDPrimaryKeyMixin, TimestampMixin, Base):
     completed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
 
     draft: Mapped["ContentDraft"] = relationship(back_populates="publish_logs")
+
+
+class BriefVersion(UUIDPrimaryKeyMixin, Base):
+    __tablename__ = "brief_versions"
+
+    brief_id: Mapped[uuid.UUID] = mapped_column(
+        ForeignKey("content_briefs.id", ondelete="CASCADE"),
+        nullable=False,
+        index=True,
+    )
+    version_number: Mapped[int] = mapped_column(Integer, nullable=False)
+    structured_brief: Mapped[dict | None] = mapped_column(JSON, nullable=True)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True),
+        nullable=False,
+    )
+
+    brief: Mapped["ContentBrief"] = relationship(back_populates="versions")

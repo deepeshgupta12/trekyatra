@@ -80,10 +80,10 @@ This file tracks structural dependencies, source-of-truth modules, and Nexus/Git
 - `services/api/app/modules/auth/dependencies.py` -> current user/current session dependencies
 - `services/api/app/modules/wordpress/client.py` -> WordPress REST client; fetch_site_index, fetch_current_user, create_post
 - `services/api/app/modules/wordpress/service.py` -> WordPress health and connectivity service helpers
-- `services/api/app/modules/content/models.py` -> topic, cluster, brief, draft, publish_log ORM models; ContentDraft has published_at and wordpress_post_id
+- `services/api/app/modules/content/models.py` -> topic, cluster, brief (+ structured_brief, word_count_target, versions rel), draft, publish_log, BriefVersion ORM models; blast radius: MEDIUM (6 importers — all safe, additive columns)
 - `services/api/app/modules/publish/service.py` -> VALID_TRANSITIONS state machine, update_draft_status, push_draft_to_wordpress, get_publish_logs
 - `services/api/app/schemas/publish.py` -> DraftStatusPatch, PublishLogResponse, DraftPublishResponse
-- `services/api/app/modules/content/service.py` -> content-domain create/list service helpers
+- `services/api/app/modules/content/service.py` -> content-domain create/list service helpers; get_brief, update_brief_status (state machine), create_brief_version, list_brief_versions
 - `services/api/app/modules/admin/service.py` -> admin dashboard and summary aggregations
 - `services/api/app/modules/treks/data.py` -> additive mock/public trek source data
 - `services/api/app/modules/treks/service.py` -> public trek list/detail filtering logic
@@ -91,8 +91,11 @@ This file tracks structural dependencies, source-of-truth modules, and Nexus/Git
 - `services/api/app/modules/agents/trend_discovery/prompts.py` -> Claude prompt for SEO topic scoring
 - `services/api/app/modules/agents/keyword_cluster/agent.py` -> KeywordClusterAgent; calls Claude, writes KeywordCluster rows
 - `services/api/app/modules/agents/keyword_cluster/prompts.py` -> Claude prompt for semantic clustering
-- `services/api/app/worker/tasks/agent_tasks.py` -> discover_trends_task + cluster_keywords_task Celery tasks
-- `services/api/app/api/routes/agent_triggers.py` -> POST /admin/agents/discover-trends + POST /admin/agents/cluster-keywords
+- `services/api/app/modules/agents/content_brief/agent.py` -> ContentBriefAgent; 3-node LangGraph (fetch_context → generate_brief → store_results); writes ContentBrief + BriefVersion
+- `services/api/app/modules/agents/content_brief/prompts.py` -> Claude prompt for SEO+AEO structured brief generation
+- `services/api/app/modules/agents/content_brief/schema.py` -> BriefStructure TypedDict (input contract for ContentWritingAgent in Step 15)
+- `services/api/app/worker/tasks/agent_tasks.py` -> discover_trends_task + cluster_keywords_task + generate_brief_task Celery tasks
+- `services/api/app/api/routes/agent_triggers.py` -> POST /admin/agents/discover-trends + POST /admin/agents/cluster-keywords + POST /admin/agents/generate-brief
 - `services/api/app/modules/agents/models.py` -> AgentRun ORM (id, agent_type, status, input/output_json, error, timestamps)
 - `services/api/app/modules/agents/state.py` -> BaseAgentState TypedDict (shared across all agents)
 - `services/api/app/modules/agents/base_agent.py` -> BaseAgent ABC; wraps LangGraph StateGraph; run() entry point
@@ -111,12 +114,15 @@ This file tracks structural dependencies, source-of-truth modules, and Nexus/Git
 - `services/api/alembic/versions/20260421_0002_add_password_hash_to_users.py` -> password auth migration
 - `services/api/alembic/versions/20260421_0003_content_domain_foundation.py` -> content domain migration
 - `services/api/alembic/versions/20260422_0004_publish_log.py` -> publish_logs table + published_at/wordpress_post_id on content_drafts
+- `services/api/alembic/versions/20260422_0005_agent_runs.py` -> agent_runs table
+- `services/api/alembic/versions/20260422_0006_brief_versions.py` -> structured_brief + word_count_target on content_briefs; new brief_versions table
 - `services/api/tests/test_health.py` -> API health smoke tests
 - `services/api/tests/test_models.py` -> metadata table coverage test
 - `services/api/tests/test_auth.py` -> auth route tests
 - `services/api/tests/test_wordpress.py` -> WordPress route tests
 - `services/api/tests/test_content_routes.py` -> content route tests
 - `services/api/tests/test_admin.py` -> admin summary route tests
+- `services/api/tests/test_brief_agent.py` -> ContentBriefAgent unit tests (mocked LLM), brief status state machine tests, BriefVersion tests, admin brief API endpoint tests (15 tests)
 - `services/api/tests/test_treks.py` -> public trek route tests
 - `services/api/tests/test_smoke.py` -> smoke tests for all 14 key API surfaces
 - `services/api/tests/test_publish.py` -> publish workflow tests (status transitions, WP mock push, log retrieval)
