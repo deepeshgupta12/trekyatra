@@ -1,5 +1,6 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
+  transpilePackages: ["@react-oauth/google"],
   async rewrites() {
     return [
       {
