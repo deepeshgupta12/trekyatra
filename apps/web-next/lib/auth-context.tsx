@@ -3,6 +3,7 @@
 import { createContext, useCallback, useContext, useEffect, useState } from "react";
 import {
   getCurrentUser,
+  googleAuth,
   loginEmail,
   logoutApi,
   signupEmail,
@@ -19,6 +20,7 @@ type AuthContextValue = {
     full_name?: string;
     display_name?: string;
   }) => Promise<void>;
+  loginWithGoogle: (access_token: string) => Promise<void>;
   logout: () => Promise<void>;
   refresh: () => Promise<void>;
 };
@@ -56,13 +58,18 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     []
   );
 
+  const loginWithGoogle = useCallback(async (access_token: string) => {
+    const res = await googleAuth(access_token);
+    setUser(res.user);
+  }, []);
+
   const logout = useCallback(async () => {
     await logoutApi();
     setUser(null);
   }, []);
 
   return (
-    <AuthContext.Provider value={{ user, isLoading, login, signup, logout, refresh }}>
+    <AuthContext.Provider value={{ user, isLoading, login, signup, loginWithGoogle, logout, refresh }}>
       {children}
     </AuthContext.Provider>
   );

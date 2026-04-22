@@ -96,12 +96,73 @@ def test_email_login_works_after_signup() -> None:
     assert settings.auth_cookie_name in client.cookies
 
 
-def test_google_placeholder_returns_not_implemented() -> None:
-    response = client.post(
-        "/api/v1/auth/google",
-        json={"id_token": "placeholder-token"},
+def test_google_auth_creates_user_and_sets_cookie() -> None:
+    from unittest.mock import patch
+
+    with patch("app.api.routes.auth.httpx.Client") as mock_cls:
+        mock_http = mock_cls.return_value.__enter__.return_value
+        mock_http.get.return_value.status_code = 200
+        mock_http.get.return_value.json.return_value = {
+            "sub": "google-sub-test-001",
+            "email": "googleuser@example.com",
+            "name": "Google User",
+            "email_verified": True,
+        }
+        response = client.post(
+            "/api/v1/auth/google",
+            json={"access_token": "fake-google-access-token"},
+        )
+
+    assert response.status_code == 200
+    data = response.json()
+    assert data["user"]["email"] == "googleuser@example.com"
+    assert data["user"]["is_verified_email"] is True
+    assert data["user"]["primary_auth_method"] == "google"
+    assert settings.auth_cookie_name in client.cookies
+
+
+def test_google_auth_returns_401_for_invalid_token() -> None:
+    from unittest.mock import patch
+
+    with patch("app.api.routes.auth.httpx.Client") as mock_cls:
+        mock_http = mock_cls.return_value.__enter__.return_value
+        mock_http.get.return_value.status_code = 401
+        mock_http.get.return_value.json.return_value = {"error": "invalid_token"}
+        response = client.post(
+            "/api/v1/auth/google",
+            json={"access_token": "invalid-token"},
+        )
+
+    assert response.status_code == 401
+
+
+def test_google_auth_links_to_existing_email_account() -> None:
+    from unittest.mock import patch
+
+    email = f"linked-{uuid.uuid4().hex[:8]}@example.com"
+    client.post(
+        "/api/v1/auth/signup/email",
+        json={"email": email, "password": "strongpass123"},
     )
-    assert response.status_code == 501
+    client.post("/api/v1/auth/logout")
+
+    with patch("app.api.routes.auth.httpx.Client") as mock_cls:
+        mock_http = mock_cls.return_value.__enter__.return_value
+        mock_http.get.return_value.status_code = 200
+        mock_http.get.return_value.json.return_value = {
+            "sub": "google-sub-link-001",
+            "email": email,
+            "name": "Linked User",
+            "email_verified": True,
+        }
+        response = client.post(
+            "/api/v1/auth/google",
+            json={"access_token": "fake-google-token"},
+        )
+
+    assert response.status_code == 200
+    assert response.json()["user"]["email"] == email
+    assert settings.auth_cookie_name in client.cookies
 
 
 def test_mobile_otp_placeholders_return_not_implemented() -> None:

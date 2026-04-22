@@ -34,13 +34,13 @@ This file tracks structural dependencies, source-of-truth modules, and Nexus/Git
 - `components/content/ContentPage.tsx` -> reusable content page with blocks
 - `components/success/SuccessHero.tsx` -> shared success state layout
 - `components/ui/*` -> shadcn/ui primitives (Button, etc.)
-- `components/Providers.tsx` -> QueryClient + AuthProvider + TooltipProvider (client)
+- `components/Providers.tsx` -> QueryClient + GoogleOAuthProvider + AuthProvider + TooltipProvider (client)
 - `components/account/UserGreeting.tsx` -> client component reading useAuth() for personalised greeting
 - `data/treks.ts` -> static fallback trek dataset (12 treks, string image paths)
 - `lib/api.ts` -> universal fetch with server/client URL detection, 3s abort timeout
 - `lib/trekApi.ts` -> trek API adapter with mergeImage() and safe static fallback
-- `lib/auth-api.ts` -> typed client-only fetch helpers for all 4 auth endpoints (me/login/signup/logout)
-- `lib/auth-context.tsx` -> React AuthContext; bootstraps from GET /me on mount; exposes user, isLoading, login(), signup(), logout(), refresh()
+- `lib/auth-api.ts` -> typed client-only fetch helpers for all 5 auth endpoints (me/login/signup/logout/google)
+- `lib/auth-context.tsx` -> React AuthContext; bootstraps from GET /me; exposes user, isLoading, login(), signup(), loginWithGoogle(), logout(), refresh()
 - `middleware.ts` -> Next.js route guard; protects /account/* and bounces authed users from /auth/sign-in, /auth/sign-up
 - `public/images/` -> local trek and hero images
 
@@ -73,7 +73,7 @@ This file tracks structural dependencies, source-of-truth modules, and Nexus/Git
 - `services/api/app/schemas/admin.py` -> admin summary response contracts
 - `services/api/app/schemas/treks.py` -> public trek response contracts
 - `services/api/app/modules/auth/models.py` -> users, auth identities, sessions
-- `services/api/app/modules/auth/service.py` -> email auth business logic and session creation
+- `services/api/app/modules/auth/service.py` -> email + Google auth business logic; session creation; login_or_register_google_user
 - `services/api/app/modules/auth/dependencies.py` -> current user/current session dependencies
 - `services/api/app/modules/wordpress/client.py` -> WordPress REST client skeleton
 - `services/api/app/modules/wordpress/service.py` -> WordPress health and connectivity service helpers

@@ -33,6 +33,7 @@ Do not modify any code file without first:
 - Public frontend data integration phase 1: done
 - Next.js frontend migration: done
 - User account foundation on frontend: done
+- Google OAuth: done
 
 ## Step History
 
@@ -150,6 +151,26 @@ What is done:
 - `apps/web-static/` Vite reference app removed (migration complete)
 What remains:
 - Role-aware admin access enforcement is still pending
+
+### Google OAuth (addendum to Step 09)
+Status: done
+What is done:
+- Backend: replaced `google_auth_placeholder` (501) with real `google_auth` handler
+- Backend: added `login_or_register_google_user` service — handles new user, existing email link, and returning Google user
+- Backend: `POST /api/v1/auth/google` accepts `{ access_token }`, verifies with Google's userinfo endpoint via httpx, upserts user + auth_identity, creates session, sets HttpOnly cookie
+- Backend schema: `GoogleAuthRequest.access_token` (was `id_token`)
+- Backend tests: 3 new Google auth tests (creates user, 401 for bad token, links to existing email account) — all 7 auth tests pass
+- Frontend: installed `@react-oauth/google`
+- Frontend: `googleAuth()` added to `lib/auth-api.ts`
+- Frontend: `loginWithGoogle()` added to `AuthContext` and `AuthProvider`
+- Frontend: `Providers.tsx` wrapped with `GoogleOAuthProvider` (reads `NEXT_PUBLIC_GOOGLE_CLIENT_ID`)
+- Frontend: "Continue with Google" button wired with `useGoogleLogin` in both sign-in and sign-up pages
+- Frontend: `apps/web-next/.env.local.example` created with `NEXT_PUBLIC_GOOGLE_CLIENT_ID` instruction
+- All 85 pages build cleanly
+What is required to activate:
+- Create OAuth 2.0 credentials at Google Cloud Console (Web application type)
+- Set Authorized JavaScript origins: `http://localhost:3000`
+- Copy Client ID → `apps/web-next/.env.local` as `NEXT_PUBLIC_GOOGLE_CLIENT_ID=<id>`
 
 ### Step 09 — User account foundation on frontend
 Status: done

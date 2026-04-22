@@ -59,3 +59,10 @@ export async function signupEmail(payload: {
 export async function logoutApi(): Promise<void> {
   await authFetch<{ message: string }>("/auth/logout", { method: "POST" });
 }
+
+export async function googleAuth(access_token: string): Promise<AuthResponse> {
+  return authFetch<AuthResponse>("/auth/google", {
+    method: "POST",
+    body: JSON.stringify({ access_token }),
+  });
+}

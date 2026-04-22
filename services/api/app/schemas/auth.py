@@ -41,7 +41,7 @@ class MobileOtpVerifyRequest(BaseModel):
 
 
 class GoogleAuthRequest(BaseModel):
-    id_token: str = Field(min_length=1)
+    access_token: str = Field(min_length=1)
 
 
 class UserResponse(BaseModel):

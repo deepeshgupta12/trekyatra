@@ -18,6 +18,7 @@ from app.core.security import (
 from app.modules.auth.models import AuthIdentity, User, UserSession
 
 EMAIL_PROVIDER: Final[str] = "email"
+GOOGLE_PROVIDER: Final[str] = "google"
 
 
 def normalize_email(email: str) -> str:
@@ -123,3 +124,74 @@ def create_session_for_user(
 def revoke_session(db: Session, session: UserSession) -> None:
     session.revoked_at = datetime.now(timezone.utc)
     db.flush()
+
+
+def login_or_register_google_user(
+    db: Session,
+    *,
+    google_sub: str,
+    email: str | None,
+    full_name: str | None,
+    is_verified_email: bool,
+) -> User:
+    # 1. Existing Google identity → return linked user
+    existing_identity = db.scalar(
+        select(AuthIdentity).where(
+            AuthIdentity.provider == GOOGLE_PROVIDER,
+            AuthIdentity.provider_user_id == google_sub,
+        )
+    )
+    if existing_identity:
+        existing_identity.last_used_at = datetime.now(timezone.utc)
+        db.flush()
+        user = db.scalar(select(User).where(User.id == existing_identity.user_id))
+        if not user or not user.is_active:
+            raise ValueError("Account linked to this Google identity is inactive.")
+        return user
+
+    # 2. Email matches an existing user → link Google identity
+    if email:
+        existing_user = get_user_by_email(db, email)
+        if existing_user:
+            db.add(AuthIdentity(
+                user_id=existing_user.id,
+                provider=GOOGLE_PROVIDER,
+                provider_user_id=google_sub,
+                email=email,
+                is_primary=False,
+                is_verified=is_verified_email,
+                last_used_at=datetime.now(timezone.utc),
+            ))
+            if is_verified_email:
+                existing_user.is_verified_email = True
+            db.flush()
+            return existing_user
+
+    # 3. Brand new user via Google
+    normalized_email = normalize_email(email) if email else None
+    user = User(
+        email=normalized_email,
+        password_hash=None,
+        full_name=full_name,
+        display_name=full_name.split()[0] if full_name else None,
+        primary_auth_method=GOOGLE_PROVIDER,
+        is_active=True,
+        is_verified_email=is_verified_email,
+        is_verified_mobile=False,
+    )
+    db.add(user)
+    db.add(AuthIdentity(
+        user=user,
+        provider=GOOGLE_PROVIDER,
+        provider_user_id=google_sub,
+        email=normalized_email,
+        is_primary=True,
+        is_verified=is_verified_email,
+        last_used_at=datetime.now(timezone.utc),
+    ))
+    try:
+        db.flush()
+    except IntegrityError as exc:
+        db.rollback()
+        raise ValueError("Unable to create account with this Google identity.") from exc
+    return user
