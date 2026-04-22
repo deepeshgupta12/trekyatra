@@ -72,24 +72,24 @@ export default function KeywordClusters() {
 
   return (
     <div>
-      <div className="flex items-start justify-between mb-8">
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between mb-6">
         <div>
           <h1 className="font-display text-2xl font-semibold text-white mb-1">Keyword Clusters</h1>
           <p className="text-white/50 text-sm">Topical authority map — pillar + supporting content.</p>
         </div>
-        <div className="flex flex-col items-end gap-2">
-          <div className="flex gap-2">
+        <div className="flex flex-col gap-2 sm:items-end">
+          <div className="flex flex-col sm:flex-row gap-2">
             <input
               type="text"
               value={topicIds}
               onChange={e => setTopicIds(e.target.value)}
               placeholder="Paste topic UUIDs (comma-separated)"
-              className="text-xs bg-white/5 border border-white/20 rounded-lg px-3 py-2 text-white/70 placeholder-white/30 w-72 focus:outline-none focus:border-white/40"
+              className="text-xs bg-white/5 border border-white/20 rounded-lg px-3 py-2 text-white/70 placeholder-white/30 w-full sm:w-64 focus:outline-none focus:border-white/40"
             />
             <Button
               variant="outline"
               size="sm"
-              className="border-white/20 text-white/60 hover:text-white"
+              className="border-white/20 text-white/60 hover:text-white w-full sm:w-auto"
               onClick={triggerClustering}
               disabled={running}
             >
@@ -99,16 +99,15 @@ export default function KeywordClusters() {
           </div>
           {runId && (
             <p className="text-xs text-green-400">
-              Agent run #{runId} dispatched — poll{" "}
+              Agent run #{runId} dispatched —{" "}
               <a
                 href={`/api/v1/admin/agent-runs/${runId}`}
                 target="_blank"
                 rel="noreferrer"
                 className="underline"
               >
-                /admin/agent-runs/{runId}
-              </a>{" "}
-              for results
+                poll result
+              </a>
             </p>
           )}
           {error && <p className="text-xs text-red-400">{error}</p>}
