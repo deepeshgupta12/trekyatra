@@ -1,7 +1,7 @@
 <!-- gitnexus:start -->
 # GitNexus — Code Intelligence
 
-This project is indexed by GitNexus as **trekyatra** (2476 symbols, 3882 relationships, 74 execution flows). Use the GitNexus MCP tools to understand code, assess impact, and navigate safely.
+This project is indexed by GitNexus as **trekyatra** (2593 symbols, 4072 relationships, 74 execution flows). Use the GitNexus MCP tools to understand code, assess impact, and navigate safely.
 
 > If any GitNexus tool warns the index is stale, run `npx gitnexus analyze` in terminal first.
 
@@ -160,10 +160,31 @@ Do not mark a step as `Done` in the step file until all four core MD files are u
 ```
 feat: step N — <short description>
 
+What was done:
+- <bullet: specific file or capability delivered>
+- <bullet: specific file or capability delivered>
+- <N tests added; total/total pass>
+
 Co-Authored-By: Claude Sonnet 4.6 <noreply@anthropic.com>
 ```
 
-Example: `feat: step 11 — worker and task queue infrastructure`
+Every commit body **must** include a `What was done:` block that lists every meaningful file, endpoint, migration, or feature delivered. Do not write vague bullets — name the file or the capability.
+
+Example:
+```
+feat: step 11 — worker and task queue infrastructure
+
+What was done:
+- Celery app wired to Redis DB 1 broker/backend (app/worker/celery_app.py)
+- BaseTask with max_retries=3, backoff=60s, on_failure/on_retry hooks (tasks/base.py)
+- smoke.ping task for end-to-end queue validation (tasks/smoke.py)
+- GET /api/v1/worker/health endpoint checking live broker connectivity (routes/worker.py)
+- worker + beat services added to docker-compose.yml under profiles: [worker]
+- make worker and make beat targets added to Makefile
+- 4 new tests; 54/54 pass
+
+Co-Authored-By: Claude Sonnet 4.6 <noreply@anthropic.com>
+```
 
 ### When to push
 - Push to remote (`git push origin main`) only after:
