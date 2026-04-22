@@ -1,7 +1,7 @@
 <!-- gitnexus:start -->
 # GitNexus — Code Intelligence
 
-This project is indexed by GitNexus as **trekyatra** (2593 symbols, 4072 relationships, 74 execution flows). Use the GitNexus MCP tools to understand code, assess impact, and navigate safely.
+This project is indexed by GitNexus as **trekyatra** (2738 symbols, 4340 relationships, 84 execution flows). Use the GitNexus MCP tools to understand code, assess impact, and navigate safely.
 
 > If any GitNexus tool warns the index is stale, run `npx gitnexus analyze` in terminal first.
 
@@ -341,3 +341,221 @@ Cover at minimum: happy path, one error/edge case, mobile layout check, and any 
 | Active step | `docs/steps/STEP-XX-*.md` |
 | Frontend source | `apps/web-next/` |
 | Backend source | `services/api/` |
+
+---
+
+## 14. Terminal Commands Reference
+
+All commands are run from the **project root** (`/Users/deepeshgupta/Projects/trekyatra`) unless stated otherwise. Never run BE or Celery commands from the project root without `cd services/api` or the `make` wrapper — Python imports will break.
+
+### Backend API
+```bash
+make api
+# Expands to: cd services/api && ../../.venv/bin/uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
+# Runs on: http://localhost:8000
+```
+
+### Frontend Dev Server
+```bash
+# Must be run from apps/web-next — NOT from project root
+cd /Users/deepeshgupta/Projects/trekyatra/apps/web-next && npm run dev
+# Runs on: http://localhost:3000
+```
+To restart the FE terminal via Bash tool (redirect output to background):
+```bash
+pkill -f "next dev" 2>/dev/null; sleep 1
+cd /Users/deepeshgupta/Projects/trekyatra/apps/web-next && npm run dev > /tmp/next-dev.log 2>&1 &
+sleep 7 && tail -6 /tmp/next-dev.log   # confirm "Ready"
+```
+If the dev server shows 404s for `/_next/static/chunks/*`, delete `.next/` and restart:
+```bash
+rm -rf /Users/deepeshgupta/Projects/trekyatra/apps/web-next/.next
+```
+
+### Celery Worker
+```bash
+make worker
+# Expands to: cd services/api && ../../.venv/bin/celery -A app.worker.celery_app worker --loglevel=info
+# Worker MUST be killed and restarted after any change to celery_app.py or tasks/
+# Verify all agent tasks registered at startup: [tasks] should list agents.discover_trends, agents.cluster_keywords, etc.
+```
+
+### Celery Beat
+```bash
+make beat
+# Expands to: cd services/api && ../../.venv/bin/celery -A app.worker.celery_app beat --loglevel=info
+```
+
+### Backend Tests
+```bash
+# From project root:
+PYTHONPATH=services/api .venv/bin/pytest services/api/tests/ -v
+# Never run pytest without PYTHONPATH=services/api — imports will fail
+```
+
+### DB Migrations
+```bash
+# From project root:
+cd services/api && ../../.venv/bin/alembic upgrade head
+# Or use make shortcut:
+make db-upgrade
+```
+
+### Frontend Build (CI gate)
+```bash
+cd apps/web-next && npm run build
+# Must pass with zero TypeScript errors before every commit
+```
+
+### GitNexus Re-index
+```bash
+npx gitnexus analyze --force   # run from project root
+# Always run after creating/deleting .py or .ts/.tsx files
+```
+
+---
+
+## 15. Frontend Admin UI Design System
+
+All admin pages live under `apps/web-next/app/(admin)/admin/`. Every new or modified admin page **must** follow these patterns exactly. Do not introduce new color tokens, card styles, or layout patterns without updating this section.
+
+### Color Palette
+
+| Role | Tailwind class | Value |
+|------|---------------|-------|
+| Page background | `bg-[#0c0e14]` | Near-black |
+| Sidebar / header | `bg-[#0f1117]` | Dark navy |
+| Card background | `bg-[#14161f]` | Slightly lighter |
+| Card border | `border-white/10` | 10% white |
+| Dividers | `border-white/8` | 8% white |
+| Text — primary | `text-white` | — |
+| Text — secondary | `text-white/70` | — |
+| Text — label | `text-white/50` | — |
+| Text — muted | `text-white/30` or `/40` | — |
+| Accent (brand orange) | `text-accent` / `bg-accent` | `hsl(22 92% 54%)` |
+| Pine (success/live) | `text-pine` / `bg-pine/10` | `hsl(162 50% 42%)` |
+| Blue (in-progress) | `text-blue-400` / `bg-blue-400/10` | — |
+| Amber (warning/uncovered) | `text-amber-400` / `bg-amber-400/10` | — |
+| Purple (briefs/draft) | `text-purple-400` / `bg-purple-500/10` | — |
+| Red (error/failed) | `text-red-400` / `bg-red-400/10` | — |
+
+### Typography
+
+| Use | Class |
+|-----|-------|
+| Page heading (H1) | `font-display text-2xl font-semibold text-white` |
+| Section heading (H2) | `font-semibold text-sm text-white` |
+| Card label | `text-xs text-white/40 font-medium` |
+| Body / table | `text-sm text-white/80` |
+| Log / mono output | `font-mono text-xs` |
+
+### Page Header Pattern (all admin pages)
+```tsx
+<div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between mb-6">
+  <div>
+    <h1 className="font-display text-2xl font-semibold text-white mb-1">Page Title</h1>
+    <p className="text-white/50 text-sm">One-line subtitle.</p>
+  </div>
+  <div className="flex flex-col gap-2 sm:items-end">
+    {/* primary action button */}
+    <Button variant="hero" size="sm" className="w-fit">Action</Button>
+    {/* status/feedback messages go here */}
+  </div>
+</div>
+```
+
+### Card Pattern
+```tsx
+<div className="bg-[#14161f] rounded-2xl border border-white/10 p-5">
+  {/* content */}
+</div>
+```
+Card with header + content divider:
+```tsx
+<div className="bg-[#14161f] rounded-2xl border border-white/10 overflow-hidden">
+  <div className="flex items-center justify-between px-5 py-3.5 border-b border-white/8">
+    <h2 className="text-white font-semibold text-sm">Section Title</h2>
+    <Link href="..." className="text-accent text-xs font-medium">View all →</Link>
+  </div>
+  {/* body */}
+</div>
+```
+
+### Table Pattern (responsive)
+```tsx
+<div className="bg-[#14161f] rounded-2xl border border-white/10 overflow-hidden">
+  <div className="overflow-x-auto">
+    <table className="w-full text-sm min-w-[480px]">
+      <thead>
+        <tr className="border-b border-white/8">
+          <th className="text-left px-4 py-3 text-white/40 font-medium text-xs">Column A</th>
+          <th className="text-left px-4 py-3 text-white/40 font-medium text-xs hidden sm:table-cell">Column B</th>
+        </tr>
+      </thead>
+      <tbody>
+        {rows.map(row => (
+          <tr key={row.id} className="border-b border-white/5 last:border-0 hover:bg-white/3 transition-colors">
+            <td className="px-4 py-3.5 text-white/80 font-medium text-xs sm:text-sm">{row.primary}</td>
+            <td className="px-4 py-3.5 text-white/50 text-xs hidden sm:table-cell">{row.secondary}</td>
+          </tr>
+        ))}
+      </tbody>
+    </table>
+  </div>
+</div>
+```
+Rule: always wrap tables in `overflow-x-auto`. Hide low-priority columns below `sm` (`hidden sm:table-cell`). Action columns hide below `md`.
+
+### Status Badge Pattern
+```tsx
+// Colour map — use consistently across all pages
+const statusStyle = {
+  uncovered:    "text-amber-400 bg-amber-400/10 border border-amber-400/20",
+  "in-progress":"text-blue-400  bg-blue-400/10  border border-blue-400/20",
+  covered:      "text-white/40  bg-white/5      border border-white/10",
+  pending:      "text-white/40  bg-white/5      border border-white/10",
+  ready:        "text-pine      bg-pine/10      border border-pine/20",
+  approved:     "text-pine      bg-pine/10      border border-pine/20",
+  live:         "text-pine      bg-pine/10      border border-pine/20",
+  review:       "text-amber-400 bg-amber-400/10 border border-amber-400/20",
+  failed:       "text-red-400   bg-red-400/10   border border-red-400/20",
+  generating:   "text-blue-400  bg-blue-400/10  border border-blue-400/20",
+  rejected:     "text-red-400   bg-red-400/10   border border-red-400/20",
+};
+
+<span className={`text-xs font-medium px-2.5 py-1 rounded-full ${statusStyle[status]}`}>
+  {label}
+</span>
+```
+
+### Button Variants
+| Variant | When to use | Class |
+|---------|-------------|-------|
+| `variant="hero"` | Primary CTA (trigger agent, approve, publish) | Orange gradient, glow shadow |
+| `variant="outline"` | Secondary actions | `className="border-white/20 text-white/60 hover:text-white"` |
+
+### KPI Card Pattern
+```tsx
+<div className="bg-[#14161f] rounded-2xl border border-white/10 p-5">
+  <div className="bg-accent/10 w-8 h-8 rounded-lg flex items-center justify-center mb-3">
+    <Icon className="h-4 w-4 text-accent" />
+  </div>
+  <p className="text-white font-display text-2xl font-semibold leading-none mb-1">{value}</p>
+  <p className="text-white/50 text-xs">{label}</p>
+  <p className="text-white/25 text-xs mt-1">{delta}</p>
+</div>
+```
+
+### Admin Layout (sidebar + responsive)
+- Desktop sidebar: fixed `w-56`, `bg-[#0f1117]`, grouped nav (Pipeline / Growth / System)
+- Nav active state: `bg-accent/15 text-accent font-semibold border border-accent/20 rounded-xl`
+- Nav inactive: `text-white/50 hover:text-white/90 hover:bg-white/5 border border-transparent rounded-xl`
+- Mobile: hamburger button triggers slide drawer; sidebar hidden below `lg`
+- Main content margin: `lg:ml-56`
+- Header height: `h-14`, sticky, `bg-[#0f1117]/90 backdrop-blur`
+
+### Mobile Rules
+- Page headers: always use `flex flex-col gap-3 sm:flex-row` — never bare `justify-between` which breaks at 375px
+- Input + button pairs: `flex flex-col sm:flex-row` — stack on mobile, row on wider
+- Wide inputs: `w-full sm:w-64` — never fixed `w-72` without responsive override
+- Buttons in mobile stacks: add `w-full sm:w-auto` when in a column layout
