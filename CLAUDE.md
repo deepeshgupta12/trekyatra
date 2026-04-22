@@ -1,0 +1,322 @@
+<!-- gitnexus:start -->
+# GitNexus — Code Intelligence
+
+This project is indexed by GitNexus as **trekyatra** (2091 symbols, 3484 relationships, 74 execution flows). Use the GitNexus MCP tools to understand code, assess impact, and navigate safely.
+
+> If any GitNexus tool warns the index is stale, run `npx gitnexus analyze` in terminal first.
+
+## Always Do
+
+- **MUST run impact analysis before editing any symbol.** Before modifying a function, class, or method, run `gitnexus_impact({target: "symbolName", direction: "upstream"})` and report the blast radius (direct callers, affected processes, risk level) to the user.
+- **MUST run `gitnexus_detect_changes()` before committing** to verify your changes only affect expected symbols and execution flows.
+- **MUST warn the user** if impact analysis returns HIGH or CRITICAL risk before proceeding with edits.
+- When exploring unfamiliar code, use `gitnexus_query({query: "concept"})` to find execution flows instead of grepping. It returns process-grouped results ranked by relevance.
+- When you need full context on a specific symbol — callers, callees, which execution flows it participates in — use `gitnexus_context({name: "symbolName"})`.
+
+## Never Do
+
+- NEVER edit a function, class, or method without first running `gitnexus_impact` on it.
+- NEVER ignore HIGH or CRITICAL risk warnings from impact analysis.
+- NEVER rename symbols with find-and-replace — use `gitnexus_rename` which understands the call graph.
+- NEVER commit changes without running `gitnexus_detect_changes()` to check affected scope.
+
+## Resources
+
+| Resource | Use for |
+|----------|---------|
+| `gitnexus://repo/trekyatra/context` | Codebase overview, check index freshness |
+| `gitnexus://repo/trekyatra/clusters` | All functional areas |
+| `gitnexus://repo/trekyatra/processes` | All execution flows |
+| `gitnexus://repo/trekyatra/process/{name}` | Step-by-step execution trace |
+
+## CLI
+
+| Task | Read this skill file |
+|------|---------------------|
+| Understand architecture / "How does X work?" | `.claude/skills/gitnexus/gitnexus-exploring/SKILL.md` |
+| Blast radius / "What breaks if I change X?" | `.claude/skills/gitnexus/gitnexus-impact-analysis/SKILL.md` |
+| Trace bugs / "Why is X failing?" | `.claude/skills/gitnexus/gitnexus-debugging/SKILL.md` |
+| Rename / extract / split / refactor | `.claude/skills/gitnexus/gitnexus-refactoring/SKILL.md` |
+| Tools, resources, schema reference | `.claude/skills/gitnexus/gitnexus-guide/SKILL.md` |
+| Index, status, clean, wiki CLI commands | `.claude/skills/gitnexus/gitnexus-cli/SKILL.md` |
+
+<!-- gitnexus:end -->
+
+---
+
+# TrekYatra — Mandatory Execution Protocol
+
+These rules apply to **every step, every version, every code change** in this project. They are non-negotiable and override any default behavior.
+
+---
+
+## 1. Pre-Step Checklist (Before Writing Any Code)
+
+Run all of these before touching a single file:
+
+1. Read `docs/MASTER_TRACKER.md` — confirm current step and what is pending
+2. Read `docs/DEPENDENCY_MAP.md` — understand structural dependencies
+3. Read `docs/PROCESS_GUARDRAILS.md` — re-confirm process rules
+4. Read the **active step doc** in `docs/steps/STEP-XX-*.md` — this is the scope contract
+5. Read `docs/TRAVEL_BLOG.md` section relevant to this step's feature area — confirm product intent
+6. Run `gitnexus_query` and `gitnexus_impact` on every symbol you plan to modify — report blast radius before coding
+7. Confirm all required local services are running (Postgres, Redis, WordPress as needed)
+8. Confirm the previous step's tests still pass (`make test`) before starting new work
+
+Do not begin implementation until all 8 checks are complete.
+
+---
+
+## 2. Implementation Order (Within Every Step)
+
+Always implement in this sequence. Do not skip or reorder:
+
+1. **Database / migration** — if new tables or columns, write and run the Alembic migration first
+2. **Backend models** — ORM models and `db/base.py` registration
+3. **Backend schemas** — Pydantic request/response contracts
+4. **Backend service layer** — business logic in `modules/*/service.py`
+5. **Backend API routes** — endpoints wired to service layer
+6. **Backend tests** — pytest tests covering happy path, error cases, and edge cases
+7. **Backend build validation** — confirm all backend tests pass (`make test`)
+8. **Frontend data layer** — `lib/*.ts` API client functions for new endpoints
+9. **Frontend components** — new UI components (no inline logic)
+10. **Frontend pages** — wire pages to components and data layer
+11. **Frontend build validation** — `next build` must pass with zero errors
+12. **Integration smoke test** — end-to-end curl + browser spot check
+
+Never implement frontend against stubbed/assumed backend contracts — always wire to a working endpoint.
+
+---
+
+## 3. Testing Requirements
+
+### Backend tests (automated, mandatory)
+- Every new API route must have at least one test: happy path, one error/edge case
+- Every new service function with business logic must have a unit test
+- Every new state machine transition must be tested (valid + invalid transition)
+- Every agent must have a mocked integration test (mock the LLM call, test input/output contract)
+- After implementing, run the **full test suite**, not just new tests — no regressions allowed
+- Failing tests must be fixed before proceeding. Do not skip or comment out tests.
+
+```bash
+PYTHONPATH=services/api .venv/bin/pytest services/api/tests/ -v
+```
+
+### Frontend build test (automated, mandatory)
+- `next build` must pass with zero TypeScript errors and zero build errors
+- Run this before every git commit involving frontend changes
+
+```bash
+cd apps/web-next && npm run build
+```
+
+### Frontend test cases (manual, delivered to user)
+At the end of every step that includes frontend changes, provide a **Frontend Test Cases** section in the step completion message. Format:
+
+```
+## Frontend Test Cases — Step XX
+
+### TC-01: [Test case name]
+**URL:** http://localhost:3000/path
+**Steps:**
+1. Step to take
+2. Step to take
+**Expected:** What should happen
+**Pass criteria:** What confirms it works
+
+### TC-02: ...
+```
+
+Cover: happy path, empty state, error state, mobile layout (resize to 375px), and any auth-gated flows. These are delivered to the user who will manually test and confirm before the step is closed.
+
+---
+
+## 4. MD File Update Rules
+
+Every step **must** update all of the following before being marked done. No exceptions:
+
+| File | What to update |
+|------|---------------|
+| `docs/MASTER_TRACKER.md` | Move step from "pending" to "done"; document what was done and what remains |
+| `docs/DEPENDENCY_MAP.md` | Add new files, modules, and blast radius notes for this step |
+| `docs/steps/STEP-XX-*.md` | Update "Files Created", "Files Modified", set Status to `Done`, add Notes |
+| `docs/IMPLEMENTATION_PLAN.md` | Mark step as `[DONE]` in the version table |
+
+Also update if applicable:
+- `docs/LOCAL_WORDPRESS_SETUP.md` — if WP config or services changed
+- `docs/FRONTEND_WIRING_BLUEPRINT.md` — if new frontend API surfaces were wired
+
+Do not mark a step as `Done` in the step file until all four core MD files are updated.
+
+---
+
+## 5. Git Rules
+
+### When to commit
+- One commit per step (or one commit per logical sub-unit if the step is large)
+- Commit only after: all backend tests pass + `next build` passes + all MD files updated
+
+### Commit message format
+```
+feat: step N — <short description>
+
+Co-Authored-By: Claude Sonnet 4.6 <noreply@anthropic.com>
+```
+
+Example: `feat: step 11 — worker and task queue infrastructure`
+
+### When to push
+- Push to remote (`git push origin main`) only after:
+  1. All automated tests pass (zero failures)
+  2. `next build` passes with zero errors
+  3. All required MD files are updated
+  4. GitNexus re-indexed (`npx gitnexus analyze --force`)
+  5. User has confirmed or there is no pending user confirmation required
+
+### Never push if
+- Any pytest test is failing
+- `next build` has TypeScript errors or build errors
+- A migration has been created but not run (`alembic upgrade head` not executed)
+- MD files have not been updated for the step
+
+---
+
+## 6. GitNexus Re-Index Rule
+
+Run `npx gitnexus analyze --force` after every step that:
+- Creates or deletes any `.py` or `.ts`/`.tsx` file
+- Adds a new module directory
+- Changes a route registration or imports a new module
+
+Record the new symbol/edge/flow counts in the step doc Notes and in `docs/MASTER_TRACKER.md`.
+
+---
+
+## 7. Anti-Hallucination Rules
+
+- Do not assume a file exists — read it first with the Read tool
+- Do not assume an API endpoint exists — check `docs/DEPENDENCY_MAP.md` or grep for the route
+- Do not assume a DB table exists — check the alembic versions or the ORM models
+- Do not assume env vars are set — check `.env.example` or `core/config.py`
+- Do not assume a package is installed — check `requirements.txt` or `package.json`
+- Never implement against a "planned" dependency that does not exist yet in code
+- Never merge multiple major steps into one without explicit user approval
+- If scope is unclear, ask before implementing — do not guess intent
+- If a file has more than one possible interpretation, re-read it before editing
+- Do not write placeholder comments like `# TODO: implement this` and leave them — either implement it or explicitly flag it to the user as out of scope for this step
+
+---
+
+## 8. Scope Discipline Rules
+
+- Implement **only** what the active step doc specifies
+- Do not add "nice to have" features, refactors, or improvements beyond the step scope
+- Do not touch files not listed in the step's "Files to Create" or "Files to Modify" unless a direct dependency break requires it (and if so, flag it explicitly)
+- If you discover a bug in code from a previous step, do not fix it silently — report it to the user and fix it in a separate, clearly labelled commit
+- If a dependency from a previous step is missing or broken, stop and report — do not work around it silently
+
+---
+
+## 9. Environment and Config Rules
+
+- Every new environment variable must be:
+  1. Added to `services/api/.env.example` (backend) or `apps/web-next/.env.local.example` (frontend)
+  2. Added to `services/api/app/core/config.py` Settings class with a default or required flag
+  3. Documented in the step doc Notes section
+- Never hardcode secrets, API keys, or credentials in code
+- Never commit `.env` or `.env.local` files
+- Docker images must be arm64-compatible (Apple Silicon M1 development machine)
+
+---
+
+## 10. Database / Migration Rules
+
+- Never modify an existing migration file — always create a new one
+- Migration naming: `YYYYMMDD_NNNN_<descriptive_name>.py`
+- Always run `alembic upgrade head` and confirm success before writing tests that touch the DB
+- Every new ORM model must be imported in `services/api/app/db/base.py` (the metadata registry)
+- Never use `alembic downgrade` in development without user confirmation — it is destructive
+
+---
+
+## 11. Step Completion Gate
+
+A step is **not done** until every item in this checklist is confirmed:
+
+- [ ] All planned backend files created and implement the step scope
+- [ ] All planned frontend files created and implement the step scope
+- [ ] Alembic migration created and `alembic upgrade head` run (if DB changes)
+- [ ] All backend pytest tests pass (zero failures, zero skipped without reason)
+- [ ] `next build` passes with zero errors
+- [ ] GitNexus re-indexed (`npx gitnexus analyze --force`)
+- [ ] GitNexus detect_changes run and blast radius matches expected scope
+- [ ] `docs/MASTER_TRACKER.md` updated
+- [ ] `docs/DEPENDENCY_MAP.md` updated with new files and blast radius notes
+- [ ] Active step doc status set to `Done` with notes
+- [ ] `docs/IMPLEMENTATION_PLAN.md` step marked `[DONE]`
+- [ ] All new env vars documented in `.env.example`
+- [ ] Git commit created with correct format
+- [ ] Git push executed (after all above pass)
+- [ ] **Frontend Test Cases** delivered to user in the completion message
+
+Only after ALL items above are checked off does the message "Step X is complete" get sent to the user.
+
+---
+
+## 12. Frontend Test Case Delivery Standard
+
+Every step with frontend changes must end with a formatted test case block in the final message to the user. This is how the user validates the step before confirming it closed.
+
+### Format
+```
+## Frontend Test Cases — Step XX: [Step Title]
+
+Run: cd apps/web-next && npm run dev (then open http://localhost:3000)
+
+### TC-01: [Feature name — happy path]
+URL: http://localhost:3000/path
+Steps:
+  1. ...
+  2. ...
+Expected result: ...
+Pass = ...
+
+### TC-02: [Feature name — empty/error state]
+...
+
+### TC-03: [Mobile layout]
+Resize browser to 375px width.
+Visit: http://localhost:3000/path
+Expected: ...
+
+### TC-04: [Auth-gated behavior, if applicable]
+...
+```
+
+Cover at minimum: happy path, one error/edge case, mobile layout check, and any auth-sensitive flows. Label each test case TC-01, TC-02, etc. so the user can report back by number.
+
+---
+
+## 13. Communication Rules
+
+- At the start of each step, state: current step number, what will be implemented, and confirm the pre-step checklist is done
+- Report blast radius results before making any code changes
+- Report each sub-task as it completes (migration done, routes done, tests passing, build clean, etc.)
+- If anything deviates from the step doc scope, flag it explicitly before implementing
+- After git push, state: commit hash, what was pushed, and list the frontend test cases
+- Never say "step X is complete" without delivering the full step completion gate checklist
+
+---
+
+## Source-of-Truth Files
+
+| What | Where |
+|------|-------|
+| Product scope | `docs/TRAVEL_BLOG.md` |
+| Current progress | `docs/MASTER_TRACKER.md` |
+| Step plan | `docs/IMPLEMENTATION_PLAN.md` |
+| Dependency map | `docs/DEPENDENCY_MAP.md` |
+| Process rules | `docs/PROCESS_GUARDRAILS.md` + this file |
+| Active step | `docs/steps/STEP-XX-*.md` |
+| Frontend source | `apps/web-next/` |
+| Backend source | `services/api/` |

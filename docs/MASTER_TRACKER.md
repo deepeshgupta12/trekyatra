@@ -18,23 +18,35 @@ Do not modify any code file without first:
 4. Checking impacted files and blast radius
 5. Updating the relevant step file in `docs/steps/`
 
-## Current Status
-- Project repo scaffold: done
-- Static frontend zip unpacked into `apps/web-static`: done
-- Backend scaffold: done
-- Database scaffold: foundation done
-- Docker/local infra: done
-- Auth foundation: done
-- WordPress integration: foundation done
-- Content domain foundation: done
-- Internal admin summary APIs: done
-- Dynamic frontend wiring: blueprint done
-- Nexus/GitNexus workflow setup: done
-- Public frontend data integration phase 1: done
-- Next.js frontend migration: done
-- User account foundation on frontend: done
-- Google OAuth: done
-- Publish, tracking, and validation workflows: done
+## V0 Status — Complete
+All V0 foundations are shipped. The stack is live locally with:
+- FastAPI backend, PostgreSQL, Redis, Celery-ready infra
+- Full Next.js 14 App Router frontend (85 pages)
+- Auth (email + Google OAuth), session management, route guards
+- WordPress REST integration (health, connectivity, create_post)
+- Content domain (topics, clusters, briefs, drafts)
+- Draft status machine + publish pipeline + publish logs
+- Admin summary APIs, smoke tests, GitNexus indexed
+
+## V1 Status — In Progress
+**Current next step: Step 11 — Worker and task queue infrastructure**
+
+| Step | Title | Status |
+|------|-------|--------|
+| 11 | Worker and task queue infrastructure | pending |
+| 12 | LangGraph agent framework + agent tracking | pending |
+| 13 | Trend Discovery Agent + Keyword Cluster Agent | pending |
+| 14 | Content Brief Agent + brief approval workflow | pending |
+| 15 | Content Writing Agent + SEO/AEO Optimization Agent | pending |
+| 16 | WordPress CMS full integration | pending |
+| 17 | Full publish orchestration pipeline | pending |
+| 18 | Public frontend content page templates | pending |
+| 19 | SEO and schema infrastructure (frontend) | pending |
+| 20 | Monetization frontend components | pending |
+| 21 | RBAC enforcement | pending |
+| 22 | Internal linking engine (basic) | pending |
+| 23 | Content refresh engine (basic) | pending |
+| 24 | Analytics ingestion + admin panel full wiring | pending |
 
 ## Step History
 
