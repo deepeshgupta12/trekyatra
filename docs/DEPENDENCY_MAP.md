@@ -87,6 +87,12 @@ This file tracks structural dependencies, source-of-truth modules, and Nexus/Git
 - `services/api/app/modules/admin/service.py` -> admin dashboard and summary aggregations
 - `services/api/app/modules/treks/data.py` -> additive mock/public trek source data
 - `services/api/app/modules/treks/service.py` -> public trek list/detail filtering logic
+- `services/api/app/modules/agents/trend_discovery/agent.py` -> TrendDiscoveryAgent; calls Claude, writes TopicOpportunity rows
+- `services/api/app/modules/agents/trend_discovery/prompts.py` -> Claude prompt for SEO topic scoring
+- `services/api/app/modules/agents/keyword_cluster/agent.py` -> KeywordClusterAgent; calls Claude, writes KeywordCluster rows
+- `services/api/app/modules/agents/keyword_cluster/prompts.py` -> Claude prompt for semantic clustering
+- `services/api/app/worker/tasks/agent_tasks.py` -> discover_trends_task + cluster_keywords_task Celery tasks
+- `services/api/app/api/routes/agent_triggers.py` -> POST /admin/agents/discover-trends + POST /admin/agents/cluster-keywords
 - `services/api/app/modules/agents/models.py` -> AgentRun ORM (id, agent_type, status, input/output_json, error, timestamps)
 - `services/api/app/modules/agents/state.py` -> BaseAgentState TypedDict (shared across all agents)
 - `services/api/app/modules/agents/base_agent.py` -> BaseAgent ABC; wraps LangGraph StateGraph; run() entry point
@@ -191,6 +197,21 @@ Before editing any backend file:
 - `apps/web-next/lib/api.ts` is the new universal fetch layer (server + client)
 - `apps/web-next/lib/trekApi.ts` mirrors the previous Vite trekApi with Next.js-compatible image paths
 - Auth, account, and admin pages are UI-complete but backend wiring is deferred to a future step
+
+### Step 13 executed blast radius
+- `app/modules/agents/base_agent.py` changed: return type annotation only — zero callers affected
+- `app/modules/agents/trend_discovery/` created: new sub-package; depends on `anthropic`, `langgraph`, `content.service`, `schemas.content`
+- `app/modules/agents/keyword_cluster/` created: new sub-package; depends on `anthropic`, `langgraph`, `content.models`, `content.service`, `schemas.content`
+- `app/modules/agents/service.py` changed: `get_run` added — additive, no existing callers affected
+- `app/worker/tasks/agent_tasks.py` created: new Celery tasks; depends on `db.session.SessionLocal`, `agents.service`, and both new agent modules
+- `app/worker/celery_app.py` changed: `agent_tasks` added to `include` — additive
+- `app/api/routes/agent_runs.py` changed: `GET /{run_id}` endpoint added — additive
+- `app/api/routes/agent_triggers.py` created: 2 POST endpoints; depends on `agents.service`, `worker.tasks.agent_tasks`
+- `app/api/router.py` changed: `agent_triggers_router` registered — additive
+- `apps/web-next/app/(admin)/admin/topics/page.tsx` rewritten: client component with Discover Trends trigger button
+- `apps/web-next/app/(admin)/admin/clusters/page.tsx` rewritten: client component with Cluster Topics trigger button
+- No Alembic migration (existing `topic_opportunities` and `keyword_clusters` tables cover all required fields)
+- `KeywordCluster.notes` JSON stores `competition_score` and `cannibalization_risk` — no schema change needed
 
 ### Step 12 executed blast radius
 - `app/db/base.py` changed: `AgentRun` imported and added to `__all__` — additive; all existing model importers unaffected

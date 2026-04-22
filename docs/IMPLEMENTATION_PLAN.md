@@ -54,7 +54,7 @@
 - Agent run service (start/update/complete/fail)
 - Admin API: GET /admin/agent-runs
 
-### Step 13 — Trend Discovery Agent + Keyword Cluster Agent
+### Step 13 — Trend Discovery Agent + Keyword Cluster Agent [DONE]
 - TrendDiscoveryAgent (topic/trend intake, scoring, urgency flag)
 - KeywordClusterAgent (group terms into clusters, pillar/support mapping)
 - Admin APIs: trigger discover-trends and cluster-keywords
@@ -262,4 +262,4 @@
 
 ## Execution Rule
 Do not start the next step without user confirmation.
-Current next step: **Step 13 — Trend Discovery Agent + Keyword Cluster Agent**
+Current next step: **Step 14 — Content Brief Agent + brief approval workflow**

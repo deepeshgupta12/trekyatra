@@ -3,8 +3,6 @@ from __future__ import annotations
 from abc import ABC, abstractmethod
 from typing import Any
 
-from langgraph.graph import StateGraph
-
 from app.modules.agents.state import BaseAgentState
 
 
@@ -17,8 +15,8 @@ class BaseAgent(ABC):
         self._graph = self._build_graph()
 
     @abstractmethod
-    def _build_graph(self) -> StateGraph:
-        """Build and compile the agent's LangGraph StateGraph."""
+    def _build_graph(self) -> Any:
+        """Return a compiled LangGraph StateGraph."""
         ...
 
     def run(self, input_data: dict[str, Any], run_id: int | None = None) -> dict[str, Any]:

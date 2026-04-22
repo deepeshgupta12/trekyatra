@@ -1,4 +1,7 @@
-import { Layers, ChevronDown } from "lucide-react";
+"use client";
+
+import { useState } from "react";
+import { Layers, ChevronDown, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 const CLUSTERS = [
@@ -33,6 +36,40 @@ const CLUSTERS = [
 ];
 
 export default function KeywordClusters() {
+  const [running, setRunning] = useState(false);
+  const [runId, setRunId] = useState<number | null>(null);
+  const [topicIds, setTopicIds] = useState("");
+  const [error, setError] = useState<string | null>(null);
+
+  async function triggerClustering() {
+    const ids = topicIds
+      .split(/[\s,]+/)
+      .map(s => s.trim())
+      .filter(Boolean);
+
+    if (ids.length === 0) {
+      setError("Paste at least one topic UUID from the Topics page");
+      return;
+    }
+
+    setRunning(true);
+    setError(null);
+    try {
+      const res = await fetch("/api/v1/admin/agents/cluster-keywords", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ topic_ids: ids }),
+      });
+      if (!res.ok) throw new Error(`${res.status} ${res.statusText}`);
+      const data = await res.json();
+      setRunId(data.agent_run_id);
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : "Unknown error");
+    } finally {
+      setRunning(false);
+    }
+  }
+
   return (
     <div>
       <div className="flex items-start justify-between mb-8">
@@ -40,9 +77,42 @@ export default function KeywordClusters() {
           <h1 className="font-display text-2xl font-semibold text-white mb-1">Keyword Clusters</h1>
           <p className="text-white/50 text-sm">Topical authority map — pillar + supporting content.</p>
         </div>
-        <Button variant="outline" size="sm" className="border-white/20 text-white/60 hover:text-white">
-          <Layers className="h-4 w-4" /> Rebuild clusters
-        </Button>
+        <div className="flex flex-col items-end gap-2">
+          <div className="flex gap-2">
+            <input
+              type="text"
+              value={topicIds}
+              onChange={e => setTopicIds(e.target.value)}
+              placeholder="Paste topic UUIDs (comma-separated)"
+              className="text-xs bg-white/5 border border-white/20 rounded-lg px-3 py-2 text-white/70 placeholder-white/30 w-72 focus:outline-none focus:border-white/40"
+            />
+            <Button
+              variant="outline"
+              size="sm"
+              className="border-white/20 text-white/60 hover:text-white"
+              onClick={triggerClustering}
+              disabled={running}
+            >
+              {running ? <Loader2 className="h-4 w-4 animate-spin" /> : <Layers className="h-4 w-4" />}
+              {running ? "Clustering…" : "Cluster topics"}
+            </Button>
+          </div>
+          {runId && (
+            <p className="text-xs text-green-400">
+              Agent run #{runId} dispatched — poll{" "}
+              <a
+                href={`/api/v1/admin/agent-runs/${runId}`}
+                target="_blank"
+                rel="noreferrer"
+                className="underline"
+              >
+                /admin/agent-runs/{runId}
+              </a>{" "}
+              for results
+            </p>
+          )}
+          {error && <p className="text-xs text-red-400">{error}</p>}
+        </div>
       </div>
 
       <div className="space-y-4">

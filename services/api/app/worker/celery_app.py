@@ -6,7 +6,7 @@ celery_app = Celery(
     "trekyatra",
     broker=settings.celery_broker_url,
     backend=settings.celery_result_backend,
-    include=["app.worker.tasks.smoke"],
+    include=["app.worker.tasks.smoke", "app.worker.tasks.agent_tasks"],
 )
 
 celery_app.conf.update(

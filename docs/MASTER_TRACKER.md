@@ -29,13 +29,13 @@ All V0 foundations are shipped. The stack is live locally with:
 - Admin summary APIs, smoke tests, GitNexus indexed
 
 ## V1 Status — In Progress
-**Current next step: Step 13 — Trend Discovery Agent + Keyword Cluster Agent**
+**Current next step: Step 14 — Content Brief Agent + brief approval workflow**
 
 | Step | Title | Status |
 |------|-------|--------|
 | 11 | Worker and task queue infrastructure | done |
 | 12 | LangGraph agent framework + agent tracking | done |
-| 13 | Trend Discovery Agent + Keyword Cluster Agent | pending |
+| 13 | Trend Discovery Agent + Keyword Cluster Agent | done |
 | 14 | Content Brief Agent + brief approval workflow | pending |
 | 15 | Content Writing Agent + SEO/AEO Optimization Agent | pending |
 | 16 | WordPress CMS full integration | pending |
@@ -184,6 +184,29 @@ What is required to activate:
 - Create OAuth 2.0 credentials at Google Cloud Console (Web application type)
 - Set Authorized JavaScript origins: `http://localhost:3000`
 - Copy Client ID → `apps/web-next/.env.local` as `NEXT_PUBLIC_GOOGLE_CLIENT_ID=<id>`
+
+### Step 13 — Trend Discovery Agent + Keyword Cluster Agent
+Status: done
+What is done:
+- `app/modules/agents/base_agent.py` — `_build_graph` return type fixed to `Any` (compiled graph)
+- `app/modules/agents/trend_discovery/prompts.py` — Claude prompt for SEO topic scoring
+- `app/modules/agents/trend_discovery/agent.py` — `TrendDiscoveryAgent`: 2-node LangGraph (score_topics → store_results); calls Claude, writes `TopicOpportunity` rows
+- `app/modules/agents/keyword_cluster/prompts.py` — Claude prompt for semantic topic clustering
+- `app/modules/agents/keyword_cluster/agent.py` — `KeywordClusterAgent`: 3-node LangGraph (fetch_topics → cluster_topics → store_results); writes `KeywordCluster` rows with `competition_score` and `cannibalization_risk` in `notes`
+- `app/modules/agents/service.py` — `get_run` added
+- `app/worker/tasks/agent_tasks.py` — `discover_trends_task` and `cluster_keywords_task` Celery tasks; use `SessionLocal` directly; call agent, then `complete_run`/`fail_run`
+- `app/worker/celery_app.py` — `agent_tasks` added to `include` list
+- `app/api/routes/agent_runs.py` — `GET /api/v1/admin/agent-runs/{id}` endpoint added
+- `app/api/routes/agent_triggers.py` — `POST /api/v1/admin/agents/discover-trends` and `POST /api/v1/admin/agents/cluster-keywords`; both dispatch Celery tasks and return `agent_run_id`
+- `app/api/router.py` — `agent_triggers_router` registered
+- `apps/web-next/app/(admin)/admin/topics/page.tsx` — "Discover trends" button wired; shows run ID + poll link
+- `apps/web-next/app/(admin)/admin/clusters/page.tsx` — "Cluster topics" button wired; accepts topic UUID input
+- `tests/test_agent_triggers.py` — 8 tests (trigger dispatch, run_id returned, GET by ID, 404, mocked LLM unit test, empty input error)
+- No new DB migration (TopicOpportunity and KeywordCluster models already have all required fields)
+- 69/69 backend tests pass; `next build` clean
+What remains:
+- Real LLM calls require ANTHROPIC_API_KEY in services/api/.env
+- Admin topics/clusters pages still show static seed data; live data wiring deferred to Step 18
 
 ### Step 12 — LangGraph agent framework + agent tracking
 Status: done

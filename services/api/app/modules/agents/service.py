@@ -56,6 +56,10 @@ def fail_run(db: Session, run_id: int, error: str) -> AgentRun | None:
     )
 
 
+def get_run(db: Session, run_id: int) -> AgentRun | None:
+    return db.get(AgentRun, run_id)
+
+
 def list_runs(
     db: Session,
     agent_type: str | None = None,

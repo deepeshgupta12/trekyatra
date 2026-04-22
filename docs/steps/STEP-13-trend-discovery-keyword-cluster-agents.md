@@ -80,8 +80,29 @@ curl -X POST http://localhost:8000/api/v1/admin/agents/cluster-keywords \
 npx gitnexus analyze --force
 ```
 
+## Files Created
+- `services/api/app/modules/agents/trend_discovery/__init__.py`
+- `services/api/app/modules/agents/trend_discovery/prompts.py`
+- `services/api/app/modules/agents/trend_discovery/agent.py`
+- `services/api/app/modules/agents/keyword_cluster/__init__.py`
+- `services/api/app/modules/agents/keyword_cluster/prompts.py`
+- `services/api/app/modules/agents/keyword_cluster/agent.py`
+- `services/api/app/worker/tasks/agent_tasks.py`
+- `services/api/app/api/routes/agent_triggers.py`
+- `services/api/tests/test_agent_triggers.py`
+
+## Files Modified
+- `services/api/app/modules/agents/base_agent.py` — `_build_graph` return type fixed to `Any`
+- `services/api/app/modules/agents/service.py` — `get_run` added
+- `services/api/app/worker/celery_app.py` — `agent_tasks` added to `include`
+- `services/api/app/api/routes/agent_runs.py` — `GET /{id}` endpoint added
+- `services/api/app/api/router.py` — `agent_triggers_router` registered
+- `apps/web-next/app/(admin)/admin/topics/page.tsx` — trigger button wired
+- `apps/web-next/app/(admin)/admin/clusters/page.tsx` — trigger button wired
+- `docs/MASTER_TRACKER.md`, `docs/DEPENDENCY_MAP.md`, `docs/IMPLEMENTATION_PLAN.md`
+
 ## Status
-pending
+Done
 
 ## Notes
 - Trend Discovery v1 will use Claude to score topic opportunity from seed keywords, not live Google Trends (that integration is V2)
