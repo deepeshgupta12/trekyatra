@@ -109,3 +109,38 @@ class WordPressClient:
             ],
             use_auth=True,
         )
+
+    def create_post(self, *, title: str, content: str, slug: str, status: str = "draft", excerpt: str | None = None) -> WordPressClientResult:
+        if not (self.username and self.app_password):
+            raise WordPressClientError("WordPress credentials are not fully configured.")
+
+        body: dict = {"title": title, "content": content, "slug": slug, "status": status}
+        if excerpt:
+            body["excerpt"] = excerpt
+
+        try:
+            with httpx.Client(
+                base_url=self.base_url,
+                timeout=self.timeout_seconds,
+                verify=self.verify_ssl,
+                headers=self._build_auth_header(),
+            ) as client:
+                response = client.post("/wp-json/wp/v2/posts", json=body)
+        except httpx.HTTPError as exc:
+            raise WordPressClientError(f"Unable to create WordPress post: {exc}") from exc
+
+        try:
+            payload: dict | list | str | None = response.json()
+        except ValueError:
+            payload = response.text if response.text else None
+
+        ok = 200 <= response.status_code < 300
+        message = "OK" if ok else f"HTTP {response.status_code}"
+
+        return WordPressClientResult(
+            endpoint=f"{self.base_url}/wp-json/wp/v2/posts",
+            status_code=response.status_code,
+            ok=ok,
+            message=message,
+            payload=payload,
+        )

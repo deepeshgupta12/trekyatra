@@ -3,7 +3,9 @@ from __future__ import annotations
 import uuid
 from typing import TYPE_CHECKING
 
-from sqlalchemy import Float, ForeignKey, JSON, String, Text
+from datetime import datetime
+
+from sqlalchemy import DateTime, Float, ForeignKey, Integer, JSON, String, Text
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.db.base_class import Base, TimestampMixin, UUIDPrimaryKeyMixin
@@ -105,4 +107,29 @@ class ContentDraft(UUIDPrimaryKeyMixin, TimestampMixin, Base):
     confidence_score: Mapped[float | None] = mapped_column(Float, nullable=True)
     status: Mapped[str] = mapped_column(String(32), default="draft", nullable=False, index=True)
 
+    published_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    wordpress_post_id: Mapped[int | None] = mapped_column(Integer, nullable=True)
+
     brief: Mapped[ContentBrief] = relationship(back_populates="drafts")
+    publish_logs: Mapped[list["PublishLog"]] = relationship(
+        back_populates="draft",
+        cascade="all, delete-orphan",
+        passive_deletes=True,
+    )
+
+
+class PublishLog(UUIDPrimaryKeyMixin, TimestampMixin, Base):
+    __tablename__ = "publish_logs"
+
+    draft_id: Mapped[uuid.UUID] = mapped_column(
+        ForeignKey("content_drafts.id", ondelete="CASCADE"),
+        nullable=False,
+        index=True,
+    )
+    status: Mapped[str] = mapped_column(String(32), nullable=False, index=True)
+    wordpress_post_id: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    wordpress_url: Mapped[str | None] = mapped_column(String(512), nullable=True)
+    error_message: Mapped[str | None] = mapped_column(Text, nullable=True)
+    completed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+
+    draft: Mapped["ContentDraft"] = relationship(back_populates="publish_logs")

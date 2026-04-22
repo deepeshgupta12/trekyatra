@@ -34,6 +34,7 @@ Do not modify any code file without first:
 - Next.js frontend migration: done
 - User account foundation on frontend: done
 - Google OAuth: done
+- Publish, tracking, and validation workflows: done
 
 ## Step History
 
@@ -171,6 +172,24 @@ What is required to activate:
 - Create OAuth 2.0 credentials at Google Cloud Console (Web application type)
 - Set Authorized JavaScript origins: `http://localhost:3000`
 - Copy Client ID → `apps/web-next/.env.local` as `NEXT_PUBLIC_GOOGLE_CLIENT_ID=<id>`
+
+### Step 10 — Publish, tracking, and validation workflows
+Status: done
+What is done:
+- `PublishLog` ORM model added to `content_drafts` cascade (tracks every push attempt)
+- `published_at` and `wordpress_post_id` columns added to `content_drafts` via migration `20260422_0004`
+- `WordPressClient.create_post()` method added
+- `schemas/publish.py` — `DraftStatusPatch`, `PublishLogResponse`, `DraftPublishResponse`
+- `modules/publish/service.py` — `VALID_TRANSITIONS` dict, `update_draft_status`, `push_draft_to_wordpress`, `get_publish_logs`
+- `api/routes/publish.py` — `PATCH /admin/drafts/{id}/status`, `POST /admin/drafts/{id}/publish`, `GET /admin/drafts/{id}/publish-log`
+- `publish_router` registered in `api/router.py`
+- `test_smoke.py` — smoke tests for all key API surfaces (14 tests)
+- `test_publish.py` — full publish workflow tests (9 tests, including mocked WP push)
+- Admin drafts page rewritten as real API client with status badges and action buttons
+- 50/50 backend tests pass; `next build` clean; GitNexus re-indexed (2072 nodes, 74 flows)
+What remains:
+- Role-aware admin access enforcement (future step)
+- OTP mobile auth (future step)
 
 ### Step 09 — User account foundation on frontend
 Status: done

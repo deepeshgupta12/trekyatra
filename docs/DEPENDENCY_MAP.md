@@ -42,6 +42,8 @@ This file tracks structural dependencies, source-of-truth modules, and Nexus/Git
 - `lib/auth-api.ts` -> typed client-only fetch helpers for all 5 auth endpoints (me/login/signup/logout/google)
 - `lib/auth-context.tsx` -> React AuthContext; bootstraps from GET /me; exposes user, isLoading, login(), signup(), loginWithGoogle(), logout(), refresh()
 - `middleware.ts` -> Next.js route guard; protects /account/* and bounces authed users from /auth/sign-in, /auth/sign-up
+- `next.config.mjs` -> Next.js config; rewrites /api/* → FastAPI; transpilePackages: [@react-oauth/google]
+- `env.local.example` -> template for NEXT_PUBLIC_GOOGLE_CLIENT_ID
 - `public/images/` -> local trek and hero images
 
 ## Frontend Runtime
@@ -60,6 +62,7 @@ This file tracks structural dependencies, source-of-truth modules, and Nexus/Git
 - `services/api/app/api/routes/wordpress.py` -> WordPress health and connectivity test handlers
 - `services/api/app/api/routes/content.py` -> topics, clusters, briefs, drafts APIs
 - `services/api/app/api/routes/admin.py` -> internal admin summary APIs
+- `services/api/app/api/routes/publish.py` -> draft status patch, WordPress push, publish log APIs
 - `services/api/app/api/routes/treks.py` -> public trek list/detail APIs
 - `services/api/app/core/config.py` -> settings and connection URIs
 - `services/api/app/core/logging.py` -> structured logging
@@ -75,9 +78,11 @@ This file tracks structural dependencies, source-of-truth modules, and Nexus/Git
 - `services/api/app/modules/auth/models.py` -> users, auth identities, sessions
 - `services/api/app/modules/auth/service.py` -> email + Google auth business logic; session creation; login_or_register_google_user
 - `services/api/app/modules/auth/dependencies.py` -> current user/current session dependencies
-- `services/api/app/modules/wordpress/client.py` -> WordPress REST client skeleton
+- `services/api/app/modules/wordpress/client.py` -> WordPress REST client; fetch_site_index, fetch_current_user, create_post
 - `services/api/app/modules/wordpress/service.py` -> WordPress health and connectivity service helpers
-- `services/api/app/modules/content/models.py` -> topic, cluster, brief, draft ORM models
+- `services/api/app/modules/content/models.py` -> topic, cluster, brief, draft, publish_log ORM models; ContentDraft has published_at and wordpress_post_id
+- `services/api/app/modules/publish/service.py` -> VALID_TRANSITIONS state machine, update_draft_status, push_draft_to_wordpress, get_publish_logs
+- `services/api/app/schemas/publish.py` -> DraftStatusPatch, PublishLogResponse, DraftPublishResponse
 - `services/api/app/modules/content/service.py` -> content-domain create/list service helpers
 - `services/api/app/modules/admin/service.py` -> admin dashboard and summary aggregations
 - `services/api/app/modules/treks/data.py` -> additive mock/public trek source data
@@ -88,6 +93,7 @@ This file tracks structural dependencies, source-of-truth modules, and Nexus/Git
 - `services/api/alembic/versions/20260421_0001_initial_auth_and_rbac.py` -> initial schema migration
 - `services/api/alembic/versions/20260421_0002_add_password_hash_to_users.py` -> password auth migration
 - `services/api/alembic/versions/20260421_0003_content_domain_foundation.py` -> content domain migration
+- `services/api/alembic/versions/20260422_0004_publish_log.py` -> publish_logs table + published_at/wordpress_post_id on content_drafts
 - `services/api/tests/test_health.py` -> API health smoke tests
 - `services/api/tests/test_models.py` -> metadata table coverage test
 - `services/api/tests/test_auth.py` -> auth route tests
@@ -95,6 +101,8 @@ This file tracks structural dependencies, source-of-truth modules, and Nexus/Git
 - `services/api/tests/test_content_routes.py` -> content route tests
 - `services/api/tests/test_admin.py` -> admin summary route tests
 - `services/api/tests/test_treks.py` -> public trek route tests
+- `services/api/tests/test_smoke.py` -> smoke tests for all 14 key API surfaces
+- `services/api/tests/test_publish.py` -> publish workflow tests (status transitions, WP mock push, log retrieval)
 
 ## Dependency Discipline Rules
 Before editing any existing frontend file:
@@ -151,6 +159,17 @@ Before editing any backend file:
 - Admin endpoints are summary-only placeholders and remain low-risk additive APIs
 - `apps/web-static/` remained untouched in Step 07
 
+### Step 09 + Google OAuth executed blast radius
+- `components/Providers.tsx` changed to add `AuthProvider` + `GoogleOAuthProvider` — affects all pages (low risk; all are client-boundary consumers)
+- `components/layout/Header.tsx` changed to inject `useAuth` — auth-aware user menu added; mobile drawer extended
+- `app/(auth)/auth/sign-in/page.tsx` + `sign-up/page.tsx` wired to real backend; `useGoogleLogin` hook added
+- `lib/auth-api.ts` + `lib/auth-context.tsx` created — new shared auth layer; consumed by Header, sign-in, sign-up, UserGreeting
+- `middleware.ts` created — pure Next.js edge middleware; no component deps
+- `services/api/app/api/routes/auth.py` changed: `google_auth_placeholder` replaced, `login_or_register_google_user` service added
+- `services/api/app/schemas/auth.py` changed: `GoogleAuthRequest.id_token` → `access_token` (test updated accordingly)
+- No database migration — existing `auth_identities` table covers Google identity via `provider="google"`
+- `next.config.mjs` created (replaces `next.config.ts`) + `transpilePackages: [@react-oauth/google]` added after cache fix
+
 ### Step 08 executed blast radius
 - `app/api/router.py` changed additively to include `treks_router`
 - `app/api/routes/treks.py` depends on `app.modules.treks.service` and `app.schemas.treks`
@@ -161,3 +180,13 @@ Before editing any backend file:
 - `apps/web-next/lib/api.ts` is the new universal fetch layer (server + client)
 - `apps/web-next/lib/trekApi.ts` mirrors the previous Vite trekApi with Next.js-compatible image paths
 - Auth, account, and admin pages are UI-complete but backend wiring is deferred to a future step
+
+### Step 10 executed blast radius
+- `app/modules/content/models.py` changed: `PublishLog` model added; `ContentDraft` gained `published_at`, `wordpress_post_id`, and `publish_logs` relationship
+- `app/db/base.py` updated to import and register `PublishLog`
+- `app/modules/wordpress/client.py` changed: `create_post()` method added (additive, no existing calls changed)
+- `app/api/router.py` changed additively to include `publish_router`
+- New module `app/modules/publish/` created — `service.py` only; depends on `content.models`, `wordpress.client`, `core.config`, `schemas.publish`
+- `alembic/versions/20260422_0004_publish_log.py` adds `publish_logs` table and two columns to `content_drafts` (reversible)
+- `apps/web-next/app/(admin)/admin/drafts/page.tsx` rewritten as client component — fetches `/api/v1/drafts`, `/api/v1/admin/drafts/{id}/status`, `/api/v1/admin/drafts/{id}/publish`; no shared layout changes
+- GitNexus re-indexed: 2072 nodes, 3465 edges, 74 flows
