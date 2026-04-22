@@ -47,7 +47,7 @@
 - Worker health endpoint
 - Worker integration tests
 
-### Step 12 — LangGraph agent framework + agent tracking
+### Step 12 — LangGraph agent framework + agent tracking [DONE]
 - Install LangGraph, Anthropic SDK, langchain-anthropic
 - `agent_runs` table and Alembic migration
 - Base agent state interface and orchestrator
@@ -262,4 +262,4 @@
 
 ## Execution Rule
 Do not start the next step without user confirmation.
-Current next step: **Step 12 — LangGraph agent framework + agent tracking**
+Current next step: **Step 13 — Trend Discovery Agent + Keyword Cluster Agent**

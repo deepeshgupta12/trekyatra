@@ -87,6 +87,12 @@ This file tracks structural dependencies, source-of-truth modules, and Nexus/Git
 - `services/api/app/modules/admin/service.py` -> admin dashboard and summary aggregations
 - `services/api/app/modules/treks/data.py` -> additive mock/public trek source data
 - `services/api/app/modules/treks/service.py` -> public trek list/detail filtering logic
+- `services/api/app/modules/agents/models.py` -> AgentRun ORM (id, agent_type, status, input/output_json, error, timestamps)
+- `services/api/app/modules/agents/state.py` -> BaseAgentState TypedDict (shared across all agents)
+- `services/api/app/modules/agents/base_agent.py` -> BaseAgent ABC; wraps LangGraph StateGraph; run() entry point
+- `services/api/app/modules/agents/service.py` -> start_run, update_run, complete_run, fail_run, list_runs
+- `services/api/app/schemas/agents.py` -> AgentRunResponse Pydantic schema
+- `services/api/app/api/routes/agent_runs.py` -> GET /api/v1/admin/agent-runs with filters
 - `services/api/app/worker/celery_app.py` -> Celery instance; broker/backend from settings; includes smoke task; beat_schedule stub
 - `services/api/app/worker/tasks/base.py` -> BaseTask; max_retries=3, backoff=60s, on_failure/on_retry hooks
 - `services/api/app/worker/tasks/smoke.py` -> smoke.ping task; end-to-end queue validation
@@ -185,6 +191,18 @@ Before editing any backend file:
 - `apps/web-next/lib/api.ts` is the new universal fetch layer (server + client)
 - `apps/web-next/lib/trekApi.ts` mirrors the previous Vite trekApi with Next.js-compatible image paths
 - Auth, account, and admin pages are UI-complete but backend wiring is deferred to a future step
+
+### Step 12 executed blast radius
+- `app/db/base.py` changed: `AgentRun` imported and added to `__all__` — additive; all existing model importers unaffected
+- `app/api/router.py` changed: `agent_runs_router` registered additively
+- `app/modules/agents/` created: new independent module; no existing code depends on it
+- `app/api/routes/agent_runs.py` created: depends on `app.db.session.get_db`, `app.modules.agents.service`, `app.schemas.agents`
+- `app/modules/agents/service.py` depends on `app.modules.agents.models`, `sqlalchemy.orm.Session`, stdlib `json`/`datetime`
+- `app/modules/agents/base_agent.py` depends on `langgraph.graph.StateGraph`, `app.modules.agents.state`
+- `app/core/config.py` changed: `anthropic_api_key` field added — additive
+- `alembic/versions/20260422_0005_agent_runs.py` — `agent_runs` table; reversible via downgrade
+- `pyproject.toml` changed: `anthropic`, `langchain-core`, `langchain-anthropic`, `langgraph` added
+- No frontend changes in Step 12
 
 ### Step 11 executed blast radius
 - `app/core/config.py` changed: `celery_broker_url` and `celery_result_backend` computed fields added — additive only; 12 existing importers of `Settings` unaffected

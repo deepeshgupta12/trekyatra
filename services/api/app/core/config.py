@@ -30,6 +30,7 @@ class Settings(BaseSettings):
 
     google_client_id: str | None = None
     google_client_secret: str | None = None
+    anthropic_api_key: str | None = None
     sms_provider: str | None = None
     sms_api_key: str | None = None
 

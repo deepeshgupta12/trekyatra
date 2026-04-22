@@ -58,12 +58,33 @@ curl http://localhost:8000/api/v1/admin/agent-runs
 npx gitnexus analyze --force
 ```
 
+## Files Created
+- `services/api/app/modules/agents/__init__.py`
+- `services/api/app/modules/agents/models.py`
+- `services/api/app/modules/agents/state.py`
+- `services/api/app/modules/agents/base_agent.py`
+- `services/api/app/modules/agents/service.py`
+- `services/api/app/schemas/agents.py`
+- `services/api/app/api/routes/agent_runs.py`
+- `services/api/alembic/versions/20260422_0005_agent_runs.py`
+- `services/api/tests/test_agent_runs.py`
+
+## Files Modified
+- `services/api/pyproject.toml` — anthropic, langchain-core, langchain-anthropic, langgraph added
+- `services/api/app/core/config.py` — anthropic_api_key setting added
+- `services/api/app/db/base.py` — AgentRun registered
+- `services/api/app/api/router.py` — agent_runs_router registered
+- `services/api/.env.example` — ANTHROPIC_API_KEY documented
+- `docs/MASTER_TRACKER.md`, `docs/DEPENDENCY_MAP.md`, `docs/IMPLEMENTATION_PLAN.md`
+
 ## Status
-pending
+Done
 
 ## Notes
 - AgentRun.status values: pending, running, completed, failed, cancelled
 - AgentRun.agent_type: string enum — trend_discovery, keyword_cluster, content_brief, content_writing, seo_aeo, publishing, refresh, internal_linking
-- Base state includes: run_id, agent_type, input, output, errors[], metadata{}
-- LangGraph nodes: each agent defines its own node functions; BaseAgent provides run() entry point
-- Anthropic API key goes in .env as ANTHROPIC_API_KEY, loaded by settings
+- BaseAgentState TypedDict: run_id, agent_type, input, output, errors[], metadata{}
+- BaseAgent.run() invokes the compiled LangGraph; subclasses implement _build_graph()
+- Anthropic API key: set ANTHROPIC_API_KEY in services/api/.env; loaded via settings.anthropic_api_key
+- Migration 20260422_0005 applied; agent_runs table live with status/agent_type indexes
+- 61/61 backend tests pass after Step 12 (54 prior + 7 new agent_runs tests)

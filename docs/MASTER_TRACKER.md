@@ -29,12 +29,12 @@ All V0 foundations are shipped. The stack is live locally with:
 - Admin summary APIs, smoke tests, GitNexus indexed
 
 ## V1 Status — In Progress
-**Current next step: Step 12 — LangGraph agent framework + agent tracking**
+**Current next step: Step 13 — Trend Discovery Agent + Keyword Cluster Agent**
 
 | Step | Title | Status |
 |------|-------|--------|
 | 11 | Worker and task queue infrastructure | done |
-| 12 | LangGraph agent framework + agent tracking | pending |
+| 12 | LangGraph agent framework + agent tracking | done |
 | 13 | Trend Discovery Agent + Keyword Cluster Agent | pending |
 | 14 | Content Brief Agent + brief approval workflow | pending |
 | 15 | Content Writing Agent + SEO/AEO Optimization Agent | pending |
@@ -184,6 +184,26 @@ What is required to activate:
 - Create OAuth 2.0 credentials at Google Cloud Console (Web application type)
 - Set Authorized JavaScript origins: `http://localhost:3000`
 - Copy Client ID → `apps/web-next/.env.local` as `NEXT_PUBLIC_GOOGLE_CLIENT_ID=<id>`
+
+### Step 12 — LangGraph agent framework + agent tracking
+Status: done
+What is done:
+- `pyproject.toml` — `anthropic`, `langchain-core`, `langchain-anthropic`, `langgraph` added and installed
+- `app/core/config.py` — `anthropic_api_key` setting added
+- `app/modules/agents/models.py` — `AgentRun` ORM model (id, agent_type, status, input_json, output_json, error, started_at, completed_at, created_at, updated_at)
+- `app/modules/agents/state.py` — `BaseAgentState` TypedDict (run_id, agent_type, input, output, errors, metadata)
+- `app/modules/agents/base_agent.py` — `BaseAgent` ABC wrapping LangGraph `StateGraph`; subclasses define `_build_graph()` and call `run()`
+- `app/modules/agents/service.py` — `start_run`, `update_run`, `complete_run`, `fail_run`, `list_runs`
+- `app/schemas/agents.py` — `AgentRunResponse` Pydantic schema
+- `app/api/routes/agent_runs.py` — `GET /api/v1/admin/agent-runs` with agent_type, status, limit, offset filters
+- `app/api/router.py` — `agent_runs_router` registered
+- `app/db/base.py` — `AgentRun` imported and registered in metadata
+- `alembic/versions/20260422_0005_agent_runs.py` — `agent_runs` table with status/agent_type indexes; migration applied
+- `tests/test_agent_runs.py` — 7 tests (list empty, filter by type, filter by status, CRUD lifecycle, fail lifecycle, nonexistent run, API list after create)
+- 61/61 backend tests pass; `next build` not needed (no frontend changes)
+What remains:
+- Actual LLM calls wired through agents (Steps 13–15)
+- ANTHROPIC_API_KEY must be set in `.env` before agents make real LLM calls
 
 ### Step 11 — Worker and task queue infrastructure
 Status: done
