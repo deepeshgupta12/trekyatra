@@ -66,6 +66,7 @@ export default function DraftReview() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [actionLoading, setActionLoading] = useState<Record<string, string>>({});
+  const [agentFeedback, setAgentFeedback] = useState<Record<string, string>>({});
   const [expanded, setExpanded] = useState<Record<string, boolean>>({});
   const [claims, setClaims] = useState<Record<string, DraftClaim[]>>({});
   const [claimsLoading, setClaimsLoading] = useState<Record<string, boolean>>({});
@@ -150,19 +151,18 @@ export default function DraftReview() {
 
   async function optimizeDraft(draftId: string) {
     setActionLoading(prev => ({ ...prev, [draftId]: "optimize" }));
+    setAgentFeedback(prev => { const n = { ...prev }; delete n[draftId]; return n; });
     try {
       const r = await fetch("/api/v1/admin/agents/optimize-draft", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ draft_id: draftId }),
       });
-      if (!r.ok) {
-        const body = await r.json().catch(() => ({}));
-        throw new Error((body as { detail?: string }).detail ?? `HTTP ${r.status}`);
-      }
-      setError("");
+      const body = await r.json();
+      if (!r.ok) throw new Error((body as { detail?: string }).detail ?? `HTTP ${r.status}`);
+      setAgentFeedback(prev => ({ ...prev, [draftId]: `Optimise dispatched — run #${(body as { agent_run_id: number }).agent_run_id}` }));
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Optimize trigger failed.");
+      setAgentFeedback(prev => ({ ...prev, [draftId]: `Error: ${err instanceof Error ? err.message : "Optimize failed"}` }));
     } finally {
       setActionLoading(prev => { const n = { ...prev }; delete n[draftId]; return n; });
     }
@@ -354,6 +354,13 @@ export default function DraftReview() {
                         </div>
                       </div>
                     )}
+                  </div>
+                )}
+
+                {/* Agent dispatch feedback */}
+                {agentFeedback[d.id] && (
+                  <div className={`px-5 py-2 text-xs border-t border-white/8 ${agentFeedback[d.id].startsWith("Error") ? "text-amber-400" : "text-pine"}`}>
+                    {agentFeedback[d.id]}
                   </div>
                 )}
 

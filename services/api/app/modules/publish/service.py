@@ -13,6 +13,7 @@ from app.schemas.publish import DraftPublishResponse, PublishLogResponse
 
 VALID_TRANSITIONS: dict[str, list[str]] = {
     "draft": ["review"],
+    "requires_review": ["review", "draft"],
     "review": ["approved", "draft"],
     "approved": ["published", "review"],
     "published": [],
