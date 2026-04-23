@@ -121,6 +121,11 @@ Done
 - Pipeline `resume()` fix: `paused_at_draft_approval` now resumes at `seo_aeo` (was incorrectly `publish`); 2 new tests; 139/139 pass
 - Trek detail page: `generateMetadata`, descriptive anchor IDs, sticky sidebar fix (removed `self-start`), all 12 TOC entries wired, 4 new sections (best_time, difficulty, packing, safety), H1 strips SEO subtitle, hero_image_url from CMS, trek facts from `content_json.trek_facts`
 
+### Resilience fix: Anthropic 529 overloaded errors
+- `services/api/app/modules/agents/client.py` — shared `get_anthropic_client()` factory with `max_retries=6` (~32s total backoff budget via SDK exponential backoff)
+- All 5 agents (`trend_discovery`, `keyword_cluster`, `content_brief`, `content_writing`, `seo_aeo`) updated to import and use `get_anthropic_client()` instead of inline `anthropic.Anthropic(api_key=...)` with default 2 retries
+- 139/139 backend tests pass after change
+
 ## Notes
 - Pipeline pauses at "brief_approval" checkpoint (after ContentBriefAgent); human approves the brief in admin UI; POST /runs/{id}/resume dispatches resume_pipeline_task which continues from content_writing
 - Pipeline pauses again at "paused_at_draft_approval" if ContentWritingAgent marks draft as requires_review; resume now correctly runs seo_aeo → publish
@@ -129,4 +134,5 @@ Done
 - Migration 20260423_0009 was initially created with duplicate index bug (index=True in Column + explicit op.create_index); fixed in-place before first successful apply (migration had never applied to any DB)
 - Migration 20260423_0010 adds hero_image_url — additive, zero downtime
 - Trek facts (duration, altitude etc.) are stored in content_json.trek_facts and editable via CMSPageForm; agent-generated CMS pages will have empty trek_facts until an editor fills them in
+- Anthropic SDK max_retries=6 gives backoff sequence 0.5→1→2→4→8→8s (7 total attempts, ~32s budget); sufficient to survive transient 529 overloaded errors without failing the pipeline
 - 139/139 backend tests pass; next build clean (89 pages)

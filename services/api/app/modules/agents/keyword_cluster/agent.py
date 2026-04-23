@@ -5,13 +5,13 @@ import re
 import uuid
 from typing import Any
 
-import anthropic
 from langgraph.graph import END, StateGraph
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from app.core.config import settings
 from app.modules.agents.base_agent import BaseAgent
+from app.modules.agents.client import get_anthropic_client
 from app.modules.agents.keyword_cluster.prompts import KEYWORD_CLUSTER_PROMPT
 from app.modules.agents.state import BaseAgentState
 from app.modules.content.models import TopicOpportunity
@@ -77,7 +77,7 @@ class KeywordClusterAgent(BaseAgent):
         topics = state.get("metadata", {}).get("topic_summaries", [])
         prompt = KEYWORD_CLUSTER_PROMPT.format(topics=json.dumps(topics, indent=2))
 
-        client = anthropic.Anthropic(api_key=settings.anthropic_api_key)
+        client = get_anthropic_client()
         message = client.messages.create(
             model=MODEL,
             max_tokens=4096,

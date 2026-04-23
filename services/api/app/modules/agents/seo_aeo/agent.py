@@ -5,12 +5,12 @@ import re
 import uuid
 from typing import Any
 
-import anthropic
 from langgraph.graph import END, StateGraph
 from sqlalchemy.orm import Session
 
 from app.core.config import settings
 from app.modules.agents.base_agent import BaseAgent
+from app.modules.agents.client import get_anthropic_client
 from app.modules.agents.seo_aeo.prompts import SEO_AEO_PROMPT, SEO_AEO_SYSTEM
 from app.modules.agents.state import BaseAgentState
 from app.modules.content import service as content_service
@@ -77,7 +77,7 @@ class SEOAEOAgent(BaseAgent):
             content_markdown=meta.get("content_markdown", ""),
         )
 
-        client = anthropic.Anthropic(api_key=settings.anthropic_api_key)
+        client = get_anthropic_client()
         message = client.messages.create(
             model=MODEL,
             max_tokens=16000,

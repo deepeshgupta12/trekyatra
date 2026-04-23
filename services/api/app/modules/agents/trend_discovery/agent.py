@@ -5,12 +5,12 @@ import re
 import uuid
 from typing import Any
 
-import anthropic
 from langgraph.graph import END, StateGraph
 from sqlalchemy.orm import Session
 
 from app.core.config import settings
 from app.modules.agents.base_agent import BaseAgent
+from app.modules.agents.client import get_anthropic_client
 from app.modules.agents.state import BaseAgentState
 from app.modules.agents.trend_discovery.prompts import TREND_DISCOVERY_PROMPT
 from app.modules.content.service import create_topic
@@ -49,7 +49,7 @@ class TrendDiscoveryAgent(BaseAgent):
             return {"errors": ["seed_topics must be a non-empty list"]}
 
         prompt = TREND_DISCOVERY_PROMPT.format(seed_topics=", ".join(seed_topics))
-        client = anthropic.Anthropic(api_key=settings.anthropic_api_key)
+        client = get_anthropic_client()
         message = client.messages.create(
             model=MODEL,
             max_tokens=4096,

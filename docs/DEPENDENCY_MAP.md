@@ -110,6 +110,7 @@ This file tracks structural dependencies, source-of-truth modules, and Nexus/Git
 - `services/api/app/modules/agents/models.py` -> AgentRun ORM (id, agent_type, status, input/output_json, error, timestamps)
 - `services/api/app/modules/agents/state.py` -> BaseAgentState TypedDict (shared across all agents)
 - `services/api/app/modules/agents/base_agent.py` -> BaseAgent ABC; wraps LangGraph StateGraph; run() entry point
+- `services/api/app/modules/agents/client.py` -> `get_anthropic_client()` factory; max_retries=6 (~32s backoff); imported by all 5 agent modules; blast radius: all agents fail if this import breaks
 - `services/api/app/modules/agents/service.py` -> start_run, update_run, complete_run, fail_run, list_runs
 - `services/api/app/schemas/agents.py` -> AgentRunResponse Pydantic schema
 - `services/api/app/api/routes/agent_runs.py` -> GET /api/v1/admin/agent-runs with filters
