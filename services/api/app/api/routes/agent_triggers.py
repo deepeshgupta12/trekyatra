@@ -26,6 +26,14 @@ class GenerateBriefRequest(BaseModel):
     page_type: str | None = None
 
 
+class WriteDraftRequest(BaseModel):
+    brief_id: str
+
+
+class OptimizeDraftRequest(BaseModel):
+    draft_id: str
+
+
 class AgentTriggerResponse(BaseModel):
     agent_run_id: int
     status: str
@@ -58,6 +66,32 @@ def trigger_generate_brief(
     input_data = payload.model_dump()
     run = agent_service.start_run(db, "content_brief", input_data)
     generate_brief_task.apply_async(args=[run.id, input_data])
+    return AgentTriggerResponse(agent_run_id=run.id, status=run.status)
+
+
+@router.post("/write-draft", response_model=AgentTriggerResponse)
+def trigger_write_draft(
+    payload: WriteDraftRequest,
+    db: Session = Depends(get_db),
+) -> AgentTriggerResponse:
+    from app.worker.tasks.agent_tasks import write_draft_task
+
+    input_data = payload.model_dump()
+    run = agent_service.start_run(db, "content_writing", input_data)
+    write_draft_task.apply_async(args=[run.id, input_data])
+    return AgentTriggerResponse(agent_run_id=run.id, status=run.status)
+
+
+@router.post("/optimize-draft", response_model=AgentTriggerResponse)
+def trigger_optimize_draft(
+    payload: OptimizeDraftRequest,
+    db: Session = Depends(get_db),
+) -> AgentTriggerResponse:
+    from app.worker.tasks.agent_tasks import optimize_draft_task
+
+    input_data = payload.model_dump()
+    run = agent_service.start_run(db, "seo_aeo", input_data)
+    optimize_draft_task.apply_async(args=[run.id, input_data])
     return AgentTriggerResponse(agent_run_id=run.id, status=run.status)
 
 

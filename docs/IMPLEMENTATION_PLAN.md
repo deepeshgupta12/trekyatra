@@ -67,7 +67,7 @@
 - Brief versioning (brief_versions table + create_brief_version service)
 - Admin UI: brief review queue fully wired to real API with approve/reject actions
 
-### Step 15 — Content Writing Agent + SEO/AEO Optimization Agent
+### Step 15 — Content Writing Agent + SEO/AEO Optimization Agent [DONE]
 - ContentWritingAgent: brief → full structured article draft (Claude API)
 - SEOAEOAgent: snippet optimization, FAQ blocks, answer boxes, entity coverage
 - Fact-check flag system: uncertain claim markers

@@ -11,6 +11,7 @@ from app.modules.content.models import (
     BriefVersion,
     ContentBrief,
     ContentDraft,
+    DraftClaim,
     KeywordCluster,
     TopicOpportunity,
 )
@@ -19,6 +20,7 @@ from app.schemas.content import (
     BriefStatusPatch,
     ContentBriefCreate,
     ContentDraftCreate,
+    DraftClaimCreate,
     KeywordClusterCreate,
     TopicOpportunityCreate,
 )
@@ -197,6 +199,47 @@ def list_drafts(db: Session) -> list[ContentDraft]:
     )
 
 
+def get_draft(db: Session, draft_id: uuid.UUID) -> ContentDraft | None:
+    return db.get(ContentDraft, draft_id)
+
+
+def update_draft_optimized_content(db: Session, draft_id: uuid.UUID, optimized_content: str) -> ContentDraft:
+    draft = db.get(ContentDraft, draft_id)
+    if draft is None:
+        raise ValueError("Draft not found")
+    draft.optimized_content = optimized_content
+    draft.updated_at = _utc_now()
+    db.commit()
+    db.refresh(draft)
+    return draft
+
+
+def create_draft_claim(db: Session, payload: DraftClaimCreate) -> DraftClaim:
+    claim = DraftClaim(
+        id=uuid.uuid4(),
+        draft_id=uuid.UUID(payload.draft_id),
+        claim_text=payload.claim_text,
+        claim_type=payload.claim_type,
+        confidence_score=payload.confidence_score,
+        flagged_for_review=payload.flagged_for_review,
+        created_at=_utc_now(),
+    )
+    db.add(claim)
+    db.commit()
+    db.refresh(claim)
+    return claim
+
+
+def list_draft_claims(db: Session, draft_id: uuid.UUID) -> list[DraftClaim]:
+    return list(
+        db.scalars(
+            select(DraftClaim)
+            .where(DraftClaim.draft_id == draft_id)
+            .order_by(DraftClaim.confidence_score.asc())
+        ).all()
+    )
+
+
 def create_draft(db: Session, payload: ContentDraftCreate) -> ContentDraft:
     now = _utc_now()
     brief_id = uuid.UUID(payload.brief_id)
@@ -209,6 +252,7 @@ def create_draft(db: Session, payload: ContentDraftCreate) -> ContentDraft:
         title=payload.title,
         slug=payload.slug,
         content_markdown=payload.content_markdown,
+        optimized_content=payload.optimized_content,
         excerpt=payload.excerpt,
         meta_title=payload.meta_title,
         meta_description=payload.meta_description,

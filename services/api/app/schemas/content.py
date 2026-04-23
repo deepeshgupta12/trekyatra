@@ -128,6 +128,7 @@ class ContentDraftCreate(BaseModel):
     title: str = Field(min_length=3, max_length=255)
     slug: str = Field(min_length=3, max_length=255)
     content_markdown: str = Field(min_length=10)
+    optimized_content: str | None = None
     excerpt: str | None = None
     meta_title: str | None = Field(default=None, max_length=255)
     meta_description: str | None = None
@@ -144,10 +145,31 @@ class ContentDraftResponse(BaseModel):
     title: str
     slug: str
     content_markdown: str
+    optimized_content: str | None
     excerpt: str | None
     meta_title: str | None
     meta_description: str | None
     version: int
     confidence_score: float | None
     status: str
+    created_at: datetime
+
+
+class DraftClaimCreate(BaseModel):
+    draft_id: str
+    claim_text: str
+    claim_type: str = Field(max_length=64)
+    confidence_score: float
+    flagged_for_review: bool = False
+
+
+class DraftClaimResponse(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    id: str
+    draft_id: str
+    claim_text: str
+    claim_type: str
+    confidence_score: float
+    flagged_for_review: bool
     created_at: datetime

@@ -11,9 +11,11 @@ from app.modules.content.service import (
     create_draft,
     create_topic,
     get_brief,
+    get_draft,
     list_brief_versions,
     list_briefs,
     list_clusters,
+    list_draft_claims,
     list_drafts,
     list_topics,
     update_brief_status,
@@ -25,6 +27,7 @@ from app.schemas.content import (
     ContentBriefResponse,
     ContentDraftCreate,
     ContentDraftResponse,
+    DraftClaimResponse,
     KeywordClusterCreate,
     KeywordClusterResponse,
     TopicOpportunityCreate,
@@ -169,25 +172,7 @@ def post_brief(
 @router.get("/drafts", response_model=list[ContentDraftResponse])
 def get_drafts(db: Session = Depends(get_db)) -> list[ContentDraftResponse]:
     rows = list_drafts(db)
-    return [
-        ContentDraftResponse.model_validate(
-            {
-                "id": str(row.id),
-                "brief_id": str(row.brief_id),
-                "title": row.title,
-                "slug": row.slug,
-                "content_markdown": row.content_markdown,
-                "excerpt": row.excerpt,
-                "meta_title": row.meta_title,
-                "meta_description": row.meta_description,
-                "version": row.version,
-                "confidence_score": row.confidence_score,
-                "status": row.status,
-                "created_at": row.created_at,
-            }
-        )
-        for row in rows
-    ]
+    return [_draft_to_response(row) for row in rows]
 
 
 @router.post(
@@ -204,6 +189,10 @@ def post_draft(
     except ValueError as exc:
         raise HTTPException(status_code=400, detail=str(exc)) from exc
 
+    return _draft_to_response(row)
+
+
+def _draft_to_response(row) -> ContentDraftResponse:
     return ContentDraftResponse.model_validate(
         {
             "id": str(row.id),
@@ -211,6 +200,7 @@ def post_draft(
             "title": row.title,
             "slug": row.slug,
             "content_markdown": row.content_markdown,
+            "optimized_content": row.optimized_content,
             "excerpt": row.excerpt,
             "meta_title": row.meta_title,
             "meta_description": row.meta_description,
@@ -245,6 +235,32 @@ def _brief_to_response(row) -> ContentBriefResponse:
             "created_at": row.created_at,
         }
     )
+
+
+@router.get("/admin/drafts/{draft_id}/claims", response_model=list[DraftClaimResponse])
+def get_draft_claims(
+    draft_id: str,
+    db: Session = Depends(get_db),
+) -> list[DraftClaimResponse]:
+    try:
+        uid = uuid.UUID(draft_id)
+    except ValueError:
+        raise HTTPException(status_code=400, detail="Invalid draft ID format")
+    rows = list_draft_claims(db, uid)
+    return [
+        DraftClaimResponse.model_validate(
+            {
+                "id": str(r.id),
+                "draft_id": str(r.draft_id),
+                "claim_text": r.claim_text,
+                "claim_type": r.claim_type,
+                "confidence_score": r.confidence_score,
+                "flagged_for_review": r.flagged_for_review,
+                "created_at": r.created_at,
+            }
+        )
+        for r in rows
+    ]
 
 
 @router.get("/admin/briefs/{brief_id}", response_model=ContentBriefResponse)

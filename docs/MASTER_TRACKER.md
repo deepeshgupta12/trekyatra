@@ -29,7 +29,7 @@ All V0 foundations are shipped. The stack is live locally with:
 - Admin summary APIs, smoke tests, GitNexus indexed
 
 ## V1 Status — In Progress
-**Current next step: Step 15 — Content Writing Agent + SEO/AEO Optimization Agent**
+**Current next step: Step 16 — WordPress CMS full integration**
 
 | Step | Title | Status |
 |------|-------|--------|
@@ -37,7 +37,7 @@ All V0 foundations are shipped. The stack is live locally with:
 | 12 | LangGraph agent framework + agent tracking | done |
 | 13 | Trend Discovery Agent + Keyword Cluster Agent | done |
 | 14 | Content Brief Agent + brief approval workflow | done |
-| 15 | Content Writing Agent + SEO/AEO Optimization Agent | pending |
+| 15 | Content Writing Agent + SEO/AEO Optimization Agent | done |
 | 16 | WordPress CMS full integration | pending |
 | 17 | Full publish orchestration pipeline | pending |
 | 18 | Public frontend content page templates | pending |
@@ -184,6 +184,27 @@ What is required to activate:
 - Create OAuth 2.0 credentials at Google Cloud Console (Web application type)
 - Set Authorized JavaScript origins: `http://localhost:3000`
 - Copy Client ID → `apps/web-next/.env.local` as `NEXT_PUBLIC_GOOGLE_CLIENT_ID=<id>`
+
+### Step 15 — Content Writing Agent + SEO/AEO Optimization Agent
+Status: done
+What is done:
+- Alembic migration `20260422_0007_draft_claims.py` — adds `optimized_content` (Text nullable) to `content_drafts`; creates `draft_claims` table (id UUID PK, draft_id FK→content_drafts CASCADE, claim_text, claim_type, confidence_score, flagged_for_review, created_at) with indexes on draft_id and flagged_for_review
+- `app/modules/content/models.py` — `ContentDraft` extended with `optimized_content` and `claims` relationship; new `DraftClaim` ORM model added
+- `app/db/base.py` — `DraftClaim` registered in metadata
+- `app/schemas/content.py` — `ContentDraftCreate`/`ContentDraftResponse` extended with `optimized_content`; `DraftClaimCreate` and `DraftClaimResponse` added
+- `app/modules/content/service.py` — `get_draft`, `update_draft_optimized_content`, `create_draft_claim`, `list_draft_claims` added; `create_draft` updated for `optimized_content`
+- `app/modules/agents/content_writing/__init__.py` + `agent.py` + `prompts.py` — `ContentWritingAgent`: 3-node LangGraph (fetch_brief → write_draft → store_results); validates brief is approved + has structured_brief; calls Claude claude-sonnet-4-6 with prompt caching; stores draft + all DraftClaim records; sets status `requires_review` if any claim confidence < 0.7
+- `app/modules/agents/seo_aeo/__init__.py` + `agent.py` + `prompts.py` — `SEOAEOAgent`: 3-node LangGraph (fetch_draft → optimize → store_results); runs SEO/AEO pass; stores `optimized_content` on draft; returns changes_count + faq_count
+- `app/worker/tasks/agent_tasks.py` — `write_draft_task` + `optimize_draft_task` Celery tasks added
+- `app/api/routes/agent_triggers.py` — `POST /api/v1/admin/agents/write-draft` + `POST /api/v1/admin/agents/optimize-draft` added
+- `app/api/routes/content.py` — `GET /api/v1/admin/drafts/{id}/claims` added; `_draft_to_response` helper added; `get_drafts`/`post_draft` refactored to use it
+- `tests/test_content_writing_agent.py` — 11 tests: missing brief_id, invalid format, not found, unapproved brief, no structured_brief, mocked-LLM creates draft+claims, no-flagged sets status=draft, claims empty, claims returns data, invalid ID, trigger dispatch
+- `tests/test_seo_aeo_agent.py` — 6 tests: missing draft_id, invalid format, not found, mocked-LLM optimizes + stores optimized_content, content unchanged, trigger dispatch
+- `apps/web-next/app/(admin)/admin/drafts/page.tsx` — fully rewritten: expandable content preview (optimized if available), flagged claims panel with confidence % and claim type badges, Optimize button, Write Draft trigger form, `requires_review` status badge
+- 101/101 backend tests pass; `next build` clean (zero errors)
+What remains:
+- Real LLM calls require ANTHROPIC_API_KEY in services/api/.env
+- Draft status machine: `requires_review` → `review` transition manually wired via Submit for Review button
 
 ### Step 14 — Content Brief Agent + Brief Approval Workflow
 Status: done

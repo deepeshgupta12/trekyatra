@@ -108,6 +108,7 @@ class ContentDraft(UUIDPrimaryKeyMixin, TimestampMixin, Base):
     title: Mapped[str] = mapped_column(String(255), nullable=False, index=True)
     slug: Mapped[str] = mapped_column(String(255), nullable=False, index=True)
     content_markdown: Mapped[str] = mapped_column(Text, nullable=False)
+    optimized_content: Mapped[str | None] = mapped_column(Text, nullable=True)
     excerpt: Mapped[str | None] = mapped_column(Text, nullable=True)
     meta_title: Mapped[str | None] = mapped_column(String(255), nullable=True)
     meta_description: Mapped[str | None] = mapped_column(Text, nullable=True)
@@ -119,6 +120,11 @@ class ContentDraft(UUIDPrimaryKeyMixin, TimestampMixin, Base):
     wordpress_post_id: Mapped[int | None] = mapped_column(Integer, nullable=True)
 
     brief: Mapped[ContentBrief] = relationship(back_populates="drafts")
+    claims: Mapped[list["DraftClaim"]] = relationship(
+        back_populates="draft",
+        cascade="all, delete-orphan",
+        passive_deletes=True,
+    )
     publish_logs: Mapped[list["PublishLog"]] = relationship(
         back_populates="draft",
         cascade="all, delete-orphan",
@@ -159,3 +165,20 @@ class BriefVersion(UUIDPrimaryKeyMixin, Base):
     )
 
     brief: Mapped["ContentBrief"] = relationship(back_populates="versions")
+
+
+class DraftClaim(UUIDPrimaryKeyMixin, Base):
+    __tablename__ = "draft_claims"
+
+    draft_id: Mapped[uuid.UUID] = mapped_column(
+        ForeignKey("content_drafts.id", ondelete="CASCADE"),
+        nullable=False,
+        index=True,
+    )
+    claim_text: Mapped[str] = mapped_column(Text, nullable=False)
+    claim_type: Mapped[str] = mapped_column(String(64), nullable=False)
+    confidence_score: Mapped[float] = mapped_column(Float, nullable=False)
+    flagged_for_review: Mapped[bool] = mapped_column(default=False, nullable=False)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+
+    draft: Mapped["ContentDraft"] = relationship(back_populates="claims")

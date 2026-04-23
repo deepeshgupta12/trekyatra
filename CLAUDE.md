@@ -1,7 +1,7 @@
 <!-- gitnexus:start -->
 # GitNexus — Code Intelligence
 
-This project is indexed by GitNexus as **trekyatra** (2993 symbols, 4814 relationships, 91 execution flows). Use the GitNexus MCP tools to understand code, assess impact, and navigate safely.
+This project is indexed by GitNexus as **trekyatra** (3211 symbols, 5288 relationships, 101 execution flows). Use the GitNexus MCP tools to understand code, assess impact, and navigate safely.
 
 > If any GitNexus tool warns the index is stale, run `npx gitnexus analyze` in terminal first.
 
@@ -559,3 +559,31 @@ const statusStyle = {
 - Input + button pairs: `flex flex-col sm:flex-row` — stack on mobile, row on wider
 - Wide inputs: `w-full sm:w-64` — never fixed `w-72` without responsive override
 - Buttons in mobile stacks: add `w-full sm:w-auto` when in a column layout
+
+---
+
+## 16. Inter-Step Dependency Check Protocol
+
+When the user reports a test case failure, runtime error, or unexpected behaviour, **always check cross-step dependencies before debugging the symptom**. Many bugs root-cause in a dependency from a prior step that was assumed but is broken or missing.
+
+### Mandatory checks when an issue is reported
+
+1. **Run `gitnexus_context({name: "failingSymbol"})` first** — see all callers, callees, and which steps touched this symbol.
+2. **Cross-check `docs/DEPENDENCY_MAP.md`** — confirm the dependency (endpoint, column, model, task) was actually delivered in the step that should have created it.
+3. **Verify the migration ran** — `alembic upgrade head` output confirms columns exist. Never assume a column or table is present without checking.
+4. **Verify the Celery worker was restarted** — workers do NOT hot-reload. Any step that adds a new Celery task requires a full worker restart (`pkill -f "celery.*worker" && make worker`). Confirm the new task appears in the `[tasks]` block at startup.
+5. **Verify router registration order** — static admin routes (e.g. `/admin/briefs/summary`) MUST be registered before dynamic routes (`/admin/briefs/{id}`). In `router.py`, `admin_router` must always come before `content_router`.
+6. **Check LLM token budgets** — agents that generate longer outputs than previous steps may truncate JSON. Always set `max_tokens` high enough for the full expected output. Add try/except around `json.loads()` in every agent node that parses LLM output.
+7. **Check schema field parity** — new ORM columns must be added to both Create and Response Pydantic schemas. A missing field in Response silently drops the value.
+
+### Common inter-step failure patterns
+
+| Symptom | Root cause to check |
+|---------|-------------------|
+| Celery task dispatched but never received | Worker not restarted after new task added |
+| `JSONDecodeError` in agent | `max_tokens` too low; LLM response truncated |
+| 400 on `/admin/briefs/summary` | Dynamic `/{id}` route registered before static `/summary` |
+| Column missing at runtime | Migration created but `alembic upgrade head` not run |
+| Schema field returns `null` unexpectedly | Field added to ORM but missing from Pydantic Response schema |
+| Agent `errors: ["not found"]` on valid ID | Prior step's data not committed, or wrong UUID passed |
+| Test passes but UI broken | Frontend still using mocked data; `loadBriefs` not wired to real API |

@@ -95,11 +95,33 @@ npx gitnexus analyze --force
 ```
 
 ## Status
-pending
+Done
+
+## Files Created
+- `services/api/alembic/versions/20260422_0007_draft_claims.py`
+- `services/api/app/modules/agents/content_writing/__init__.py`
+- `services/api/app/modules/agents/content_writing/agent.py`
+- `services/api/app/modules/agents/content_writing/prompts.py`
+- `services/api/app/modules/agents/seo_aeo/__init__.py`
+- `services/api/app/modules/agents/seo_aeo/agent.py`
+- `services/api/app/modules/agents/seo_aeo/prompts.py`
+- `services/api/tests/test_content_writing_agent.py`
+- `services/api/tests/test_seo_aeo_agent.py`
+
+## Files Modified
+- `services/api/app/modules/content/models.py` — DraftClaim model, optimized_content on ContentDraft
+- `services/api/app/db/base.py` — DraftClaim registered
+- `services/api/app/schemas/content.py` — DraftClaimCreate, DraftClaimResponse, optimized_content on ContentDraftCreate/Response
+- `services/api/app/modules/content/service.py` — get_draft, update_draft_optimized_content, create_draft_claim, list_draft_claims
+- `services/api/app/worker/tasks/agent_tasks.py` — write_draft_task + optimize_draft_task
+- `services/api/app/api/routes/agent_triggers.py` — /write-draft + /optimize-draft
+- `services/api/app/api/routes/content.py` — GET /admin/drafts/{id}/claims, _draft_to_response helper
+- `apps/web-next/app/(admin)/admin/drafts/page.tsx` — content preview, claims panel, Optimize button, Write Draft form
 
 ## Notes
-- ContentWritingAgent should use Claude claude-sonnet-4-6 as the default model; add model selection to AgentRun metadata
-- SEOAEOAgent should run as a separate LangGraph pass so it can be re-triggered independently after human edits
+- Migration numbering: step doc said 0006 but that was taken by Step 14's brief_versions; using 0007
+- ContentWritingAgent uses claude-sonnet-4-6; max_tokens=16000; prompt caching on system prompt block
+- SEOAEOAgent uses claude-sonnet-4-6; max_tokens=16000; prompt caching on system prompt block
+- CONFIDENCE_FLAG_THRESHOLD = 0.7 — any claim below sets draft status to requires_review
 - Fact-check claim types: route_distance, altitude, permit_requirement, seasonality, cost_estimate, safety_advisory, operator_claim
-- Any draft with 1+ flagged claim (confidence < 0.7) must be set to requires_review status — cannot be approved or published without human clearing the flags
-- Prompt caching: use Anthropic SDK cache_control on system prompt blocks to reduce cost on repeated agent runs
+- 101/101 backend tests pass; next build clean
