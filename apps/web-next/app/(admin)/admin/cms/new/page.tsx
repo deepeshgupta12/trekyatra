@@ -4,7 +4,7 @@ import { ChevronRight } from "lucide-react";
 
 export default function NewCMSPagePage() {
   return (
-    <div className="p-6 max-w-4xl">
+    <div className="p-6">
       {/* Breadcrumb */}
       <div className="flex items-center gap-1.5 text-xs text-white/40 mb-6">
         <Link href="/admin/cms" className="hover:text-white transition-colors">Master CMS</Link>

@@ -120,25 +120,34 @@ def _md_to_html(text: str | None) -> str:
     )
 
 
-# Maps regex patterns (matched against lowercase H2/H3 headings) to section keys.
+# Maps regex patterns (matched against lowercase headings) to section keys.
+# Patterns are intentionally broad to survive SEO-optimised question-form headings
+# (e.g. "How to Reach X?" → route_overview, "Is X Safe?" → safety).
 _SECTION_HEADING_MAP: list[tuple[str, str]] = [
-    (r"why.*trek|why.*special|introduction|hidden gem", "why_this_trek"),
-    (r"altitude.*distance|route.*glance|trail overview|route overview", "route_overview"),
-    (r"itinerary|day.wise|day by day|what each day", "itinerary"),
-    (r"best time|when to go|season|visit.*time", "best_time"),
-    (r"difficulty|fitness|experience required", "difficulty"),
+    (r"why.*trek|why.*choose|why.*visit|why.*special|about.*trek|overview.*trek|introduction|hidden gem", "why_this_trek"),
+    (r"route|trail|reach|access|how to get|getting there|from.*to.*trek|trek.*path|trek.*track|altitude.*distance|trail overview|route overview", "route_overview"),
+    (r"itinerary|day.wise|day by day|what each day|day \d|schedule", "itinerary"),
+    (r"best time|when to go|season|visit.*time|weather|climate|month", "best_time"),
+    (r"difficulty|fitness|experience required|who can|suitable for|level|grade|strenuous", "difficulty"),
     (r"permit", "permits"),
-    (r"cost|budget|price|fee|expense", "cost_estimate"),
-    (r"pack|gear|equipment|what to bring|what to carry", "packing"),
-    (r"safety|emergency|risk|precaution", "safety"),
-    (r"faq|frequently asked|questions answered|common question", "faqs"),
+    (r"cost|budget|price|fee|expense|how much|package|charges|rate", "cost_estimate"),
+    (r"pack|gear|equipment|what to bring|what to carry|clothing|kit|bag", "packing"),
+    (r"safety|emergency|risk|precaution|tip|warning|hazard|ams|altitude sickness", "safety"),
+    (r"faq|frequently asked|questions answered|common question|people also ask|q&a|queries", "faqs"),
 ]
 
 
 def _parse_sections_from_markdown(text: str) -> dict[str, str]:
-    """Split a markdown document into named sections keyed by content type."""
+    """Split a markdown document into named sections keyed by content type.
+
+    Pre-heading content (intro paragraphs before the first matched H2/H3) is
+    captured as why_this_trek, which is where most agent-generated articles put
+    their opening summary.  Trailing punctuation (?, !) is stripped before
+    pattern matching so question-form SEO headings match correctly.
+    """
     sections: dict[str, list[str]] = {}
-    current_key: str | None = None
+    # Intro text before the first matched heading → why_this_trek
+    current_key: str | None = "why_this_trek"
     current_lines: list[str] = []
 
     for line in text.splitlines():
@@ -146,7 +155,8 @@ def _parse_sections_from_markdown(text: str) -> dict[str, str]:
         if m:
             if current_key and current_lines:
                 sections.setdefault(current_key, []).extend(current_lines)
-            heading = m.group(1).lower()
+            # Strip trailing punctuation before matching (handles question-form headings)
+            heading = re.sub(r"[?!:]+$", "", m.group(1).lower()).strip()
             current_key = None
             for pattern, key in _SECTION_HEADING_MAP:
                 if re.search(pattern, heading):
