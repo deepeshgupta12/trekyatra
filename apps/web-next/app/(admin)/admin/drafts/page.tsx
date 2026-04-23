@@ -438,7 +438,7 @@ export default function DraftReview() {
                       onClick={() => publishDraft(d.id)}
                     >
                       {busy === "publish" ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : null}
-                      Publish to WordPress
+                      Publish to Master CMS
                     </Button>
                   )}
 

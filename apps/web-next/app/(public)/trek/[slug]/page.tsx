@@ -75,7 +75,7 @@ export default async function TrekDetailPage({ params }: { params: { slug: strin
             <span className="px-3 py-1 rounded-full bg-accent text-accent-foreground text-xs font-semibold uppercase tracking-widest">{trek.difficulty}</span>
             {trek.beginner && <span className="px-3 py-1 rounded-full glass-dark text-xs uppercase tracking-widest">Beginner-friendly</span>}
             <span className="px-3 py-1 rounded-full glass-dark text-xs uppercase tracking-widest flex items-center gap-1.5">
-              <Star className="h-3 w-3 text-accent fill-accent" /> Updated 5 days ago
+              <Star className="h-3 w-3 text-accent fill-accent" /> {formatUpdatedAt(cmsPage?.published_at ?? cmsPage?.updated_at)}
             </span>
           </div>
           <h1 className="font-display text-5xl md:text-7xl font-semibold leading-[0.95] mb-4 max-w-4xl">{trek.name}</h1>
@@ -108,8 +108,8 @@ export default async function TrekDetailPage({ params }: { params: { slug: strin
 
       <section className="py-12 md:py-16">
         <div className="container-wide grid lg:grid-cols-[200px_1fr_320px] gap-10">
-          <aside className="hidden lg:block">
-            <div className="sticky top-44 space-y-2">
+          <aside className="hidden lg:block self-start">
+            <div className="sticky top-44 max-h-[calc(100vh-13rem)] overflow-y-auto space-y-2 pr-1">
               <div className="text-xs uppercase tracking-widest text-muted-foreground mb-3">On this page</div>
               {toc.map((t, i) => (
                 <a key={t} href={`#s${i}`} className={`block text-sm py-1.5 px-3 rounded-lg transition-colors ${i === 0 ? "text-accent bg-accent/10 font-medium" : "text-foreground/70 hover:text-foreground"}`}>{t}</a>
@@ -196,8 +196,8 @@ export default async function TrekDetailPage({ params }: { params: { slug: strin
             </Block>
           </article>
 
-          <aside className="hidden lg:block">
-            <div className="sticky top-44 space-y-4">
+          <aside className="hidden lg:block self-start">
+            <div className="sticky top-44 max-h-[calc(100vh-13rem)] overflow-y-auto space-y-4">
               <div className="bg-gradient-pine text-surface rounded-2xl p-6 stack-shadow">
                 <div className="text-xs uppercase tracking-widest text-accent-glow mb-2">Plan this trek</div>
                 <div className="font-display text-2xl font-semibold mb-4 leading-tight">Get matched with a vetted operator</div>
@@ -242,6 +242,16 @@ export default async function TrekDetailPage({ params }: { params: { slug: strin
       </div>
     </>
   );
+}
+
+function formatUpdatedAt(dateStr?: string | null): string {
+  if (!dateStr) return "Recently updated";
+  const date = new Date(dateStr);
+  const diffDays = Math.floor((Date.now() - date.getTime()) / 86_400_000);
+  if (diffDays === 0) return "Updated today";
+  if (diffDays === 1) return "Updated yesterday";
+  if (diffDays < 30) return `Updated ${diffDays} days ago`;
+  return `Updated ${date.toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" })}`;
 }
 
 function Block({ id, eyebrow, title, children }: { id: string; eyebrow: string; title: string; children: React.ReactNode }) {

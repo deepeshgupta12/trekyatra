@@ -3,6 +3,7 @@ from __future__ import annotations
 import uuid
 from datetime import datetime, timezone
 
+import markdown as md_lib
 import redis
 from sqlalchemy import select
 from sqlalchemy.orm import Session
@@ -105,10 +106,19 @@ def delete_page(db: Session, *, page: CMSPage) -> None:
     db.flush()
 
 
+def _md_to_html(text: str | None) -> str:
+    if not text:
+        return ""
+    return md_lib.markdown(
+        text,
+        extensions=["extra", "tables", "nl2br", "sane_lists"],
+    )
+
+
 def upsert_page_from_draft(db: Session, *, draft: ContentDraft) -> CMSPage:
     """Create or update a CMSPage from a ContentDraft at publish time."""
     existing = get_page_by_slug(db, draft.slug)
-    content_html = draft.optimized_content or draft.content_markdown
+    content_html = _md_to_html(draft.optimized_content or draft.content_markdown)
 
     if existing:
         existing.title = draft.title
