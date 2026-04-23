@@ -233,7 +233,7 @@ const START_OPTIONS = [
 ];
 
 const END_MAP: Record<string, string> = {
-  trend_discovery: "content_brief",
+  trend_discovery: "publish",
   content_brief:   "content_brief",
   content_writing: "publish",
   seo_aeo:         "publish",
