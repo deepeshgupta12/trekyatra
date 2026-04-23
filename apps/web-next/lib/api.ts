@@ -10,3 +10,47 @@ export async function apiFetch<T>(path: string): Promise<T> {
   if (!res.ok) throw new Error(`API ${res.status}: ${path}`);
   return res.json() as Promise<T>;
 }
+
+// ---------------------------------------------------------------------------
+// WordPress content helpers — Step 16
+// ---------------------------------------------------------------------------
+
+export interface WPPost {
+  id: number;
+  slug: string;
+  title: string;
+  content: string;
+  excerpt: string;
+  status: string;
+  post_type: string;
+  link: string;
+  date: string;
+  meta: Record<string, string>;
+}
+
+export interface WPPostsResponse {
+  posts: WPPost[];
+  total: number;
+  pages: number;
+}
+
+export async function fetchWPPost(slug: string): Promise<WPPost> {
+  return apiFetch<WPPost>(`/wordpress/posts/${slug}`);
+}
+
+export async function fetchWPPosts(filters?: {
+  post_type?: string;
+  status?: string;
+  per_page?: number;
+  page?: number;
+}): Promise<WPPostsResponse> {
+  const params = filters
+    ? "?" +
+      new URLSearchParams(
+        Object.fromEntries(
+          Object.entries(filters).map(([k, v]) => [k, String(v)])
+        )
+      ).toString()
+    : "";
+  return apiFetch<WPPostsResponse>(`/wordpress/posts${params}`);
+}

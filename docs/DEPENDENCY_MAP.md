@@ -36,6 +36,9 @@ This file tracks structural dependencies, source-of-truth modules, and Nexus/Git
 - `components/ui/*` -> shadcn/ui primitives (Button, etc.)
 - `components/Providers.tsx` -> QueryClient + GoogleOAuthProvider + AuthProvider + TooltipProvider (client)
 - `components/account/UserGreeting.tsx` -> client component reading useAuth() for personalised greeting
+- `components/admin/CopyableId.tsx` -> click-to-copy UUID component; blast radius: LOW (imported by admin topic/cluster/brief/pipeline pages only)
+- `components/admin/AgentRunsPanel.tsx` -> live agent-run panel with 5s polling; reads GET /api/v1/admin/agent-runs?agent_type=TYPE&limit=5; blast radius: LOW (imported by admin topic/cluster/brief/drafts pages)
+- `app/(admin)/admin/pipeline/page.tsx` -> new pipeline view page; fetches topics+clusters+briefs+drafts in parallel; client-side join; stage summary + table
 - `data/treks.ts` -> static fallback trek dataset (12 treks, string image paths)
 - `lib/api.ts` -> universal fetch with server/client URL detection, 3s abort timeout
 - `lib/trekApi.ts` -> trek API adapter with mergeImage() and safe static fallback
@@ -59,7 +62,7 @@ This file tracks structural dependencies, source-of-truth modules, and Nexus/Git
 - `services/api/app/api/router.py` -> API router registration
 - `services/api/app/api/routes/health.py` -> versioned health route
 - `services/api/app/api/routes/auth.py` -> auth route registration and handlers
-- `services/api/app/api/routes/wordpress.py` -> WordPress health and connectivity test handlers
+- `services/api/app/api/routes/wordpress.py` -> WordPress health, connectivity test, GET /posts, GET /posts/{slug}, POST /categories, POST /tags; WP down → 503
 - `services/api/app/api/routes/content.py` -> topics, clusters, briefs, drafts APIs
 - `services/api/app/api/routes/admin.py` -> internal admin summary APIs
 - `services/api/app/api/routes/publish.py` -> draft status patch, WordPress push, publish log APIs
@@ -78,8 +81,9 @@ This file tracks structural dependencies, source-of-truth modules, and Nexus/Git
 - `services/api/app/modules/auth/models.py` -> users, auth identities, sessions
 - `services/api/app/modules/auth/service.py` -> email + Google auth business logic; session creation; login_or_register_google_user
 - `services/api/app/modules/auth/dependencies.py` -> current user/current session dependencies
-- `services/api/app/modules/wordpress/client.py` -> WordPress REST client; fetch_site_index, fetch_current_user, create_post
-- `services/api/app/modules/wordpress/service.py` -> WordPress health and connectivity service helpers
+- `services/api/app/modules/wordpress/client.py` -> WordPress REST client; _execute() core + _request/_request_write wrappers; fetch_site_index, fetch_current_user, create_post (extended: post_type, meta, category_ids, tag_ids), update_post, list_posts, get_post, upload_media (placeholder), ensure_category, ensure_tag; WordPressClientResult extended with total/total_pages
+- `services/api/app/modules/wordpress/cache.py` -> Redis cache for WP reads; DB 2, 5-min TTL; cache_get/set/delete; wp_post_key/wp_posts_key; all errors swallowed (cache is best-effort)
+- `services/api/app/modules/wordpress/service.py` -> WordPress health, connectivity test, and CMS pull/sync helpers; list_wp_posts (cache-first), get_wp_post (cache-first), ensure_wp_category, ensure_wp_tag, invalidate_post_cache, _normalize_wp_post
 - `services/api/app/modules/content/models.py` -> topic, cluster, brief (+ structured_brief, word_count_target, versions rel), draft (+ optimized_content, claims rel), publish_log, BriefVersion, DraftClaim ORM models; blast radius: MEDIUM (6 importers — all safe, additive columns)
 - `services/api/app/modules/publish/service.py` -> VALID_TRANSITIONS state machine, update_draft_status, push_draft_to_wordpress, get_publish_logs
 - `services/api/app/schemas/publish.py` -> DraftStatusPatch, PublishLogResponse, DraftPublishResponse

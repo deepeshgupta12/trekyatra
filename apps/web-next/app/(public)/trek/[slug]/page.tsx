@@ -2,6 +2,7 @@ import Link from "next/link";
 import { TrekCard } from "@/components/trek/TrekCard";
 import { Button } from "@/components/ui/button";
 import { fetchTreks, fetchTrekBySlug } from "@/lib/trekApi";
+import { fetchWPPost, type WPPost } from "@/lib/api";
 import { Bookmark, Share2, GitCompare, Sparkles, Clock, TrendingUp, Calendar, Shield, FileCheck, Backpack, Wallet, ChevronRight, Star, MapPin, AlertTriangle, Check, Mountain } from "lucide-react";
 import type { Trek } from "@/components/trek/TrekCard";
 
@@ -13,6 +14,14 @@ export async function generateStaticParams() {
 export default async function TrekDetailPage({ params }: { params: { slug: string } }) {
   const trek = (await fetchTrekBySlug(params.slug)) as Trek;
   const allTreks = await fetchTreks();
+
+  // Try WordPress for rich article content; fall back gracefully if WP is down
+  let wpPost: WPPost | null = null;
+  try {
+    wpPost = await fetchWPPost(params.slug);
+  } catch {
+    // WP not available — render with static data only
+  }
   const related = allTreks.filter(t => t.slug !== trek.slug).slice(0, 3);
 
   const facts = [
@@ -85,6 +94,12 @@ export default async function TrekDetailPage({ params }: { params: { slug: strin
           </aside>
 
           <article className="prose prose-lg max-w-none">
+            {wpPost && (
+              <div
+                className="mb-10 wp-content"
+                dangerouslySetInnerHTML={{ __html: wpPost.content }}
+              />
+            )}
             <Block id="s0" eyebrow="Why this trek" title={`Why ${trek.name} is on every Indian trekker's list`}>
               <p>From the snowy summit&apos;s 360° view to the silent pine campsites, this trek delivers the full Himalayan experience in a beginner-friendly window.</p>
               <ul className="mt-4 grid grid-cols-1 md:grid-cols-2 gap-2">

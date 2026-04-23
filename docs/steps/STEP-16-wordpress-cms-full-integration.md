@@ -88,7 +88,20 @@ npx gitnexus analyze --force
 ```
 
 ## Status
-pending
+done
+
+## Files Created
+- `infrastructure/wordpress/plugins/trekyatra-cpt/trekyatra-cpt.php`
+- `services/api/app/modules/wordpress/cache.py`
+- `services/api/tests/test_wordpress_full.py`
+
+## Files Modified
+- `services/api/app/modules/wordpress/client.py`
+- `services/api/app/modules/wordpress/service.py`
+- `services/api/app/api/routes/wordpress.py`
+- `services/api/app/schemas/wordpress.py`
+- `apps/web-next/lib/api.ts`
+- `apps/web-next/app/(public)/trek/[slug]/page.tsx`
 
 ## Notes
 - Custom plugin should be minimal: just registers CPTs and meta fields, nothing else

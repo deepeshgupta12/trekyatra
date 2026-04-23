@@ -22,3 +22,47 @@ class WordPressConnectionTestResponse(BaseModel):
     base_url: str
     public_api: WordPressCheckResult
     authenticated_api: WordPressCheckResult
+
+
+# ---------------------------------------------------------------------------
+# Step 16 — full WP content schemas
+# ---------------------------------------------------------------------------
+
+
+class WPPostResponse(BaseModel):
+    id: int
+    slug: str
+    title: str
+    content: str
+    excerpt: str
+    status: str
+    post_type: str
+    link: str
+    date: str
+    meta: dict = {}
+
+
+class WPPostsListResponse(BaseModel):
+    posts: list[WPPostResponse]
+    total: int
+    pages: int
+
+
+class WPCategoryRequest(BaseModel):
+    name: str
+
+
+class WPCategoryResponse(BaseModel):
+    id: int
+    name: str
+    slug: str
+
+
+class WPTagRequest(BaseModel):
+    name: str
+
+
+class WPTagResponse(BaseModel):
+    id: int
+    name: str
+    slug: str

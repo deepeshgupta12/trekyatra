@@ -29,7 +29,7 @@ All V0 foundations are shipped. The stack is live locally with:
 - Admin summary APIs, smoke tests, GitNexus indexed
 
 ## V1 Status — In Progress
-**Current next step: Step 16 — WordPress CMS full integration**
+**Current next step: Step 17 — Full publish orchestration pipeline**
 
 | Step | Title | Status |
 |------|-------|--------|
@@ -38,7 +38,8 @@ All V0 foundations are shipped. The stack is live locally with:
 | 13 | Trend Discovery Agent + Keyword Cluster Agent | done |
 | 14 | Content Brief Agent + brief approval workflow | done |
 | 15 | Content Writing Agent + SEO/AEO Optimization Agent | done |
-| 16 | WordPress CMS full integration | pending |
+| 15B | Admin CMS enhancements — real API wiring + pipeline view | done |
+| 16 | WordPress CMS full integration | done |
 | 17 | Full publish orchestration pipeline | pending |
 | 18 | Public frontend content page templates | pending |
 | 19 | SEO and schema infrastructure (frontend) | pending |
@@ -184,6 +185,33 @@ What is required to activate:
 - Create OAuth 2.0 credentials at Google Cloud Console (Web application type)
 - Set Authorized JavaScript origins: `http://localhost:3000`
 - Copy Client ID → `apps/web-next/.env.local` as `NEXT_PUBLIC_GOOGLE_CLIENT_ID=<id>`
+
+### Step 16 — WordPress CMS Full Integration
+Status: done
+What is done:
+- `infrastructure/wordpress/plugins/trekyatra-cpt/trekyatra-cpt.php` — WP plugin registering 8 CPTs (trek_guide, packing_list, comparison, permit_guide, seasonal_page, beginner_roundup, gear_review, destination) with `show_in_rest=true`; registers 10 meta fields (content_type, cluster_id, brief_id, etc.) on all CPTs + standard posts via REST API
+- `services/api/app/modules/wordpress/cache.py` — Redis cache module (DB 2, 5-min TTL); `cache_get/set/delete`, `wp_post_key(slug)`, `wp_posts_key(post_type, page)`; all Redis errors swallowed silently
+- `services/api/app/modules/wordpress/client.py` — refactored `_request` → `_execute(method, path, use_auth, body)`; backward-compatible `_request()` and `_request_write()` wrappers; `create_post()` extended with `post_type`, `meta`, `category_ids`, `tag_ids` params; added `update_post(post_id, **fields)`, `list_posts(post_type, status, per_page, page)`, `get_post(int|str)`, `upload_media()` placeholder, `ensure_category(name)`, `ensure_tag(name)`; `WordPressClientResult` extended with `total` and `total_pages` from WP response headers
+- `services/api/app/schemas/wordpress.py` — extended with `WPPostResponse`, `WPPostsListResponse`, `WPCategoryRequest/Response`, `WPTagRequest/Response`
+- `services/api/app/modules/wordpress/service.py` — new helpers: `_normalize_wp_post()` (flattens WP rendered fields), `list_wp_posts()` (cache-first), `get_wp_post()` (cache-first, slug → list query), `ensure_wp_category()`, `ensure_wp_tag()`, `invalidate_post_cache()`
+- `services/api/app/api/routes/wordpress.py` — new routes: `GET /api/v1/wordpress/posts`, `GET /api/v1/wordpress/posts/{slug}`, `POST /api/v1/wordpress/categories`, `POST /api/v1/wordpress/tags`; WP down → 503 (never crashes frontend)
+- `services/api/tests/test_wordpress_full.py` — 18 tests covering: normalize, list (cache hit/miss/error), get (cache hit/miss/not-found/error), ensure_category (found/error), ensure_tag, API 503 on WP down, API 200 with mocked data for all 4 new routes
+- `apps/web-next/lib/api.ts` — `WPPost` interface, `WPPostsResponse` interface, `fetchWPPost(slug)`, `fetchWPPosts(filters)` exported
+- `apps/web-next/app/(public)/trek/[slug]/page.tsx` — imports `fetchWPPost`; tries WP at server-render time, falls back silently; renders `wpPost.content` via `dangerouslySetInnerHTML` before static blocks if available
+- 119/119 backend tests pass; `next build` clean (zero errors)
+
+### Step 15B — Admin CMS Enhancements (real API wiring + pipeline view)
+Status: done
+What is done:
+- `components/admin/CopyableId.tsx` — click-to-copy UUID component; `Copy` icon on hover, `Check` icon on copied (2s reset); shows truncated UUID with optional label prefix
+- `components/admin/AgentRunsPanel.tsx` — live last-5 agent-run panel; polls every 5s while any run has status="running"; auto-stops when all complete; remounts per dispatch via `key={runKey}`; shows status badge + duration; non-intrusive (returns null on empty)
+- `admin/topics/page.tsx` — fully rewritten; loads real topics from `GET /api/v1/topics`; trend_score and urgency_score progress bars; status badges; CopyableId per topic; "Generate brief →" nav link with `?topic_id=&kw=` query params; AgentRunsPanel for trend_discovery agent
+- `admin/clusters/page.tsx` — fully rewritten; loads real clusters from `GET /api/v1/clusters`; intent badges (informational/commercial/transactional); supporting keywords expandable (first 6 shown, +N more toggle); AgentRunsPanel for keyword_cluster agent
+- `admin/briefs/page.tsx` — structured brief content viewer expanded (heading tree H1/H2/H3 indented, FAQs list, key_entities + secondary_keywords tag pills); CopyableId for brief/topic/cluster UUIDs; "Write draft →" cross-nav link on approved briefs; AgentRunsPanel for content_brief agent
+- `admin/drafts/page.tsx` — requires_review and review status badges added; per-card agentFeedback state shows dispatch confirmation after optimize; await-outside-setState bug fixed
+- `admin/pipeline/page.tsx` — new page; parallel fetches all 4 entities; client-side join (topicMap, clusterMap, draftByBrief); stage summary pills (In Progress→In Review→Approved→Draft Stage→Published); full pipeline table with brief/topic/cluster/draft status + confidence %, all UUIDs via CopyableId, nav links to /admin/briefs and /admin/drafts
+- `admin/layout.tsx` — Pipeline View nav item added (GitMerge icon, href /admin/pipeline)
+- GitNexus re-indexed: 3,268 nodes | 5,350 edges | 81 clusters | 101 flows (commit aab2d3e)
 
 ### Step 15 — Content Writing Agent + SEO/AEO Optimization Agent
 Status: done

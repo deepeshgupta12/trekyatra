@@ -67,17 +67,29 @@
 - Brief versioning (brief_versions table + create_brief_version service)
 - Admin UI: brief review queue fully wired to real API with approve/reject actions
 
+### Step 15B — Admin CMS Enhancements [DONE]
+- CopyableId and AgentRunsPanel shared components
+- Topics/Clusters pages wired to real API with live agent run status
+- Briefs page: structured brief content viewer, UUID copy, cross-nav links
+- Drafts page: requires_review badge, per-card dispatch feedback fix
+- Pipeline View page: Topic→Cluster→Brief→Draft→Published table view
+- Admin layout: Pipeline View nav entry
+
 ### Step 15 — Content Writing Agent + SEO/AEO Optimization Agent [DONE]
 - ContentWritingAgent: brief → full structured article draft (Claude API)
 - SEOAEOAgent: snippet optimization, FAQ blocks, answer boxes, entity coverage
 - Fact-check flag system: uncertain claim markers
 - Draft review flow with content preview in admin UI
 
-### Step 16 — WordPress CMS full integration
-- Custom post types registered and mapped (trek guide, packing list, comparison, etc.)
-- Custom fields / ACF-style meta mapped from backend schemas
-- Category/tag taxonomy management from backend
-- WordPressClient extended: full meta + taxonomy push
+### Step 16 — WordPress CMS full integration [DONE]
+- PHP plugin: 8 CPTs + 10 meta fields registered with REST API visibility
+- WordPressClient: _execute() refactor, create_post extended, update_post, list_posts, get_post, upload_media (placeholder), ensure_category, ensure_tag
+- Redis cache module: DB 2, 5-min TTL, wp:post:{slug} / wp:posts:{type}:{page} keys
+- New schemas: WPPostResponse, WPPostsListResponse, WPCategoryRequest/Response, WPTagRequest/Response
+- New routes: GET /posts, GET /posts/{slug}, POST /categories, POST /tags — 503 on WP down
+- 18 new tests (119/119 total pass)
+- Frontend: WPPost type + fetchWPPost/fetchWPPosts in lib/api.ts
+- Trek detail page: WP content enrichment with static fallback
 - Pull sync: GET /api/v1/wordpress/posts
 - Frontend: consume WP REST API for article/content pages
 
