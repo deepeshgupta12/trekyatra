@@ -6,7 +6,11 @@ celery_app = Celery(
     "trekyatra",
     broker=settings.celery_broker_url,
     backend=settings.celery_result_backend,
-    include=["app.worker.tasks.smoke", "app.worker.tasks.agent_tasks"],
+    include=[
+        "app.worker.tasks.smoke",
+        "app.worker.tasks.agent_tasks",
+        "app.modules.pipeline.tasks",
+    ],
 )
 
 celery_app.conf.update(
@@ -18,5 +22,10 @@ celery_app.conf.update(
     task_track_started=True,
     task_acks_late=True,
     worker_prefetch_multiplier=1,
-    beat_schedule={},
+    beat_schedule={
+        "daily-content-discovery": {
+            "task": "pipeline.daily_discovery",
+            "schedule": 86400,  # every 24 hours; crontab(hour=6, minute=0) when celery[beat] is in use
+        },
+    },
 )

@@ -3,6 +3,7 @@ from app.modules.agents.models import AgentRun
 from app.modules.auth.models import AuthIdentity, User, UserSession
 from app.modules.cms.models import CMSPage
 from app.modules.content.models import BriefVersion, ContentBrief, ContentDraft, DraftClaim, KeywordCluster, PublishLog, TopicOpportunity
+from app.modules.pipeline.models import PipelineRun, PipelineStage
 from app.modules.rbac.models import Permission, Role
 
 __all__ = [
@@ -21,4 +22,6 @@ __all__ = [
     "DraftClaim",
     "AgentRun",
     "CMSPage",
+    "PipelineRun",
+    "PipelineStage",
 ]

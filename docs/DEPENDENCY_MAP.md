@@ -38,7 +38,7 @@ This file tracks structural dependencies, source-of-truth modules, and Nexus/Git
 - `components/account/UserGreeting.tsx` -> client component reading useAuth() for personalised greeting
 - `components/admin/CopyableId.tsx` -> click-to-copy UUID component; blast radius: LOW (imported by admin topic/cluster/brief/pipeline pages only)
 - `components/admin/AgentRunsPanel.tsx` -> live agent-run panel with 5s polling; reads GET /api/v1/admin/agent-runs?agent_type=TYPE&limit=5; blast radius: LOW (imported by admin topic/cluster/brief/drafts pages)
-- `app/(admin)/admin/pipeline/page.tsx` -> new pipeline view page; fetches topics+clusters+briefs+drafts in parallel; client-side join; stage summary + table
+- `app/(admin)/admin/pipeline/page.tsx` -> orchestration monitor; TriggerForm (start stage + inputs), RunCard (StageTrack, output chips, resume/cancel buttons, approval gate notice), KPI strip, auto-refresh while runs active; reads from GET /admin/pipeline/runs
 - `data/treks.ts` -> static fallback trek dataset (12 treks, string image paths)
 - `components/admin/CMSPageForm.tsx` -> shared CMS create/edit form; 10 section textareas + SEO meta + page type/status selectors; blast radius: LOW (used only by /admin/cms/new and /admin/cms/[slug]/edit)
 - `app/(admin)/admin/cms/page.tsx` -> Master CMS index: KPI cards, pages table, New page button, edit/cache/view/delete per row
@@ -113,7 +113,12 @@ This file tracks structural dependencies, source-of-truth modules, and Nexus/Git
 - `services/api/app/modules/agents/service.py` -> start_run, update_run, complete_run, fail_run, list_runs
 - `services/api/app/schemas/agents.py` -> AgentRunResponse Pydantic schema
 - `services/api/app/api/routes/agent_runs.py` -> GET /api/v1/admin/agent-runs with filters
-- `services/api/app/worker/celery_app.py` -> Celery instance; broker/backend from settings; includes smoke task; beat_schedule stub
+- `services/api/app/worker/celery_app.py` -> Celery instance; broker/backend from settings; includes smoke + agent_tasks + pipeline.tasks; beat_schedule: daily_discovery every 24h
+- `services/api/app/modules/pipeline/models.py` -> PipelineRun + PipelineStage ORM models; blast radius: LOW (new tables, no prior callers)
+- `services/api/app/modules/pipeline/service.py` -> PipelineOrchestrator (run/resume/stage dispatchers) + CRUD helpers; PIPELINE_STAGES list; CHECKPOINT_AFTER map; blast radius: LOW (only called by pipeline tasks and pipeline routes)
+- `services/api/app/modules/pipeline/tasks.py` -> run_pipeline_task, resume_pipeline_task, daily_discovery_task Celery tasks
+- `services/api/app/api/routes/pipeline.py` -> POST/GET /admin/pipeline/run, GET /admin/pipeline/runs, GET/POST /admin/pipeline/runs/{id}, POST /admin/pipeline/runs/{id}/resume, POST /admin/pipeline/runs/{id}/cancel; blast radius: LOW
+- `services/api/app/schemas/pipeline.py` -> PipelineRunCreate, PipelineRunResponse, PipelineStageResponse, PipelineTriggerResponse
 - `services/api/app/worker/tasks/base.py` -> BaseTask; max_retries=3, backoff=60s, on_failure/on_retry hooks
 - `services/api/app/worker/tasks/smoke.py` -> smoke.ping task; end-to-end queue validation
 - `services/api/app/api/routes/worker.py` -> GET /api/v1/worker/health; checks Redis broker connectivity

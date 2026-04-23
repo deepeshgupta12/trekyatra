@@ -86,11 +86,32 @@ npx gitnexus analyze --force
 ```
 
 ## Status
-pending
+Done
+
+## Files Created
+- `services/api/app/modules/pipeline/__init__.py`
+- `services/api/app/modules/pipeline/models.py` — PipelineRun, PipelineStage
+- `services/api/app/modules/pipeline/service.py` — PipelineOrchestrator + CRUD helpers
+- `services/api/app/modules/pipeline/tasks.py` — run_pipeline_task, resume_pipeline_task, daily_discovery_task
+- `services/api/app/api/routes/pipeline.py` — 5 endpoints
+- `services/api/app/schemas/pipeline.py` — 4 Pydantic schemas
+- `services/api/alembic/versions/20260423_0009_pipeline.py`
+- `services/api/tests/test_pipeline.py` — 20 tests
+
+## Files Modified
+- `services/api/app/db/base.py` — PipelineRun, PipelineStage registered
+- `services/api/app/api/router.py` — pipeline_router registered
+- `services/api/app/worker/celery_app.py` — pipeline.tasks included; beat_schedule daily_discovery
+- `apps/web-next/lib/api.ts` — PipelineRun/PipelineStage types + 5 pipeline helpers
+- `apps/web-next/app/(admin)/admin/pipeline/page.tsx` — full rewrite as orchestration monitor
+- `docs/MASTER_TRACKER.md`
+- `docs/DEPENDENCY_MAP.md`
+- `docs/IMPLEMENTATION_PLAN.md`
 
 ## Notes
-- Pipeline pauses at "brief_approval" checkpoint (after ContentBriefAgent); human approves the brief in admin UI; pipeline.resume() then runs ContentWritingAgent → SEOAEOAgent → publish
-- Pipeline pauses again at "draft_approval" checkpoint if any fact-check claims are flagged
-- "Partial pipeline" mode: start_stage=content_writing if brief was manually created
-- Beat schedule: run daily discovery + brief generation at 06:00 UTC; stop at brief_approval gate (never publish without human approval in V1)
-- All stage failures are retried up to 3 times before marking the pipeline as failed
+- Pipeline pauses at "brief_approval" checkpoint (after ContentBriefAgent); human approves the brief in admin UI; POST /runs/{id}/resume dispatches resume_pipeline_task which continues from content_writing
+- Pipeline pauses again at "paused_at_draft_approval" if ContentWritingAgent marks draft as requires_review
+- Partial pipeline: start_stage=content_writing + brief_id, or start_stage=seo_aeo/publish + draft_id
+- Beat schedule: daily_discovery_task runs every 24h; triggers trend_discovery → content_brief; pauses at brief_approval gate (never auto-publishes)
+- Migration 20260423_0009 was initially created with duplicate index bug (index=True in Column + explicit op.create_index); fixed in-place before first successful apply (migration had never applied to any DB)
+- 137/137 backend tests pass; next build clean

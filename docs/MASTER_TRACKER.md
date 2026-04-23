@@ -29,7 +29,7 @@ All V0 foundations are shipped. The stack is live locally with:
 - Admin summary APIs, smoke tests, GitNexus indexed
 
 ## V1 Status — In Progress
-**Current next step: Step 17 — Full publish orchestration pipeline**
+**Current next step: Step 18 — Public frontend content page templates**
 
 | Step | Title | Status |
 |------|-------|--------|
@@ -40,7 +40,7 @@ All V0 foundations are shipped. The stack is live locally with:
 | 15 | Content Writing Agent + SEO/AEO Optimization Agent | done |
 | 15B | Admin CMS enhancements — real API wiring + pipeline view | done |
 | 16 | Master CMS Foundation (WordPress removed) | done |
-| 17 | Full publish orchestration pipeline | pending |
+| 17 | Full publish orchestration pipeline | done |
 | 18 | Public frontend content page templates | pending |
 | 19 | SEO and schema infrastructure (frontend) | pending |
 | 20 | Monetization frontend components | pending |
@@ -185,6 +185,22 @@ What is required to activate:
 - Create OAuth 2.0 credentials at Google Cloud Console (Web application type)
 - Set Authorized JavaScript origins: `http://localhost:3000`
 - Copy Client ID → `apps/web-next/.env.local` as `NEXT_PUBLIC_GOOGLE_CLIENT_ID=<id>`
+
+### Step 17 — Full Publish Orchestration Pipeline
+Status: done
+What is done:
+- Alembic migration `20260423_0009_pipeline.py` — creates `pipeline_runs` (id UUID PK, pipeline_type, status, current_stage, start/end_stage, input/output_json, error_detail, timestamps) and `pipeline_stages` (id UUID PK, pipeline_run_id FK, stage_name, agent_run_id FK→agent_runs, status, error_detail, timestamps)
+- `app/modules/pipeline/models.py` — `PipelineRun` + `PipelineStage` ORM models with relationship; `db/base.py` updated
+- `app/schemas/pipeline.py` — `PipelineRunCreate`, `PipelineRunResponse`, `PipelineStageResponse`, `PipelineTriggerResponse`
+- `app/modules/pipeline/service.py` — CRUD helpers + `PipelineOrchestrator` class: `run()` / `resume()` / stage dispatchers for all 6 stages; checkpoint gates: `paused_at_brief_approval` (after content_brief), `paused_at_draft_approval` (after content_writing if draft has flagged claims); partial pipeline support via start_stage/end_stage
+- `app/modules/pipeline/tasks.py` — `run_pipeline_task`, `resume_pipeline_task`, `daily_discovery_task` (Celery beat)
+- `app/worker/celery_app.py` — pipeline tasks included; beat_schedule daily_discovery added
+- `app/api/routes/pipeline.py` — POST /run, GET /runs, GET /runs/{id}, POST /runs/{id}/resume, POST /runs/{id}/cancel
+- `app/api/router.py` — pipeline_router registered
+- `tests/test_pipeline.py` — 20 tests: CRUD, stages_slice, API trigger/list/get/cancel/resume/409, orchestrator failure propagation, metadata coverage
+- 137/137 backend tests pass; `next build` clean
+- `apps/web-next/lib/api.ts` — PipelineRun/PipelineStage types + triggerPipeline/fetchPipelineRuns/fetchPipelineRun/resumePipelineRun/cancelPipelineRun
+- `apps/web-next/app/(admin)/admin/pipeline/page.tsx` — fully rewritten: TriggerForm (start stage selector + seed topics/brief_id/draft_id inputs), RunCard (stage track, output chips, resume/cancel buttons, approval gate notice, error detail), KPI strip, auto-refresh while runs are active
 
 ### Step 16 — Master CMS Foundation
 Status: done

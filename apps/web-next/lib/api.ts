@@ -107,3 +107,88 @@ export async function updateCMSPage(slug: string, data: CMSPagePayload): Promise
   }
   return res.json() as Promise<CMSPage>;
 }
+
+// ---------------------------------------------------------------------------
+// Pipeline orchestration helpers
+// ---------------------------------------------------------------------------
+
+export interface PipelineStage {
+  id: string;
+  stage_name: string;
+  status: string;
+  agent_run_id: number | null;
+  error_detail: string | null;
+  started_at: string | null;
+  completed_at: string | null;
+  created_at: string;
+}
+
+export interface PipelineRun {
+  id: string;
+  pipeline_type: string;
+  status: string;
+  current_stage: string | null;
+  start_stage: string;
+  end_stage: string;
+  input_json: string | null;
+  output_json: string | null;
+  error_detail: string | null;
+  created_at: string;
+  completed_at: string | null;
+  stages: PipelineStage[];
+}
+
+export interface PipelineTriggerResponse {
+  pipeline_run_id: string;
+  status: string;
+  message: string;
+}
+
+export async function fetchPipelineRuns(limit = 20): Promise<PipelineRun[]> {
+  return apiFetch<PipelineRun[]>(`/admin/pipeline/runs?limit=${limit}`);
+}
+
+export async function fetchPipelineRun(runId: string): Promise<PipelineRun> {
+  return apiFetch<PipelineRun>(`/admin/pipeline/runs/${runId}`);
+}
+
+export async function triggerPipeline(payload: {
+  seed_topics?: string[];
+  start_stage?: string;
+  end_stage?: string;
+  brief_id?: string;
+  draft_id?: string;
+}): Promise<PipelineTriggerResponse> {
+  const res = await fetch("/api/v1/admin/pipeline/run", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(payload),
+  });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error((err as { detail?: string }).detail ?? `Trigger failed (${res.status})`);
+  }
+  return res.json() as Promise<PipelineTriggerResponse>;
+}
+
+export async function resumePipelineRun(runId: string): Promise<PipelineTriggerResponse> {
+  const res = await fetch(`/api/v1/admin/pipeline/runs/${runId}/resume`, {
+    method: "POST",
+  });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error((err as { detail?: string }).detail ?? `Resume failed (${res.status})`);
+  }
+  return res.json() as Promise<PipelineTriggerResponse>;
+}
+
+export async function cancelPipelineRun(runId: string): Promise<PipelineRun> {
+  const res = await fetch(`/api/v1/admin/pipeline/runs/${runId}/cancel`, {
+    method: "POST",
+  });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error((err as { detail?: string }).detail ?? `Cancel failed (${res.status})`);
+  }
+  return res.json() as Promise<PipelineRun>;
+}

@@ -93,12 +93,15 @@
 - Next.js revalidation endpoint: POST /api/revalidate (slug | scope: "all")
 - Admin CMS page: pages table, KPI cards, per-page + global cache clear
 
-### Step 17 — Full publish orchestration pipeline
-- Celery chain: Trend → Cluster → Brief → Write → SEO → Publish (to Master CMS)
-- Approval gate checkpoints (brief approval, draft approval)
-- Manual trigger: POST /admin/pipeline/run
-- Pipeline status tracking
-- Admin UI: pipeline monitor page
+### Step 17 — Full publish orchestration pipeline [DONE]
+- `pipeline_runs` + `pipeline_stages` tables; Alembic migration 20260423_0009
+- PipelineOrchestrator service: 6-stage chain (trend_discovery → keyword_cluster → content_brief → content_writing → seo_aeo → publish)
+- Checkpoint gates: paused_at_brief_approval (after content_brief), paused_at_draft_approval (after content_writing if draft has flagged claims)
+- Celery tasks: run_pipeline_task, resume_pipeline_task, daily_discovery_task (beat schedule)
+- Admin APIs: POST /admin/pipeline/run, GET /admin/pipeline/runs, GET /runs/{id}, POST /runs/{id}/resume, POST /runs/{id}/cancel
+- 20 new tests in test_pipeline.py; 137/137 total pass; next build clean
+- Frontend: PipelineRun/Stage types + triggerPipeline/resumePipelineRun/cancelPipelineRun in lib/api.ts
+- /admin/pipeline/page.tsx rewritten as orchestration monitor with RunCard, StageTrack, TriggerForm
 
 ### Step 18 — Public frontend content page templates
 - Trek guide page template (Master CMS data)
