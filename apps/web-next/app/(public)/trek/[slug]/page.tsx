@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { notFound } from "next/navigation";
 import { TrekCard } from "@/components/trek/TrekCard";
 import { Button } from "@/components/ui/button";
 import { fetchTreks, fetchTrekBySlug } from "@/lib/trekApi";
@@ -12,8 +13,10 @@ export async function generateStaticParams() {
 }
 
 export default async function TrekDetailPage({ params }: { params: { slug: string } }) {
-  const trek = (await fetchTrekBySlug(params.slug)) as Trek;
-  const allTreks = await fetchTreks();
+  const [trekRaw, allTreks] = await Promise.all([
+    fetchTrekBySlug(params.slug),
+    fetchTreks(),
+  ]);
 
   // Fetch rich content from Master CMS — falls back silently if not published yet.
   let cmsPage: CMSPage | null = null;
@@ -23,6 +26,26 @@ export default async function TrekDetailPage({ params }: { params: { slug: strin
   } catch {
     // CMS page not found — render with static data only
   }
+
+  // 404 only when neither static data nor a published CMS page exists.
+  if (!trekRaw && !cmsPage) notFound();
+
+  // When CMS page exists but the slug isn't in static data yet, build a minimal Trek
+  // fallback so the rest of the page renders without crashing.
+  const trek: Trek = trekRaw ?? {
+    slug: params.slug,
+    name: cmsPage!.title,
+    description: cmsPage!.seo_description ?? "",
+    region: "",
+    state: "",
+    image: "/images/trek-forest.jpg",
+    duration: "—",
+    altitude: "—",
+    difficulty: "Moderate",
+    season: "—",
+    beginner: false,
+  };
+
   const related = allTreks.filter(t => t.slug !== trek.slug).slice(0, 3);
 
   const facts = [
