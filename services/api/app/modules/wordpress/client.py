@@ -107,13 +107,53 @@ class WordPressClient:
             total_pages=total_pages,
         )
 
+    # ------------------------------------------------------------------
+    # URL helpers — generate both pretty-permalink and ?rest_route= forms
+    # so the client works whether or not WP pretty permalinks are enabled.
+    # ------------------------------------------------------------------
+
+    # Built-in WP post types use plural REST bases; CPTs use their own slug.
+    _BUILTIN_REST_BASES: dict[str, str] = {
+        "post": "posts",
+        "page": "pages",
+        "attachment": "media",
+        "nav_menu_item": "menu-items",
+    }
+
+    def _rest_base(self, post_type: str) -> str:
+        return self._BUILTIN_REST_BASES.get(post_type, post_type)
+
+    def _wp_paths(self, wp_path: str, qs: str = "") -> list[str]:
+        """Return [/wp-json{wp_path}, /?rest_route={wp_path}] with optional qs."""
+        if qs:
+            return [
+                f"/wp-json{wp_path}?{qs}",
+                f"/?rest_route={wp_path}&{qs}",
+            ]
+        return [f"/wp-json{wp_path}", f"/?rest_route={wp_path}"]
+
+    def _try_write_paths(
+        self, *, method: str, wp_path: str, body: dict
+    ) -> WordPressClientResult:
+        """POST/PUT to both URL forms; return first non-404 response."""
+        last_exc: Exception | None = None
+        for path in self._wp_paths(wp_path):
+            try:
+                result = self._execute(method=method, path=path, use_auth=True, body=body)
+                if result.ok or result.status_code not in (301, 302, 404):
+                    return result
+            except WordPressClientError as exc:
+                last_exc = exc
+        if last_exc:
+            raise last_exc
+        raise WordPressClientError(f"All write paths failed for {wp_path}")
+
+    # ------------------------------------------------------------------
+    # Internal GET helpers
+    # ------------------------------------------------------------------
+
     def _request(self, *, path: str, use_auth: bool) -> WordPressClientResult:
         return self._execute(method="GET", path=path, use_auth=use_auth)
-
-    def _request_write(
-        self, *, method: str, path: str, body: dict
-    ) -> WordPressClientResult:
-        return self._execute(method=method, path=path, use_auth=True, body=body)
 
     def _try_paths(self, *, paths: list[str], use_auth: bool) -> WordPressClientResult:
         last_result: WordPressClientResult | None = None
@@ -138,10 +178,7 @@ class WordPressClient:
 
     def fetch_current_user(self) -> WordPressClientResult:
         return self._try_paths(
-            paths=[
-                "/wp-json/wp/v2/users/me",
-                "/?rest_route=/wp/v2/users/me",
-            ],
+            paths=self._wp_paths("/wp/v2/users/me"),
             use_auth=True,
         )
 
@@ -172,9 +209,9 @@ class WordPressClient:
             body["categories"] = category_ids
         if tag_ids:
             body["tags"] = tag_ids
-        return self._request_write(
+        return self._try_write_paths(
             method="POST",
-            path=f"/wp-json/wp/v2/{post_type}",
+            wp_path=f"/wp/v2/{self._rest_base(post_type)}",
             body=body,
         )
 
@@ -183,9 +220,9 @@ class WordPressClient:
     # ------------------------------------------------------------------
 
     def update_post(self, post_id: int, **fields: object) -> WordPressClientResult:
-        return self._request_write(
+        return self._try_write_paths(
             method="PUT",
-            path=f"/wp-json/wp/v2/posts/{post_id}",
+            wp_path=f"/wp/v2/posts/{post_id}",
             body={k: v for k, v in fields.items()},
         )
 
@@ -197,18 +234,29 @@ class WordPressClient:
         per_page: int = 10,
         page: int = 1,
     ) -> WordPressClientResult:
-        qs = f"?status={status}&per_page={per_page}&page={page}"
-        return self._request(
-            path=f"/wp-json/wp/v2/{post_type}{qs}",
+        # Omit status=publish — WP returns published posts by default.
+        # Passing status=publish explicitly triggers an extra editorial
+        # permission check on some WP configurations.
+        qs_parts = [f"per_page={per_page}", f"page={page}"]
+        if status != "publish":
+            qs_parts.append(f"status={status}")
+        qs = "&".join(qs_parts)
+        rest_base = self._rest_base(post_type)
+        return self._try_paths(
+            paths=self._wp_paths(f"/wp/v2/{rest_base}", qs),
             use_auth=True,
         )
 
     def get_post(self, identifier: int | str) -> WordPressClientResult:
         if isinstance(identifier, int):
-            path = f"/wp-json/wp/v2/posts/{identifier}"
-        else:
-            path = f"/wp-json/wp/v2/posts?slug={identifier}"
-        return self._request(path=path, use_auth=True)
+            return self._try_paths(
+                paths=self._wp_paths(f"/wp/v2/posts/{identifier}"),
+                use_auth=True,
+            )
+        return self._try_paths(
+            paths=self._wp_paths("/wp/v2/posts", f"slug={identifier}"),
+            use_auth=True,
+        )
 
     def upload_media(
         self,
@@ -222,8 +270,8 @@ class WordPressClient:
         )
 
     def ensure_category(self, name: str) -> WordPressClientResult:
-        search = self._request(
-            path=f"/wp-json/wp/v2/categories?search={name}&per_page=5",
+        search = self._try_paths(
+            paths=self._wp_paths("/wp/v2/categories", f"search={name}&per_page=5"),
             use_auth=True,
         )
         if search.ok and isinstance(search.payload, list):
@@ -239,15 +287,15 @@ class WordPressClient:
                         message="OK",
                         payload=cat,
                     )
-        return self._request_write(
+        return self._try_write_paths(
             method="POST",
-            path="/wp-json/wp/v2/categories",
+            wp_path="/wp/v2/categories",
             body={"name": name},
         )
 
     def ensure_tag(self, name: str) -> WordPressClientResult:
-        search = self._request(
-            path=f"/wp-json/wp/v2/tags?search={name}&per_page=5",
+        search = self._try_paths(
+            paths=self._wp_paths("/wp/v2/tags", f"search={name}&per_page=5"),
             use_auth=True,
         )
         if search.ok and isinstance(search.payload, list):
@@ -263,8 +311,8 @@ class WordPressClient:
                         message="OK",
                         payload=tag,
                     )
-        return self._request_write(
+        return self._try_write_paths(
             method="POST",
-            path="/wp-json/wp/v2/tags",
+            wp_path="/wp/v2/tags",
             body={"name": name},
         )
