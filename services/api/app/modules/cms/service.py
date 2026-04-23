@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import re
 import uuid
 from datetime import datetime, timezone
 
@@ -58,7 +59,9 @@ def cache_invalidate_all() -> None:
 # ---------------------------------------------------------------------------
 
 def create_page(db: Session, *, data: CMSPageCreate) -> CMSPage:
-    page = CMSPage(**data.model_dump())
+    payload = data.model_dump()
+    payload["content_json"] = _process_content_json(payload.get("content_json"))
+    page = CMSPage(**payload)
     db.add(page)
     db.flush()
     return page
@@ -91,6 +94,8 @@ def list_pages(
 
 def update_page(db: Session, *, page: CMSPage, patch: CMSPagePatch) -> CMSPage:
     updates = patch.model_dump(exclude_unset=True)
+    if "content_json" in updates:
+        updates["content_json"] = _process_content_json(updates["content_json"])
     for field, value in updates.items():
         setattr(page, field, value)
     if updates.get("status") == "published" and page.published_at is None:
@@ -115,14 +120,76 @@ def _md_to_html(text: str | None) -> str:
     )
 
 
+# Maps regex patterns (matched against lowercase H2/H3 headings) to section keys.
+_SECTION_HEADING_MAP: list[tuple[str, str]] = [
+    (r"why.*trek|why.*special|introduction|hidden gem", "why_this_trek"),
+    (r"altitude.*distance|route.*glance|trail overview|route overview", "route_overview"),
+    (r"itinerary|day.wise|day by day|what each day", "itinerary"),
+    (r"best time|when to go|season|visit.*time", "best_time"),
+    (r"difficulty|fitness|experience required", "difficulty"),
+    (r"permit", "permits"),
+    (r"cost|budget|price|fee|expense", "cost_estimate"),
+    (r"pack|gear|equipment|what to bring|what to carry", "packing"),
+    (r"safety|emergency|risk|precaution", "safety"),
+    (r"faq|frequently asked|questions answered|common question", "faqs"),
+]
+
+
+def _parse_sections_from_markdown(text: str) -> dict[str, str]:
+    """Split a markdown document into named sections keyed by content type."""
+    sections: dict[str, list[str]] = {}
+    current_key: str | None = None
+    current_lines: list[str] = []
+
+    for line in text.splitlines():
+        m = re.match(r"^#{1,3}\s+(.+)$", line)
+        if m:
+            if current_key and current_lines:
+                sections.setdefault(current_key, []).extend(current_lines)
+            heading = m.group(1).lower()
+            current_key = None
+            for pattern, key in _SECTION_HEADING_MAP:
+                if re.search(pattern, heading):
+                    current_key = key
+                    break
+            current_lines = []
+        elif current_key is not None:
+            current_lines.append(line)
+
+    if current_key and current_lines:
+        sections.setdefault(current_key, []).extend(current_lines)
+
+    return {k: _md_to_html("\n".join(v).strip()) for k, v in sections.items() if v}
+
+
+def _process_content_json(content_json: dict | None) -> dict | None:
+    """Convert any markdown strings inside content_json.sections to HTML."""
+    if not content_json:
+        return content_json
+    sections = content_json.get("sections")
+    if isinstance(sections, dict):
+        content_json = {
+            **content_json,
+            "sections": {
+                k: _md_to_html(v) if isinstance(v, str) else v
+                for k, v in sections.items()
+            },
+        }
+    return content_json
+
+
 def upsert_page_from_draft(db: Session, *, draft: ContentDraft) -> CMSPage:
     """Create or update a CMSPage from a ContentDraft at publish time."""
     existing = get_page_by_slug(db, draft.slug)
-    content_html = _md_to_html(draft.optimized_content or draft.content_markdown)
+    raw_markdown = draft.optimized_content or draft.content_markdown or ""
+    content_html = _md_to_html(raw_markdown)
+    sections = _parse_sections_from_markdown(raw_markdown)
+    content_json = {"sections": sections} if sections else None
 
     if existing:
         existing.title = draft.title
         existing.content_html = content_html
+        existing.content_json = content_json
         existing.seo_title = draft.meta_title
         existing.seo_description = draft.meta_description
         existing.status = "published"
@@ -137,6 +204,7 @@ def upsert_page_from_draft(db: Session, *, draft: ContentDraft) -> CMSPage:
         page_type="trek_guide",
         title=draft.title,
         content_html=content_html,
+        content_json=content_json,
         seo_title=draft.meta_title,
         seo_description=draft.meta_description,
         status="published",

@@ -43,6 +43,9 @@ Done
 - `services/api/tests/test_cms.py`
 - `apps/web-next/app/api/revalidate/route.ts`
 - `apps/web-next/app/(admin)/admin/cms/page.tsx`
+- `apps/web-next/app/(admin)/admin/cms/new/page.tsx`
+- `apps/web-next/app/(admin)/admin/cms/[slug]/edit/page.tsx`
+- `apps/web-next/components/admin/CMSPageForm.tsx`
 
 ## Files Modified
 - `services/api/app/core/config.py`
@@ -58,13 +61,21 @@ Done
 - `services/api/tests/test_admin.py`
 - `services/api/tests/test_smoke.py`
 - `services/api/.env.example`
+- `services/api/pyproject.toml`
 - `apps/web-next/lib/api.ts`
 - `apps/web-next/app/(public)/trek/[slug]/page.tsx`
 - `apps/web-next/app/(admin)/admin/layout.tsx`
+- `apps/web-next/app/(admin)/admin/cms/page.tsx`
+- `apps/web-next/app/(admin)/admin/drafts/page.tsx`
+- `apps/web-next/app/globals.css`
 
 ## Notes
-- 117/117 backend tests pass; `next build` clean (zero errors)
+- 117/117 backend tests pass; `next build` clean (89 static pages, zero errors)
 - Cache uses Redis DB 2, 5-min TTL
-- `upsert_page_from_draft` bridges agent pipeline → CMS; called by `publish_to_cms`
-- Admin cache clear hits both Redis (backend) and Next.js revalidation simultaneously
+- `_md_to_html` converts markdown at publish/save time; stored as HTML in content_html and content_json.sections
+- `_parse_sections_from_markdown` splits agent markdown on H2/H3 headings; maps to 10 named section keys
+- `_process_content_json` converts section markdown→HTML for manual saves via create/update routes
+- Trek detail page renders each Block from `content_json.sections[key]`; falls back to static template per section
+- CMS create/edit admin UI: `/admin/cms/new` + `/admin/cms/[slug]/edit` with `CMSPageForm` (10 section textareas + SEO meta)
+- "Publish to Master CMS" CTA label in Draft Review
 - WordPress Docker service deleted; stop the container if still running

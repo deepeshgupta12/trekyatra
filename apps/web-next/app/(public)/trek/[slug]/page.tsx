@@ -118,82 +118,111 @@ export default async function TrekDetailPage({ params }: { params: { slug: strin
           </aside>
 
           <article className="prose prose-lg max-w-none">
-            {cmsPage && (
-              <div
-                className="mb-10 cms-content"
-                dangerouslySetInnerHTML={{ __html: cmsPage.content_html }}
-              />
-            )}
-            <Block id="s0" eyebrow="Why this trek" title={`Why ${trek.name} is on every Indian trekker's list`}>
-              <p>From the snowy summit&apos;s 360° view to the silent pine campsites, this trek delivers the full Himalayan experience in a beginner-friendly window.</p>
-              <ul className="mt-4 grid grid-cols-1 md:grid-cols-2 gap-2">
-                {["Snow guarantee from late December to early April", "Reachable from Delhi in one overnight drive", "Multiple operators, competitive pricing", "Excellent acclimatisation profile"].map(p => (
-                  <li key={p} className="flex items-start gap-2 text-base"><Check className="h-5 w-5 text-success flex-shrink-0 mt-0.5" /> {p}</li>
-                ))}
-              </ul>
-            </Block>
+            {(() => {
+              const sec = cmsPage?.content_json?.sections ?? {};
+              const S = (key: string) => (sec as Record<string, string>)[key];
 
-            <Block id="s1" eyebrow="Route overview" title="The route at a glance">
-              <p>You start at Sankri (6,400 ft), climb gently through pine forest to Juda Ka Talab on day 2, ascend to base camp on day 3, summit on day 4, and return across days 5–6. Total distance: ~20 km.</p>
-            </Block>
+              return (
+                <>
+                  <Block id="s0" eyebrow="Why this trek" title={`Why ${trek.name} is on every Indian trekker's list`}>
+                    {S("why_this_trek") ? (
+                      <div className="not-prose cms-section" dangerouslySetInnerHTML={{ __html: S("why_this_trek") }} />
+                    ) : (
+                      <>
+                        <p>From the snowy summit&apos;s 360° view to the silent pine campsites, this trek delivers the full Himalayan experience in a beginner-friendly window.</p>
+                        <ul className="mt-4 grid grid-cols-1 md:grid-cols-2 gap-2">
+                          {["Snow guarantee from late December to early April", "Reachable from Delhi in one overnight drive", "Multiple operators, competitive pricing", "Excellent acclimatisation profile"].map(p => (
+                            <li key={p} className="flex items-start gap-2 text-base"><Check className="h-5 w-5 text-success flex-shrink-0 mt-0.5" /> {p}</li>
+                          ))}
+                        </ul>
+                      </>
+                    )}
+                  </Block>
 
-            <Block id="s2" eyebrow="Day-wise itinerary" title="What each day actually looks like">
-              <div className="not-prose space-y-3">
-                {[
-                  { d: "Day 1", title: "Dehradun → Sankri", body: "210 km drive (10 hrs) along the Tons valley." },
-                  { d: "Day 2", title: "Sankri → Juda Ka Talab", body: "4 km trek through oak/pine forest. 9,100 ft." },
-                  { d: "Day 3", title: "Juda Ka Talab → Base Camp", body: "4 km gentle climb to 11,250 ft." },
-                  { d: "Day 4", title: "Summit Day", body: "Pre-dawn start. 360° Himalayan view. Descend to Hargaon." },
-                  { d: "Day 5", title: "Hargaon → Sankri", body: "Long descent through forest. 6 km." },
-                  { d: "Day 6", title: "Sankri → Dehradun", body: "Drive back. Trip ends at Dehradun station by 9 PM." },
-                ].map(d => (
-                  <div key={d.d} className="flex gap-4 p-5 bg-surface-muted rounded-2xl">
-                    <div className="text-xs uppercase tracking-widest text-accent font-semibold pt-1 w-16">{d.d}</div>
-                    <div>
-                      <div className="font-display text-lg font-semibold">{d.title}</div>
-                      <div className="text-sm text-muted-foreground mt-1">{d.body}</div>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </Block>
+                  <Block id="s1" eyebrow="Route overview" title="The route at a glance">
+                    {S("route_overview") ? (
+                      <div className="not-prose cms-section" dangerouslySetInnerHTML={{ __html: S("route_overview") }} />
+                    ) : (
+                      <p>You start at Sankri (6,400 ft), climb gently through pine forest to Juda Ka Talab on day 2, ascend to base camp on day 3, summit on day 4, and return across days 5–6. Total distance: ~20 km.</p>
+                    )}
+                  </Block>
 
-            <Block id="s3" eyebrow="Permits" title="What permits you need">
-              <div className="not-prose p-5 rounded-2xl bg-warning/10 border border-warning/30 flex gap-3 mb-4">
-                <AlertTriangle className="h-5 w-5 text-warning flex-shrink-0 mt-0.5" />
-                <div className="text-sm">Forest Department permits are mandatory. Carry a Govt photo ID.</div>
-              </div>
-            </Block>
+                  <Block id="s2" eyebrow="Day-wise itinerary" title="What each day actually looks like">
+                    {S("itinerary") ? (
+                      <div className="not-prose cms-section" dangerouslySetInnerHTML={{ __html: S("itinerary") }} />
+                    ) : (
+                      <div className="not-prose space-y-3">
+                        {[
+                          { d: "Day 1", title: "Dehradun → Sankri", body: "210 km drive (10 hrs) along the Tons valley." },
+                          { d: "Day 2", title: "Sankri → Juda Ka Talab", body: "4 km trek through oak/pine forest. 9,100 ft." },
+                          { d: "Day 3", title: "Juda Ka Talab → Base Camp", body: "4 km gentle climb to 11,250 ft." },
+                          { d: "Day 4", title: "Summit Day", body: "Pre-dawn start. 360° Himalayan view. Descend to Hargaon." },
+                          { d: "Day 5", title: "Hargaon → Sankri", body: "Long descent through forest. 6 km." },
+                          { d: "Day 6", title: "Sankri → Dehradun", body: "Drive back. Trip ends at Dehradun station by 9 PM." },
+                        ].map(d => (
+                          <div key={d.d} className="flex gap-4 p-5 bg-surface-muted rounded-2xl">
+                            <div className="text-xs uppercase tracking-widest text-accent font-semibold pt-1 w-16">{d.d}</div>
+                            <div>
+                              <div className="font-display text-lg font-semibold">{d.title}</div>
+                              <div className="text-sm text-muted-foreground mt-1">{d.body}</div>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </Block>
 
-            <Block id="s4" eyebrow="Cost estimate" title="What this trek will actually cost you">
-              <div className="not-prose grid grid-cols-3 gap-3">
-                {[
-                  { tier: "Budget", cost: "₹8,500", desc: "Group fixed-departure" },
-                  { tier: "Mid", cost: "₹12,000", desc: "Better food, smaller groups" },
-                  { tier: "Premium", cost: "₹18,000+", desc: "Private group, guide" },
-                ].map(c => (
-                  <div key={c.tier} className="p-5 bg-card border border-border rounded-2xl">
-                    <div className="text-xs uppercase tracking-widest text-muted-foreground">{c.tier}</div>
-                    <div className="font-display text-3xl font-semibold mt-1">{c.cost}</div>
-                    <div className="text-xs text-muted-foreground mt-2">{c.desc}</div>
-                  </div>
-                ))}
-              </div>
-            </Block>
+                  <Block id="s3" eyebrow="Permits" title="What permits you need">
+                    {S("permits") ? (
+                      <div className="not-prose cms-section" dangerouslySetInnerHTML={{ __html: S("permits") }} />
+                    ) : (
+                      <div className="not-prose p-5 rounded-2xl bg-warning/10 border border-warning/30 flex gap-3 mb-4">
+                        <AlertTriangle className="h-5 w-5 text-warning flex-shrink-0 mt-0.5" />
+                        <div className="text-sm">Forest Department permits are mandatory. Carry a Govt photo ID.</div>
+                      </div>
+                    )}
+                  </Block>
 
-            <Block id="s5" eyebrow="FAQs" title="Common questions answered">
-              <div className="not-prose space-y-3">
-                {[
-                  ["Can a complete beginner attempt this?", "Yes — provided you can jog 5km in 30 minutes. Start training 4 weeks ahead."],
-                  ["Will I see snow in March?", "Likely yes, especially above the base camp. April is uncertain."],
-                ].map(([q, a]) => (
-                  <details key={q} className="group p-5 bg-surface-muted rounded-2xl">
-                    <summary className="font-semibold cursor-pointer flex items-center justify-between">{q} <ChevronRight className="h-4 w-4 group-open:rotate-90 transition-transform" /></summary>
-                    <p className="mt-3 text-sm text-muted-foreground">{a}</p>
-                  </details>
-                ))}
-              </div>
-            </Block>
+                  <Block id="s4" eyebrow="Cost estimate" title="What this trek will actually cost you">
+                    {S("cost_estimate") ? (
+                      <div className="not-prose cms-section" dangerouslySetInnerHTML={{ __html: S("cost_estimate") }} />
+                    ) : (
+                      <div className="not-prose grid grid-cols-3 gap-3">
+                        {[
+                          { tier: "Budget", cost: "₹8,500", desc: "Group fixed-departure" },
+                          { tier: "Mid", cost: "₹12,000", desc: "Better food, smaller groups" },
+                          { tier: "Premium", cost: "₹18,000+", desc: "Private group, guide" },
+                        ].map(c => (
+                          <div key={c.tier} className="p-5 bg-card border border-border rounded-2xl">
+                            <div className="text-xs uppercase tracking-widest text-muted-foreground">{c.tier}</div>
+                            <div className="font-display text-3xl font-semibold mt-1">{c.cost}</div>
+                            <div className="text-xs text-muted-foreground mt-2">{c.desc}</div>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </Block>
+
+                  <Block id="s5" eyebrow="FAQs" title="Common questions answered">
+                    {S("faqs") ? (
+                      <div className="not-prose cms-section" dangerouslySetInnerHTML={{ __html: S("faqs") }} />
+                    ) : (
+                      <div className="not-prose space-y-3">
+                        {[
+                          ["Can a complete beginner attempt this?", "Yes — provided you can jog 5km in 30 minutes. Start training 4 weeks ahead."],
+                          ["Will I see snow in March?", "Likely yes, especially above the base camp. April is uncertain."],
+                        ].map(([q, a]) => (
+                          <details key={q} className="group p-5 bg-surface-muted rounded-2xl">
+                            <summary className="font-semibold cursor-pointer flex items-center justify-between">{q} <ChevronRight className="h-4 w-4 group-open:rotate-90 transition-transform" /></summary>
+                            <p className="mt-3 text-sm text-muted-foreground">{a}</p>
+                          </details>
+                        ))}
+                      </div>
+                    )}
+                  </Block>
+                </>
+              );
+            })()}
           </article>
 
           <aside className="hidden lg:block self-start">

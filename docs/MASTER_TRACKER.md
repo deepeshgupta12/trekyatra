@@ -190,21 +190,22 @@ What is required to activate:
 Status: done
 What is done:
 - WordPress removed entirely: deleted `app/modules/wordpress/`, `app/api/routes/wordpress.py`, `app/schemas/wordpress.py`, `tests/test_wordpress*.py`, `docker-compose.wordpress.yml`, `infrastructure/wordpress/`; 5 WP config settings removed from `config.py` and `.env.example`
-- `services/api/alembic/versions/20260423_0008_master_cms.py` — creates `cms_pages` table (slug, page_type, title, content_html, content_json, status, seo_title, seo_description, seo_meta, published_at, brief_id FK, cluster_id FK, timestamps); drops `wordpress_post_id` from `content_drafts`, adds `cms_page_id` (UUID); drops `wordpress_post_id`+`wordpress_url` from `publish_logs`, adds `cms_page_id`+`published_url`
-- `services/api/app/modules/cms/models.py` — `CMSPage` ORM model; registered in `app/db/base.py`
-- `services/api/app/schemas/cms.py` — `CMSPageCreate`, `CMSPagePatch`, `CMSPageResponse`, `CMSCacheInvalidateRequest/Response`
-- `services/api/app/modules/cms/service.py` — `create_page`, `get_page_by_slug`, `get_page_by_id`, `list_pages`, `update_page`, `delete_page`, `upsert_page_from_draft` (agent pipeline → CMS bridge), `cache_invalidate`, `cache_invalidate_all` (Redis DB 2, 5-min TTL, all errors swallowed)
-- `services/api/app/api/routes/cms.py` — `GET/POST /cms/pages`, `GET/PATCH/DELETE /cms/pages/{slug}`, `POST /cms/cache/invalidate`; registered in `router.py`
-- `services/api/app/modules/publish/service.py` — `push_draft_to_wordpress` replaced by `publish_to_cms`; calls `upsert_page_from_draft`, writes `PublishLog` with `cms_page_id` + `published_url`, sets `draft.cms_page_id`
-- `services/api/app/schemas/admin.py` — `WordPressConfigSummary` replaced by `CMSConfigSummary`; `SystemSummaryResponse` + `DashboardSummaryResponse` updated
-- `services/api/tests/test_cms.py` — 18 tests: service CRUD, upsert create/update, cache swallows errors, API list/create/409/get/404/patch/delete/cache-invalidate-single/all/400
-- `services/api/tests/test_publish.py` — rewritten: 9 tests covering status transitions + `publish_to_cms` creates CMSPage + publish log with cms_page_id
-- `apps/web-next/lib/api.ts` — WP types/helpers removed; `CMSPage` interface + `fetchCMSPage` (cache: no-store) + `fetchCMSPages` added
-- `apps/web-next/app/(public)/trek/[slug]/page.tsx` — reads from CMS API (`fetchCMSPage`); renders `cmsPage.content_html` only if `status === "published"`; static fallback unchanged
-- `apps/web-next/app/api/revalidate/route.ts` — Next.js on-demand revalidation POST endpoint; accepts `{ slug }`, `{ slugs }`, `{ scope: "all" }` → calls `revalidatePath`
-- `apps/web-next/app/(admin)/admin/cms/page.tsx` — Master CMS admin page: KPI cards (total/published/draft/review), pages table with slug + type + status + updated date, per-page cache clear + view + delete, global "Clear all caches" button hitting both Redis and Next.js revalidation
-- `apps/web-next/app/(admin)/admin/layout.tsx` — "Master CMS" nav entry added (Database icon, System group)
-- 117/117 backend tests pass; `next build` clean (zero errors)
+- `services/api/alembic/versions/20260423_0008_master_cms.py` — creates `cms_pages` table; drops WP columns from drafts+logs; adds `cms_page_id`+`published_url`
+- `services/api/app/modules/cms/service.py` — full CRUD + `upsert_page_from_draft` (agent pipeline → CMS); `_md_to_html` converts markdown at storage time; `_parse_sections_from_markdown` extracts named sections from agent output into `content_json.sections`; `_process_content_json` converts section markdown to HTML for manual saves; `cache_invalidate`/`cache_invalidate_all` (Redis DB 2)
+- `services/api/app/api/routes/cms.py` — `GET/POST /cms/pages`, `GET/PATCH/DELETE /cms/pages/{slug}`, `POST /cms/cache/invalidate`
+- `services/api/app/modules/publish/service.py` — `publish_to_cms` replaces `push_draft_to_wordpress`
+- 117/117 backend tests pass
+- `apps/web-next/lib/api.ts` — `CMSPage` + `TrekContentSections` interfaces; `fetchCMSPage`/`fetchCMSPages`/`createCMSPage`/`updateCMSPage` helpers
+- `apps/web-next/app/(public)/trek/[slug]/page.tsx` — each named Block renders from `content_json.sections[key]` (HTML) when present; static template is fallback; `notFound()` guard for unknown slugs; `formatUpdatedAt` from `cmsPage.published_at`; sticky sidebars `max-h` capped
+- `apps/web-next/app/api/revalidate/route.ts` — Next.js on-demand revalidation endpoint
+- `apps/web-next/app/(admin)/admin/cms/page.tsx` — KPI cards + pages table; New page button + edit icon per row; cache clear (per-page + global)
+- `apps/web-next/app/(admin)/admin/cms/new/page.tsx` — manual CMS page creation form
+- `apps/web-next/app/(admin)/admin/cms/[slug]/edit/page.tsx` — edit existing CMS page with Save + Publish + cache clear
+- `apps/web-next/components/admin/CMSPageForm.tsx` — shared form: title, slug, page type, status, SEO meta, 10 section textareas (markdown)
+- `apps/web-next/app/globals.css` — `.cms-section` prose styles for agent-generated HTML blocks
+- `apps/web-next/app/(admin)/admin/drafts/page.tsx` — "Publish to Master CMS" CTA label
+- `services/api/pyproject.toml` — `markdown>=3.6` dependency added
+- `next build` clean (89 static pages); GitNexus re-indexed
 
 ### Step 15B — Admin CMS Enhancements (real API wiring + pipeline view)
 Status: done

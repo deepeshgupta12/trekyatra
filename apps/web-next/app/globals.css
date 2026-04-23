@@ -164,6 +164,18 @@
 
   .scrollbar-hide::-webkit-scrollbar { display: none; }
   .scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }
+
+  /* CMS-generated section HTML — inherits prose typography */
+  .cms-section h2 { @apply font-display text-2xl font-semibold mb-3 mt-6; }
+  .cms-section h3 { @apply font-display text-xl font-semibold mb-2 mt-5; }
+  .cms-section p  { @apply mb-4 leading-relaxed; }
+  .cms-section ul { @apply list-disc pl-5 mb-4 space-y-1; }
+  .cms-section ol { @apply list-decimal pl-5 mb-4 space-y-1; }
+  .cms-section li { @apply leading-relaxed; }
+  .cms-section strong { @apply font-semibold; }
+  .cms-section table { @apply w-full border-collapse mb-4 text-sm; }
+  .cms-section th { @apply border border-border px-3 py-2 bg-muted font-semibold text-left; }
+  .cms-section td { @apply border border-border px-3 py-2; }
 }
 
 @keyframes float-slow {

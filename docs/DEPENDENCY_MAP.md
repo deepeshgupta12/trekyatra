@@ -40,7 +40,11 @@ This file tracks structural dependencies, source-of-truth modules, and Nexus/Git
 - `components/admin/AgentRunsPanel.tsx` -> live agent-run panel with 5s polling; reads GET /api/v1/admin/agent-runs?agent_type=TYPE&limit=5; blast radius: LOW (imported by admin topic/cluster/brief/drafts pages)
 - `app/(admin)/admin/pipeline/page.tsx` -> new pipeline view page; fetches topics+clusters+briefs+drafts in parallel; client-side join; stage summary + table
 - `data/treks.ts` -> static fallback trek dataset (12 treks, string image paths)
-- `lib/api.ts` -> universal fetch with server/client URL detection, 3s abort timeout
+- `components/admin/CMSPageForm.tsx` -> shared CMS create/edit form; 10 section textareas + SEO meta + page type/status selectors; blast radius: LOW (used only by /admin/cms/new and /admin/cms/[slug]/edit)
+- `app/(admin)/admin/cms/page.tsx` -> Master CMS index: KPI cards, pages table, New page button, edit/cache/view/delete per row
+- `app/(admin)/admin/cms/new/page.tsx` -> CMS manual page creation (server shell + CMSPageForm)
+- `app/(admin)/admin/cms/[slug]/edit/page.tsx` -> CMS page editor; server-fetches existing page; CMSPageForm pre-populated; Save + Publish + cache clear
+- `lib/api.ts` -> universal fetch; CMSPage + TrekContentSections interfaces; fetchCMSPage/fetchCMSPages/createCMSPage/updateCMSPage helpers
 - `lib/trekApi.ts` -> trek API adapter with mergeImage() and safe static fallback
 - `lib/auth-api.ts` -> typed client-only fetch helpers for all 5 auth endpoints (me/login/signup/logout/google)
 - `lib/auth-context.tsx` -> React AuthContext; bootstraps from GET /me; exposes user, isLoading, login(), signup(), loginWithGoogle(), logout(), refresh()
@@ -82,7 +86,7 @@ This file tracks structural dependencies, source-of-truth modules, and Nexus/Git
 - `services/api/app/modules/auth/service.py` -> email + Google auth business logic; session creation; login_or_register_google_user
 - `services/api/app/modules/auth/dependencies.py` -> current user/current session dependencies
 - `services/api/app/modules/cms/models.py` -> CMSPage ORM model; blast radius: LOW (new table, no prior callers)
-- `services/api/app/modules/cms/service.py` -> CMS CRUD helpers; upsert_page_from_draft (publish bridge); cache_invalidate/cache_invalidate_all (Redis DB 2, 5-min TTL, errors swallowed); blast radius: MEDIUM (called by publish service)
+- `services/api/app/modules/cms/service.py` -> CMS CRUD helpers; _md_to_html (markdown→HTML at storage); _parse_sections_from_markdown (agent output → content_json.sections); _process_content_json (section markdown→HTML for manual saves); upsert_page_from_draft (publish bridge, now also populates content_json.sections); cache_invalidate/cache_invalidate_all (Redis DB 2, 5-min TTL); blast radius: MEDIUM (called by publish service + CMS create/update routes)
 - `services/api/app/modules/content/models.py` -> topic, cluster, brief (+ structured_brief, word_count_target, versions rel), draft (+ optimized_content, claims rel, cms_page_id), publish_log (+ cms_page_id, published_url), BriefVersion, DraftClaim ORM models; blast radius: MEDIUM
 - `services/api/app/modules/publish/service.py` -> VALID_TRANSITIONS state machine, update_draft_status, publish_to_cms (calls upsert_page_from_draft), get_publish_logs
 - `services/api/app/schemas/publish.py` -> DraftStatusPatch, PublishLogResponse, DraftPublishResponse

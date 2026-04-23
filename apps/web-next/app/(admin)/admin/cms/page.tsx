@@ -1,7 +1,8 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { FileText, Globe, RefreshCw, Trash2, Plus, X } from "lucide-react";
+import Link from "next/link";
+import { Globe, RefreshCw, Trash2, Pencil, Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 interface CMSPage {
@@ -81,16 +82,23 @@ export default function CMSAdminPage() {
           <p className="text-white/50 text-sm">All published and draft content pages. Cache control included.</p>
         </div>
         <div className="flex flex-col gap-2 sm:items-end">
-          <Button
-            variant="hero"
-            size="sm"
-            className="w-fit"
-            onClick={() => invalidateCache("all")}
-            disabled={invalidating}
-          >
-            <RefreshCw className={`h-4 w-4 ${invalidating ? "animate-spin" : ""}`} />
-            Clear all caches
-          </Button>
+          <div className="flex gap-2">
+            <Link href="/admin/cms/new">
+              <Button variant="outline" size="sm" className="border-white/20 text-white/60 hover:text-white w-fit">
+                <Plus className="h-4 w-4" /> New page
+              </Button>
+            </Link>
+            <Button
+              variant="hero"
+              size="sm"
+              className="w-fit"
+              onClick={() => invalidateCache("all")}
+              disabled={invalidating}
+            >
+              <RefreshCw className={`h-4 w-4 ${invalidating ? "animate-spin" : ""}`} />
+              Clear all caches
+            </Button>
+          </div>
           {feedback && (
             <span className="text-xs text-pine">{feedback}</span>
           )}
@@ -171,10 +179,17 @@ export default function CMSAdminPage() {
                     </td>
                     <td className="px-4 py-3.5">
                       <div className="flex items-center gap-2">
+                        <Link
+                          href={`/admin/cms/${page.slug}/edit`}
+                          className="text-white/40 hover:text-white transition-colors"
+                          title="Edit page"
+                        >
+                          <Pencil className="h-3.5 w-3.5" />
+                        </Link>
                         <button
                           onClick={() => invalidateCache("slug", page.slug)}
                           className="text-white/40 hover:text-accent transition-colors"
-                          title="Clear cache for this page"
+                          title="Clear cache"
                         >
                           <RefreshCw className="h-3.5 w-3.5" />
                         </button>
@@ -183,7 +198,7 @@ export default function CMSAdminPage() {
                           target="_blank"
                           rel="noopener noreferrer"
                           className="text-white/40 hover:text-white transition-colors"
-                          title="View page"
+                          title="View live page"
                         >
                           <Globe className="h-3.5 w-3.5" />
                         </a>

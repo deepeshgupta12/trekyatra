@@ -1,0 +1,212 @@
+"use client";
+
+import { useState } from "react";
+import { useRouter } from "next/navigation";
+import { Button } from "@/components/ui/button";
+import { Loader2, Save, Globe } from "lucide-react";
+import { createCMSPage, updateCMSPage, type CMSPage, type CMSPagePayload, type TrekContentSections } from "@/lib/api";
+
+const PAGE_TYPES = [
+  { value: "trek_guide", label: "Trek Guide" },
+  { value: "packing_list", label: "Packing List" },
+  { value: "seasonal", label: "Seasonal / Best Time" },
+  { value: "comparison", label: "Comparison" },
+  { value: "permit_guide", label: "Permit Guide" },
+  { value: "beginner_roundup", label: "Beginner Roundup" },
+  { value: "region_listing", label: "Region / Category" },
+];
+
+const STATUSES = [
+  { value: "draft", label: "Draft" },
+  { value: "review", label: "In Review" },
+  { value: "approved", label: "Approved" },
+  { value: "published", label: "Published" },
+];
+
+const SECTION_FIELDS: { key: keyof TrekContentSections; label: string; hint: string; rows: number }[] = [
+  { key: "why_this_trek", label: "Why this trek", hint: "Intro paragraph — why this trek stands out.", rows: 5 },
+  { key: "route_overview", label: "Route overview", hint: "High-level route summary, distance, elevation gain.", rows: 4 },
+  { key: "itinerary", label: "Day-wise itinerary", hint: "Use markdown: **Day 1** – description", rows: 8 },
+  { key: "best_time", label: "Best time to visit", hint: "Season-by-season breakdown.", rows: 5 },
+  { key: "difficulty", label: "Difficulty & fitness", hint: "Who can do this trek, fitness requirements.", rows: 4 },
+  { key: "permits", label: "Permits", hint: "Required permits, how to get them, cost.", rows: 4 },
+  { key: "cost_estimate", label: "Cost estimate", hint: "Budget / mid / premium tiers.", rows: 4 },
+  { key: "packing", label: "Packing & gear", hint: "Essential gear list. Use - bullet format.", rows: 5 },
+  { key: "safety", label: "Safety tips", hint: "Key safety advice and emergency info.", rows: 5 },
+  { key: "faqs", label: "FAQs", hint: "Use **Q: question** then **A: answer** format.", rows: 6 },
+];
+
+interface Props {
+  mode: "create" | "edit";
+  existing?: CMSPage;
+}
+
+export default function CMSPageForm({ mode, existing }: Props) {
+  const router = useRouter();
+  const s = existing?.content_json?.sections ?? {};
+
+  const [title, setTitle] = useState(existing?.title ?? "");
+  const [slug, setSlug] = useState(existing?.slug ?? "");
+  const [pageType, setPageType] = useState(existing?.page_type ?? "trek_guide");
+  const [status, setStatus] = useState(existing?.status ?? "draft");
+  const [seoTitle, setSeoTitle] = useState(existing?.seo_title ?? "");
+  const [seoDesc, setSeoDesc] = useState(existing?.seo_description ?? "");
+  const [sections, setSections] = useState<Record<string, string>>(
+    Object.fromEntries(SECTION_FIELDS.map((f) => [f.key, (s as Record<string, string>)[f.key] ?? ""]))
+  );
+
+  const [saving, setSaving] = useState(false);
+  const [publishing, setPublishing] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [success, setSuccess] = useState<string | null>(null);
+
+  function autoSlug(value: string) {
+    return value.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
+  }
+
+  function handleTitleChange(v: string) {
+    setTitle(v);
+    if (mode === "create") setSlug(autoSlug(v));
+  }
+
+  function buildPayload(overrideStatus?: string): CMSPagePayload {
+    const nonEmptySections = Object.fromEntries(
+      Object.entries(sections).filter(([, v]) => v.trim() !== "")
+    ) as TrekContentSections;
+    return {
+      title: title.trim(),
+      slug: slug.trim(),
+      page_type: pageType,
+      status: overrideStatus ?? status,
+      seo_title: seoTitle.trim() || null,
+      seo_description: seoDesc.trim() || null,
+      content_json: Object.keys(nonEmptySections).length > 0 ? { sections: nonEmptySections } : null,
+    };
+  }
+
+  async function save(overrideStatus?: string) {
+    setError(null);
+    setSuccess(null);
+    const isSaving = !overrideStatus;
+    if (isSaving) setSaving(true); else setPublishing(true);
+    try {
+      const payload = buildPayload(overrideStatus);
+      if (mode === "create") {
+        const page = await createCMSPage(payload as Parameters<typeof createCMSPage>[0]);
+        router.push(`/admin/cms/${page.slug}/edit`);
+      } else {
+        await updateCMSPage(existing!.slug, payload);
+        if (overrideStatus === "published") {
+          await Promise.all([
+            fetch("/api/v1/cms/cache/invalidate", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ slug: existing!.slug }) }),
+            fetch("/api/revalidate", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ slug: existing!.slug }) }),
+          ]);
+        }
+        setStatus(overrideStatus ?? status);
+        setSuccess(overrideStatus === "published" ? "Published and cache cleared." : "Saved.");
+        setTimeout(() => setSuccess(null), 3000);
+      }
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Save failed.");
+    } finally {
+      setSaving(false);
+      setPublishing(false);
+    }
+  }
+
+  const inputCls = "w-full bg-[#0c0e14] border border-white/10 rounded-xl px-3 py-2.5 text-sm text-white placeholder:text-white/30 focus:outline-none focus:border-accent/50";
+  const labelCls = "block text-xs text-white/50 font-medium mb-1.5";
+
+  return (
+    <div className="space-y-8">
+      {/* Basic info */}
+      <div className="bg-[#14161f] rounded-2xl border border-white/10 p-5 space-y-4">
+        <h2 className="text-white font-semibold text-sm">Page details</h2>
+
+        <div className="grid sm:grid-cols-2 gap-4">
+          <div>
+            <label className={labelCls}>Title *</label>
+            <input className={inputCls} value={title} onChange={(e) => handleTitleChange(e.target.value)} placeholder="Triund Trek: Complete Guide" />
+          </div>
+          <div>
+            <label className={labelCls}>Slug *</label>
+            <input className={inputCls} value={slug} onChange={(e) => setSlug(e.target.value)} placeholder="triund-trek" />
+          </div>
+        </div>
+
+        <div className="grid sm:grid-cols-2 gap-4">
+          <div>
+            <label className={labelCls}>Page type</label>
+            <select className={inputCls} value={pageType} onChange={(e) => setPageType(e.target.value)}>
+              {PAGE_TYPES.map((t) => <option key={t.value} value={t.value}>{t.label}</option>)}
+            </select>
+          </div>
+          <div>
+            <label className={labelCls}>Status</label>
+            <select className={inputCls} value={status} onChange={(e) => setStatus(e.target.value)}>
+              {STATUSES.map((s) => <option key={s.value} value={s.value}>{s.label}</option>)}
+            </select>
+          </div>
+        </div>
+      </div>
+
+      {/* SEO */}
+      <div className="bg-[#14161f] rounded-2xl border border-white/10 p-5 space-y-4">
+        <h2 className="text-white font-semibold text-sm">SEO meta</h2>
+        <div>
+          <label className={labelCls}>SEO title</label>
+          <input className={inputCls} value={seoTitle} onChange={(e) => setSeoTitle(e.target.value)} placeholder="Triund Trek Guide 2025 — Routes, Permits & Tips" />
+        </div>
+        <div>
+          <label className={labelCls}>SEO description</label>
+          <textarea className={inputCls} rows={3} value={seoDesc} onChange={(e) => setSeoDesc(e.target.value)} placeholder="Plan your Triund trek with our complete guide — routes, itinerary, best time, permits, and packing list." />
+        </div>
+      </div>
+
+      {/* Content sections */}
+      <div className="bg-[#14161f] rounded-2xl border border-white/10 overflow-hidden">
+        <div className="px-5 py-3.5 border-b border-white/8">
+          <h2 className="text-white font-semibold text-sm">Content sections</h2>
+          <p className="text-white/40 text-xs mt-0.5">Markdown supported. Each section maps to a named block on the public page.</p>
+        </div>
+        <div className="p-5 space-y-6">
+          {SECTION_FIELDS.map((f) => (
+            <div key={f.key}>
+              <label className={labelCls}>{f.label}</label>
+              <p className="text-white/30 text-xs mb-1.5">{f.hint}</p>
+              <textarea
+                className={inputCls}
+                rows={f.rows}
+                value={sections[f.key] ?? ""}
+                onChange={(e) => setSections((prev) => ({ ...prev, [f.key]: e.target.value }))}
+                placeholder={`Write ${f.label.toLowerCase()} content here…`}
+              />
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* Actions */}
+      <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3">
+        <Button variant="hero" size="sm" onClick={() => save()} disabled={saving || publishing || !title || !slug}>
+          {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
+          {mode === "create" ? "Create page" : "Save changes"}
+        </Button>
+        {mode === "edit" && existing?.status !== "published" && (
+          <Button variant="outline" size="sm" className="border-pine/40 text-pine hover:text-white" onClick={() => save("published")} disabled={saving || publishing}>
+            {publishing ? <Loader2 className="h-4 w-4 animate-spin" /> : <Globe className="h-4 w-4" />}
+            Publish
+          </Button>
+        )}
+        {mode === "edit" && existing?.status === "published" && (
+          <Button variant="outline" size="sm" className="border-white/20 text-white/60 hover:text-white" onClick={() => save("published")} disabled={saving || publishing}>
+            {publishing ? <Loader2 className="h-4 w-4 animate-spin" /> : <Globe className="h-4 w-4" />}
+            Save &amp; re-publish
+          </Button>
+        )}
+        {error && <span className="text-red-400 text-xs">{error}</span>}
+        {success && <span className="text-pine text-xs">{success}</span>}
+      </div>
+    </div>
+  );
+}
