@@ -103,7 +103,7 @@
 
 @layer base {
   * { @apply border-border; }
-  html, body { overflow-x: hidden; }
+  html, body { overflow-x: clip; }
   html { -webkit-font-smoothing: antialiased; text-rendering: optimizeLegibility; }
   body {
     @apply bg-background text-foreground;

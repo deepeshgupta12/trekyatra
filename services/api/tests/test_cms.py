@@ -235,3 +235,44 @@ def test_api_cache_invalidate_all():
 def test_api_cache_invalidate_empty_body_400():
     r = client.post("/api/v1/cms/cache/invalidate", json={})
     assert r.status_code == 400
+
+
+def test_api_reparse_sections_422_when_no_brief_id():
+    client.post("/api/v1/cms/pages", json={
+        "slug": "no-brief-page", "page_type": "trek_guide", "title": "No Brief",
+    })
+    r = client.post("/api/v1/cms/pages/no-brief-page/reparse-sections")
+    assert r.status_code == 422
+    assert "brief_id" in r.json()["detail"]
+
+
+def test_api_reparse_sections_200_populates_sections():
+    suffix = uuid.uuid4().hex[:8]
+    # Create brief + draft with section-containing markdown
+    brief_r = client.post("/api/v1/briefs", json={
+        "title": "Reparse Brief", "slug": f"brief-{suffix}",
+        "target_keyword": "test", "status": "approved",
+    })
+    assert brief_r.status_code == 201
+    brief_id = brief_r.json()["id"]
+    md = ("Intro paragraph about why this trek is special.\n\n"
+          "## Route Overview\nThe route starts at Nohradhar and climbs steadily.\n\n"
+          "## FAQs\n**Q: Can beginners do this?** A: Yes.")
+    draft_r = client.post("/api/v1/drafts", json={
+        "brief_id": brief_id, "title": "Trek Draft",
+        "slug": f"trek-{suffix}", "content_markdown": md, "status": "draft",
+    })
+    assert draft_r.status_code == 201
+    # Create CMS page linked to the brief
+    page_r = client.post("/api/v1/cms/pages", json={
+        "slug": f"trek-{suffix}", "page_type": "trek_guide",
+        "title": "Trek Page", "brief_id": brief_id,
+    })
+    assert page_r.status_code == 201
+    r = client.post(f"/api/v1/cms/pages/trek-{suffix}/reparse-sections")
+    assert r.status_code == 200
+    data = r.json()
+    assert data["content_json"] is not None
+    sections = data["content_json"].get("sections", {})
+    assert "why_this_trek" in sections
+    assert "route_overview" in sections

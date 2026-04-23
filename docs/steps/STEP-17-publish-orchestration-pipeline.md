@@ -135,4 +135,12 @@ Done
 - Migration 20260423_0010 adds hero_image_url — additive, zero downtime
 - Trek facts (duration, altitude etc.) are stored in content_json.trek_facts and editable via CMSPageForm; agent-generated CMS pages will have empty trek_facts until an editor fills them in
 - Anthropic SDK max_retries=6 gives backoff sequence 0.5→1→2→4→8→8s (7 total attempts, ~32s budget); sufficient to survive transient 529 overloaded errors without failing the pipeline
-- 139/139 backend tests pass; next build clean (89 pages)
+### Post-TC fix 2: Sticky sidebar + CMS empty sections
+- `apps/web-next/app/globals.css` — `overflow-x: hidden` → `overflow-x: clip`; root cause of broken sticky: `hidden` on `<html>` re-assigns scroll container away from viewport in Chromium/Safari, `clip` does not
+- `services/api/app/modules/cms/service.py:_process_content_json` — HTML passthrough: values starting with `<` are no longer re-processed through markdown converter, preventing double-processing of pipeline-generated sections
+- `services/api/app/modules/cms/service.py:reparse_sections_from_draft` — new service function; finds ContentDraft via page.brief_id, re-parses optimized_content/content_markdown with fixed `_parse_sections_from_markdown`, stores HTML sections in content_json.sections
+- `services/api/app/api/routes/cms.py` — new `POST /cms/pages/{slug}/reparse-sections` endpoint calling the service function
+- `apps/web-next/lib/api.ts` — `reparseCMSSections(slug)` function added
+- `apps/web-next/components/admin/CMSPageForm.tsx` — Re-parse sections button (shown when `brief_id` exists); calls reparse endpoint, updates section state with returned HTML values
+- 2 new tests: `test_api_reparse_sections_422_when_no_brief_id`, `test_api_reparse_sections_200_populates_sections`
+- 141/141 backend tests pass; next build clean (89 pages)

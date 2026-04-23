@@ -64,6 +64,21 @@ def patch_cms_page(
     return CMSPageResponse.model_validate(page)
 
 
+@router.post("/pages/{slug}/reparse-sections", response_model=CMSPageResponse)
+def reparse_cms_page_sections(slug: str, db: Session = Depends(get_db)) -> CMSPageResponse:
+    """Re-extract content_json.sections from the page's source draft markdown."""
+    page = cms_service.get_page_by_slug(db, slug)
+    if not page:
+        raise HTTPException(status_code=404, detail=f"CMS page '{slug}' not found.")
+    try:
+        page = cms_service.reparse_sections_from_draft(db, page=page)
+        db.commit()
+        db.refresh(page)
+    except ValueError as exc:
+        raise HTTPException(status_code=422, detail=str(exc))
+    return CMSPageResponse.model_validate(page)
+
+
 @router.delete("/pages/{slug}", status_code=status.HTTP_204_NO_CONTENT)
 def delete_cms_page(slug: str, db: Session = Depends(get_db)) -> None:
     page = cms_service.get_page_by_slug(db, slug)

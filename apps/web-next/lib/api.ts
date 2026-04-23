@@ -120,6 +120,15 @@ export async function updateCMSPage(slug: string, data: CMSPagePayload): Promise
   return res.json() as Promise<CMSPage>;
 }
 
+export async function reparseCMSSections(slug: string): Promise<CMSPage> {
+  const res = await fetch(`/api/v1/cms/pages/${slug}/reparse-sections`, { method: "POST" });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error((err as { detail?: string }).detail ?? `Reparse failed (${res.status})`);
+  }
+  return res.json() as Promise<CMSPage>;
+}
+
 // ---------------------------------------------------------------------------
 // Pipeline orchestration helpers
 // ---------------------------------------------------------------------------

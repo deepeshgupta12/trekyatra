@@ -3,8 +3,8 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
-import { Loader2, Save, Globe } from "lucide-react";
-import { createCMSPage, updateCMSPage, type CMSPage, type CMSPagePayload, type TrekContentSections, type TrekFacts } from "@/lib/api";
+import { Loader2, Save, Globe, RefreshCw } from "lucide-react";
+import { createCMSPage, updateCMSPage, reparseCMSSections, type CMSPage, type CMSPagePayload, type TrekContentSections, type TrekFacts } from "@/lib/api";
 
 const PAGE_TYPES = [
   { value: "trek_guide", label: "Trek Guide" },
@@ -68,6 +68,7 @@ export default function CMSPageForm({ mode, existing }: Props) {
 
   const [saving, setSaving] = useState(false);
   const [publishing, setPublishing] = useState(false);
+  const [reparsing, setReparsing] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
 
@@ -101,6 +102,26 @@ export default function CMSPageForm({ mode, existing }: Props) {
         ? { sections: hasSections ? nonEmptySections : undefined, trek_facts: hasFacts ? nonEmptyFacts : undefined }
         : null,
     };
+  }
+
+  async function reparseFromDraft() {
+    if (!existing?.slug) return;
+    setError(null);
+    setSuccess(null);
+    setReparsing(true);
+    try {
+      const updated = await reparseCMSSections(existing.slug);
+      const newSections = (updated.content_json?.sections ?? {}) as Record<string, string>;
+      setSections(Object.fromEntries(
+        SECTION_FIELDS.map((f) => [f.key, newSections[f.key] ?? sections[f.key] ?? ""])
+      ));
+      setSuccess("Sections re-parsed from draft. Review and save.");
+      setTimeout(() => setSuccess(null), 5000);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Reparse failed.");
+    } finally {
+      setReparsing(false);
+    }
   }
 
   async function save(overrideStatus?: string) {
@@ -244,20 +265,26 @@ export default function CMSPageForm({ mode, existing }: Props) {
 
       {/* Actions */}
       <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3">
-        <Button variant="hero" size="sm" onClick={() => save()} disabled={saving || publishing || !title || !slug}>
+        <Button variant="hero" size="sm" onClick={() => save()} disabled={saving || publishing || reparsing || !title || !slug}>
           {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
           {mode === "create" ? "Create page" : "Save changes"}
         </Button>
         {mode === "edit" && existing?.status !== "published" && (
-          <Button variant="outline" size="sm" className="border-pine/40 text-pine hover:text-white" onClick={() => save("published")} disabled={saving || publishing}>
+          <Button variant="outline" size="sm" className="border-pine/40 text-pine hover:text-white" onClick={() => save("published")} disabled={saving || publishing || reparsing}>
             {publishing ? <Loader2 className="h-4 w-4 animate-spin" /> : <Globe className="h-4 w-4" />}
             Publish
           </Button>
         )}
         {mode === "edit" && existing?.status === "published" && (
-          <Button variant="outline" size="sm" className="border-white/20 text-white/60 hover:text-white" onClick={() => save("published")} disabled={saving || publishing}>
+          <Button variant="outline" size="sm" className="border-white/20 text-white/60 hover:text-white" onClick={() => save("published")} disabled={saving || publishing || reparsing}>
             {publishing ? <Loader2 className="h-4 w-4 animate-spin" /> : <Globe className="h-4 w-4" />}
             Save &amp; re-publish
+          </Button>
+        )}
+        {mode === "edit" && existing?.brief_id && (
+          <Button variant="outline" size="sm" className="border-white/10 text-white/50 hover:text-white" onClick={reparseFromDraft} disabled={saving || publishing || reparsing}>
+            {reparsing ? <Loader2 className="h-4 w-4 animate-spin" /> : <RefreshCw className="h-4 w-4" />}
+            Re-parse sections
           </Button>
         )}
         {error && <span className="text-red-400 text-xs">{error}</span>}

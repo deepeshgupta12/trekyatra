@@ -173,7 +173,9 @@ def _parse_sections_from_markdown(text: str) -> dict[str, str]:
 
 
 def _process_content_json(content_json: dict | None) -> dict | None:
-    """Convert any markdown strings inside content_json.sections to HTML."""
+    """Convert markdown strings inside content_json.sections to HTML.
+    Values already in HTML (start with '<') are passed through unchanged to
+    prevent double-processing of pipeline-generated sections."""
     if not content_json:
         return content_json
     sections = content_json.get("sections")
@@ -181,11 +183,42 @@ def _process_content_json(content_json: dict | None) -> dict | None:
         content_json = {
             **content_json,
             "sections": {
-                k: _md_to_html(v) if isinstance(v, str) else v
+                k: (v if not isinstance(v, str) or v.lstrip().startswith("<") else _md_to_html(v))
                 for k, v in sections.items()
             },
         }
     return content_json
+
+
+def reparse_sections_from_draft(db: Session, *, page: CMSPage) -> CMSPage:
+    """Re-parse content_json.sections from the page's associated ContentDraft markdown."""
+    from sqlalchemy import select as sa_select
+
+    if not page.brief_id:
+        raise ValueError("CMS page has no brief_id — cannot locate source draft")
+
+    draft = db.scalar(
+        sa_select(ContentDraft)
+        .where(ContentDraft.brief_id == page.brief_id)
+        .order_by(ContentDraft.created_at.desc())
+        .limit(1)
+    )
+    if not draft:
+        raise ValueError(f"No draft found for brief_id {page.brief_id}")
+
+    raw_markdown = draft.optimized_content or draft.content_markdown or ""
+    if not raw_markdown.strip():
+        raise ValueError("Draft has no content to parse")
+
+    sections = _parse_sections_from_markdown(raw_markdown)
+    if not sections:
+        raise ValueError("No sections could be extracted from the draft markdown")
+
+    existing_json = dict(page.content_json) if page.content_json else {}
+    page.content_json = {**existing_json, "sections": sections}
+    db.flush()
+    cache_invalidate([page.slug])
+    return page
 
 
 def upsert_page_from_draft(db: Session, *, draft: ContentDraft) -> CMSPage:
