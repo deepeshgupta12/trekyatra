@@ -117,7 +117,7 @@ class ContentBriefAgent(BaseAgent):
         client = anthropic.Anthropic(api_key=settings.anthropic_api_key)
         message = client.messages.create(
             model=MODEL,
-            max_tokens=8096,
+            max_tokens=16000,
             messages=[{"role": "user", "content": prompt}],
         )
         raw = message.content[0].text.strip()
@@ -125,7 +125,10 @@ class ContentBriefAgent(BaseAgent):
             raw = re.sub(r"^```[a-z]*\n?", "", raw)
             raw = re.sub(r"\n?```$", "", raw)
 
-        brief_data: dict[str, Any] = json.loads(raw)
+        try:
+            brief_data: dict[str, Any] = json.loads(raw)
+        except json.JSONDecodeError as exc:
+            return {"errors": [f"LLM returned invalid JSON (truncated?): {exc}. raw_length={len(raw)}"]}
         return {"output": {"brief": brief_data}}
 
     def _store_results(self, state: BaseAgentState) -> dict[str, Any]:

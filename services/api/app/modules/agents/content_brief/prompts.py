@@ -47,5 +47,6 @@ Rules:
 - For trek_guide pages: include a difficulty rating section, best time to visit, what to pack, permit requirements.
 - For comparison pages: include a comparison table H2.
 - Monetization: suggest gear affiliate cards after packing/gear sections; suggest lead forms after itinerary sections.
-- Return ONLY valid JSON. No explanation, no markdown fences.
+- Keep editorial_brief_markdown under 600 words — it is a brief, not the article itself. Use short bullet points per section, not full prose.
+- Return ONLY valid JSON. No explanation, no markdown fences. Ensure the JSON is complete and syntactically valid before returning.
 """
