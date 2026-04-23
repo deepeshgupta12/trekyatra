@@ -6,7 +6,7 @@ from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 
 from app.db.session import get_db
-from app.modules.publish.service import get_publish_logs, push_draft_to_wordpress, update_draft_status
+from app.modules.publish.service import get_publish_logs, publish_to_cms, update_draft_status
 from app.schemas.publish import DraftPublishResponse, DraftStatusPatch, PublishLogResponse
 
 router = APIRouter(prefix="/admin/drafts", tags=["publish"])
@@ -32,7 +32,7 @@ def publish_draft(
     db: Session = Depends(get_db),
 ) -> DraftPublishResponse:
     try:
-        result = push_draft_to_wordpress(db, draft_id=draft_id)
+        result = publish_to_cms(db, draft_id=draft_id)
         db.commit()
     except ValueError as exc:
         db.rollback()

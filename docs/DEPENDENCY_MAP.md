@@ -12,7 +12,7 @@ This file tracks structural dependencies, source-of-truth modules, and Nexus/Git
 - `docs/` — implementation governance
 - root `package.json` — repo-level scripts including GitNexus commands
 - root `docker-compose.yml` — local infra for Postgres and Redis
-- root `docker-compose.wordpress.yml` — isolated local WordPress stack
+- root `docker-compose.yml` — Postgres + Redis; `docker-compose.wordpress.yml` deleted (WordPress removed)
 
 ## Source-of-Truth Rules
 - Current frontend source of truth: `apps/web-next/` (Next.js 14 App Router)
@@ -62,10 +62,10 @@ This file tracks structural dependencies, source-of-truth modules, and Nexus/Git
 - `services/api/app/api/router.py` -> API router registration
 - `services/api/app/api/routes/health.py` -> versioned health route
 - `services/api/app/api/routes/auth.py` -> auth route registration and handlers
-- `services/api/app/api/routes/wordpress.py` -> WordPress health, connectivity test, GET /posts, GET /posts/{slug}, POST /categories, POST /tags; WP down → 503
+- `services/api/app/api/routes/cms.py` -> Master CMS CRUD (GET/POST/PATCH/DELETE /cms/pages, POST /cms/cache/invalidate); blast radius: LOW (no upstream callers yet)
 - `services/api/app/api/routes/content.py` -> topics, clusters, briefs, drafts APIs
 - `services/api/app/api/routes/admin.py` -> internal admin summary APIs
-- `services/api/app/api/routes/publish.py` -> draft status patch, WordPress push, publish log APIs
+- `services/api/app/api/routes/publish.py` -> draft status patch, CMS publish, publish log APIs
 - `services/api/app/api/routes/treks.py` -> public trek list/detail APIs
 - `services/api/app/core/config.py` -> settings and connection URIs
 - `services/api/app/core/logging.py` -> structured logging
@@ -74,18 +74,17 @@ This file tracks structural dependencies, source-of-truth modules, and Nexus/Git
 - `services/api/app/db/base.py` -> model import registry for metadata
 - `services/api/app/db/session.py` -> SQLAlchemy engine, session factory, DB dependency
 - `services/api/app/schemas/auth.py` -> auth request/response contracts
-- `services/api/app/schemas/wordpress.py` -> WordPress request/response contracts
+- `services/api/app/schemas/cms.py` -> CMSPageCreate, CMSPagePatch, CMSPageResponse, CMSCacheInvalidateRequest/Response
 - `services/api/app/schemas/content.py` -> content-domain request/response contracts
 - `services/api/app/schemas/admin.py` -> admin summary response contracts
 - `services/api/app/schemas/treks.py` -> public trek response contracts
 - `services/api/app/modules/auth/models.py` -> users, auth identities, sessions
 - `services/api/app/modules/auth/service.py` -> email + Google auth business logic; session creation; login_or_register_google_user
 - `services/api/app/modules/auth/dependencies.py` -> current user/current session dependencies
-- `services/api/app/modules/wordpress/client.py` -> WordPress REST client; _execute() core + _request/_request_write wrappers; fetch_site_index, fetch_current_user, create_post (extended: post_type, meta, category_ids, tag_ids), update_post, list_posts, get_post, upload_media (placeholder), ensure_category, ensure_tag; WordPressClientResult extended with total/total_pages
-- `services/api/app/modules/wordpress/cache.py` -> Redis cache for WP reads; DB 2, 5-min TTL; cache_get/set/delete; wp_post_key/wp_posts_key; all errors swallowed (cache is best-effort)
-- `services/api/app/modules/wordpress/service.py` -> WordPress health, connectivity test, and CMS pull/sync helpers; list_wp_posts (cache-first), get_wp_post (cache-first), ensure_wp_category, ensure_wp_tag, invalidate_post_cache, _normalize_wp_post
-- `services/api/app/modules/content/models.py` -> topic, cluster, brief (+ structured_brief, word_count_target, versions rel), draft (+ optimized_content, claims rel), publish_log, BriefVersion, DraftClaim ORM models; blast radius: MEDIUM (6 importers — all safe, additive columns)
-- `services/api/app/modules/publish/service.py` -> VALID_TRANSITIONS state machine, update_draft_status, push_draft_to_wordpress, get_publish_logs
+- `services/api/app/modules/cms/models.py` -> CMSPage ORM model; blast radius: LOW (new table, no prior callers)
+- `services/api/app/modules/cms/service.py` -> CMS CRUD helpers; upsert_page_from_draft (publish bridge); cache_invalidate/cache_invalidate_all (Redis DB 2, 5-min TTL, errors swallowed); blast radius: MEDIUM (called by publish service)
+- `services/api/app/modules/content/models.py` -> topic, cluster, brief (+ structured_brief, word_count_target, versions rel), draft (+ optimized_content, claims rel, cms_page_id), publish_log (+ cms_page_id, published_url), BriefVersion, DraftClaim ORM models; blast radius: MEDIUM
+- `services/api/app/modules/publish/service.py` -> VALID_TRANSITIONS state machine, update_draft_status, publish_to_cms (calls upsert_page_from_draft), get_publish_logs
 - `services/api/app/schemas/publish.py` -> DraftStatusPatch, PublishLogResponse, DraftPublishResponse
 - `services/api/app/modules/content/service.py` -> content-domain create/list service helpers; get_brief, update_brief_status (state machine), create_brief_version, list_brief_versions; get_draft, update_draft_optimized_content, create_draft_claim, list_draft_claims
 - `services/api/app/modules/admin/service.py` -> admin dashboard and summary aggregations
@@ -121,14 +120,14 @@ This file tracks structural dependencies, source-of-truth modules, and Nexus/Git
 - `services/api/alembic/versions/20260421_0001_initial_auth_and_rbac.py` -> initial schema migration
 - `services/api/alembic/versions/20260421_0002_add_password_hash_to_users.py` -> password auth migration
 - `services/api/alembic/versions/20260421_0003_content_domain_foundation.py` -> content domain migration
-- `services/api/alembic/versions/20260422_0004_publish_log.py` -> publish_logs table + published_at/wordpress_post_id on content_drafts
+- `services/api/alembic/versions/20260422_0004_publish_log.py` -> publish_logs table + published_at on content_drafts (wordpress_post_id since replaced by cms_page_id in 0008)
 - `services/api/alembic/versions/20260422_0005_agent_runs.py` -> agent_runs table
 - `services/api/alembic/versions/20260422_0006_brief_versions.py` -> structured_brief + word_count_target on content_briefs; new brief_versions table
 - `services/api/alembic/versions/20260422_0007_draft_claims.py` -> optimized_content on content_drafts; new draft_claims table with draft_id FK, claim_text, claim_type, confidence_score, flagged_for_review
 - `services/api/tests/test_health.py` -> API health smoke tests
 - `services/api/tests/test_models.py` -> metadata table coverage test
 - `services/api/tests/test_auth.py` -> auth route tests
-- `services/api/tests/test_wordpress.py` -> WordPress route tests
+- `services/api/tests/test_cms.py` -> Master CMS CRUD + cache invalidation + publish flow tests (18 tests)
 - `services/api/tests/test_content_routes.py` -> content route tests
 - `services/api/tests/test_admin.py` -> admin summary route tests
 - `services/api/tests/test_brief_agent.py` -> ContentBriefAgent unit tests (mocked LLM), brief status state machine tests, BriefVersion tests, admin brief API endpoint tests (15 tests)
@@ -178,7 +177,7 @@ Before editing any backend file:
 - `alembic/env.py` depends on `app.db.base`, so Step 06 models flow automatically into migration metadata
 - `app/api/router.py` was changed additively to include `content_router`
 - `docker-compose.yml` remained untouched
-- `docker-compose.wordpress.yml` isolates local WordPress runtime from the main Postgres/Redis infra
+- `docker-compose.wordpress.yml` was isolated local WordPress runtime — deleted in Step 16 (WordPress removed)
 - `apps/web-static/` remained untouched in Step 06
 
 ### Step 07 executed blast radius
@@ -255,11 +254,10 @@ Before editing any backend file:
 - GitNexus re-indexed post-step (counts in step doc Notes)
 
 ### Step 10 executed blast radius
-- `app/modules/content/models.py` changed: `PublishLog` model added; `ContentDraft` gained `published_at`, `wordpress_post_id`, and `publish_logs` relationship
-- `app/db/base.py` updated to import and register `PublishLog`
-- `app/modules/wordpress/client.py` changed: `create_post()` method added (additive, no existing calls changed)
-- `app/api/router.py` changed additively to include `publish_router`
-- New module `app/modules/publish/` created — `service.py` only; depends on `content.models`, `wordpress.client`, `core.config`, `schemas.publish`
+- `app/modules/content/models.py` changed: `PublishLog` model added; `ContentDraft` gained `published_at`, `publish_logs` relationship (wordpress_post_id/wordpress_url later replaced by cms_page_id/published_url in Step 16)
+- `app/db/base.py` updated to import and register `PublishLog`; `CMSPage` added in Step 16
+- `app/api/router.py` changed additively to include `publish_router`; `wordpress_router` replaced by `cms_router` in Step 16
+- New module `app/modules/publish/` created — `service.py` only; depends on `content.models`, `cms.service` (Step 16), `schemas.publish`
 - `alembic/versions/20260422_0004_publish_log.py` adds `publish_logs` table and two columns to `content_drafts` (reversible)
 - `apps/web-next/app/(admin)/admin/drafts/page.tsx` rewritten as client component — fetches `/api/v1/drafts`, `/api/v1/admin/drafts/{id}/status`, `/api/v1/admin/drafts/{id}/publish`; no shared layout changes
 - GitNexus re-indexed: 2072 nodes, 3465 edges, 74 flows

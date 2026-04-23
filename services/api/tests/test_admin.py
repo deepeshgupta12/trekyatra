@@ -106,7 +106,7 @@ def test_admin_dashboard_summary() -> None:
     assert "clusters" in payload
     assert "briefs" in payload
     assert "drafts" in payload
-    assert "wordpress" in payload
+    assert "cms" in payload
     assert "generated_at" in payload
 
     assert payload["topics"]["total"] >= 1
@@ -157,5 +157,5 @@ def test_admin_system_summary() -> None:
     assert payload["api_status"] == "ok"
     assert payload["database_status"] in {"ok", "error"}
     assert "environment" in payload
-    assert "wordpress" in payload
+    assert "cms" in payload
     assert "generated_at" in payload

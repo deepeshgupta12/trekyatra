@@ -1,111 +1,70 @@
-# STEP 16 — WordPress CMS Full Integration
+# STEP 16 — Master CMS Foundation
+
+> **Note:** Originally scoped as "WordPress CMS Full Integration." WordPress removed in favour of a native Master CMS after validating the WP integration added operational overhead without benefit. All WP code, infrastructure, and tests deleted and replaced.
 
 ## Goal
-Upgrade the WordPress integration from a basic connectivity test to a production-grade CMS layer. Register custom post types, push full metadata and taxonomy, and establish the pull/sync mechanism the frontend will use to render real published content.
+Build a native Master CMS that drives all public frontend content, stores agent pipeline output, and provides cache invalidation for the frontend — with zero external CMS dependency.
 
 ## Scope
 
-### WordPress custom post types
-- Register custom post types via WP plugin (minimal plugin deployed to local WP): trek_guide, packing_list, comparison, permit_guide, seasonal_page, beginner_roundup, gear_review, destination
-- Verify CPTs are available via WP REST API (`/wp-json/wp/v2/<post-type>`)
+### Backend
+- `cms_pages` table: slug, page_type, title, content_html, content_json, status, seo fields, brief_id FK, cluster_id FK, published_at
+- `CMSPage` ORM model registered in `app/db/base.py`
+- CMS service layer: `create_page`, `get_page_by_slug`, `list_pages`, `update_page`, `delete_page`, `upsert_page_from_draft`, `cache_invalidate`, `cache_invalidate_all`
+- CMS API routes: `GET/POST /cms/pages`, `GET/PATCH/DELETE /cms/pages/{slug}`, `POST /cms/cache/invalidate`
+- Publish service rewritten: `publish_to_cms` replaces `push_draft_to_wordpress`
+- `content_drafts`: `wordpress_post_id` → `cms_page_id` (UUID)
+- `publish_logs`: `wordpress_post_id` + `wordpress_url` → `cms_page_id` + `published_url`
+- 18 tests in `test_cms.py`; `test_publish.py` rewritten for CMS flow
+- Admin schemas/service: `WordPressConfigSummary` → `CMSConfigSummary`
 
-### Custom fields / meta fields
-- Register ACF-compatible meta fields (or use WP REST API custom meta): content_type, cluster_id, brief_id, freshness_interval, monetization_type, page_trust_level, fact_check_status, affiliate_disclosure_flag, safety_disclaimer_flag, schema_payload_ref
-- Verify meta fields appear in REST API responses
+### WordPress removal
+- Deleted: `app/modules/wordpress/`, `app/api/routes/wordpress.py`, `app/schemas/wordpress.py`, all WP tests, `docker-compose.wordpress.yml`, `infrastructure/wordpress/`
+- 5 WP config settings removed from `config.py` and `.env.example`
+- `wordpress_router` replaced by `cms_router` in `router.py`
 
-### Backend: full metadata push
-- Extend `WordPressClient.create_post()` to include: post_type, categories (by name), tags (by name), custom meta fields, featured image (placeholder for now)
-- Add `WordPressClient.update_post()` for existing post updates
-- Add `WordPressClient.list_posts()` with filters (post_type, status, per_page, page)
-- Add `WordPressClient.get_post()` by ID or slug
-- Add `WordPressClient.upload_media()` placeholder (implement when image gen is ready)
-
-### Pull/sync for frontend
-- GET /api/v1/wordpress/posts — proxy list from WP REST API with cache
-- GET /api/v1/wordpress/posts/{slug} — proxy single post with cache
-- Redis cache: 5-minute TTL on WP content reads; invalidate on publish/update
-
-### Category and tag management
-- POST /api/v1/wordpress/categories — ensure category exists or create
-- POST /api/v1/wordpress/tags — ensure tag exists or create
-
-### Frontend integration prep
-- Update `lib/api.ts` to expose `fetchWPPost(slug)` and `fetchWPPosts(filters)`
-- Trek detail page updated to try WP backend first, fall back to static data
-
-## Preconditions
-- Read docs/MASTER_TRACKER.md
-- Read docs/PROCESS_GUARDRAILS.md
-- Read docs/DEPENDENCY_MAP.md
-- Confirm Step 15 complete (draft content available to push)
-- Local WordPress running (`docker-compose -f docker-compose.wordpress.yml up -d`)
-- WP admin credentials in .env (WORDPRESS_URL, WORDPRESS_USER, WORDPRESS_APP_PASSWORD)
-
-## Dependency Check
-- `app/modules/wordpress/client.py` — extended with new methods (additive, existing callers unchanged)
-- `app/modules/wordpress/service.py` — new service helpers for list/get/categories/tags
-- `app/api/routes/wordpress.py` — add new endpoints additively
-- `apps/web-next/lib/api.ts` — add WP fetch helpers (additive)
-- Redis cache layer: new dependency on `redis.asyncio` in backend
-
-## Planned Files to Create
-- `services/api/app/modules/wordpress/cache.py` — Redis cache helpers for WP content
-- WP custom plugin file (minimal PHP, deployed to local WP): `infrastructure/wordpress/plugins/trekyatra-cpt/trekyatra-cpt.php`
-- `services/api/tests/test_wordpress_full.py`
-
-## Planned Files to Modify
-- `services/api/app/modules/wordpress/client.py` — add update_post, list_posts, get_post, upload_media, ensure_category, ensure_tag
-- `services/api/app/modules/wordpress/service.py` — add pull/sync service helpers
-- `services/api/app/api/routes/wordpress.py` — add list/get/category/tag endpoints
-- `services/api/app/schemas/wordpress.py` — extend with full post response schema
-- `apps/web-next/lib/api.ts` — add fetchWPPost, fetchWPPosts
-- `apps/web-next/app/(public)/treks/[slug]/page.tsx` — try WP API first
-- `docs/MASTER_TRACKER.md`
-- `docs/DEPENDENCY_MAP.md`
-
-## Validation Commands
-```bash
-# Ensure WP is running
-docker-compose -f docker-compose.wordpress.yml up -d
-
-# Install deps
-make install
-
-# Run tests
-PYTHONPATH=services/api .venv/bin/pytest services/api/tests/ -v
-make api
-
-# Verify CPTs accessible
-curl http://localhost:8080/wp-json/wp/v2/trek_guide
-
-# Push a test post with full meta
-curl -X POST http://localhost:8000/api/v1/admin/drafts/<id>/publish
-
-# Pull back via API
-curl http://localhost:8000/api/v1/wordpress/posts?post_type=trek_guide
-
-npx gitnexus analyze --force
-```
+### Frontend
+- `lib/api.ts`: WP helpers removed; `CMSPage` interface + `fetchCMSPage`/`fetchCMSPages` added
+- `trek/[slug]/page.tsx`: reads from CMS API; renders only if `status === "published"`
+- `app/api/revalidate/route.ts`: Next.js on-demand revalidation endpoint
+- `app/(admin)/admin/cms/page.tsx`: Master CMS admin page with KPI cards, pages table, per-page and global cache clear
+- Admin layout: "Master CMS" nav entry in System group
 
 ## Status
-done
+Done
 
 ## Files Created
-- `infrastructure/wordpress/plugins/trekyatra-cpt/trekyatra-cpt.php`
-- `services/api/app/modules/wordpress/cache.py`
-- `services/api/tests/test_wordpress_full.py`
+- `services/api/app/modules/cms/__init__.py`
+- `services/api/app/modules/cms/models.py`
+- `services/api/app/modules/cms/service.py`
+- `services/api/app/api/routes/cms.py`
+- `services/api/app/schemas/cms.py`
+- `services/api/alembic/versions/20260423_0008_master_cms.py`
+- `services/api/tests/test_cms.py`
+- `apps/web-next/app/api/revalidate/route.ts`
+- `apps/web-next/app/(admin)/admin/cms/page.tsx`
 
 ## Files Modified
-- `services/api/app/modules/wordpress/client.py`
-- `services/api/app/modules/wordpress/service.py`
-- `services/api/app/api/routes/wordpress.py`
-- `services/api/app/schemas/wordpress.py`
+- `services/api/app/core/config.py`
+- `services/api/app/api/router.py`
+- `services/api/app/db/base.py`
+- `services/api/app/modules/content/models.py`
+- `services/api/app/modules/admin/service.py`
+- `services/api/app/modules/publish/service.py`
+- `services/api/app/api/routes/publish.py`
+- `services/api/app/schemas/admin.py`
+- `services/api/app/schemas/publish.py`
+- `services/api/tests/test_publish.py`
+- `services/api/tests/test_admin.py`
+- `services/api/tests/test_smoke.py`
+- `services/api/.env.example`
 - `apps/web-next/lib/api.ts`
 - `apps/web-next/app/(public)/trek/[slug]/page.tsx`
+- `apps/web-next/app/(admin)/admin/layout.tsx`
 
 ## Notes
-- Custom plugin should be minimal: just registers CPTs and meta fields, nothing else
-- App password authentication is already in use; no change to auth strategy
-- Cache key pattern: `wp:post:{slug}`, `wp:posts:{post_type}:{page}`
-- If WP is not reachable, list/get endpoints should return cached data or 503 (never crash the frontend)
-- featured_image upload is a placeholder — implement with image generation in V2
+- 117/117 backend tests pass; `next build` clean (zero errors)
+- Cache uses Redis DB 2, 5-min TTL
+- `upsert_page_from_draft` bridges agent pipeline → CMS; called by `publish_to_cms`
+- Admin cache clear hits both Redis (backend) and Next.js revalidation simultaneously
+- WordPress Docker service deleted; stop the container if still running

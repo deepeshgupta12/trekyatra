@@ -5,7 +5,7 @@ Replace all static/mock data on public content pages with real content pulled fr
 
 ## Scope
 
-### Page templates to implement (all consume WP REST API via backend proxy)
+### Page templates to implement (all consume Master CMS API via `/api/v1/cms/pages/{slug}`)
 1. **Trek Guide** (`/treks/[slug]`) — full guide with TOC, breadcrumbs, FAQs, related treks, CTA slots
 2. **Packing List** (`/packing/[slug]`) — checklist format, gear items with affiliate link slots, download CTA
 3. **Best-Time / Seasonal** (`/seasons/[slug]`) — month calendar, weather summary, trek recommendations
@@ -26,19 +26,20 @@ Replace all static/mock data on public content pages with real content pulled fr
 
 ### Data fetching pattern
 - All content pages use Next.js `generateStaticParams` + ISR (revalidate: 3600)
-- `fetchWPPost(slug, postType)` from `lib/api.ts` — server-side fetch with fallback
-- If WP is not available, serve static fallback data (existing `data/treks.ts`)
+- `fetchCMSPage(slug)` from `lib/api.ts` — server-side fetch with `cache: "no-store"`
+- If CMS page not found or not published, serve static fallback data (existing `data/treks.ts`)
 - Structured data (JSON-LD) injected in page metadata (wired in Step 19)
+- Cache invalidation: `POST /api/v1/cms/cache/invalidate` + `POST /api/revalidate` from admin UI
 
 ## Preconditions
 - Read docs/MASTER_TRACKER.md
 - Read docs/PROCESS_GUARDRAILS.md
 - Read docs/DEPENDENCY_MAP.md
-- Confirm Step 16 complete (WP pull/sync API working)
-- At least 2-3 published posts per content type in local WordPress for testing
+- Confirm Step 16 complete (Master CMS API working, publish_to_cms tested)
+- At least 2-3 published CMS pages per content type (use admin CMS page or publish a draft)
 
 ## Dependency Check
-- `apps/web-next/lib/api.ts` — fetchWPPost / fetchWPPosts added in Step 16
+- `apps/web-next/lib/api.ts` — fetchCMSPage / fetchCMSPages added in Step 16
 - `apps/web-next/app/(public)/treks/[slug]/page.tsx` — fully rewritten; existing mock data replaced
 - No backend changes in this step; all new code is frontend
 - `apps/web-next/components/` — new shared components created (no existing components modified)

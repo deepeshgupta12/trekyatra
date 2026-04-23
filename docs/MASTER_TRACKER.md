@@ -39,7 +39,7 @@ All V0 foundations are shipped. The stack is live locally with:
 | 14 | Content Brief Agent + brief approval workflow | done |
 | 15 | Content Writing Agent + SEO/AEO Optimization Agent | done |
 | 15B | Admin CMS enhancements — real API wiring + pipeline view | done |
-| 16 | WordPress CMS full integration | done |
+| 16 | Master CMS Foundation (WordPress removed) | done |
 | 17 | Full publish orchestration pipeline | pending |
 | 18 | Public frontend content page templates | pending |
 | 19 | SEO and schema infrastructure (frontend) | pending |
@@ -186,19 +186,25 @@ What is required to activate:
 - Set Authorized JavaScript origins: `http://localhost:3000`
 - Copy Client ID → `apps/web-next/.env.local` as `NEXT_PUBLIC_GOOGLE_CLIENT_ID=<id>`
 
-### Step 16 — WordPress CMS Full Integration
+### Step 16 — Master CMS Foundation
 Status: done
 What is done:
-- `infrastructure/wordpress/plugins/trekyatra-cpt/trekyatra-cpt.php` — WP plugin registering 8 CPTs (trek_guide, packing_list, comparison, permit_guide, seasonal_page, beginner_roundup, gear_review, destination) with `show_in_rest=true`; registers 10 meta fields (content_type, cluster_id, brief_id, etc.) on all CPTs + standard posts via REST API
-- `services/api/app/modules/wordpress/cache.py` — Redis cache module (DB 2, 5-min TTL); `cache_get/set/delete`, `wp_post_key(slug)`, `wp_posts_key(post_type, page)`; all Redis errors swallowed silently
-- `services/api/app/modules/wordpress/client.py` — refactored `_request` → `_execute(method, path, use_auth, body)`; backward-compatible `_request()` and `_request_write()` wrappers; `create_post()` extended with `post_type`, `meta`, `category_ids`, `tag_ids` params; added `update_post(post_id, **fields)`, `list_posts(post_type, status, per_page, page)`, `get_post(int|str)`, `upload_media()` placeholder, `ensure_category(name)`, `ensure_tag(name)`; `WordPressClientResult` extended with `total` and `total_pages` from WP response headers
-- `services/api/app/schemas/wordpress.py` — extended with `WPPostResponse`, `WPPostsListResponse`, `WPCategoryRequest/Response`, `WPTagRequest/Response`
-- `services/api/app/modules/wordpress/service.py` — new helpers: `_normalize_wp_post()` (flattens WP rendered fields), `list_wp_posts()` (cache-first), `get_wp_post()` (cache-first, slug → list query), `ensure_wp_category()`, `ensure_wp_tag()`, `invalidate_post_cache()`
-- `services/api/app/api/routes/wordpress.py` — new routes: `GET /api/v1/wordpress/posts`, `GET /api/v1/wordpress/posts/{slug}`, `POST /api/v1/wordpress/categories`, `POST /api/v1/wordpress/tags`; WP down → 503 (never crashes frontend)
-- `services/api/tests/test_wordpress_full.py` — 18 tests covering: normalize, list (cache hit/miss/error), get (cache hit/miss/not-found/error), ensure_category (found/error), ensure_tag, API 503 on WP down, API 200 with mocked data for all 4 new routes
-- `apps/web-next/lib/api.ts` — `WPPost` interface, `WPPostsResponse` interface, `fetchWPPost(slug)`, `fetchWPPosts(filters)` exported
-- `apps/web-next/app/(public)/trek/[slug]/page.tsx` — imports `fetchWPPost`; tries WP at server-render time, falls back silently; renders `wpPost.content` via `dangerouslySetInnerHTML` before static blocks if available
-- 119/119 backend tests pass; `next build` clean (zero errors)
+- WordPress removed entirely: deleted `app/modules/wordpress/`, `app/api/routes/wordpress.py`, `app/schemas/wordpress.py`, `tests/test_wordpress*.py`, `docker-compose.wordpress.yml`, `infrastructure/wordpress/`; 5 WP config settings removed from `config.py` and `.env.example`
+- `services/api/alembic/versions/20260423_0008_master_cms.py` — creates `cms_pages` table (slug, page_type, title, content_html, content_json, status, seo_title, seo_description, seo_meta, published_at, brief_id FK, cluster_id FK, timestamps); drops `wordpress_post_id` from `content_drafts`, adds `cms_page_id` (UUID); drops `wordpress_post_id`+`wordpress_url` from `publish_logs`, adds `cms_page_id`+`published_url`
+- `services/api/app/modules/cms/models.py` — `CMSPage` ORM model; registered in `app/db/base.py`
+- `services/api/app/schemas/cms.py` — `CMSPageCreate`, `CMSPagePatch`, `CMSPageResponse`, `CMSCacheInvalidateRequest/Response`
+- `services/api/app/modules/cms/service.py` — `create_page`, `get_page_by_slug`, `get_page_by_id`, `list_pages`, `update_page`, `delete_page`, `upsert_page_from_draft` (agent pipeline → CMS bridge), `cache_invalidate`, `cache_invalidate_all` (Redis DB 2, 5-min TTL, all errors swallowed)
+- `services/api/app/api/routes/cms.py` — `GET/POST /cms/pages`, `GET/PATCH/DELETE /cms/pages/{slug}`, `POST /cms/cache/invalidate`; registered in `router.py`
+- `services/api/app/modules/publish/service.py` — `push_draft_to_wordpress` replaced by `publish_to_cms`; calls `upsert_page_from_draft`, writes `PublishLog` with `cms_page_id` + `published_url`, sets `draft.cms_page_id`
+- `services/api/app/schemas/admin.py` — `WordPressConfigSummary` replaced by `CMSConfigSummary`; `SystemSummaryResponse` + `DashboardSummaryResponse` updated
+- `services/api/tests/test_cms.py` — 18 tests: service CRUD, upsert create/update, cache swallows errors, API list/create/409/get/404/patch/delete/cache-invalidate-single/all/400
+- `services/api/tests/test_publish.py` — rewritten: 9 tests covering status transitions + `publish_to_cms` creates CMSPage + publish log with cms_page_id
+- `apps/web-next/lib/api.ts` — WP types/helpers removed; `CMSPage` interface + `fetchCMSPage` (cache: no-store) + `fetchCMSPages` added
+- `apps/web-next/app/(public)/trek/[slug]/page.tsx` — reads from CMS API (`fetchCMSPage`); renders `cmsPage.content_html` only if `status === "published"`; static fallback unchanged
+- `apps/web-next/app/api/revalidate/route.ts` — Next.js on-demand revalidation POST endpoint; accepts `{ slug }`, `{ slugs }`, `{ scope: "all" }` → calls `revalidatePath`
+- `apps/web-next/app/(admin)/admin/cms/page.tsx` — Master CMS admin page: KPI cards (total/published/draft/review), pages table with slug + type + status + updated date, per-page cache clear + view + delete, global "Clear all caches" button hitting both Redis and Next.js revalidation
+- `apps/web-next/app/(admin)/admin/layout.tsx` — "Master CMS" nav entry added (Database icon, System group)
+- 117/117 backend tests pass; `next build` clean (zero errors)
 
 ### Step 15B — Admin CMS Enhancements (real API wiring + pipeline view)
 Status: done

@@ -7,7 +7,7 @@ import { Logo } from "@/components/brand/Logo";
 import {
   LayoutDashboard, Search, Layers, FileText, CheckSquare, Link2,
   DollarSign, BarChart2, Terminal, Settings, ChevronRight, Menu, X,
-  GitBranch, Bot, GitMerge,
+  GitBranch, Bot, GitMerge, Database,
 } from "lucide-react";
 
 const NAV_GROUPS = [
@@ -34,6 +34,7 @@ const NAV_GROUPS = [
   {
     label: "System",
     items: [
+      { href: "/admin/cms", label: "Master CMS", icon: Database },
       { href: "/admin/logs", label: "Agent Logs", icon: Terminal },
       { href: "/admin/settings", label: "Settings", icon: Settings },
     ],

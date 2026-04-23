@@ -23,8 +23,8 @@ def test_auth_me_unauthenticated() -> None:
     assert r.status_code == 401
 
 
-def test_wordpress_health() -> None:
-    r = client.get("/api/v1/wordpress/health")
+def test_cms_pages_list() -> None:
+    r = client.get("/api/v1/cms/pages")
     assert r.status_code == 200
 
 

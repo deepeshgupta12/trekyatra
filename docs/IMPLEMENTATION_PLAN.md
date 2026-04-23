@@ -81,27 +81,27 @@
 - Fact-check flag system: uncertain claim markers
 - Draft review flow with content preview in admin UI
 
-### Step 16 — WordPress CMS full integration [DONE]
-- PHP plugin: 8 CPTs + 10 meta fields registered with REST API visibility
-- WordPressClient: _execute() refactor, create_post extended, update_post, list_posts, get_post, upload_media (placeholder), ensure_category, ensure_tag
-- Redis cache module: DB 2, 5-min TTL, wp:post:{slug} / wp:posts:{type}:{page} keys
-- New schemas: WPPostResponse, WPPostsListResponse, WPCategoryRequest/Response, WPTagRequest/Response
-- New routes: GET /posts, GET /posts/{slug}, POST /categories, POST /tags — 503 on WP down
-- 18 new tests (119/119 total pass)
-- Frontend: WPPost type + fetchWPPost/fetchWPPosts in lib/api.ts
-- Trek detail page: WP content enrichment with static fallback
-- Pull sync: GET /api/v1/wordpress/posts
-- Frontend: consume WP REST API for article/content pages
+### Step 16 — Master CMS Foundation [DONE]
+- WordPress removed entirely (all modules, routes, schemas, tests, docker-compose, PHP plugin)
+- `cms_pages` table: slug, page_type, title, content_html, content_json, status, seo fields, brief_id FK, cluster_id FK, published_at
+- CMS service layer: CRUD + `upsert_page_from_draft` (agent pipeline → CMS bridge) + cache invalidation (Redis DB 2, 5-min TTL)
+- New routes: GET/POST /cms/pages, GET/PATCH/DELETE /cms/pages/{slug}, POST /cms/cache/invalidate
+- publish_to_cms replaces push_draft_to_wordpress; content_drafts.wordpress_post_id → cms_page_id
+- 18 new tests in test_cms.py; test_publish.py rewritten for CMS flow (117/117 total pass)
+- Frontend: CMSPage type + fetchCMSPage/fetchCMSPages in lib/api.ts
+- Trek detail page: reads from CMS API with static fallback
+- Next.js revalidation endpoint: POST /api/revalidate (slug | scope: "all")
+- Admin CMS page: pages table, KPI cards, per-page + global cache clear
 
 ### Step 17 — Full publish orchestration pipeline
-- Celery chain: Trend → Cluster → Brief → Write → SEO → Publish
+- Celery chain: Trend → Cluster → Brief → Write → SEO → Publish (to Master CMS)
 - Approval gate checkpoints (brief approval, draft approval)
 - Manual trigger: POST /admin/pipeline/run
 - Pipeline status tracking
 - Admin UI: pipeline monitor page
 
 ### Step 18 — Public frontend content page templates
-- Trek guide page template (real WordPress data)
+- Trek guide page template (Master CMS data)
 - Packing list page template
 - Best-time / seasonal page template
 - Comparison page template
@@ -241,7 +241,7 @@
 - Language model selection per content piece
 - Alternate language draft generation pipeline
 - hreflang setup in SEO layer
-- Language-specific WordPress post types
+- Language fields on cms_pages (no WordPress dependency)
 
 ---
 

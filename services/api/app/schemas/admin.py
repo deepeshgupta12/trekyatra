@@ -14,12 +14,11 @@ class TopicSummary(CountSummary):
     by_source: dict[str, int]
 
 
-class WordPressConfigSummary(BaseModel):
-    base_url: str
-    rest_api_base_url: str
-    credentials_configured: bool
-    timeout_seconds: float
-    verify_ssl: bool
+class CMSConfigSummary(BaseModel):
+    engine: str = "master_cms"
+    pages_table: str = "cms_pages"
+    cache_db: int = 2
+    cache_ttl_seconds: int = 300
 
 
 class SystemSummaryResponse(BaseModel):
@@ -28,7 +27,7 @@ class SystemSummaryResponse(BaseModel):
     api_status: str
     database_status: str
     environment: str
-    wordpress: WordPressConfigSummary
+    cms: CMSConfigSummary
     generated_at: datetime
 
 
@@ -39,5 +38,5 @@ class DashboardSummaryResponse(BaseModel):
     clusters: CountSummary
     briefs: CountSummary
     drafts: CountSummary
-    wordpress: WordPressConfigSummary
+    cms: CMSConfigSummary
     generated_at: datetime

@@ -22,12 +22,6 @@ class Settings(BaseSettings):
     redis_port: int = 6380
     redis_db: int = 0
 
-    wordpress_base_url: str = "http://localhost:8080"
-    wordpress_username: str = "admin"
-    wordpress_app_password: str = "replace_me"
-    wordpress_timeout_seconds: float = 10.0
-    wordpress_verify_ssl: bool = True
-
     google_client_id: str | None = None
     google_client_secret: str | None = None
     anthropic_api_key: str | None = None
@@ -70,17 +64,6 @@ class Settings(BaseSettings):
     @property
     def celery_result_backend(self) -> str:
         return f"redis://{self.redis_host}:{self.redis_port}/1"
-
-    @computed_field  # type: ignore[prop-decorator]
-    @property
-    def wordpress_rest_base_url(self) -> str:
-        return f"{self.wordpress_base_url.rstrip('/')}/wp-json"
-
-    @computed_field  # type: ignore[prop-decorator]
-    @property
-    def wordpress_credentials_configured(self) -> bool:
-        return bool(self.wordpress_username and self.wordpress_app_password)
-
 
 @lru_cache(maxsize=1)
 def get_settings() -> Settings:

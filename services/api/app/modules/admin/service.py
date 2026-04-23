@@ -13,11 +13,11 @@ from app.modules.content.models import (
     TopicOpportunity,
 )
 from app.schemas.admin import (
+    CMSConfigSummary,
     CountSummary,
     DashboardSummaryResponse,
     SystemSummaryResponse,
     TopicSummary,
-    WordPressConfigSummary,
 )
 
 
@@ -113,14 +113,8 @@ def summarize_drafts(db: Session) -> CountSummary:
     )
 
 
-def summarize_wordpress_config() -> WordPressConfigSummary:
-    return WordPressConfigSummary(
-        base_url=settings.wordpress_base_url,
-        rest_api_base_url=settings.wordpress_rest_base_url,
-        credentials_configured=settings.wordpress_credentials_configured,
-        timeout_seconds=settings.wordpress_timeout_seconds,
-        verify_ssl=settings.wordpress_verify_ssl,
-    )
+def summarize_cms_config() -> CMSConfigSummary:
+    return CMSConfigSummary()
 
 
 def summarize_system(db: Session) -> SystemSummaryResponse:
@@ -134,7 +128,7 @@ def summarize_system(db: Session) -> SystemSummaryResponse:
         api_status="ok",
         database_status=database_status,
         environment=settings.app_env,
-        wordpress=summarize_wordpress_config(),
+        cms=summarize_cms_config(),
         generated_at=_utc_now(),
     )
 
@@ -145,6 +139,6 @@ def summarize_dashboard(db: Session) -> DashboardSummaryResponse:
         clusters=summarize_clusters(db),
         briefs=summarize_briefs(db),
         drafts=summarize_drafts(db),
-        wordpress=summarize_wordpress_config(),
+        cms=summarize_cms_config(),
         generated_at=_utc_now(),
     )

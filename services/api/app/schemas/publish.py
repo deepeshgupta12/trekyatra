@@ -15,8 +15,8 @@ class PublishLogResponse(BaseModel):
     id: uuid.UUID
     draft_id: uuid.UUID
     status: str
-    wordpress_post_id: int | None = None
-    wordpress_url: str | None = None
+    cms_page_id: uuid.UUID | None = None
+    published_url: str | None = None
     error_message: str | None = None
     completed_at: datetime | None = None
     created_at: datetime
@@ -27,6 +27,6 @@ class PublishLogResponse(BaseModel):
 class DraftPublishResponse(BaseModel):
     draft_id: uuid.UUID
     status: str
-    wordpress_post_id: int | None = None
-    wordpress_url: str | None = None
+    cms_page_id: uuid.UUID | None = None
+    published_url: str | None = None
     message: str

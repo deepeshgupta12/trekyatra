@@ -38,7 +38,7 @@ Wire all agents and approval gates into a single orchestrated content pipeline. 
 - Read docs/PROCESS_GUARDRAILS.md
 - Read docs/DEPENDENCY_MAP.md
 - Confirm Step 15 is complete (all 5 agents operational)
-- Confirm Step 16 is complete (WP push working end-to-end)
+- Confirm Step 16 is complete (Master CMS publish_to_cms working end-to-end)
 - Celery worker running (Step 11)
 
 ## Dependency Check

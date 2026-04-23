@@ -117,7 +117,7 @@ class ContentDraft(UUIDPrimaryKeyMixin, TimestampMixin, Base):
     status: Mapped[str] = mapped_column(String(32), default="draft", nullable=False, index=True)
 
     published_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
-    wordpress_post_id: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    cms_page_id: Mapped[uuid.UUID | None] = mapped_column(Uuid, nullable=True)
 
     brief: Mapped[ContentBrief] = relationship(back_populates="drafts")
     claims: Mapped[list["DraftClaim"]] = relationship(
@@ -141,8 +141,8 @@ class PublishLog(UUIDPrimaryKeyMixin, TimestampMixin, Base):
         index=True,
     )
     status: Mapped[str] = mapped_column(String(32), nullable=False, index=True)
-    wordpress_post_id: Mapped[int | None] = mapped_column(Integer, nullable=True)
-    wordpress_url: Mapped[str | None] = mapped_column(String(512), nullable=True)
+    cms_page_id: Mapped[uuid.UUID | None] = mapped_column(Uuid, nullable=True)
+    published_url: Mapped[str | None] = mapped_column(String(512), nullable=True)
     error_message: Mapped[str | None] = mapped_column(Text, nullable=True)
     completed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
 

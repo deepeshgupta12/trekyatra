@@ -6,9 +6,7 @@ from datetime import datetime, timezone
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
-from app.core.config import settings
 from app.modules.content.models import ContentDraft, PublishLog
-from app.modules.wordpress.client import WordPressClient, WordPressClientError
 from app.schemas.publish import DraftPublishResponse, PublishLogResponse
 
 VALID_TRANSITIONS: dict[str, list[str]] = {
@@ -35,7 +33,11 @@ def update_draft_status(db: Session, *, draft_id: uuid.UUID, new_status: str) ->
     return draft
 
 
-def push_draft_to_wordpress(db: Session, *, draft_id: uuid.UUID) -> DraftPublishResponse:
+def publish_to_cms(db: Session, *, draft_id: uuid.UUID) -> DraftPublishResponse:
+    """Publish an approved draft to the Master CMS (creates/updates a CMSPage record)."""
+    from app.modules.cms.models import CMSPage
+    from app.modules.cms.service import upsert_page_from_draft
+
     draft = db.scalar(select(ContentDraft).where(ContentDraft.id == draft_id))
     if draft is None:
         raise ValueError(f"Draft {draft_id} not found.")
@@ -46,70 +48,33 @@ def push_draft_to_wordpress(db: Session, *, draft_id: uuid.UUID) -> DraftPublish
     db.add(log)
     db.flush()
 
-    if not settings.wordpress_credentials_configured:
-        log.status = "skipped"
-        log.error_message = "WordPress credentials are not configured."
-        log.completed_at = datetime.now(timezone.utc)
-        draft.status = "published"
-        draft.published_at = datetime.now(timezone.utc)
-        db.flush()
-        return DraftPublishResponse(
-            draft_id=draft.id,
-            status="skipped",
-            message="WordPress not configured — draft marked published locally.",
-        )
-
-    client = WordPressClient(
-        base_url=settings.wordpress_base_url,
-        username=settings.wordpress_username,
-        app_password=settings.wordpress_app_password,
-        timeout_seconds=settings.wordpress_timeout_seconds,
-        verify_ssl=settings.wordpress_verify_ssl,
-    )
-
     try:
-        result = client.create_post(
-            title=draft.title,
-            content=draft.content_markdown,
-            slug=draft.slug,
-            status="publish",
-            excerpt=draft.excerpt,
-        )
-    except WordPressClientError as exc:
+        cms_page = upsert_page_from_draft(db, draft=draft)
+    except Exception as exc:
         log.status = "failed"
         log.error_message = str(exc)
         log.completed_at = datetime.now(timezone.utc)
         db.flush()
-        raise ValueError(f"WordPress push failed: {exc}") from exc
+        raise ValueError(f"CMS publish failed: {exc}") from exc
 
-    if not result.ok:
-        error_msg = f"WordPress returned HTTP {result.status_code}: {result.message}"
-        log.status = "failed"
-        log.error_message = error_msg
-        log.completed_at = datetime.now(timezone.utc)
-        db.flush()
-        raise ValueError(error_msg)
-
-    payload = result.payload if isinstance(result.payload, dict) else {}
-    wp_post_id: int | None = payload.get("id")
-    wp_link: str | None = payload.get("link")
+    published_url = f"/trek/{cms_page.slug}"
 
     log.status = "succeeded"
-    log.wordpress_post_id = wp_post_id
-    log.wordpress_url = wp_link
+    log.cms_page_id = cms_page.id
+    log.published_url = published_url
     log.completed_at = datetime.now(timezone.utc)
 
     draft.status = "published"
     draft.published_at = datetime.now(timezone.utc)
-    draft.wordpress_post_id = wp_post_id
+    draft.cms_page_id = cms_page.id
     db.flush()
 
     return DraftPublishResponse(
         draft_id=draft.id,
         status="succeeded",
-        wordpress_post_id=wp_post_id,
-        wordpress_url=wp_link,
-        message="Draft published to WordPress successfully.",
+        cms_page_id=cms_page.id,
+        published_url=published_url,
+        message="Draft published to Master CMS successfully.",
     )
 
 

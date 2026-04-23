@@ -1,8 +1,8 @@
-"""Tests for publish workflow: status transitions, WordPress push, publish log."""
+"""Tests for publish workflow: status transitions, CMS publish, publish log."""
 from __future__ import annotations
 
 import uuid
-from unittest.mock import MagicMock, patch
+from unittest.mock import patch
 
 import pytest
 from fastapi.testclient import TestClient
@@ -10,6 +10,7 @@ from sqlalchemy import delete
 
 from app.db.session import SessionLocal
 from app.main import app
+from app.modules.cms.models import CMSPage
 from app.modules.content.models import ContentBrief, ContentDraft, KeywordCluster, PublishLog, TopicOpportunity
 
 client = TestClient(app)
@@ -23,6 +24,7 @@ def clean_state():
         db.execute(delete(ContentBrief))
         db.execute(delete(KeywordCluster))
         db.execute(delete(TopicOpportunity))
+        db.execute(delete(CMSPage))
         db.commit()
     yield
     with SessionLocal() as db:
@@ -31,6 +33,7 @@ def clean_state():
         db.execute(delete(ContentBrief))
         db.execute(delete(KeywordCluster))
         db.execute(delete(TopicOpportunity))
+        db.execute(delete(CMSPage))
         db.commit()
 
 
@@ -96,63 +99,36 @@ def test_publish_requires_approved_status() -> None:
     assert "approved" in r.json()["detail"]
 
 
-def test_publish_skipped_when_wordpress_not_configured() -> None:
+def test_publish_to_cms_succeeds() -> None:
     draft_id = _create_draft_in_state("approved")
-
-    with patch("app.modules.publish.service.settings") as mock_settings:
-        mock_settings.wordpress_credentials_configured = False
-
-        r = client.post(f"/api/v1/admin/drafts/{draft_id}/publish")
-
-    assert r.status_code == 200
-    data = r.json()
-    assert data["status"] == "skipped"
-    assert "not configured" in data["message"].lower() or "locally" in data["message"].lower()
-
-
-def test_publish_succeeds_with_mocked_wordpress() -> None:
-    draft_id = _create_draft_in_state("approved")
-
-    mock_result = MagicMock()
-    mock_result.ok = True
-    mock_result.status_code = 201
-    mock_result.message = "OK"
-    mock_result.payload = {"id": 42, "link": "http://localhost:8080/?p=42"}
-
-    with patch("app.modules.publish.service.settings") as mock_settings, \
-         patch("app.modules.publish.service.WordPressClient") as mock_client_cls:
-        mock_settings.wordpress_credentials_configured = True
-        mock_settings.wordpress_base_url = "http://localhost:8080"
-        mock_settings.wordpress_username = "admin"
-        mock_settings.wordpress_app_password = "test"
-        mock_settings.wordpress_timeout_seconds = 10.0
-        mock_settings.wordpress_verify_ssl = False
-
-        mock_instance = mock_client_cls.return_value
-        mock_instance.create_post.return_value = mock_result
-
-        r = client.post(f"/api/v1/admin/drafts/{draft_id}/publish")
-
+    r = client.post(f"/api/v1/admin/drafts/{draft_id}/publish")
     assert r.status_code == 200
     data = r.json()
     assert data["status"] == "succeeded"
-    assert data["wordpress_post_id"] == 42
-    assert data["wordpress_url"] == "http://localhost:8080/?p=42"
+    assert data["cms_page_id"] is not None
+    assert data["published_url"] is not None
+    assert "CMS" in data["message"]
 
 
-def test_publish_log_recorded_after_push() -> None:
+def test_publish_creates_cms_page_in_db() -> None:
     draft_id = _create_draft_in_state("approved")
+    client.post(f"/api/v1/admin/drafts/{draft_id}/publish")
+    with SessionLocal() as db:
+        pages = db.query(CMSPage).all()
+    assert len(pages) == 1
+    assert pages[0].status == "published"
 
-    with patch("app.modules.publish.service.settings") as mock_settings:
-        mock_settings.wordpress_credentials_configured = False
-        client.post(f"/api/v1/admin/drafts/{draft_id}/publish")
 
+def test_publish_log_recorded_after_publish() -> None:
+    draft_id = _create_draft_in_state("approved")
+    client.post(f"/api/v1/admin/drafts/{draft_id}/publish")
     r = client.get(f"/api/v1/admin/drafts/{draft_id}/publish-log")
     assert r.status_code == 200
     logs = r.json()
     assert len(logs) == 1
-    assert logs[0]["status"] == "skipped"
+    assert logs[0]["status"] == "succeeded"
     assert logs[0]["draft_id"] == draft_id
+    assert logs[0]["cms_page_id"] is not None
 
 
 def test_publish_log_empty_for_unpublished_draft() -> None:
