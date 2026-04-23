@@ -67,9 +67,12 @@ def list_wordpress_posts(
 
 
 @router.get("/posts/{slug}", response_model=WPPostResponse)
-def get_wordpress_post(slug: str) -> WPPostResponse:
+def get_wordpress_post(
+    slug: str,
+    post_type: str = Query(default="post"),
+) -> WPPostResponse:
     try:
-        data = get_wp_post(slug=slug)
+        data = get_wp_post(slug=slug, post_type=post_type)
         return WPPostResponse(**data)
     except WordPressClientError as exc:
         raise HTTPException(

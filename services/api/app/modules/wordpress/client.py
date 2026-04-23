@@ -247,14 +247,17 @@ class WordPressClient:
             use_auth=True,
         )
 
-    def get_post(self, identifier: int | str) -> WordPressClientResult:
+    def get_post(
+        self, identifier: int | str, post_type: str = "post"
+    ) -> WordPressClientResult:
+        rest_base = self._rest_base(post_type)
         if isinstance(identifier, int):
             return self._try_paths(
-                paths=self._wp_paths(f"/wp/v2/posts/{identifier}"),
+                paths=self._wp_paths(f"/wp/v2/{rest_base}/{identifier}"),
                 use_auth=True,
             )
         return self._try_paths(
-            paths=self._wp_paths("/wp/v2/posts", f"slug={identifier}"),
+            paths=self._wp_paths(f"/wp/v2/{rest_base}", f"slug={identifier}"),
             use_auth=True,
         )
 

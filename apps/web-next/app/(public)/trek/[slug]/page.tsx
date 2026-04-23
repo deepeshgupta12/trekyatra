@@ -15,12 +15,17 @@ export default async function TrekDetailPage({ params }: { params: { slug: strin
   const trek = (await fetchTrekBySlug(params.slug)) as Trek;
   const allTreks = await fetchTreks();
 
-  // Try WordPress for rich article content; fall back gracefully if WP is down
+  // Try WordPress for rich article content — trek_guide CPT first, then standard post.
+  // Falls back silently if WP is down or the post doesn't exist.
   let wpPost: WPPost | null = null;
   try {
-    wpPost = await fetchWPPost(params.slug);
+    wpPost = await fetchWPPost(params.slug, "trek_guide");
   } catch {
-    // WP not available — render with static data only
+    try {
+      wpPost = await fetchWPPost(params.slug);
+    } catch {
+      // WP not available — render with static data only
+    }
   }
   const related = allTreks.filter(t => t.slug !== trek.slug).slice(0, 3);
 

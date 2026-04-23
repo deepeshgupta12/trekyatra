@@ -135,14 +135,14 @@ def list_wp_posts(
     return response
 
 
-def get_wp_post(*, slug: str) -> dict:
+def get_wp_post(*, slug: str, post_type: str = "post") -> dict:
     cache_key = wp_post_key(slug)
     cached = cache_get(cache_key)
     if cached is not None:
         return cached
 
     client = _build_client()
-    result = client.get_post(slug)
+    result = client.get_post(slug, post_type)
     if not result.ok:
         raise WordPressClientError(
             f"WP post '{slug}' not found: {result.message}"

@@ -34,8 +34,12 @@ export interface WPPostsResponse {
   pages: number;
 }
 
-export async function fetchWPPost(slug: string): Promise<WPPost> {
-  return apiFetch<WPPost>(`/wordpress/posts/${slug}`);
+export async function fetchWPPost(
+  slug: string,
+  postType?: string,
+): Promise<WPPost> {
+  const qs = postType ? `?post_type=${postType}` : "";
+  return apiFetch<WPPost>(`/wordpress/posts/${slug}${qs}`);
 }
 
 export async function fetchWPPosts(filters?: {
