@@ -186,9 +186,16 @@ What is required to activate:
 - Set Authorized JavaScript origins: `http://localhost:3000`
 - Copy Client ID → `apps/web-next/.env.local` as `NEXT_PUBLIC_GOOGLE_CLIENT_ID=<id>`
 
-### Step 17 — Full Publish Orchestration Pipeline
+### Step 17 — Full Publish Orchestration Pipeline (+ enhancements)
 Status: done
-What is done:
+What is done (enhancements, post-TC review):
+- Alembic migration `20260423_0010_cms_hero_image.py` — adds hero_image_url (String 512, nullable) to cms_pages
+- `CMSPage` model + all 3 CMS schemas updated with hero_image_url field
+- `CMSPageForm` — hero_image_url URL input + preview; trek_facts strip (6 fields: duration, altitude, difficulty, season, permits, base); trek_facts persisted to content_json.trek_facts; buildPayload updated
+- `lib/api.ts` — TrekFacts interface added; CMSPage + CMSPagePayload extended with hero_image_url and trek_facts
+- Pipeline service `resume()` fix: paused_at_draft_approval now resumes at seo_aeo (not publish) — SEO/AEO agent runs before every publish
+- 2 new pipeline tests: draft-approval resume dispatches task, stages_slice confirms seo_aeo→publish path; 139/139 backend tests pass
+- Trek detail page full overhaul: generateMetadata (seo_title/description), descriptive anchor IDs (#why-this-trek, #quick-facts, etc.), sticky sidebars fixed (removed self-start from asides), all 12 TOC items match real section blocks, 4 new content blocks (best_time, difficulty, packing, safety), hero_image_url from CMS, trek facts from content_json.trek_facts, H1 strips SEO subtitle (splits on : or —), next build clean (89 pages)
 - Alembic migration `20260423_0009_pipeline.py` — creates `pipeline_runs` (id UUID PK, pipeline_type, status, current_stage, start/end_stage, input/output_json, error_detail, timestamps) and `pipeline_stages` (id UUID PK, pipeline_run_id FK, stage_name, agent_run_id FK→agent_runs, status, error_detail, timestamps)
 - `app/modules/pipeline/models.py` — `PipelineRun` + `PipelineStage` ORM models with relationship; `db/base.py` updated
 - `app/schemas/pipeline.py` — `PipelineRunCreate`, `PipelineRunResponse`, `PipelineStageResponse`, `PipelineTriggerResponse`

@@ -4,7 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Loader2, Save, Globe } from "lucide-react";
-import { createCMSPage, updateCMSPage, type CMSPage, type CMSPagePayload, type TrekContentSections } from "@/lib/api";
+import { createCMSPage, updateCMSPage, type CMSPage, type CMSPagePayload, type TrekContentSections, type TrekFacts } from "@/lib/api";
 
 const PAGE_TYPES = [
   { value: "trek_guide", label: "Trek Guide" },
@@ -45,12 +45,23 @@ export default function CMSPageForm({ mode, existing }: Props) {
   const router = useRouter();
   const s = existing?.content_json?.sections ?? {};
 
+  const tf = (existing?.content_json?.trek_facts ?? {}) as TrekFacts;
+
   const [title, setTitle] = useState(existing?.title ?? "");
   const [slug, setSlug] = useState(existing?.slug ?? "");
   const [pageType, setPageType] = useState(existing?.page_type ?? "trek_guide");
   const [status, setStatus] = useState(existing?.status ?? "draft");
   const [seoTitle, setSeoTitle] = useState(existing?.seo_title ?? "");
   const [seoDesc, setSeoDesc] = useState(existing?.seo_description ?? "");
+  const [heroImageUrl, setHeroImageUrl] = useState(existing?.hero_image_url ?? "");
+  const [trekFacts, setTrekFacts] = useState<TrekFacts>({
+    duration: tf.duration ?? "",
+    altitude: tf.altitude ?? "",
+    difficulty: tf.difficulty ?? "",
+    season: tf.season ?? "",
+    permits: tf.permits ?? "",
+    base: tf.base ?? "",
+  });
   const [sections, setSections] = useState<Record<string, string>>(
     Object.fromEntries(SECTION_FIELDS.map((f) => [f.key, (s as Record<string, string>)[f.key] ?? ""]))
   );
@@ -73,6 +84,11 @@ export default function CMSPageForm({ mode, existing }: Props) {
     const nonEmptySections = Object.fromEntries(
       Object.entries(sections).filter(([, v]) => v.trim() !== "")
     ) as TrekContentSections;
+    const nonEmptyFacts = Object.fromEntries(
+      Object.entries(trekFacts).filter(([, v]) => (v ?? "").trim() !== "")
+    ) as TrekFacts;
+    const hasFacts = Object.keys(nonEmptyFacts).length > 0;
+    const hasSections = Object.keys(nonEmptySections).length > 0;
     return {
       title: title.trim(),
       slug: slug.trim(),
@@ -80,7 +96,10 @@ export default function CMSPageForm({ mode, existing }: Props) {
       status: overrideStatus ?? status,
       seo_title: seoTitle.trim() || null,
       seo_description: seoDesc.trim() || null,
-      content_json: Object.keys(nonEmptySections).length > 0 ? { sections: nonEmptySections } : null,
+      hero_image_url: heroImageUrl.trim() || null,
+      content_json: (hasSections || hasFacts)
+        ? { sections: hasSections ? nonEmptySections : undefined, trek_facts: hasFacts ? nonEmptyFacts : undefined }
+        : null,
     };
   }
 
@@ -160,6 +179,43 @@ export default function CMSPageForm({ mode, existing }: Props) {
         <div>
           <label className={labelCls}>SEO description</label>
           <textarea className={inputCls} rows={3} value={seoDesc} onChange={(e) => setSeoDesc(e.target.value)} placeholder="Plan your Triund trek with our complete guide — routes, itinerary, best time, permits, and packing list." />
+        </div>
+      </div>
+
+      {/* Hero image */}
+      <div className="bg-[#14161f] rounded-2xl border border-white/10 p-5 space-y-4">
+        <h2 className="text-white font-semibold text-sm">Hero image</h2>
+        <div>
+          <label className={labelCls}>Hero image URL</label>
+          <input
+            className={inputCls}
+            value={heroImageUrl}
+            onChange={(e) => setHeroImageUrl(e.target.value)}
+            placeholder="https://cdn.example.com/kedarkantha-hero.jpg"
+          />
+          <p className="text-white/25 text-xs mt-1">Full URL to the hero image shown at the top of the trek page.</p>
+        </div>
+        {heroImageUrl && (
+          <img src={heroImageUrl} alt="Hero preview" className="w-full max-h-40 object-cover rounded-xl opacity-80" onError={(e) => { (e.target as HTMLImageElement).style.display = "none"; }} />
+        )}
+      </div>
+
+      {/* Trek facts strip */}
+      <div className="bg-[#14161f] rounded-2xl border border-white/10 p-5 space-y-4">
+        <h2 className="text-white font-semibold text-sm">Trek facts strip</h2>
+        <p className="text-white/40 text-xs -mt-2">Shown in the sticky facts bar and info strip on the public page.</p>
+        <div className="grid sm:grid-cols-3 gap-4">
+          {(["duration", "altitude", "difficulty", "season", "permits", "base"] as (keyof TrekFacts)[]).map((key) => (
+            <div key={key}>
+              <label className={labelCls}>{key.charAt(0).toUpperCase() + key.slice(1)}</label>
+              <input
+                className={inputCls}
+                value={trekFacts[key] ?? ""}
+                onChange={(e) => setTrekFacts((prev) => ({ ...prev, [key]: e.target.value }))}
+                placeholder={key === "duration" ? "6 days" : key === "altitude" ? "12,500 ft" : key === "difficulty" ? "Moderate" : key === "season" ? "Dec – Apr" : key === "permits" ? "Required" : "Sankri"}
+              />
+            </div>
+          ))}
         </div>
       </div>
 

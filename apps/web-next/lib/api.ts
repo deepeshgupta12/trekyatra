@@ -29,17 +29,28 @@ export interface TrekContentSections {
   faqs?: string;
 }
 
+// Structured trek facts stored in content_json.trek_facts — set via CMSPageForm.
+export interface TrekFacts {
+  duration?: string;
+  altitude?: string;
+  difficulty?: string;
+  season?: string;
+  permits?: string;
+  base?: string;
+}
+
 export interface CMSPage {
   id: string;
   slug: string;
   page_type: string;
   title: string;
   content_html: string;
-  content_json: { sections?: TrekContentSections; [key: string]: unknown } | null;
+  content_json: { sections?: TrekContentSections; trek_facts?: TrekFacts; [key: string]: unknown } | null;
   status: string;
   seo_title: string | null;
   seo_description: string | null;
   seo_meta: Record<string, unknown> | null;
+  hero_image_url: string | null;
   brief_id: string | null;
   cluster_id: string | null;
   published_at: string | null;
@@ -76,10 +87,11 @@ export interface CMSPagePayload {
   page_type?: string;
   title?: string;
   content_html?: string;
-  content_json?: { sections?: TrekContentSections } | null;
+  content_json?: { sections?: TrekContentSections; trek_facts?: TrekFacts } | null;
   status?: string;
   seo_title?: string | null;
   seo_description?: string | null;
+  hero_image_url?: string | null;
 }
 
 export async function createCMSPage(data: CMSPagePayload & { slug: string; title: string; page_type: string }): Promise<CMSPage> {

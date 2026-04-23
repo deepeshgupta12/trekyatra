@@ -151,7 +151,7 @@ class PipelineOrchestrator:
             next_stage = "content_writing"
             self._verify_brief_approved()
         elif run.status == "paused_at_draft_approval":
-            next_stage = "publish"
+            next_stage = "seo_aeo"
             self._verify_draft_approved()
         else:
             raise ValueError(

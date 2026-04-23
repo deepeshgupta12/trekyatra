@@ -108,10 +108,25 @@ Done
 - `docs/DEPENDENCY_MAP.md`
 - `docs/IMPLEMENTATION_PLAN.md`
 
+## Post-TC Enhancement (same step, separate commit)
+
+### Bug fix: END_MAP frontend bug
+- `apps/web-next/app/(admin)/admin/pipeline/page.tsx` — `END_MAP["trend_discovery"]` corrected from `"content_brief"` to `"publish"` (caused resume ValueError)
+
+### Enhancements applied after TC review
+- Alembic migration `20260423_0010_cms_hero_image.py` — adds `hero_image_url` to `cms_pages`
+- `CMSPage` model + all 3 CMS schemas (`CMSPageCreate`, `CMSPagePatch`, `CMSPageResponse`) — `hero_image_url` added
+- `CMSPageForm` — hero image URL input + preview; trek facts strip (duration / altitude / difficulty / season / permits / base); `content_json.trek_facts` persisted
+- `lib/api.ts` — `TrekFacts` interface; `CMSPage` + `CMSPagePayload` extended
+- Pipeline `resume()` fix: `paused_at_draft_approval` now resumes at `seo_aeo` (was incorrectly `publish`); 2 new tests; 139/139 pass
+- Trek detail page: `generateMetadata`, descriptive anchor IDs, sticky sidebar fix (removed `self-start`), all 12 TOC entries wired, 4 new sections (best_time, difficulty, packing, safety), H1 strips SEO subtitle, hero_image_url from CMS, trek facts from `content_json.trek_facts`
+
 ## Notes
 - Pipeline pauses at "brief_approval" checkpoint (after ContentBriefAgent); human approves the brief in admin UI; POST /runs/{id}/resume dispatches resume_pipeline_task which continues from content_writing
-- Pipeline pauses again at "paused_at_draft_approval" if ContentWritingAgent marks draft as requires_review
+- Pipeline pauses again at "paused_at_draft_approval" if ContentWritingAgent marks draft as requires_review; resume now correctly runs seo_aeo → publish
 - Partial pipeline: start_stage=content_writing + brief_id, or start_stage=seo_aeo/publish + draft_id
 - Beat schedule: daily_discovery_task runs every 24h; triggers trend_discovery → content_brief; pauses at brief_approval gate (never auto-publishes)
 - Migration 20260423_0009 was initially created with duplicate index bug (index=True in Column + explicit op.create_index); fixed in-place before first successful apply (migration had never applied to any DB)
-- 137/137 backend tests pass; next build clean
+- Migration 20260423_0010 adds hero_image_url — additive, zero downtime
+- Trek facts (duration, altitude etc.) are stored in content_json.trek_facts and editable via CMSPageForm; agent-generated CMS pages will have empty trek_facts until an editor fills them in
+- 139/139 backend tests pass; next build clean (89 pages)

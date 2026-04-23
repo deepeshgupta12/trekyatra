@@ -40,11 +40,11 @@ This file tracks structural dependencies, source-of-truth modules, and Nexus/Git
 - `components/admin/AgentRunsPanel.tsx` -> live agent-run panel with 5s polling; reads GET /api/v1/admin/agent-runs?agent_type=TYPE&limit=5; blast radius: LOW (imported by admin topic/cluster/brief/drafts pages)
 - `app/(admin)/admin/pipeline/page.tsx` -> orchestration monitor; TriggerForm (start stage + inputs), RunCard (StageTrack, output chips, resume/cancel buttons, approval gate notice), KPI strip, auto-refresh while runs active; reads from GET /admin/pipeline/runs
 - `data/treks.ts` -> static fallback trek dataset (12 treks, string image paths)
-- `components/admin/CMSPageForm.tsx` -> shared CMS create/edit form; 10 section textareas + SEO meta + page type/status selectors; blast radius: LOW (used only by /admin/cms/new and /admin/cms/[slug]/edit)
+- `components/admin/CMSPageForm.tsx` -> shared CMS create/edit form; hero_image_url input + preview, trek_facts strip (6 fields), 10 section textareas, SEO meta, page type/status selectors; blast radius: LOW (used only by /admin/cms/new and /admin/cms/[slug]/edit)
 - `app/(admin)/admin/cms/page.tsx` -> Master CMS index: KPI cards, pages table, New page button, edit/cache/view/delete per row
 - `app/(admin)/admin/cms/new/page.tsx` -> CMS manual page creation (server shell + CMSPageForm)
 - `app/(admin)/admin/cms/[slug]/edit/page.tsx` -> CMS page editor; server-fetches existing page; CMSPageForm pre-populated; Save + Publish + cache clear
-- `lib/api.ts` -> universal fetch; CMSPage + TrekContentSections interfaces; fetchCMSPage/fetchCMSPages/createCMSPage/updateCMSPage helpers
+- `lib/api.ts` -> universal fetch; CMSPage (+ hero_image_url, content_json.trek_facts) + TrekContentSections + TrekFacts interfaces; fetchCMSPage/fetchCMSPages/createCMSPage/updateCMSPage helpers
 - `lib/trekApi.ts` -> trek API adapter with mergeImage() and safe static fallback
 - `lib/auth-api.ts` -> typed client-only fetch helpers for all 5 auth endpoints (me/login/signup/logout/google)
 - `lib/auth-context.tsx` -> React AuthContext; bootstraps from GET /me; exposes user, isLoading, login(), signup(), loginWithGoogle(), logout(), refresh()
@@ -78,14 +78,14 @@ This file tracks structural dependencies, source-of-truth modules, and Nexus/Git
 - `services/api/app/db/base.py` -> model import registry for metadata
 - `services/api/app/db/session.py` -> SQLAlchemy engine, session factory, DB dependency
 - `services/api/app/schemas/auth.py` -> auth request/response contracts
-- `services/api/app/schemas/cms.py` -> CMSPageCreate, CMSPagePatch, CMSPageResponse, CMSCacheInvalidateRequest/Response
+- `services/api/app/schemas/cms.py` -> CMSPageCreate, CMSPagePatch, CMSPageResponse (all include hero_image_url), CMSCacheInvalidateRequest/Response
 - `services/api/app/schemas/content.py` -> content-domain request/response contracts
 - `services/api/app/schemas/admin.py` -> admin summary response contracts
 - `services/api/app/schemas/treks.py` -> public trek response contracts
 - `services/api/app/modules/auth/models.py` -> users, auth identities, sessions
 - `services/api/app/modules/auth/service.py` -> email + Google auth business logic; session creation; login_or_register_google_user
 - `services/api/app/modules/auth/dependencies.py` -> current user/current session dependencies
-- `services/api/app/modules/cms/models.py` -> CMSPage ORM model; blast radius: LOW (new table, no prior callers)
+- `services/api/app/modules/cms/models.py` -> CMSPage ORM model + hero_image_url (String 512, nullable); blast radius: LOW (new table, no prior callers)
 - `services/api/app/modules/cms/service.py` -> CMS CRUD helpers; _md_to_html (markdown→HTML at storage); _parse_sections_from_markdown (agent output → content_json.sections); _process_content_json (section markdown→HTML for manual saves); upsert_page_from_draft (publish bridge, now also populates content_json.sections); cache_invalidate/cache_invalidate_all (Redis DB 2, 5-min TTL); blast radius: MEDIUM (called by publish service + CMS create/update routes)
 - `services/api/app/modules/content/models.py` -> topic, cluster, brief (+ structured_brief, word_count_target, versions rel), draft (+ optimized_content, claims rel, cms_page_id), publish_log (+ cms_page_id, published_url), BriefVersion, DraftClaim ORM models; blast radius: MEDIUM
 - `services/api/app/modules/publish/service.py` -> VALID_TRANSITIONS state machine, update_draft_status, publish_to_cms (calls upsert_page_from_draft), get_publish_logs
@@ -115,7 +115,7 @@ This file tracks structural dependencies, source-of-truth modules, and Nexus/Git
 - `services/api/app/api/routes/agent_runs.py` -> GET /api/v1/admin/agent-runs with filters
 - `services/api/app/worker/celery_app.py` -> Celery instance; broker/backend from settings; includes smoke + agent_tasks + pipeline.tasks; beat_schedule: daily_discovery every 24h
 - `services/api/app/modules/pipeline/models.py` -> PipelineRun + PipelineStage ORM models; blast radius: LOW (new tables, no prior callers)
-- `services/api/app/modules/pipeline/service.py` -> PipelineOrchestrator (run/resume/stage dispatchers) + CRUD helpers; PIPELINE_STAGES list; CHECKPOINT_AFTER map; blast radius: LOW (only called by pipeline tasks and pipeline routes)
+- `services/api/app/modules/pipeline/service.py` -> PipelineOrchestrator (run/resume/stage dispatchers) + CRUD helpers; PIPELINE_STAGES list; CHECKPOINT_AFTER map; resume() from paused_at_draft_approval now resumes at seo_aeo (not publish); blast radius: LOW (only called by pipeline tasks and pipeline routes)
 - `services/api/app/modules/pipeline/tasks.py` -> run_pipeline_task, resume_pipeline_task, daily_discovery_task Celery tasks
 - `services/api/app/api/routes/pipeline.py` -> POST/GET /admin/pipeline/run, GET /admin/pipeline/runs, GET/POST /admin/pipeline/runs/{id}, POST /admin/pipeline/runs/{id}/resume, POST /admin/pipeline/runs/{id}/cancel; blast radius: LOW
 - `services/api/app/schemas/pipeline.py` -> PipelineRunCreate, PipelineRunResponse, PipelineStageResponse, PipelineTriggerResponse
@@ -133,6 +133,7 @@ This file tracks structural dependencies, source-of-truth modules, and Nexus/Git
 - `services/api/alembic/versions/20260422_0005_agent_runs.py` -> agent_runs table
 - `services/api/alembic/versions/20260422_0006_brief_versions.py` -> structured_brief + word_count_target on content_briefs; new brief_versions table
 - `services/api/alembic/versions/20260422_0007_draft_claims.py` -> optimized_content on content_drafts; new draft_claims table with draft_id FK, claim_text, claim_type, confidence_score, flagged_for_review
+- `services/api/alembic/versions/20260423_0010_cms_hero_image.py` -> adds hero_image_url (String 512, nullable) to cms_pages
 - `services/api/tests/test_health.py` -> API health smoke tests
 - `services/api/tests/test_models.py` -> metadata table coverage test
 - `services/api/tests/test_auth.py` -> auth route tests

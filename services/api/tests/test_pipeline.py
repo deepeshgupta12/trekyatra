@@ -234,6 +234,50 @@ def test_resume_paused_run_dispatches_task():
         db.close()
 
 
+# ── Orchestrator: resume from draft approval runs seo_aeo first ───────────────
+
+def test_resume_from_draft_approval_dispatches_task():
+    """Resuming a paused_at_draft_approval run dispatches resume_pipeline_task."""
+    db = next(get_db())
+    try:
+        run = pipeline_service.create_pipeline_run(
+            db,
+            start_stage="trend_discovery",
+            end_stage="publish",
+            input_data={"draft_id": str(uuid.uuid4())},
+        )
+        run.status = "paused_at_draft_approval"
+        db.commit()
+        with patch("app.modules.pipeline.tasks.resume_pipeline_task.apply_async") as mock_task:
+            mock_task.return_value = MagicMock()
+            response = client.post(f"/api/v1/admin/pipeline/runs/{run.id}/resume")
+        assert response.status_code == 200
+        mock_task.assert_called_once()
+    finally:
+        db.close()
+
+
+def test_resume_from_draft_approval_resumes_at_seo_aeo():
+    """After draft approval, next stages slice begins at seo_aeo, not publish."""
+    db = next(get_db())
+    try:
+        run = pipeline_service.create_pipeline_run(
+            db,
+            start_stage="trend_discovery",
+            end_stage="publish",
+            input_data={"draft_id": str(uuid.uuid4())},
+        )
+        run.status = "paused_at_draft_approval"
+        run.output_json = json.dumps({"draft_id": str(uuid.uuid4())})
+        db.commit()
+        orch = pipeline_service.PipelineOrchestrator(db=db, run_id=run.id)
+        orch._run = run
+        stages = orch._stages_slice("seo_aeo", "publish")
+        assert stages == ["seo_aeo", "publish"]
+    finally:
+        db.close()
+
+
 # ── Orchestrator: failed stage marks run as failed ────────────────────────────
 
 def test_orchestrator_stage_failure_marks_run_failed():
