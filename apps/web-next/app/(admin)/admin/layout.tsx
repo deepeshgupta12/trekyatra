@@ -7,7 +7,7 @@ import { Logo } from "@/components/brand/Logo";
 import {
   LayoutDashboard, Search, Layers, FileText, CheckSquare, Link2,
   DollarSign, BarChart2, Terminal, Settings, ChevronRight, Menu, X,
-  GitBranch, Bot,
+  GitBranch, Bot, GitMerge,
 } from "lucide-react";
 
 const NAV_GROUPS = [
@@ -15,6 +15,7 @@ const NAV_GROUPS = [
     label: "Pipeline",
     items: [
       { href: "/admin", label: "Dashboard", icon: LayoutDashboard, exact: true },
+      { href: "/admin/pipeline", label: "Pipeline View", icon: GitMerge },
       { href: "/admin/topics", label: "Topic Discovery", icon: Search },
       { href: "/admin/clusters", label: "Keyword Clusters", icon: Layers },
       { href: "/admin/briefs", label: "Brief Review", icon: FileText },

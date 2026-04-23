@@ -92,6 +92,13 @@ export default function DraftReview() {
 
   useEffect(() => { fetchDrafts(); }, [fetchDrafts]);
 
+  // Pre-fill brief_id from URL query param (?brief_id=...)
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const p = new URLSearchParams(window.location.search);
+    if (p.get("brief_id")) setWriteBriefId(p.get("brief_id")!);
+  }, []);
+
   async function loadClaims(draftId: string) {
     if (claims[draftId]) return;
     setClaimsLoading(prev => ({ ...prev, [draftId]: true }));
