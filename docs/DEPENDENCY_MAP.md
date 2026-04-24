@@ -169,6 +169,20 @@ This file tracks structural dependencies, source-of-truth modules, and Nexus/Git
 - `services/api/tests/test_smoke.py` -> smoke tests for all 14 key API surfaces
 - `services/api/tests/test_publish.py` -> publish workflow tests (status transitions, WP mock push, log retrieval)
 
+### Step 19 Bug Fixes (post-TC) blast radius
+- `services/api/app/modules/content/service.py:update_draft_claim` -> NEW: updates flagged_for_review on DraftClaim; blast radius: LOW (called only by new admin PATCH route)
+- `services/api/app/schemas/admin.py:ClaimPatch` -> NEW: Pydantic schema for PATCH body; blast radius: LOW
+- `services/api/app/api/routes/admin.py` -> UPDATED: `PATCH /admin/fact-check/claims/{claim_id}` endpoint added; imports `ClaimPatch`, `update_draft_claim`; blast radius: LOW (additive endpoint)
+- `services/api/app/modules/cms/service.py:_strip_flagged_markers` -> NEW: strips `*(flagged for verification)*` and bracket forms from markdown; called by `_md_to_html`; blast radius: MEDIUM (all markdown-to-HTML conversions go through _md_to_html → publish pipeline + reparse route)
+- `services/api/app/modules/cms/service.py:_strip_flagged_markers_html` -> NEW: strips `<em>(flagged...)</em>` from stored HTML; called by `_process_content_json`; blast radius: MEDIUM (same callers as _process_content_json)
+- `services/api/app/modules/cms/service.py:_md_to_html` -> UPDATED: calls `_strip_flagged_markers` before conversion; blast radius: HIGH (all section conversions)
+- `services/api/app/modules/cms/service.py:_process_content_json` -> UPDATED: strips HTML markers from existing HTML values; blast radius: MEDIUM
+- `services/api/app/modules/cms/service.py:_SECTION_HEADING_MAP` -> UPDATED: safety pattern adds `medical|health.*altitude|mountain.*safe|know before`; cost_estimate adds `invest|spend|financial|tariff|expenditure`; blast radius: MEDIUM (parse_sections_from_markdown callers)
+- `apps/web-next/lib/api.ts` -> UPDATED: `patchFactCheckClaim`, `clearPipelineRuns`, `clearAgentRuns` helpers added; blast radius: LOW (additive)
+- `apps/web-next/app/(admin)/admin/fact-check/page.tsx` -> UPDATED: "Mark verified" / "Flag for editor" buttons wired with loading states; optimistic updates; blast radius: LOW
+- `apps/web-next/app/(admin)/admin/pipeline/page.tsx` -> UPDATED: `handleClearFailed()` + "Clear all" button in Failed/Cancelled section; imports `clearPipelineRuns`; blast radius: LOW
+- `services/api/tests/test_cms.py` -> UPDATED: 6 new tests (claim PATCH, 404, flagged-marker strip, bracket-marker strip, medical→safety, financial→cost); 174/174 total pass
+
 ### Step 19 + Step 18 fixes blast radius
 - `apps/web-next/lib/schema.ts` -> NEW: schema builder utilities (buildArticleSchema, buildFAQSchema, buildBreadcrumbSchema, buildItemListSchema, buildWebSiteSchema); uses NEXT_PUBLIC_SITE_URL; blast radius: LOW (new file, imported only by page files)
 - `apps/web-next/components/seo/SchemaInjector.tsx` -> NEW: renders JSON-LD <script> tags; blast radius: LOW (leaf component, imported by trek/packing/permits/guides/homepage pages)

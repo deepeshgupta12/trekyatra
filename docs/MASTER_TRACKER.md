@@ -201,6 +201,20 @@ What is done (enhancements, post-TC review):
 - CMS empty sections fix: `cms/service.py:reparse_sections_from_draft` + `POST /cms/pages/{slug}/reparse-sections` route + Re-parse sections button in CMSPageForm; prevents double-processing HTML via `_process_content_json` passthrough; 2 new tests; 141/141 pass
 - Section parser overhaul (parser fix batch): `_parse_sections_from_markdown` updated to use `^#{1,2}` (H3 = content not boundary), H1 always opens why_this_trek (captures intro paragraphs), `faqs` moved to top of `_SECTION_HEADING_MAP` (first-match-wins; fixes FAQ content landing in why_this_trek), `difficult\b` added to difficulty pattern, `key facts` and `overview` added to why_this_trek pattern; `_extract_trek_facts_from_markdown` helper added — extracts duration/altitude/difficulty/season/permits/base from structured markdown; `upsert_page_from_draft` + `reparse_sections_from_draft` both write trek_facts to content_json; FE hardcoded fallbacks "Required"/"Sankri"/"Moderate" replaced with "—"; 8 new parser unit tests; 148/149 pass (1 pre-existing pipeline test pollution — unrelated)
 
+### Step 19 Bug Fixes — Fact-check wiring, flagged-marker stripping, pipeline clear
+Status: done
+What is done:
+- `PATCH /admin/fact-check/claims/{claim_id}`: new endpoint updates `flagged_for_review` on DraftClaim; `update_draft_claim()` service function added to `content/service.py`
+- `ClaimPatch` Pydantic schema added to `schemas/admin.py`
+- Fact Check admin page: "Mark verified" calls PATCH with `flagged_for_review=false`, optimistic UI update removes flag; "Flag for editor" calls PATCH confirm + shows "Sent to editor queue ✓" (no DB change, already flagged)
+- `patchFactCheckClaim()`, `clearPipelineRuns()`, `clearAgentRuns()` helpers added to `lib/api.ts`
+- Pipeline page: "Clear all" button in Failed/Cancelled section header calls `DELETE /admin/pipeline/runs/clear` and reloads
+- `_strip_flagged_markers()` + `_strip_flagged_markers_html()` helpers in `cms/service.py`: strip `*(flagged for verification)*`, `[flagged for verification ...]`, `<em>(flagged...)</em>` from markdown/HTML before storage
+- `_md_to_html()` now calls `_strip_flagged_markers()` before markdown conversion
+- `_process_content_json()` now strips flagged HTML markers from already-stored HTML sections
+- Section patterns expanded: "safety" gains `medical|health.*altitude|mountain.*safe|know before`; "cost_estimate" gains `invest|spend|financial|tariff|expenditure`
+- 6 new backend tests; 174/174 pass; `next build` clean
+
 ### Step 19 — SEO and Schema Infrastructure (Frontend)
 Status: done
 What is done:

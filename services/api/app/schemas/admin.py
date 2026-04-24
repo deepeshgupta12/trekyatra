@@ -32,6 +32,10 @@ class SystemSummaryResponse(BaseModel):
     generated_at: datetime
 
 
+class ClaimPatch(BaseModel):
+    flagged_for_review: bool
+
+
 class ClaimResponse(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 

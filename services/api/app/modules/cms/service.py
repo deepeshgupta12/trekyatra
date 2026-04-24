@@ -111,11 +111,42 @@ def delete_page(db: Session, *, page: CMSPage) -> None:
     db.flush()
 
 
+# Strips LLM inline fact-check markers before/after HTML conversion.
+# Markdown forms: *(flagged for verification)*, _(flagged)_, (flagged for verification — ...)
+_FLAG_MD = re.compile(
+    r"\s*[\*_]?\((?:flagged for verification|flagged)[^)]*\)[\*_]?",
+    re.I,
+)
+# Bracket form: [flagged for verification — rates vary by season]
+_FLAG_MD_BRACKET = re.compile(
+    r"\s*\[(?:flagged for verification|flagged)[^\]]*\]",
+    re.I,
+)
+# HTML form: <em>(flagged for verification...)</em>
+_FLAG_HTML = re.compile(
+    r"\s*<em>\s*\((?:flagged for verification|flagged)[^<]*\)\s*<\/em>",
+    re.I,
+)
+
+
+def _strip_flagged_markers(text: str) -> str:
+    """Remove LLM fact-check markers from raw markdown before HTML conversion."""
+    text = _FLAG_MD.sub("", text)
+    text = _FLAG_MD_BRACKET.sub("", text)
+    return text
+
+
+def _strip_flagged_markers_html(html: str) -> str:
+    """Remove rendered <em>(flagged...)</em> markers from already-converted HTML."""
+    return _FLAG_HTML.sub("", html)
+
+
 def _md_to_html(text: str | None) -> str:
     if not text:
         return ""
+    cleaned = _strip_flagged_markers(text)
     return md_lib.markdown(
-        text,
+        cleaned,
         extensions=["extra", "tables", "nl2br", "sane_lists"],
     )
 
@@ -125,9 +156,9 @@ def _md_to_html(text: str | None) -> str:
 # "Frequently Asked Questions About the X Trek" matches faqs, not about.*trek.
 _SECTION_HEADING_MAP: list[tuple[str, str]] = [
     (r"faq|frequently asked|questions answered|common question|people also ask|q&a|queries", "faqs"),
-    (r"safety|emergency|risk|precaution|tip|warning|hazard|ams|altitude sickness", "safety"),
+    (r"safety|emergency|risk|precaution|tip|warning|hazard|ams|altitude sickness|medical|health.*altitude|mountain.*safe|safe.*trek|know before", "safety"),
     (r"pack|gear|equipment|what to bring|what to carry|clothing|kit|bag", "packing"),
-    (r"cost|budget|price|fee|expense|how much|package|charges|rate", "cost_estimate"),
+    (r"cost|budget|price|fee|expense|how much|package|charges|rate|invest|spend|financial|tariff|expenditure", "cost_estimate"),
     (r"permit", "permits"),
     (r"difficulty|difficult\b|fitness|experience required|who can|suitable for|level|grade|strenuous", "difficulty"),
     (r"best time|when to go|season|visit.*time|weather|climate|month", "best_time"),
@@ -292,8 +323,8 @@ def _parse_faqs_from_section(faq_raw: str) -> list[dict]:
 
 def _process_content_json(content_json: dict | None) -> dict | None:
     """Convert markdown strings inside content_json.sections to HTML.
-    Values already in HTML (start with '<') are passed through unchanged to
-    prevent double-processing of pipeline-generated sections."""
+    Values already in HTML (start with '<') have flagged markers stripped
+    to prevent double-processing of pipeline-generated sections."""
     if not content_json:
         return content_json
     sections = content_json.get("sections")
@@ -301,7 +332,11 @@ def _process_content_json(content_json: dict | None) -> dict | None:
         content_json = {
             **content_json,
             "sections": {
-                k: (v if not isinstance(v, str) or v.lstrip().startswith("<") else _md_to_html(v))
+                k: (
+                    _strip_flagged_markers_html(v)
+                    if isinstance(v, str) and v.lstrip().startswith("<")
+                    else _md_to_html(v)
+                )
                 for k, v in sections.items()
             },
         }

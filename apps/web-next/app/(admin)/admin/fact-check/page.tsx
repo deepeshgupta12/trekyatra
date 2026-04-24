@@ -1,9 +1,9 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { CheckSquare, AlertTriangle, CheckCircle, Filter } from "lucide-react";
+import { CheckSquare, AlertTriangle, CheckCircle, Filter, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { fetchFactCheckClaims, type FactCheckClaim } from "@/lib/api";
+import { fetchFactCheckClaims, patchFactCheckClaim, type FactCheckClaim } from "@/lib/api";
 
 const CLAIM_TYPE_LABELS: Record<string, string> = {
   route_distance: "Route distance",
@@ -33,6 +33,8 @@ export default function FactCheck() {
   const [flaggedOnly, setFlaggedOnly] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  // Per-claim action state: claimId → "verifying" | "flagging" | "editor_flagged" | null
+  const [claimBusy, setClaimBusy] = useState<Record<string, string | null>>({});
 
   useEffect(() => {
     setLoading(true);
@@ -42,6 +44,33 @@ export default function FactCheck() {
       .catch((e) => setError(e.message))
       .finally(() => setLoading(false));
   }, [flaggedOnly]);
+
+  async function handleMarkVerified(claimId: string) {
+    setClaimBusy((prev) => ({ ...prev, [claimId]: "verifying" }));
+    try {
+      await patchFactCheckClaim(claimId, false);
+      // Optimistic update: mark as verified in local state
+      setClaims((prev) =>
+        prev.map((c) => c.id === claimId ? { ...c, flagged_for_review: false } : c)
+      );
+    } catch {
+      setError("Failed to update claim. Please try again.");
+    } finally {
+      setClaimBusy((prev) => ({ ...prev, [claimId]: null }));
+    }
+  }
+
+  async function handleFlagForEditor(claimId: string) {
+    setClaimBusy((prev) => ({ ...prev, [claimId]: "flagging" }));
+    try {
+      // Claim stays flagged_for_review=true (already is); signal "sent to editor"
+      await patchFactCheckClaim(claimId, true);
+      setClaimBusy((prev) => ({ ...prev, [claimId]: "editor_flagged" }));
+    } catch {
+      setError("Failed to flag claim. Please try again.");
+      setClaimBusy((prev) => ({ ...prev, [claimId]: null }));
+    }
+  }
 
   const flaggedCount = claims.filter((c) => c.flagged_for_review).length;
 
@@ -110,12 +139,36 @@ export default function FactCheck() {
               <ConfidenceBar score={c.confidence_score} />
               {flagged && (
                 <div className="flex gap-2 mt-4 pt-3 border-t border-white/8">
-                  <Button variant="outline" size="sm" className="border-white/20 text-white/60 hover:text-white text-xs">
-                    Mark verified
-                  </Button>
-                  <Button variant="outline" size="sm" className="border-white/20 text-white/60 hover:text-white text-xs">
-                    Flag for editor
-                  </Button>
+                  {claimBusy[c.id] === "editor_flagged" ? (
+                    <span className="text-xs text-pine px-2 py-1">Sent to editor queue ✓</span>
+                  ) : (
+                    <>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="border-white/20 text-white/60 hover:text-pine hover:border-pine/40 text-xs"
+                        disabled={!!claimBusy[c.id]}
+                        onClick={() => handleMarkVerified(c.id)}
+                      >
+                        {claimBusy[c.id] === "verifying"
+                          ? <Loader2 className="h-3 w-3 animate-spin" />
+                          : <CheckCircle className="h-3 w-3" />}
+                        Mark verified
+                      </Button>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="border-white/20 text-white/60 hover:text-amber-400 hover:border-amber-400/40 text-xs"
+                        disabled={!!claimBusy[c.id]}
+                        onClick={() => handleFlagForEditor(c.id)}
+                      >
+                        {claimBusy[c.id] === "flagging"
+                          ? <Loader2 className="h-3 w-3 animate-spin" />
+                          : <AlertTriangle className="h-3 w-3" />}
+                        Flag for editor
+                      </Button>
+                    </>
+                  )}
                 </div>
               )}
             </div>

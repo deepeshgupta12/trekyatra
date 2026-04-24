@@ -9,12 +9,14 @@ import {
   Pause,
   Play,
   RefreshCw,
+  Trash2,
   X,
   Zap,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   cancelPipelineRun,
+  clearPipelineRuns,
   fetchPipelineRuns,
   resumePipelineRun,
   triggerPipeline,
@@ -403,6 +405,20 @@ export default function PipelinePage() {
     }
   }
 
+  async function handleClearFailed() {
+    setBusy("__clear__");
+    setMsg("");
+    try {
+      const result = await clearPipelineRuns();
+      setMsg(`Cleared ${result.deleted_runs} failed/cancelled run(s).`);
+      await load();
+    } catch (e) {
+      setMsg(e instanceof Error ? e.message : "Clear failed.");
+    } finally {
+      setBusy(null);
+    }
+  }
+
   const active    = runs.filter(r => r.status === "running");
   const paused    = runs.filter(r => r.status.startsWith("paused_at_"));
   const completed = runs.filter(r => r.status === "completed");
@@ -496,9 +512,23 @@ export default function PipelinePage() {
       {/* failed / cancelled */}
       {failed.length > 0 && (
         <section>
-          <h2 className="text-white/50 text-xs font-semibold uppercase tracking-widest mb-3 flex items-center gap-2">
-            <AlertTriangle className="h-3.5 w-3.5" /> Failed / Cancelled
-          </h2>
+          <div className="flex items-center justify-between mb-3">
+            <h2 className="text-white/50 text-xs font-semibold uppercase tracking-widest flex items-center gap-2">
+              <AlertTriangle className="h-3.5 w-3.5" /> Failed / Cancelled
+            </h2>
+            <Button
+              variant="outline"
+              size="sm"
+              className="border-red-400/20 text-red-400/60 hover:text-red-400 hover:border-red-400/40 text-xs h-7 px-2"
+              onClick={handleClearFailed}
+              disabled={busy === "__clear__"}
+            >
+              {busy === "__clear__"
+                ? <Loader2 className="h-3 w-3 animate-spin" />
+                : <Trash2 className="h-3 w-3" />}
+              Clear all
+            </Button>
+          </div>
           <div className="space-y-3">
             {failed.map(run => (
               <RunCard key={run.id} run={run} onResume={handleResume} onCancel={handleCancel} busy={busy} />

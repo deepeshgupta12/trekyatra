@@ -93,6 +93,28 @@ export async function fetchFactCheckClaims(flaggedOnly = false): Promise<FactChe
   return apiFetch<FactCheckClaim[]>(`/admin/fact-check/claims?flagged_only=${flaggedOnly}&limit=100`);
 }
 
+export async function patchFactCheckClaim(id: string, flaggedForReview: boolean): Promise<FactCheckClaim> {
+  const res = await fetch(`/api/v1/admin/fact-check/claims/${id}`, {
+    method: "PATCH",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ flagged_for_review: flaggedForReview }),
+  });
+  if (!res.ok) throw new Error(`Claim update failed (${res.status})`);
+  return res.json() as Promise<FactCheckClaim>;
+}
+
+export async function clearPipelineRuns(): Promise<{ deleted_runs: number; deleted_stages: number }> {
+  const res = await fetch("/api/v1/admin/pipeline/runs/clear", { method: "DELETE" });
+  if (!res.ok) throw new Error(`Clear runs failed (${res.status})`);
+  return res.json();
+}
+
+export async function clearAgentRuns(): Promise<{ deleted: number }> {
+  const res = await fetch("/api/v1/admin/agent-runs/clear", { method: "DELETE" });
+  if (!res.ok) throw new Error(`Clear agent runs failed (${res.status})`);
+  return res.json();
+}
+
 // ---------------------------------------------------------------------------
 
 export async function fetchCMSPages(filters?: {

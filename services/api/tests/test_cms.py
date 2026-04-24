@@ -532,3 +532,83 @@ def test_clear_non_completed_agent_runs():
     r = client.delete("/api/v1/admin/agent-runs/clear")
     assert r.status_code == 200
     assert r.json()["deleted"] >= 1
+
+
+# ── Fact-check claim PATCH ────────────────────────────────────────────────────
+
+def _make_draft_claim(draft_id: str, flagged: bool = True) -> str:
+    """Create a DraftClaim directly via DB and return claim id."""
+    from app.modules.content.models import DraftClaim as DC
+    import uuid as _uuid
+    from datetime import datetime, timezone
+    claim_id = _uuid.uuid4()
+    with SessionLocal() as db:
+        claim = DC(
+            id=claim_id,
+            draft_id=_uuid.UUID(draft_id),
+            claim_text="The summit altitude is 4,200 m.",
+            claim_type="altitude",
+            confidence_score=0.55,
+            flagged_for_review=flagged,
+            created_at=datetime.now(timezone.utc),
+        )
+        db.add(claim)
+        db.commit()
+    return str(claim_id)
+
+
+def test_patch_fact_check_claim_mark_verified():
+    """PATCH /admin/fact-check/claims/{id} with flagged_for_review=false unflags claim."""
+    _, draft_id = _make_brief_and_draft(uuid.uuid4().hex[:8])
+    claim_id = _make_draft_claim(draft_id, flagged=True)
+    r = client.patch(f"/api/v1/admin/fact-check/claims/{claim_id}",
+                     json={"flagged_for_review": False})
+    assert r.status_code == 200
+    data = r.json()
+    assert data["flagged_for_review"] is False
+    assert data["id"] == claim_id
+
+
+def test_patch_fact_check_claim_404():
+    """PATCH with unknown UUID returns 404."""
+    fake_id = str(uuid.uuid4())
+    r = client.patch(f"/api/v1/admin/fact-check/claims/{fake_id}",
+                     json={"flagged_for_review": False})
+    assert r.status_code == 404
+
+
+# ── Flagged-marker stripping ──────────────────────────────────────────────────
+
+def test_flagged_marker_stripped_from_sections():
+    """'*(flagged for verification)*' markers must be stripped from section HTML."""
+    md = ("## Route Overview\n"
+          "The route covers 4,200 m *(flagged for verification)* of altitude gain. "
+          "Stream crossings are highest in June. *(flagged for verification — verify timing)*")
+    sections = _parse_sections_from_markdown(md)
+    assert "route_overview" in sections
+    html = sections["route_overview"]
+    assert "flagged" not in html.lower(), f"Flagged marker not stripped: {html}"
+
+
+def test_flagged_bracket_marker_stripped():
+    """'[flagged for verification — rates vary]' bracket form must be stripped."""
+    md = ("## Cost and Budget\n"
+          "Trek costs around ₹15,000 [flagged for verification — rates vary by season].")
+    sections = _parse_sections_from_markdown(md)
+    assert "cost_estimate" in sections
+    html = sections["cost_estimate"]
+    assert "flagged" not in html.lower(), f"Bracket marker not stripped: {html}"
+
+
+def test_medical_heading_maps_to_safety():
+    """'## Medical Considerations at High Altitude' must map to safety section."""
+    md = "## Medical Considerations at High Altitude\nAcclimatisation is mandatory above 3,500 m."
+    sections = _parse_sections_from_markdown(md)
+    assert "safety" in sections, "medical heading should map to safety section"
+
+
+def test_financial_heading_maps_to_cost():
+    """'## Financial Planning for the Trek' must map to cost_estimate section."""
+    md = "## Financial Planning for the Trek\nBudget ₹25,000–₹40,000 depending on group size."
+    sections = _parse_sections_from_markdown(md)
+    assert "cost_estimate" in sections, "financial heading should map to cost_estimate section"

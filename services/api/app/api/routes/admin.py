@@ -1,6 +1,6 @@
 import uuid
 
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
@@ -14,7 +14,9 @@ from app.modules.admin.service import (
     summarize_topics,
 )
 from app.modules.content.models import ContentDraft, DraftClaim
+from app.modules.content.service import update_draft_claim
 from app.schemas.admin import (
+    ClaimPatch,
     ClaimResponse,
     CountSummary,
     DashboardSummaryResponse,
@@ -97,3 +99,30 @@ def list_fact_check_claims(
         )
         for row in rows
     ]
+
+
+@router.patch("/fact-check/claims/{claim_id}", response_model=ClaimResponse)
+def patch_fact_check_claim(
+    claim_id: uuid.UUID,
+    patch: ClaimPatch,
+    db: Session = Depends(get_db),
+) -> ClaimResponse:
+    """Update flagged_for_review on a DraftClaim (mark verified or re-flag)."""
+    # Fetch the draft_title for the response (need the join)
+    claim = db.get(DraftClaim, claim_id)
+    if claim is None:
+        raise HTTPException(status_code=404, detail="Claim not found")
+    draft = db.get(ContentDraft, claim.draft_id)
+    draft_title = draft.title if draft else ""
+
+    updated = update_draft_claim(db, claim_id, flagged_for_review=patch.flagged_for_review)
+    return ClaimResponse(
+        id=updated.id,
+        draft_id=updated.draft_id,
+        draft_title=draft_title,
+        claim_text=updated.claim_text,
+        claim_type=updated.claim_type,
+        confidence_score=updated.confidence_score,
+        flagged_for_review=updated.flagged_for_review,
+        created_at=updated.created_at,
+    )

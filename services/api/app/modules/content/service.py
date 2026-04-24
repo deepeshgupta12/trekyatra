@@ -240,6 +240,16 @@ def list_draft_claims(db: Session, draft_id: uuid.UUID) -> list[DraftClaim]:
     )
 
 
+def update_draft_claim(db: Session, claim_id: uuid.UUID, *, flagged_for_review: bool) -> DraftClaim:
+    claim = db.get(DraftClaim, claim_id)
+    if claim is None:
+        raise ValueError("Claim not found")
+    claim.flagged_for_review = flagged_for_review
+    db.commit()
+    db.refresh(claim)
+    return claim
+
+
 def create_draft(db: Session, payload: ContentDraftCreate) -> ContentDraft:
     now = _utc_now()
     brief_id = uuid.UUID(payload.brief_id)
