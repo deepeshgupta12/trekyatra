@@ -56,6 +56,8 @@ export default function TableOfContents({ items }: Props) {
               if (el) {
                 el.scrollIntoView({ behavior: "smooth", block: "start" });
                 setActiveId(item.id);
+                // Update URL hash without triggering a full navigation
+                history.pushState(null, "", `#${item.id}`);
               }
             }}
             className={`block text-sm py-1.5 px-3 rounded-lg transition-all duration-150 ${

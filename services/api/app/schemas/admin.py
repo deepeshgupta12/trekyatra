@@ -1,3 +1,4 @@
+import uuid
 from datetime import datetime
 
 from pydantic import BaseModel, ConfigDict
@@ -29,6 +30,19 @@ class SystemSummaryResponse(BaseModel):
     environment: str
     cms: CMSConfigSummary
     generated_at: datetime
+
+
+class ClaimResponse(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    id: uuid.UUID
+    draft_id: uuid.UUID
+    draft_title: str
+    claim_text: str
+    claim_type: str
+    confidence_score: float
+    flagged_for_review: bool
+    created_at: datetime
 
 
 class DashboardSummaryResponse(BaseModel):

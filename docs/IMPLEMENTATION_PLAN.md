@@ -111,7 +111,7 @@
 - New page templates: packing/[slug], permits/[slug], guides/[slug] — all CMS-powered with static fallbacks
 - lib/api.ts: FAQItem type added; CMSPage.content_json.faqs typed; CMSPagePayload extended
 
-### Step 19 — SEO and schema infrastructure (frontend)
+### Step 19 — SEO and schema infrastructure (frontend) [DONE]
 - Next.js metadata API for all page types (title, description, OG)
 - JSON-LD schema injection (Article, FAQPage, BreadcrumbList, Organization)
 - Canonical tags per page

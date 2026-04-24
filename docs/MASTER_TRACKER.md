@@ -29,7 +29,7 @@ All V0 foundations are shipped. The stack is live locally with:
 - Admin summary APIs, smoke tests, GitNexus indexed
 
 ## V1 Status — In Progress
-**Current next step: Step 19 — SEO and schema infrastructure**
+**Current next step: Step 20 — Monetization frontend components**
 
 | Step | Title | Status |
 |------|-------|--------|
@@ -42,7 +42,7 @@ All V0 foundations are shipped. The stack is live locally with:
 | 16 | Master CMS Foundation (WordPress removed) | done |
 | 17 | Full publish orchestration pipeline | done |
 | 18 | Public frontend content page templates | done |
-| 19 | SEO and schema infrastructure (frontend) | pending |
+| 19 | SEO and schema infrastructure (frontend) | done |
 | 20 | Monetization frontend components | pending |
 | 21 | RBAC enforcement | pending |
 | 22 | Internal linking engine (basic) | pending |
@@ -200,6 +200,25 @@ What is done (enhancements, post-TC review):
 - Sticky sidebar root fix: `globals.css` changed `overflow-x: hidden` → `overflow-x: clip` on html/body; `hidden` on `<html>` re-assigns the scroll container away from the viewport, breaking `position: sticky` in Chromium/Safari
 - CMS empty sections fix: `cms/service.py:reparse_sections_from_draft` + `POST /cms/pages/{slug}/reparse-sections` route + Re-parse sections button in CMSPageForm; prevents double-processing HTML via `_process_content_json` passthrough; 2 new tests; 141/141 pass
 - Section parser overhaul (parser fix batch): `_parse_sections_from_markdown` updated to use `^#{1,2}` (H3 = content not boundary), H1 always opens why_this_trek (captures intro paragraphs), `faqs` moved to top of `_SECTION_HEADING_MAP` (first-match-wins; fixes FAQ content landing in why_this_trek), `difficult\b` added to difficulty pattern, `key facts` and `overview` added to why_this_trek pattern; `_extract_trek_facts_from_markdown` helper added — extracts duration/altitude/difficulty/season/permits/base from structured markdown; `upsert_page_from_draft` + `reparse_sections_from_draft` both write trek_facts to content_json; FE hardcoded fallbacks "Required"/"Sankri"/"Moderate" replaced with "—"; 8 new parser unit tests; 148/149 pass (1 pre-existing pipeline test pollution — unrelated)
+
+### Step 19 — SEO and Schema Infrastructure (Frontend)
+Status: done
+What is done:
+- `apps/web-next/lib/schema.ts` — schema builder utilities: `buildArticleSchema`, `buildFAQSchema`, `buildBreadcrumbSchema`, `buildItemListSchema`, `buildWebSiteSchema`; all use `NEXT_PUBLIC_SITE_URL` env
+- `apps/web-next/components/seo/SchemaInjector.tsx` — renders `<script type="application/ld+json">` for each valid schema object; filters null entries
+- `apps/web-next/app/sitemap.ts` — Next.js App Router sitemap: static pages + trek detail slugs + published CMS pages by type prefix; deduplicates by URL; fails gracefully when API unavailable
+- `apps/web-next/app/robots.ts` — blocks `/admin/`, `/account/`, `/auth/`, `/api/`; references sitemap URL
+- `apps/web-next/app/layout.tsx` — `metadataBase`, global OG site defaults, Twitter card defaults, `robots: {index: true, follow: true}` added
+- `apps/web-next/app/(public)/page.tsx` — homepage gets `buildWebSiteSchema()` via SchemaInjector
+- `apps/web-next/app/(public)/trek/[slug]/page.tsx` — canonical, OG, Twitter card via `generateMetadata()`; Article + FAQPage + BreadcrumbList JSON-LD; section padding increased `pt-16 pb-16 md:pt-20 md:pb-20`; TOC URL hash reinstated via `history.pushState`
+- `apps/web-next/app/(public)/packing/[slug]/page.tsx` — canonical, OG, Twitter card; Article + FAQ JSON-LD
+- `apps/web-next/app/(public)/permits/[slug]/page.tsx` — canonical, OG, Twitter card; Article + FAQ JSON-LD
+- `apps/web-next/app/(public)/guides/[slug]/page.tsx` — canonical, OG, Twitter card; Article + FAQ JSON-LD
+- Step 18 bug fixes: trek facts two-pass extraction (table → KV, colon required); FAQ H3 format parsing; stale-run cleanup at startup; fact-check admin page wired to real DraftClaim data
+- Backend: `DELETE /admin/pipeline/runs/clear` + `DELETE /admin/agent-runs/clear` bulk cleanup endpoints; `GET /admin/fact-check/claims` with DraftClaim join; startup `_cancel_stale_runs()` lifespan hook
+- `apps/web-next/app/(admin)/admin/fact-check/page.tsx` rewritten as real-API client component
+- `apps/web-next/lib/api.ts`: `FactCheckClaim` type + `fetchFactCheckClaims` helper
+- 168/168 backend tests pass; `next build` clean; CLAUDE.md updated with inter-step dependency rules (Section 16)
 
 ### Step 18 — Public Frontend Content Page Templates
 Status: done

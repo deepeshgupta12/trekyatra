@@ -74,6 +74,27 @@ export async function fetchCMSPage(slug: string): Promise<CMSPage> {
   return res.json() as Promise<CMSPage>;
 }
 
+// ---------------------------------------------------------------------------
+// Fact-check claims
+// ---------------------------------------------------------------------------
+
+export interface FactCheckClaim {
+  id: string;
+  draft_id: string;
+  draft_title: string;
+  claim_text: string;
+  claim_type: string;
+  confidence_score: number;
+  flagged_for_review: boolean;
+  created_at: string;
+}
+
+export async function fetchFactCheckClaims(flaggedOnly = false): Promise<FactCheckClaim[]> {
+  return apiFetch<FactCheckClaim[]>(`/admin/fact-check/claims?flagged_only=${flaggedOnly}&limit=100`);
+}
+
+// ---------------------------------------------------------------------------
+
 export async function fetchCMSPages(filters?: {
   status?: string;
   page_type?: string;

@@ -3,6 +3,8 @@ import { Search, MapPin, Calendar, Mountain, Sparkles, ArrowRight, Star, Shield,
 import { Button } from "@/components/ui/button";
 import { TrekCard } from "@/components/trek/TrekCard";
 import { fetchTreks } from "@/lib/trekApi";
+import SchemaInjector from "@/components/seo/SchemaInjector";
+import { buildWebSiteSchema } from "@/lib/schema";
 
 const regions = [
   { name: "Himachal Pradesh", count: "48 treks", image: "/images/region-himachal-camp.jpg", slug: "himachal" },
@@ -27,6 +29,7 @@ export default async function Home() {
 
   return (
     <>
+      <SchemaInjector schemas={[buildWebSiteSchema()]} />
       {/* HERO */}
       <section className="relative min-h-[88vh] flex items-end overflow-hidden">
         <div className="absolute inset-0">

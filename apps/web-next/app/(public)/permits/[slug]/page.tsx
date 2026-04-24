@@ -5,6 +5,8 @@ import Breadcrumb from "@/components/content/Breadcrumb";
 import FAQAccordion from "@/components/content/FAQAccordion";
 import AuthorBlock from "@/components/content/AuthorBlock";
 import SafetyDisclaimer from "@/components/content/SafetyDisclaimer";
+import SchemaInjector from "@/components/seo/SchemaInjector";
+import { buildArticleSchema, buildFAQSchema } from "@/lib/schema";
 import { FileCheck, AlertTriangle, ExternalLink } from "lucide-react";
 import Link from "next/link";
 
@@ -19,9 +21,19 @@ export async function generateMetadata({ params }: { params: { slug: string } })
     const page = await fetchCMSPage(params.slug);
     if (page.status === "published") cmsPage = page;
   } catch { /* not found */ }
-  const title = cmsPage?.seo_title ?? `Permit Guide — ${params.slug.replace(/-/g, " ")}`;
+  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? "https://trekyatra.com";
+  const title = cmsPage?.seo_title
+    ? `${cmsPage.seo_title} | TrekYatra`
+    : `Permit Guide — ${params.slug.replace(/-/g, " ")} | TrekYatra`;
   const description = cmsPage?.seo_description ?? "Official permit requirements and how to obtain them.";
-  return { title, description };
+  const canonical = `${siteUrl}/permits/${params.slug}`;
+  return {
+    title,
+    description,
+    alternates: { canonical },
+    openGraph: { title, description, url: canonical, type: "article" },
+    twitter: { card: "summary_large_image", title, description },
+  };
 }
 
 export default async function PermitPage({ params }: { params: { slug: string } }) {
@@ -34,9 +46,17 @@ export default async function PermitPage({ params }: { params: { slug: string } 
   const sec = (cmsPage?.content_json?.sections ?? {}) as Record<string, string>;
   const faqItems: FAQItem[] = cmsPage?.content_json?.faqs ?? [];
   const pageTitle = cmsPage?.title ?? `${params.slug.replace(/-/g, " ")} — Permit Guide`;
+  const articleSchema = buildArticleSchema({
+    title: cmsPage?.seo_title ?? pageTitle,
+    description: cmsPage?.seo_description ?? "",
+    url: `/permits/${params.slug}`,
+    publishedAt: cmsPage?.published_at ?? undefined,
+    updatedAt: cmsPage?.updated_at ?? undefined,
+  });
 
   return (
     <>
+      <SchemaInjector schemas={[articleSchema, faqItems.length ? buildFAQSchema(faqItems) : null]} />
       <section className="bg-gradient-to-br from-background to-warning/5 border-b border-border py-14">
         <div className="container-wide max-w-3xl">
           <Breadcrumb items={[

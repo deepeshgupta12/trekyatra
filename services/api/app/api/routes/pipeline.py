@@ -3,10 +3,12 @@ from __future__ import annotations
 import uuid
 
 from fastapi import APIRouter, Depends, HTTPException
+from sqlalchemy import delete
 from sqlalchemy.orm import Session
 
 from app.db.session import get_db
 from app.modules.pipeline import service as pipeline_service
+from app.modules.pipeline.models import PipelineRun, PipelineStage
 from app.schemas.pipeline import (
     PipelineRunCreate,
     PipelineRunResponse,
@@ -100,3 +102,29 @@ def cancel_run(run_id: uuid.UUID, db: Session = Depends(get_db)):
     if run is None:
         raise HTTPException(status_code=404, detail="Pipeline run not found.")
     return PipelineRunResponse.model_validate(run)
+
+
+@router.delete("/runs/clear", response_model=dict)
+def clear_non_completed_runs(db: Session = Depends(get_db)):
+    """Delete all pipeline runs that are not in 'completed' status.
+
+    Removes failed, cancelled, and stale running runs, keeping only
+    successfully completed runs. Intended for admin housekeeping.
+    """
+    from sqlalchemy import select as sa_select
+
+    non_terminal = ("failed", "cancelled", "running")
+    # Collect IDs first to delete stages before runs (FK constraint)
+    run_ids = list(db.scalars(
+        sa_select(PipelineRun.id).where(PipelineRun.status.in_(non_terminal))
+    ).all())
+    stage_rows = 0
+    if run_ids:
+        stage_rows = db.execute(
+            delete(PipelineStage).where(PipelineStage.pipeline_run_id.in_(run_ids))
+        ).rowcount
+    run_rows = db.execute(
+        delete(PipelineRun).where(PipelineRun.status.in_(non_terminal))
+    ).rowcount
+    db.commit()
+    return {"deleted_runs": run_rows, "deleted_stages": stage_rows}

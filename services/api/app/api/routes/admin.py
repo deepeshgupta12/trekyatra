@@ -1,4 +1,7 @@
+import uuid
+
 from fastapi import APIRouter, Depends
+from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from app.db.session import get_db
@@ -10,7 +13,9 @@ from app.modules.admin.service import (
     summarize_system,
     summarize_topics,
 )
+from app.modules.content.models import ContentDraft, DraftClaim
 from app.schemas.admin import (
+    ClaimResponse,
     CountSummary,
     DashboardSummaryResponse,
     SystemSummaryResponse,
@@ -60,3 +65,35 @@ def get_admin_system_summary(
     db: Session = Depends(get_db),
 ) -> SystemSummaryResponse:
     return summarize_system(db)
+
+
+@router.get("/fact-check/claims", response_model=list[ClaimResponse])
+def list_fact_check_claims(
+    flagged_only: bool = False,
+    limit: int = 100,
+    offset: int = 0,
+    db: Session = Depends(get_db),
+) -> list[ClaimResponse]:
+    """Return DraftClaims across all drafts, optionally filtered to flagged-only."""
+    q = (
+        select(DraftClaim, ContentDraft.title.label("draft_title"))
+        .join(ContentDraft, DraftClaim.draft_id == ContentDraft.id)
+        .order_by(DraftClaim.created_at.desc())
+    )
+    if flagged_only:
+        q = q.where(DraftClaim.flagged_for_review == True)  # noqa: E712
+    q = q.limit(limit).offset(offset)
+    rows = db.execute(q).all()
+    return [
+        ClaimResponse(
+            id=row.DraftClaim.id,
+            draft_id=row.DraftClaim.draft_id,
+            draft_title=row.draft_title,
+            claim_text=row.DraftClaim.claim_text,
+            claim_type=row.DraftClaim.claim_type,
+            confidence_score=row.DraftClaim.confidence_score,
+            flagged_for_review=row.DraftClaim.flagged_for_review,
+            created_at=row.DraftClaim.created_at,
+        )
+        for row in rows
+    ]

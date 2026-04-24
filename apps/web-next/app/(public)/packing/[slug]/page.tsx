@@ -7,6 +7,8 @@ import FAQAccordion from "@/components/content/FAQAccordion";
 import AuthorBlock from "@/components/content/AuthorBlock";
 import AffiliateDisclosure from "@/components/content/AffiliateDisclosure";
 import UpdatedBadge from "@/components/content/UpdatedBadge";
+import SchemaInjector from "@/components/seo/SchemaInjector";
+import { buildArticleSchema, buildFAQSchema } from "@/lib/schema";
 import { Backpack, CheckSquare, ShoppingBag } from "lucide-react";
 import Link from "next/link";
 
@@ -21,9 +23,19 @@ export async function generateMetadata({ params }: { params: { slug: string } })
     const page = await fetchCMSPage(params.slug);
     if (page.status === "published") cmsPage = page;
   } catch { /* not found */ }
-  const title = cmsPage?.seo_title ?? `Packing List — ${params.slug.replace(/-/g, " ")}`;
+  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? "https://trekyatra.com";
+  const title = cmsPage?.seo_title
+    ? `${cmsPage.seo_title} | TrekYatra`
+    : `Packing List — ${params.slug.replace(/-/g, " ")} | TrekYatra`;
   const description = cmsPage?.seo_description ?? "Complete packing checklist for your Himalayan trek.";
-  return { title, description };
+  const canonical = `${siteUrl}/packing/${params.slug}`;
+  return {
+    title,
+    description,
+    alternates: { canonical },
+    openGraph: { title, description, url: canonical, type: "article" },
+    twitter: { card: "summary_large_image", title, description },
+  };
 }
 
 export default async function PackingPage({ params }: { params: { slug: string } }) {
@@ -36,9 +48,17 @@ export default async function PackingPage({ params }: { params: { slug: string }
   const sec = (cmsPage?.content_json?.sections ?? {}) as Record<string, string>;
   const faqItems: FAQItem[] = cmsPage?.content_json?.faqs ?? [];
   const pageTitle = cmsPage?.title ?? `${params.slug.replace(/-/g, " ")} — Packing List`;
+  const articleSchema = buildArticleSchema({
+    title: cmsPage?.seo_title ?? pageTitle,
+    description: cmsPage?.seo_description ?? "",
+    url: `/packing/${params.slug}`,
+    publishedAt: cmsPage?.published_at ?? undefined,
+    updatedAt: cmsPage?.updated_at ?? undefined,
+  });
 
   return (
     <>
+      <SchemaInjector schemas={[articleSchema, faqItems.length ? buildFAQSchema(faqItems) : null]} />
       <section className="bg-gradient-to-br from-background via-background to-accent/5 border-b border-border py-14">
         <div className="container-wide max-w-3xl">
           <Breadcrumb items={[

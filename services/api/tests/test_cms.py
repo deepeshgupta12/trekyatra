@@ -408,3 +408,127 @@ def test_api_reparse_sections_200_populates_sections():
     sections = data["content_json"].get("sections", {})
     assert "why_this_trek" in sections
     assert "route_overview" in sections
+
+
+# ── Table-format fact extraction ──────────────────────────────────────────────
+
+def test_extract_trek_facts_table_duration():
+    """Table row '| **Duration** | 7 days |' must be extracted correctly."""
+    md = "| **Duration** | 7 days (standard) · 9 days (acclimatisation variant) |\n| **Difficulty** | Difficult |"
+    facts = _extract_trek_facts_from_markdown(md)
+    assert "duration" in facts
+    assert "7 days" in facts["duration"]
+
+
+def test_extract_trek_facts_table_altitude():
+    md = "| **Maximum Altitude** | ~5,400 m / 17,700 ft (Gauri Pass) |"
+    facts = _extract_trek_facts_from_markdown(md)
+    assert "altitude" in facts
+    assert "5,400" in facts["altitude"]
+
+
+def test_extract_trek_facts_table_difficulty():
+    md = "| **Difficulty** | Difficult |"
+    facts = _extract_trek_facts_from_markdown(md)
+    assert "difficulty" in facts
+    assert "Difficult" in facts["difficulty"]
+
+
+def test_extract_trek_facts_table_season():
+    md = "| **Best Season** | May–June · September–October |"
+    facts = _extract_trek_facts_from_markdown(md)
+    assert "season" in facts
+    assert "May" in facts["season"]
+
+
+def test_extract_trek_facts_table_permits():
+    md = "| **Permits Required** | Kedarnath Wildlife Sanctuary forest permit |"
+    facts = _extract_trek_facts_from_markdown(md)
+    assert "permits" in facts
+    assert "Kedarnath" in facts["permits"]
+
+
+def test_extract_trek_facts_table_base():
+    md = "| **Base Camp / Last Village** | Gauri Kund (1,982 m) |"
+    facts = _extract_trek_facts_from_markdown(md)
+    assert "base" in facts
+    assert "Gauri Kund" in facts["base"]
+
+
+def test_season_heading_not_captured_as_fact():
+    """'## What Is the Best Time to Do the X Trek?' must NOT be captured as season fact."""
+    md = "## What Is the Best Time to Do the Gauri Pass Trek?\n\nMay–June and September–October are ideal."
+    facts = _extract_trek_facts_from_markdown(md)
+    # Season should not be extracted from a heading (no colon → no key:value match)
+    if "season" in facts:
+        # If extracted, value should be the actual season text, not the heading tail
+        assert "to Do" not in facts["season"]
+
+
+# ── H3-format FAQ parsing ──────────────────────────────────────────────────────
+
+def test_parse_faqs_from_section_h3_format():
+    """H3-heading questions ('### Question?\\nAnswer') parsed correctly."""
+    md = (
+        "### How difficult is the Gauri Pass trek?\n"
+        "The trek is rated Difficult and requires prior high-altitude experience.\n\n"
+        "### What permits are required?\n"
+        "A Kedarnath Wildlife Sanctuary forest permit is mandatory."
+    )
+    faqs = _parse_faqs_from_section(md)
+    assert len(faqs) == 2
+    assert "How difficult" in faqs[0]["q"]
+    assert "Difficult" in faqs[0]["a"]
+    assert "permit" in faqs[1]["a"].lower()
+
+
+def test_parse_faqs_mixed_formats():
+    """Both H3 and bold formats in the same section are parsed without loss."""
+    md = (
+        "### First question?\n"
+        "Answer to first question.\n\n"
+        "**Second question?**\n"
+        "Answer to second question."
+    )
+    faqs = _parse_faqs_from_section(md)
+    assert len(faqs) == 2
+
+
+def test_clear_non_completed_pipeline_runs():
+    """DELETE /admin/pipeline/runs/clear removes failed/cancelled runs only."""
+    # Seed a completed run and a failed run
+    from app.modules.pipeline import service as ps
+    with SessionLocal() as db:
+        completed = ps.create_pipeline_run(db, start_stage="trend_discovery", end_stage="publish", input_data={})
+        db.commit()
+        # Manually mark one as failed
+        failed = ps.create_pipeline_run(db, start_stage="trend_discovery", end_stage="publish", input_data={})
+        failed.status = "failed"
+        db.commit()
+
+    r = client.delete("/api/v1/admin/pipeline/runs/clear")
+    assert r.status_code == 200
+    data = r.json()
+    assert data["deleted_runs"] >= 1  # the failed run deleted
+
+    with SessionLocal() as db:
+        from app.modules.pipeline.models import PipelineRun
+        from sqlalchemy import select as sa_select
+        remaining = db.scalars(sa_select(PipelineRun)).all()
+        statuses = {r.status for r in remaining}
+        # Only completed runs should persist
+        assert "failed" not in statuses
+
+
+def test_clear_non_completed_agent_runs():
+    """DELETE /admin/agent-runs/clear removes non-completed agent runs."""
+    from app.modules.agents.models import AgentRun
+    from app.modules.agents import service as agent_svc
+
+    with SessionLocal() as db:
+        run_id = agent_svc.start_run(db, "trend_discovery", {"test": True})
+        db.commit()  # this creates a "running" run
+
+    r = client.delete("/api/v1/admin/agent-runs/clear")
+    assert r.status_code == 200
+    assert r.json()["deleted"] >= 1

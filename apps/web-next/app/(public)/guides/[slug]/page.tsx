@@ -6,6 +6,8 @@ import Breadcrumb from "@/components/content/Breadcrumb";
 import FAQAccordion from "@/components/content/FAQAccordion";
 import AuthorBlock from "@/components/content/AuthorBlock";
 import SafetyDisclaimer from "@/components/content/SafetyDisclaimer";
+import SchemaInjector from "@/components/seo/SchemaInjector";
+import { buildArticleSchema, buildFAQSchema } from "@/lib/schema";
 import { Compass, Star } from "lucide-react";
 
 export async function generateStaticParams() {
@@ -19,9 +21,19 @@ export async function generateMetadata({ params }: { params: { slug: string } })
     const page = await fetchCMSPage(params.slug);
     if (page.status === "published") cmsPage = page;
   } catch { /* not found */ }
-  const title = cmsPage?.seo_title ?? `Guide — ${params.slug.replace(/-/g, " ")}`;
+  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? "https://trekyatra.com";
+  const title = cmsPage?.seo_title
+    ? `${cmsPage.seo_title} | TrekYatra`
+    : `Guide — ${params.slug.replace(/-/g, " ")} | TrekYatra`;
   const description = cmsPage?.seo_description ?? "A curated beginner-friendly trekking guide.";
-  return { title, description };
+  const canonical = `${siteUrl}/guides/${params.slug}`;
+  return {
+    title,
+    description,
+    alternates: { canonical },
+    openGraph: { title, description, url: canonical, type: "article" },
+    twitter: { card: "summary_large_image", title, description },
+  };
 }
 
 export default async function GuidePage({ params }: { params: { slug: string } }) {
@@ -36,9 +48,17 @@ export default async function GuidePage({ params }: { params: { slug: string } }
   const faqItems: FAQItem[] = cmsPage?.content_json?.faqs ?? [];
   const pageTitle = cmsPage?.title ?? `${params.slug.replace(/-/g, " ")} Guide`;
   const beginnerTreks = treksRaw.filter(t => t.beginner).slice(0, 6);
+  const articleSchema = buildArticleSchema({
+    title: cmsPage?.seo_title ?? pageTitle,
+    description: cmsPage?.seo_description ?? "",
+    url: `/guides/${params.slug}`,
+    publishedAt: cmsPage?.published_at ?? undefined,
+    updatedAt: cmsPage?.updated_at ?? undefined,
+  });
 
   return (
     <>
+      <SchemaInjector schemas={[articleSchema, faqItems.length ? buildFAQSchema(faqItems) : null]} />
       <section className="bg-gradient-to-br from-background to-success/5 border-b border-border py-14">
         <div className="container-wide max-w-4xl">
           <Breadcrumb items={[

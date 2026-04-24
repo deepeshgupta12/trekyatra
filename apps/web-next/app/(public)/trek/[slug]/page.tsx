@@ -10,6 +10,8 @@ import FAQAccordion from "@/components/content/FAQAccordion";
 import Breadcrumb from "@/components/content/Breadcrumb";
 import AuthorBlock from "@/components/content/AuthorBlock";
 import SafetyDisclaimer from "@/components/content/SafetyDisclaimer";
+import SchemaInjector from "@/components/seo/SchemaInjector";
+import { buildArticleSchema, buildFAQSchema, buildBreadcrumbSchema } from "@/lib/schema";
 import {
   Bookmark, Share2, GitCompare, Sparkles, Clock, TrendingUp, Calendar,
   Shield, FileCheck, Backpack, Wallet, ChevronRight, Star, MapPin,
@@ -30,13 +32,28 @@ export async function generateMetadata({ params }: { params: { slug: string } })
   } catch { /* not found */ }
 
   const trekRaw = await fetchTrekBySlug(params.slug).catch(() => null);
-  const title = cmsPage?.seo_title ?? trekRaw?.name ?? params.slug.replace(/-/g, " ");
+  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? "https://trekyatra.com";
+  const title = cmsPage?.seo_title
+    ? `${cmsPage.seo_title} | TrekYatra`
+    : trekRaw?.name
+    ? `${trekRaw.name} — Trek Guide | TrekYatra`
+    : `${params.slug.replace(/-/g, " ")} | TrekYatra`;
   const description = cmsPage?.seo_description ?? trekRaw?.description ?? "";
+  const canonicalUrl = `${siteUrl}/treks/${params.slug}`;
+  const ogImage = cmsPage?.hero_image_url ?? trekRaw?.image ?? null;
 
   return {
     title,
     description,
-    openGraph: { title, description, type: "article" },
+    alternates: { canonical: canonicalUrl },
+    openGraph: {
+      title,
+      description,
+      type: "article",
+      url: canonicalUrl,
+      ...(ogImage ? { images: [{ url: ogImage, width: 1200, height: 630 }] } : {}),
+    },
+    twitter: { card: "summary_large_image", title, description },
   };
 }
 
@@ -106,8 +123,27 @@ export default async function TrekDetailPage({ params }: { params: { slug: strin
   // Structured FAQ items from CMS (auto-extracted or editor-supplied)
   const faqItems: FAQItem[] = cmsPage?.content_json?.faqs ?? [];
 
+  // JSON-LD schemas
+  const pageUrl = `/treks/${params.slug}`;
+  const articleSchema = buildArticleSchema({
+    title: cmsPage?.seo_title ?? trek.name,
+    description: cmsPage?.seo_description ?? trek.description ?? "",
+    url: pageUrl,
+    publishedAt: cmsPage?.published_at ?? undefined,
+    updatedAt: cmsPage?.updated_at ?? undefined,
+    imageUrl: cmsPage?.hero_image_url ?? trek.image ?? undefined,
+  });
+  const faqSchema = faqItems.length ? buildFAQSchema(faqItems) : null;
+  const breadcrumbSchema = buildBreadcrumbSchema([
+    { label: "Home", href: "/" },
+    { label: "Explore", href: "/explore" },
+    { label: trek.state || "Treks", href: "/explore" },
+    { label: cmsDisplayName ?? trek.name },
+  ]);
+
   return (
     <>
+      <SchemaInjector schemas={[articleSchema, faqSchema, breadcrumbSchema]} />
       {/* Hero */}
       <section className="relative h-[78vh] min-h-[600px] flex items-end overflow-hidden">
         <div className="absolute inset-0">
@@ -159,7 +195,7 @@ export default async function TrekDetailPage({ params }: { params: { slug: strin
         </div>
       </section>
 
-      <section className="py-12 md:py-16">
+      <section className="pt-16 pb-16 md:pt-20 md:pb-20">
         <div className="container-wide grid lg:grid-cols-[200px_1fr_320px] gap-10">
 
           {/* Left TOC sidebar — client component with scroll spy */}

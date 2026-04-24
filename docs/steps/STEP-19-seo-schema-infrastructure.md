@@ -94,13 +94,42 @@ open http://localhost:3000/treks/<slug>
 curl -s http://localhost:3000/treks/<slug> | grep -i 'og:'
 ```
 
+## Files Created
+- `apps/web-next/lib/schema.ts` — buildArticleSchema, buildFAQSchema, buildBreadcrumbSchema, buildItemListSchema, buildWebSiteSchema
+- `apps/web-next/components/seo/SchemaInjector.tsx` — JSON-LD script tag renderer; filters null schemas
+- `apps/web-next/app/sitemap.ts` — Next.js App Router sitemap; static + trek slugs + CMS pages; deduplicates
+- `apps/web-next/app/robots.ts` — blocks /admin/, /account/, /auth/, /api/; references sitemap URL
+
+## Files Modified
+- `apps/web-next/app/layout.tsx` — metadataBase, global OG/Twitter/robots defaults
+- `apps/web-next/app/(public)/page.tsx` — WebSite JSON-LD via SchemaInjector
+- `apps/web-next/app/(public)/trek/[slug]/page.tsx` — canonical, OG, Twitter, Article+FAQPage+BreadcrumbList JSON-LD; section padding; TOC hash fix
+- `apps/web-next/app/(public)/packing/[slug]/page.tsx` — canonical, OG, Twitter, Article+FAQ JSON-LD
+- `apps/web-next/app/(public)/permits/[slug]/page.tsx` — canonical, OG, Twitter, Article+FAQ JSON-LD
+- `apps/web-next/app/(public)/guides/[slug]/page.tsx` — canonical, OG, Twitter, Article+FAQ JSON-LD
+- `apps/web-next/lib/api.ts` — FactCheckClaim type + fetchFactCheckClaims (Step 18 fix)
+- `apps/web-next/app/(admin)/admin/fact-check/page.tsx` — real-API client component (Step 18 fix)
+- `apps/web-next/components/content/TableOfContents.tsx` — history.pushState URL hash (Step 18 fix)
+- `services/api/app/main.py` — _cancel_stale_runs() lifespan startup hook (Step 18 fix)
+- `services/api/app/api/routes/pipeline.py` — DELETE /admin/pipeline/runs/clear (Step 18 fix)
+- `services/api/app/api/routes/agent_runs.py` — DELETE /admin/agent-runs/clear (Step 18 fix)
+- `services/api/app/api/routes/admin.py` — GET /admin/fact-check/claims (Step 18 fix)
+- `services/api/app/schemas/admin.py` — ClaimResponse model (Step 18 fix)
+- `services/api/app/modules/cms/service.py` — two-pass trek facts extraction; H3 FAQ parsing (Step 18 fix)
+- `services/api/app/modules/agents/seo_aeo/agent.py` — _clean_llm_json() (Step 18 SEO fix)
+- `services/api/app/modules/agents/seo_aeo/prompts.py` — explicit JSON escaping instruction (Step 18 SEO fix)
+- `services/api/tests/test_cms.py` — 11 new tests; 168/168 pass
+- `CLAUDE.md` — Section 15 (Admin Design System) + Section 16 (Inter-Step Dependency Protocol) added
+
 ## Status
-pending
+Done
 
 ## Notes
-- `generateMetadata()` must be async and await the WP post fetch — reuse same fetch as the page component (Next.js deduplicates requests in the same render pass)
-- FAQPage schema only injected if the draft/post has a non-empty FAQ section (check before injecting)
-- Sitemap: cap at 1000 URLs per sitemap file initially; add sitemap index if content grows past that
-- Organization schema: include logo URL, social profiles, and site name — set these as env vars
-- SearchAction schema on homepage enables Google's Sitelinks Searchbox — implement only if public search page is live
-- Do not add Review schema unless real verified reviews exist — Google penalizes fake review markup
+- `generateMetadata()` is async in all dynamic route pages; reuses the same CMS fetch as the page (Next.js deduplicates requests in the same render pass)
+- FAQPage schema only injected when `faqItems.length > 0` — no empty schema blocks emitted
+- Sitemap deduplicates by URL so static + CMS entries for the same trek slug don't duplicate
+- Two-pass trek facts: table format (`| **Duration** | 7 days |`) tried first; KV format (`**Duration:** 7 days`) as fallback; season heading guard: colon REQUIRED to avoid capturing headings like "Best Time to Do the Trek?"
+- _clean_llm_json() character-level walker: escapes literal \n/\r/\t inside JSON string values; fixes SEO/AEO agent truncation at char ~4479
+- Stale-run cleanup: on startup, any AgentRun or PipelineRun with status="running" is set to "cancelled" — prevents phantom runs after worker restart
+- CMS persistence (data not wiped): Docker bind mounts (./postgres-data, ./redis-data) are correct. If data appears wiped, check if test fixtures with autouse=True are deleting from the real DB or if pipeline runs are stuck at approval gates (no published CMS pages visible until pipeline completes)
+- Fact Check page: uses real DraftClaim data joined with ContentDraft for title; supports flagged_only toggle

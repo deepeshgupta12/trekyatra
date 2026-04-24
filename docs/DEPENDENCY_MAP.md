@@ -169,6 +169,32 @@ This file tracks structural dependencies, source-of-truth modules, and Nexus/Git
 - `services/api/tests/test_smoke.py` -> smoke tests for all 14 key API surfaces
 - `services/api/tests/test_publish.py` -> publish workflow tests (status transitions, WP mock push, log retrieval)
 
+### Step 19 + Step 18 fixes blast radius
+- `apps/web-next/lib/schema.ts` -> NEW: schema builder utilities (buildArticleSchema, buildFAQSchema, buildBreadcrumbSchema, buildItemListSchema, buildWebSiteSchema); uses NEXT_PUBLIC_SITE_URL; blast radius: LOW (new file, imported only by page files)
+- `apps/web-next/components/seo/SchemaInjector.tsx` -> NEW: renders JSON-LD <script> tags; blast radius: LOW (leaf component, imported by trek/packing/permits/guides/homepage pages)
+- `apps/web-next/app/sitemap.ts` -> NEW: Next.js App Router sitemap; fetches treks + fetchCMSPages; blast radius: LOW (build-time only, graceful fallback on API unavailable)
+- `apps/web-next/app/robots.ts` -> NEW: Next.js App Router robots; blocks /admin/, /account/, /auth/, /api/; blast radius: LOW
+- `apps/web-next/app/layout.tsx` -> UPDATED: metadataBase, global OG/Twitter defaults, robots index/follow; blast radius: MEDIUM (root layout — affects all pages' metadata inheritance)
+- `apps/web-next/app/(public)/page.tsx` -> UPDATED: WebSite JSON-LD via SchemaInjector; blast radius: LOW (leaf page)
+- `apps/web-next/app/(public)/trek/[slug]/page.tsx` -> UPDATED: canonical + OG + Twitter in generateMetadata; Article + FAQPage + BreadcrumbList JSON-LD; section padding increased; TOC history.pushState reinstated; blast radius: LOW (leaf page)
+- `apps/web-next/app/(public)/packing/[slug]/page.tsx` -> UPDATED: canonical + OG + Twitter; Article + FAQ JSON-LD; blast radius: LOW
+- `apps/web-next/app/(public)/permits/[slug]/page.tsx` -> UPDATED: canonical + OG + Twitter; Article + FAQ JSON-LD; blast radius: LOW
+- `apps/web-next/app/(public)/guides/[slug]/page.tsx` -> UPDATED: canonical + OG + Twitter; Article + FAQ JSON-LD; blast radius: LOW
+- `apps/web-next/lib/api.ts` -> UPDATED: FactCheckClaim interface + fetchFactCheckClaims helper; blast radius: LOW (additive)
+- `apps/web-next/app/(admin)/admin/fact-check/page.tsx` -> REWRITTEN: real-API client component; reads GET /admin/fact-check/claims; blast radius: LOW (leaf admin page)
+- `apps/web-next/components/content/TableOfContents.tsx` -> UPDATED: history.pushState on item click (URL hash update); blast radius: LOW
+- `services/api/app/main.py` -> UPDATED: _cancel_stale_runs() called in lifespan startup; marks orphaned agent_runs + pipeline_runs with status="running" as "cancelled"; blast radius: LOW (startup hook, additive)
+- `services/api/app/api/routes/pipeline.py` -> UPDATED: DELETE /admin/pipeline/runs/clear — deletes pipeline_stages first (FK), then non-completed runs; blast radius: LOW (additive endpoint)
+- `services/api/app/api/routes/agent_runs.py` -> UPDATED: DELETE /admin/agent-runs/clear — deletes failed/cancelled/running AgentRuns; blast radius: LOW (additive endpoint)
+- `services/api/app/api/routes/admin.py` -> UPDATED: GET /admin/fact-check/claims — joins DraftClaim with ContentDraft for title; supports flagged_only param; blast radius: LOW (additive endpoint)
+- `services/api/app/schemas/admin.py` -> UPDATED: ClaimResponse Pydantic model added; blast radius: LOW (additive)
+- `services/api/app/modules/cms/service.py:_extract_trek_facts_from_markdown` -> UPDATED: two-pass extraction — _FACT_TABLE (markdown table format) first, _FACT_KV (bold key:value, colon required) fallback; season headings no longer captured; blast radius: LOW (internal helper, called by upsert_page_from_draft + reparse_sections_from_draft)
+- `services/api/app/modules/cms/service.py:_parse_faqs_from_section` -> UPDATED: handles ### H3 format AND **bold** format; blast radius: LOW (internal helper)
+- `services/api/app/modules/agents/seo_aeo/agent.py` -> UPDATED: _clean_llm_json() fallback parser escapes literal \\n/\\r/\\t inside JSON strings; blast radius: LOW (agent only)
+- `services/api/app/modules/agents/seo_aeo/prompts.py` -> UPDATED: explicit instruction to escape newlines in JSON string values; blast radius: LOW
+- `services/api/tests/test_cms.py` -> UPDATED: 11 new tests (table format, season-heading guard, H3 FAQ, clear endpoints); 168/168 total pass
+- `CLAUDE.md` -> UPDATED: Section 16 (Inter-Step Dependency Check Protocol) + Section 15 (Admin UI Design System) added; GitNexus skill table added to GitNexus section
+
 ## Dependency Discipline Rules
 Before editing any existing frontend file:
 1. Identify entry file and route usage.

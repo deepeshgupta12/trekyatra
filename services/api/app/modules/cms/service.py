@@ -175,24 +175,48 @@ def _parse_sections_from_markdown(text: str) -> dict[str, str]:
     return {k: _md_to_html("\n".join(v).strip()) for k, v in sections.items() if v}
 
 
-# Patterns to auto-extract trek facts from raw markdown (key: value style).
-# Handles bold-label lists ("**Duration:** 5 days"), table rows, and "Permit Required:" formats.
-_FACT_EXTRACT: list[tuple[str, str, re.Pattern]] = [
-    ("duration",   "duration",   re.compile(r"(?:\*\*)?duration(?:\*\*)?[:\s*]+([^\n|*]{3,60}?)(?:\n|\||$)", re.I)),
-    ("altitude",   "altitude",   re.compile(r"(?:\*\*)?(?:max(?:imum)?\s+)?(?:altitude|elevation|height)(?:\*\*)?[:\s*]+([^\n|*]{3,60}?)(?:\n|\||$)", re.I)),
-    ("difficulty", "difficulty", re.compile(r"(?:\*\*)?difficulty(?:\s+level)?(?:\*\*)?[:\s*]+([^\n|*]{3,50}?)(?:\n|\||$)", re.I)),
-    ("season",     "season",     re.compile(r"(?:\*\*)?(?:best\s+(?:time|season)|ideal\s+season|best\s+season|season)(?:\*\*)?[:\s*]+([^\n|*]{3,80}?)(?:\n|\||$)", re.I)),
-    # "**Permit Required:** Yes — ..." — matches bold close + optional second colon before value
-    ("permits",    "permits",    re.compile(r"(?:\*\*)?permit\b[^*:\n]{0,20}(?::?\*\*)?:?\s+([^\n|*]{3,80}?)(?:\n|\||$)", re.I)),
-    # "**Nearest Base Villages:** Nohradhar / Sarahan *(Note:...)*" — note stripped via [^\n|*(]
-    ("base",       "base",       re.compile(r"(?:\*\*)?(?:(?:nearest\s+)?base\s+(?:villages?|camp|town)|starting\s+(?:point|village)|trailhead)(?::?\*\*)?:?\s+([^\n|*(]{3,50}?)(?:\s*\*|\n|\||$)", re.I)),
+# Table-row patterns: "| **Key** | Value |" — highest fidelity, tried first.
+_FACT_TABLE: list[tuple[str, re.Pattern]] = [
+    ("duration",   re.compile(r"\|\s*\*\*Duration\b[^|*]*\*\*\s*\|\s*([^|\n]+?)\s*\|", re.I)),
+    ("altitude",   re.compile(r"\|\s*\*\*(?:Max(?:imum)?\s+)?(?:Altitude|Elevation|Height)\b[^|*]*\*\*\s*\|\s*([^|\n]+?)\s*\|", re.I)),
+    ("difficulty", re.compile(r"\|\s*\*\*Difficulty\b[^|*]*\*\*\s*\|\s*([^|\n]+?)\s*\|", re.I)),
+    ("season",     re.compile(r"\|\s*\*\*Best\s+Season\b[^|*]*\*\*\s*\|\s*([^|\n]+?)\s*\|", re.I)),
+    ("permits",    re.compile(r"\|\s*\*\*Permits?\b[^|*]*\*\*\s*\|\s*([^|\n]+?)\s*\|", re.I)),
+    ("base",       re.compile(r"\|\s*\*\*(?:Base|Start|Trailhead|Last\s+Village)\b[^|*]*\*\*\s*\|\s*([^|\n]+?)\s*\|", re.I)),
+]
+
+# Key:value patterns.  Separator is `\*{0,2}:\*{0,2}\s*` which matches all three
+# formats: "**Key:** val"  → `:**` after keyword; "**Key**: val" → `**:` after keyword;
+# "Key: val" → `:`.  The colon is REQUIRED so headings ("Best Season for X") never match.
+_FACT_KV: list[tuple[str, re.Pattern]] = [
+    ("duration",   re.compile(r"(?:\*\*)?duration(?:\*\*)?(?:\*{0,2}:\*{0,2}\s*)([^\n|*]{3,60}?)(?:\n|\||$)", re.I)),
+    ("altitude",   re.compile(r"(?:\*\*)?(?:max(?:imum)?\s+)?(?:altitude|elevation|height)(?:\*\*)?(?:\*{0,2}:\*{0,2}\s*)([^\n|*]{3,60}?)(?:\n|\||$)", re.I)),
+    ("difficulty", re.compile(r"(?:\*\*)?difficulty(?:\s+level)?(?:\*\*)?(?:\*{0,2}:\*{0,2}\s*)([^\n|*]{3,50}?)(?:\n|\||$)", re.I)),
+    ("season",     re.compile(r"(?:\*\*)?(?:best\s+season|ideal\s+season|season)(?:\*\*)?(?:\*{0,2}:\*{0,2}\s*)([^\n|*]{3,80}?)(?:\n|\||$)", re.I)),
+    ("permits",    re.compile(r"(?:\*\*)?permit\b[^*:\n]{0,20}(?:\*{0,2}:\*{0,2}\s*)([^\n|*]{3,80}?)(?:\n|\||$)", re.I)),
+    ("base",       re.compile(r"(?:\*\*)?(?:(?:nearest\s+)?base\s+(?:villages?|camp|town)|starting\s+(?:point|village)|trailhead)(?:\*{0,2}:\*{0,2}\s*)([^\n|*(]{3,50}?)(?:\s*\*|\n|\||$)", re.I)),
 ]
 
 
 def _extract_trek_facts_from_markdown(text: str) -> dict[str, str]:
-    """Extract duration, altitude, difficulty, season, permits, base from raw markdown."""
+    """Extract duration, altitude, difficulty, season, permits, base from raw markdown.
+
+    Tries table-row format first ("| **Duration** | 7 days |"), then falls back to
+    key:value format ("**Duration:** 7 days"). The key:value patterns require an
+    explicit colon so H2/H3 headings are never mistakenly captured.
+    """
     facts: dict[str, str] = {}
-    for key, _label, pattern in _FACT_EXTRACT:
+    # Pass 1 — table rows (highest fidelity)
+    for key, pattern in _FACT_TABLE:
+        m = pattern.search(text)
+        if m:
+            val = m.group(1).strip().strip("*").strip(" /–-")
+            if val and len(val) > 1:
+                facts[key] = val
+    # Pass 2 — key:value (fill any gaps not found in table)
+    for key, pattern in _FACT_KV:
+        if key in facts:
+            continue
         m = pattern.search(text)
         if m:
             val = m.group(1).strip().strip("*").strip(" /–-")
@@ -223,38 +247,46 @@ def _extract_faq_section_raw(text: str) -> str:
 
 
 def _parse_faqs_from_section(faq_raw: str) -> list[dict]:
-    """Parse FAQ markdown with bold-question / paragraph-answer format into [{q, a}] list.
+    """Parse FAQ markdown into [{q, a}] list.
 
-    Handles both: '**Question?**\\nAnswer' and '**Q: Question?**\\n**A:** Answer'.
-    Answers are converted to HTML via _md_to_html so the FE can render them safely.
+    Handles three common LLM output formats:
+      1. H3 heading question: "### Is Kedarkantha for beginners?\\nAnswer text"
+      2. Bold standalone: "**Question?**\\nAnswer text"
+      3. Bold Q/A labels: "**Q: Question?**\\n**A:** Answer text"
+
+    Answers are converted to HTML via _md_to_html.
     """
     faqs: list[dict] = []
     current_q: str | None = None
     current_a_lines: list[str] = []
 
+    def _flush() -> None:
+        nonlocal current_q, current_a_lines
+        if current_q is not None and current_a_lines:
+            answer_md = "\n".join(current_a_lines).strip()
+            if answer_md:
+                faqs.append({"q": current_q, "a": _md_to_html(answer_md)})
+        current_q = None
+        current_a_lines = []
+
     for line in faq_raw.splitlines():
-        # Bold standalone line = question ("**Some question?**" or "**Q: Some question?**")
-        m = re.match(r"^\*\*(?:Q:\s*)?(.+?)\*\*\s*$", line.strip())
-        if m:
-            if current_q is not None and current_a_lines:
-                answer_md = "\n".join(current_a_lines).strip()
-                if answer_md:
-                    faqs.append({"q": current_q, "a": _md_to_html(answer_md)})
-            q_text = m.group(1).strip()
-            # Normalise: strip trailing punctuation, then add ?
-            q_text = re.sub(r"[?!.]+$", "", q_text).strip() + "?"
+        stripped = line.strip()
+        # Format 1: ### H3 heading as question
+        h3 = re.match(r"^###\s+(.+)$", stripped)
+        # Format 2/3: **Question?** or **Q: Question?** (entire line bold)
+        bold = re.match(r"^\*\*(?:Q:\s*)?(.+?)\*\*\s*$", stripped)
+
+        if h3 or bold:
+            _flush()
+            q_raw = (h3 or bold).group(1).strip()  # type: ignore[union-attr]
+            q_text = re.sub(r"[?!.]+$", "", q_raw).strip() + "?"
             current_q = q_text
             current_a_lines = []
         elif current_q is not None:
-            # Skip "**A:**" answer-label lines (some formats include them)
             clean = re.sub(r"^\*\*A:\*\*\s*", "", line)
             current_a_lines.append(clean)
 
-    if current_q is not None and current_a_lines:
-        answer_md = "\n".join(current_a_lines).strip()
-        if answer_md:
-            faqs.append({"q": current_q, "a": _md_to_html(answer_md)})
-
+    _flush()
     return faqs
 
 
