@@ -3,8 +3,11 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
-import { Loader2, Save, Globe, RefreshCw } from "lucide-react";
-import { createCMSPage, updateCMSPage, reparseCMSSections, type CMSPage, type CMSPagePayload, type TrekContentSections, type TrekFacts } from "@/lib/api";
+import { Loader2, Save, Globe, RefreshCw, Plus, Trash2 } from "lucide-react";
+import {
+  createCMSPage, updateCMSPage, reparseCMSSections,
+  type CMSPage, type CMSPagePayload, type TrekContentSections, type TrekFacts, type FAQItem,
+} from "@/lib/api";
 
 const PAGE_TYPES = [
   { value: "trek_guide", label: "Trek Guide" },
@@ -23,6 +26,7 @@ const STATUSES = [
   { value: "published", label: "Published" },
 ];
 
+// Sections except faqs — faqs has its own dedicated Q&A editor
 const SECTION_FIELDS: { key: keyof TrekContentSections; label: string; hint: string; rows: number }[] = [
   { key: "why_this_trek", label: "Why this trek", hint: "Intro paragraph — why this trek stands out.", rows: 5 },
   { key: "route_overview", label: "Route overview", hint: "High-level route summary, distance, elevation gain.", rows: 4 },
@@ -33,7 +37,6 @@ const SECTION_FIELDS: { key: keyof TrekContentSections; label: string; hint: str
   { key: "cost_estimate", label: "Cost estimate", hint: "Budget / mid / premium tiers.", rows: 4 },
   { key: "packing", label: "Packing & gear", hint: "Essential gear list. Use - bullet format.", rows: 5 },
   { key: "safety", label: "Safety tips", hint: "Key safety advice and emergency info.", rows: 5 },
-  { key: "faqs", label: "FAQs", hint: "Use **Q: question** then **A: answer** format.", rows: 6 },
 ];
 
 interface Props {
@@ -44,7 +47,6 @@ interface Props {
 export default function CMSPageForm({ mode, existing }: Props) {
   const router = useRouter();
   const s = existing?.content_json?.sections ?? {};
-
   const tf = (existing?.content_json?.trek_facts ?? {}) as TrekFacts;
 
   const [title, setTitle] = useState(existing?.title ?? "");
@@ -65,6 +67,10 @@ export default function CMSPageForm({ mode, existing }: Props) {
   const [sections, setSections] = useState<Record<string, string>>(
     Object.fromEntries(SECTION_FIELDS.map((f) => [f.key, (s as Record<string, string>)[f.key] ?? ""]))
   );
+  // Structured FAQs — each item has a question and HTML answer
+  const [faqs, setFaqs] = useState<FAQItem[]>(
+    existing?.content_json?.faqs ?? []
+  );
 
   const [saving, setSaving] = useState(false);
   const [publishing, setPublishing] = useState(false);
@@ -81,6 +87,18 @@ export default function CMSPageForm({ mode, existing }: Props) {
     if (mode === "create") setSlug(autoSlug(v));
   }
 
+  function addFaq() {
+    setFaqs(prev => [...prev, { q: "", a: "" }]);
+  }
+
+  function removeFaq(i: number) {
+    setFaqs(prev => prev.filter((_, idx) => idx !== i));
+  }
+
+  function updateFaq(i: number, field: "q" | "a", value: string) {
+    setFaqs(prev => prev.map((item, idx) => idx === i ? { ...item, [field]: value } : item));
+  }
+
   function buildPayload(overrideStatus?: string): CMSPagePayload {
     const nonEmptySections = Object.fromEntries(
       Object.entries(sections).filter(([, v]) => v.trim() !== "")
@@ -88,8 +106,10 @@ export default function CMSPageForm({ mode, existing }: Props) {
     const nonEmptyFacts = Object.fromEntries(
       Object.entries(trekFacts).filter(([, v]) => (v ?? "").trim() !== "")
     ) as TrekFacts;
+    const validFaqs = faqs.filter(f => f.q.trim() !== "");
     const hasFacts = Object.keys(nonEmptyFacts).length > 0;
     const hasSections = Object.keys(nonEmptySections).length > 0;
+    const hasFaqs = validFaqs.length > 0;
     return {
       title: title.trim(),
       slug: slug.trim(),
@@ -98,8 +118,12 @@ export default function CMSPageForm({ mode, existing }: Props) {
       seo_title: seoTitle.trim() || null,
       seo_description: seoDesc.trim() || null,
       hero_image_url: heroImageUrl.trim() || null,
-      content_json: (hasSections || hasFacts)
-        ? { sections: hasSections ? nonEmptySections : undefined, trek_facts: hasFacts ? nonEmptyFacts : undefined }
+      content_json: (hasSections || hasFacts || hasFaqs)
+        ? {
+            sections: hasSections ? nonEmptySections : undefined,
+            trek_facts: hasFacts ? nonEmptyFacts : undefined,
+            faqs: hasFaqs ? validFaqs : undefined,
+          }
         : null,
     };
   }
@@ -115,7 +139,10 @@ export default function CMSPageForm({ mode, existing }: Props) {
       setSections(Object.fromEntries(
         SECTION_FIELDS.map((f) => [f.key, newSections[f.key] ?? sections[f.key] ?? ""])
       ));
-      setSuccess("Sections re-parsed from draft. Review and save.");
+      // Update FAQs if the re-parse returned structured items
+      const newFaqs = updated.content_json?.faqs ?? [];
+      if (newFaqs.length > 0) setFaqs(newFaqs);
+      setSuccess("Sections and FAQs re-parsed from draft. Review and save.");
       setTimeout(() => setSuccess(null), 5000);
     } catch (e) {
       setError(e instanceof Error ? e.message : "Reparse failed.");
@@ -162,7 +189,6 @@ export default function CMSPageForm({ mode, existing }: Props) {
       {/* Basic info */}
       <div className="bg-[#14161f] rounded-2xl border border-white/10 p-5 space-y-4">
         <h2 className="text-white font-semibold text-sm">Page details</h2>
-
         <div className="grid sm:grid-cols-2 gap-4">
           <div>
             <label className={labelCls}>Title *</label>
@@ -173,7 +199,6 @@ export default function CMSPageForm({ mode, existing }: Props) {
             <input className={inputCls} value={slug} onChange={(e) => setSlug(e.target.value)} placeholder="triund-trek" />
           </div>
         </div>
-
         <div className="grid sm:grid-cols-2 gap-4">
           <div>
             <label className={labelCls}>Page type</label>
@@ -199,7 +224,7 @@ export default function CMSPageForm({ mode, existing }: Props) {
         </div>
         <div>
           <label className={labelCls}>SEO description</label>
-          <textarea className={inputCls} rows={3} value={seoDesc} onChange={(e) => setSeoDesc(e.target.value)} placeholder="Plan your Triund trek with our complete guide — routes, itinerary, best time, permits, and packing list." />
+          <textarea className={inputCls} rows={3} value={seoDesc} onChange={(e) => setSeoDesc(e.target.value)} placeholder="Plan your Triund trek with our complete guide..." />
         </div>
       </div>
 
@@ -208,12 +233,7 @@ export default function CMSPageForm({ mode, existing }: Props) {
         <h2 className="text-white font-semibold text-sm">Hero image</h2>
         <div>
           <label className={labelCls}>Hero image URL</label>
-          <input
-            className={inputCls}
-            value={heroImageUrl}
-            onChange={(e) => setHeroImageUrl(e.target.value)}
-            placeholder="https://cdn.example.com/kedarkantha-hero.jpg"
-          />
+          <input className={inputCls} value={heroImageUrl} onChange={(e) => setHeroImageUrl(e.target.value)} placeholder="https://cdn.example.com/hero.jpg" />
           <p className="text-white/25 text-xs mt-1">Full URL to the hero image shown at the top of the trek page.</p>
         </div>
         {heroImageUrl && (
@@ -258,6 +278,61 @@ export default function CMSPageForm({ mode, existing }: Props) {
                 onChange={(e) => setSections((prev) => ({ ...prev, [f.key]: e.target.value }))}
                 placeholder={`Write ${f.label.toLowerCase()} content here…`}
               />
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* FAQ editor — structured Q&A pairs */}
+      <div className="bg-[#14161f] rounded-2xl border border-white/10 overflow-hidden">
+        <div className="flex items-center justify-between px-5 py-3.5 border-b border-white/8">
+          <div>
+            <h2 className="text-white font-semibold text-sm">FAQs</h2>
+            <p className="text-white/40 text-xs mt-0.5">Each question–answer pair renders as an accordion on the public page.</p>
+          </div>
+          <button
+            type="button"
+            onClick={addFaq}
+            className="flex items-center gap-1.5 text-xs text-accent hover:text-accent/80 font-medium border border-accent/30 rounded-lg px-3 py-1.5 transition-colors"
+          >
+            <Plus className="h-3.5 w-3.5" /> Add FAQ
+          </button>
+        </div>
+        <div className="p-5 space-y-4">
+          {faqs.length === 0 && (
+            <p className="text-white/30 text-sm text-center py-4">No FAQs yet. Click "Add FAQ" or use "Re-parse sections" to auto-extract from the draft.</p>
+          )}
+          {faqs.map((item, i) => (
+            <div key={i} className="bg-[#0c0e14] border border-white/8 rounded-xl p-4 space-y-3">
+              <div className="flex items-start justify-between gap-2">
+                <span className="text-xs text-white/40 font-medium pt-1">FAQ {i + 1}</span>
+                <button
+                  type="button"
+                  onClick={() => removeFaq(i)}
+                  className="text-red-400/60 hover:text-red-400 transition-colors flex-shrink-0"
+                >
+                  <Trash2 className="h-3.5 w-3.5" />
+                </button>
+              </div>
+              <div>
+                <label className={labelCls}>Question</label>
+                <input
+                  className={inputCls}
+                  value={item.q}
+                  onChange={(e) => updateFaq(i, "q", e.target.value)}
+                  placeholder="What permits are required for this trek?"
+                />
+              </div>
+              <div>
+                <label className={labelCls}>Answer <span className="text-white/25">(HTML from auto-parse, or plain text)</span></label>
+                <textarea
+                  className={inputCls}
+                  rows={4}
+                  value={item.a}
+                  onChange={(e) => updateFaq(i, "a", e.target.value)}
+                  placeholder="A Forest Department permit is required. Obtain it at the ranger station before the trailhead."
+                />
+              </div>
             </div>
           ))}
         </div>

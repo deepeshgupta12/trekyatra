@@ -84,12 +84,34 @@ open http://localhost:3000/guides/<slug>
 ```
 
 ## Status
-pending
+Done
+
+## Files Created
+- `apps/web-next/components/content/FAQAccordion.tsx` — client accordion with smooth open/close
+- `apps/web-next/components/content/TableOfContents.tsx` — client TOC with IntersectionObserver scroll spy
+- `apps/web-next/components/content/Breadcrumb.tsx`
+- `apps/web-next/components/content/RelatedContent.tsx`
+- `apps/web-next/components/content/AuthorBlock.tsx`
+- `apps/web-next/components/content/UpdatedBadge.tsx`
+- `apps/web-next/components/content/SafetyDisclaimer.tsx`
+- `apps/web-next/components/content/AffiliateDisclosure.tsx`
+- `apps/web-next/app/(public)/packing/[slug]/page.tsx`
+- `apps/web-next/app/(public)/permits/[slug]/page.tsx`
+- `apps/web-next/app/(public)/guides/[slug]/page.tsx`
+
+## Files Modified
+- `apps/web-next/app/(public)/trek/[slug]/page.tsx` — full rewrite: TableOfContents, FAQAccordion, Breadcrumb, AuthorBlock, Quick Facts body block, generic cost/permits fallbacks
+- `apps/web-next/components/admin/CMSPageForm.tsx` — FAQ Q&A pair editor (add/remove), Re-parse updates FAQ state
+- `apps/web-next/lib/api.ts` — FAQItem type, content_json.faqs typed on CMSPage + CMSPagePayload
+- `services/api/app/modules/cms/service.py` — permits/base regex fixes; _extract_faq_section_raw; _parse_faqs_from_section; upsert_page_from_draft + reparse_sections_from_draft write content_json.faqs
+- `services/api/tests/test_cms.py` — 4 new tests (permits format, nearest base, FAQ parse, FAQ extract); 33/33 CMS tests pass; 153/153 total
+- `docs/MASTER_TRACKER.md`, `docs/DEPENDENCY_MAP.md`, `docs/IMPLEMENTATION_PLAN.md`
 
 ## Notes
-- All page templates must include the UpdatedBadge (freshness signal for SEO trust)
-- Comparison page: uses a structured comparison table; winner/recommended badge driven by a metadata field on the WP post
-- Safety-sensitive content types (permit, beginner roundup, seasonal): always include SafetyDisclaimer
-- Affiliate-heavy pages (packing list, gear pages): always include AffiliateDisclosure at top
-- Mobile: TOC should collapse into a sticky "Jump to section" button on screens < 768px
-- RelatedContent: uses `/api/v1/links/suggestions/{page_id}` once Step 22 (internal linking) is done; until then, shows same-cluster posts from WP
+- FAQAccordion: first item opens by default (index 0); each item gets accent border-l-2 when active; answers stored as HTML (converted by _md_to_html during reparse/publish)
+- TableOfContents: IntersectionObserver rootMargin "-10% 0px -70% 0px" — highlights the topmost visible section; smooth scroll on click via scrollIntoView
+- Quick Facts body block (id="quick-facts"): filters out "—" values so empty facts are hidden; the sticky strip always shows all 6 cells
+- RelatedContent: uses same-cluster posts from static trek data until Step 22 (internal linking engine)
+- TOC "Quick facts" link now scrolls to the body-level facts grid block (not the sticky strip)
+- permits/base regex: handles `**keyword:** value` markdown where colon is inside bold markers (`**keyword:**`); closing `**` matched by `(?::?\*\*)?` group before value capture
+- FAQ CMS editor: answers shown as HTML from auto-parse; editors can read/edit HTML or paste plain text; plain text is stored as-is (no conversion on save)

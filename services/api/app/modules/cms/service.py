@@ -176,14 +176,16 @@ def _parse_sections_from_markdown(text: str) -> dict[str, str]:
 
 
 # Patterns to auto-extract trek facts from raw markdown (key: value style).
-# Handles bold-label tables ("**Duration:** 5 days") and prose formats.
+# Handles bold-label lists ("**Duration:** 5 days"), table rows, and "Permit Required:" formats.
 _FACT_EXTRACT: list[tuple[str, str, re.Pattern]] = [
-    ("duration",   "duration",   re.compile(r"(?:\*\*)?duration(?:\*\*)?[:\s*]+([^\n|]{3,60}?)(?:\n|\||\*\*|$)", re.I)),
-    ("altitude",   "altitude",   re.compile(r"(?:\*\*)?(?:max(?:imum)?\s+)?(?:altitude|elevation|height)(?:\*\*)?[:\s*]+([^\n|]{3,60}?)(?:\n|\||\*\*|$)", re.I)),
-    ("difficulty", "difficulty", re.compile(r"(?:\*\*)?difficulty(?:\s+level)?(?:\*\*)?[:\s*]+([^\n|]{3,50}?)(?:\n|\||\*\*|$)", re.I)),
-    ("season",     "season",     re.compile(r"(?:\*\*)?(?:best\s+time|ideal\s+season|season)(?:\*\*)?[:\s*]+([^\n|]{3,80}?)(?:\n|\||\*\*|$)", re.I)),
-    ("permits",    "permits",    re.compile(r"(?:\*\*)?permits?(?:\*\*)?[:\s*]+([^\n|]{3,80}?)(?:\n|\||\*\*|$)", re.I)),
-    ("base",       "base",       re.compile(r"(?:\*\*)?(?:base\s+(?:camp|village|town)|nearest\s+town|starting\s+(?:point|village)|trailhead)(?:\*\*)?[:\s*]+([^\n|]{3,50}?)(?:\n|\||\*\*|$)", re.I)),
+    ("duration",   "duration",   re.compile(r"(?:\*\*)?duration(?:\*\*)?[:\s*]+([^\n|*]{3,60}?)(?:\n|\||$)", re.I)),
+    ("altitude",   "altitude",   re.compile(r"(?:\*\*)?(?:max(?:imum)?\s+)?(?:altitude|elevation|height)(?:\*\*)?[:\s*]+([^\n|*]{3,60}?)(?:\n|\||$)", re.I)),
+    ("difficulty", "difficulty", re.compile(r"(?:\*\*)?difficulty(?:\s+level)?(?:\*\*)?[:\s*]+([^\n|*]{3,50}?)(?:\n|\||$)", re.I)),
+    ("season",     "season",     re.compile(r"(?:\*\*)?(?:best\s+(?:time|season)|ideal\s+season|best\s+season|season)(?:\*\*)?[:\s*]+([^\n|*]{3,80}?)(?:\n|\||$)", re.I)),
+    # "**Permit Required:** Yes — ..." — matches bold close + optional second colon before value
+    ("permits",    "permits",    re.compile(r"(?:\*\*)?permit\b[^*:\n]{0,20}(?::?\*\*)?:?\s+([^\n|*]{3,80}?)(?:\n|\||$)", re.I)),
+    # "**Nearest Base Villages:** Nohradhar / Sarahan *(Note:...)*" — note stripped via [^\n|*(]
+    ("base",       "base",       re.compile(r"(?:\*\*)?(?:(?:nearest\s+)?base\s+(?:villages?|camp|town)|starting\s+(?:point|village)|trailhead)(?::?\*\*)?:?\s+([^\n|*(]{3,50}?)(?:\s*\*|\n|\||$)", re.I)),
 ]
 
 
@@ -193,10 +195,67 @@ def _extract_trek_facts_from_markdown(text: str) -> dict[str, str]:
     for key, _label, pattern in _FACT_EXTRACT:
         m = pattern.search(text)
         if m:
-            val = m.group(1).strip().strip("*").strip()
+            val = m.group(1).strip().strip("*").strip(" /–-")
             if val and len(val) > 1:
                 facts[key] = val
     return facts
+
+
+def _extract_faq_section_raw(text: str) -> str:
+    """Return the raw markdown lines belonging to the FAQ section."""
+    lines = text.splitlines()
+    faq_start: int | None = None
+    for i, line in enumerate(lines):
+        m = re.match(r"^#{1,2}\s+(.+)$", line)
+        if m:
+            heading = re.sub(r"[?!:]+$", "", m.group(1).lower()).strip()
+            if re.search(r"faq|frequently asked|questions answered|common question|people also ask", heading):
+                faq_start = i + 1
+                break
+    if faq_start is None:
+        return ""
+    result: list[str] = []
+    for line in lines[faq_start:]:
+        if re.match(r"^#{1,2}\s", line):
+            break
+        result.append(line)
+    return "\n".join(result)
+
+
+def _parse_faqs_from_section(faq_raw: str) -> list[dict]:
+    """Parse FAQ markdown with bold-question / paragraph-answer format into [{q, a}] list.
+
+    Handles both: '**Question?**\\nAnswer' and '**Q: Question?**\\n**A:** Answer'.
+    Answers are converted to HTML via _md_to_html so the FE can render them safely.
+    """
+    faqs: list[dict] = []
+    current_q: str | None = None
+    current_a_lines: list[str] = []
+
+    for line in faq_raw.splitlines():
+        # Bold standalone line = question ("**Some question?**" or "**Q: Some question?**")
+        m = re.match(r"^\*\*(?:Q:\s*)?(.+?)\*\*\s*$", line.strip())
+        if m:
+            if current_q is not None and current_a_lines:
+                answer_md = "\n".join(current_a_lines).strip()
+                if answer_md:
+                    faqs.append({"q": current_q, "a": _md_to_html(answer_md)})
+            q_text = m.group(1).strip()
+            # Normalise: strip trailing punctuation, then add ?
+            q_text = re.sub(r"[?!.]+$", "", q_text).strip() + "?"
+            current_q = q_text
+            current_a_lines = []
+        elif current_q is not None:
+            # Skip "**A:**" answer-label lines (some formats include them)
+            clean = re.sub(r"^\*\*A:\*\*\s*", "", line)
+            current_a_lines.append(clean)
+
+    if current_q is not None and current_a_lines:
+        answer_md = "\n".join(current_a_lines).strip()
+        if answer_md:
+            faqs.append({"q": current_q, "a": _md_to_html(answer_md)})
+
+    return faqs
 
 
 def _process_content_json(content_json: dict | None) -> dict | None:
@@ -242,11 +301,17 @@ def reparse_sections_from_draft(db: Session, *, page: CMSPage) -> CMSPage:
         raise ValueError("No sections could be extracted from the draft markdown")
 
     extracted_facts = _extract_trek_facts_from_markdown(raw_markdown)
+    faq_raw = _extract_faq_section_raw(raw_markdown)
+    extracted_faqs = _parse_faqs_from_section(faq_raw) if faq_raw else []
+
     existing_json = dict(page.content_json) if page.content_json else {}
     # Merge: editor-supplied trek_facts override auto-extracted values
     existing_facts = existing_json.get("trek_facts") or {}
     merged_facts = {**extracted_facts, **{k: v for k, v in existing_facts.items() if v}}
-    page.content_json = {**existing_json, "sections": sections, "trek_facts": merged_facts}
+    # Merge FAQs: editor-supplied pairs take priority; extracted ones fill in when editor list is empty
+    existing_faqs = existing_json.get("faqs") or []
+    merged_faqs = existing_faqs if existing_faqs else extracted_faqs
+    page.content_json = {**existing_json, "sections": sections, "trek_facts": merged_facts, "faqs": merged_faqs}
     db.flush()
     cache_invalidate([page.slug])
     return page
@@ -259,13 +324,17 @@ def upsert_page_from_draft(db: Session, *, draft: ContentDraft) -> CMSPage:
     content_html = _md_to_html(raw_markdown)
     sections = _parse_sections_from_markdown(raw_markdown)
     trek_facts = _extract_trek_facts_from_markdown(raw_markdown)
+    faq_raw = _extract_faq_section_raw(raw_markdown)
+    faqs = _parse_faqs_from_section(faq_raw) if faq_raw else []
     content_json: dict | None = None
-    if sections or trek_facts:
+    if sections or trek_facts or faqs:
         content_json = {}
         if sections:
             content_json["sections"] = sections
         if trek_facts:
             content_json["trek_facts"] = trek_facts
+        if faqs:
+            content_json["faqs"] = faqs
 
     if existing:
         existing.title = draft.title

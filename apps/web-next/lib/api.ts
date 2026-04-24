@@ -39,13 +39,19 @@ export interface TrekFacts {
   base?: string;
 }
 
+// Structured FAQ items stored in content_json.faqs
+export interface FAQItem {
+  q: string;
+  a: string;
+}
+
 export interface CMSPage {
   id: string;
   slug: string;
   page_type: string;
   title: string;
   content_html: string;
-  content_json: { sections?: TrekContentSections; trek_facts?: TrekFacts; [key: string]: unknown } | null;
+  content_json: { sections?: TrekContentSections; trek_facts?: TrekFacts; faqs?: FAQItem[]; [key: string]: unknown } | null;
   status: string;
   seo_title: string | null;
   seo_description: string | null;
@@ -87,7 +93,7 @@ export interface CMSPagePayload {
   page_type?: string;
   title?: string;
   content_html?: string;
-  content_json?: { sections?: TrekContentSections; trek_facts?: TrekFacts } | null;
+  content_json?: { sections?: TrekContentSections; trek_facts?: TrekFacts; faqs?: FAQItem[] } | null;
   status?: string;
   seo_title?: string | null;
   seo_description?: string | null;

@@ -121,9 +121,23 @@ This file tracks structural dependencies, source-of-truth modules, and Nexus/Git
 - `services/api/app/modules/cms/service.py:_process_content_json` -> now skips HTML passthrough (values starting with '<'); affects create_page + update_page; blast radius: LOW
 - `services/api/app/api/routes/cms.py:reparse_cms_page_sections` -> POST /cms/pages/{slug}/reparse-sections; blast radius: LOW (new endpoint)
 - `services/api/app/modules/cms/service.py:_parse_sections_from_markdown` -> UPDATED: H1/H2-only boundaries (H3 = section content); H1 opens why_this_trek; faqs first in heading map (first-match-wins); difficult\b + key facts patterns added; blast radius: MEDIUM (called by upsert_page_from_draft + reparse_sections_from_draft + pipeline publish chain)
-- `services/api/app/modules/cms/service.py:_extract_trek_facts_from_markdown` -> NEW: regex extracts duration/altitude/difficulty/season/permits/base from structured markdown ("**Duration:** X days" etc.); called by upsert_page_from_draft + reparse_sections_from_draft; blast radius: LOW (new symbol)
+- `services/api/app/modules/cms/service.py:_extract_trek_facts_from_markdown` -> UPDATED: permits pattern handles `**Permit Required:**` format; base pattern handles `**Nearest Base Villages:**` + note stripping; blast radius: LOW (internal helper only)
+- `services/api/app/modules/cms/service.py:_extract_faq_section_raw` -> NEW: finds FAQ section in raw markdown by heading pattern; returns raw lines until next H2; blast radius: LOW
+- `services/api/app/modules/cms/service.py:_parse_faqs_from_section` -> NEW: parses bold-question/paragraph-answer FAQ markdown into [{q, a}] list; converts answers via _md_to_html; called by upsert_page_from_draft + reparse_sections_from_draft; blast radius: LOW
 - `apps/web-next/app/globals.css` -> overflow-x changed from hidden to clip; affects all pages (sticky positioning fix)
-- `apps/web-next/components/admin/CMSPageForm.tsx` -> added Re-parse sections button; blast radius: LOW (leaf component)
+- `apps/web-next/components/admin/CMSPageForm.tsx` -> UPDATED: FAQ Q&A pair editor (add/remove); faqs included in buildPayload; Re-parse updates FAQ state; blast radius: LOW (leaf component)
+- `apps/web-next/components/content/FAQAccordion.tsx` -> NEW: client accordion component; blast radius: LOW
+- `apps/web-next/components/content/TableOfContents.tsx` -> NEW: client TOC with IntersectionObserver scroll spy; blast radius: LOW
+- `apps/web-next/components/content/Breadcrumb.tsx` -> NEW; blast radius: LOW
+- `apps/web-next/components/content/RelatedContent.tsx` -> NEW; blast radius: LOW
+- `apps/web-next/components/content/AuthorBlock.tsx` -> NEW; blast radius: LOW
+- `apps/web-next/components/content/UpdatedBadge.tsx` -> NEW; blast radius: LOW
+- `apps/web-next/components/content/SafetyDisclaimer.tsx` -> NEW; blast radius: LOW
+- `apps/web-next/components/content/AffiliateDisclosure.tsx` -> NEW; blast radius: LOW
+- `apps/web-next/app/(public)/trek/[slug]/page.tsx` -> UPDATED: TableOfContents + FAQAccordion + Breadcrumb + AuthorBlock; Quick Facts body block; generic cost/permits fallbacks; blast radius: LOW (leaf page)
+- `apps/web-next/app/(public)/packing/[slug]/page.tsx` -> NEW: CMS-powered packing list template; blast radius: LOW
+- `apps/web-next/app/(public)/permits/[slug]/page.tsx` -> NEW: CMS-powered permit guide template; blast radius: LOW
+- `apps/web-next/app/(public)/guides/[slug]/page.tsx` -> NEW: CMS-powered beginner guide template; blast radius: LOW
 - `services/api/app/modules/pipeline/tasks.py` -> run_pipeline_task, resume_pipeline_task, daily_discovery_task Celery tasks
 - `services/api/app/api/routes/pipeline.py` -> POST/GET /admin/pipeline/run, GET /admin/pipeline/runs, GET/POST /admin/pipeline/runs/{id}, POST /admin/pipeline/runs/{id}/resume, POST /admin/pipeline/runs/{id}/cancel; blast radius: LOW
 - `services/api/app/schemas/pipeline.py` -> PipelineRunCreate, PipelineRunResponse, PipelineStageResponse, PipelineTriggerResponse

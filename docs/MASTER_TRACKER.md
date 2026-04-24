@@ -29,7 +29,7 @@ All V0 foundations are shipped. The stack is live locally with:
 - Admin summary APIs, smoke tests, GitNexus indexed
 
 ## V1 Status — In Progress
-**Current next step: Step 18 — Public frontend content page templates**
+**Current next step: Step 19 — SEO and schema infrastructure**
 
 | Step | Title | Status |
 |------|-------|--------|
@@ -41,7 +41,7 @@ All V0 foundations are shipped. The stack is live locally with:
 | 15B | Admin CMS enhancements — real API wiring + pipeline view | done |
 | 16 | Master CMS Foundation (WordPress removed) | done |
 | 17 | Full publish orchestration pipeline | done |
-| 18 | Public frontend content page templates | pending |
+| 18 | Public frontend content page templates | done |
 | 19 | SEO and schema infrastructure (frontend) | pending |
 | 20 | Monetization frontend components | pending |
 | 21 | RBAC enforcement | pending |
@@ -200,6 +200,17 @@ What is done (enhancements, post-TC review):
 - Sticky sidebar root fix: `globals.css` changed `overflow-x: hidden` → `overflow-x: clip` on html/body; `hidden` on `<html>` re-assigns the scroll container away from the viewport, breaking `position: sticky` in Chromium/Safari
 - CMS empty sections fix: `cms/service.py:reparse_sections_from_draft` + `POST /cms/pages/{slug}/reparse-sections` route + Re-parse sections button in CMSPageForm; prevents double-processing HTML via `_process_content_json` passthrough; 2 new tests; 141/141 pass
 - Section parser overhaul (parser fix batch): `_parse_sections_from_markdown` updated to use `^#{1,2}` (H3 = content not boundary), H1 always opens why_this_trek (captures intro paragraphs), `faqs` moved to top of `_SECTION_HEADING_MAP` (first-match-wins; fixes FAQ content landing in why_this_trek), `difficult\b` added to difficulty pattern, `key facts` and `overview` added to why_this_trek pattern; `_extract_trek_facts_from_markdown` helper added — extracts duration/altitude/difficulty/season/permits/base from structured markdown; `upsert_page_from_draft` + `reparse_sections_from_draft` both write trek_facts to content_json; FE hardcoded fallbacks "Required"/"Sankri"/"Moderate" replaced with "—"; 8 new parser unit tests; 148/149 pass (1 pre-existing pipeline test pollution — unrelated)
+
+### Step 18 — Public Frontend Content Page Templates
+Status: done
+What is done:
+- Backend parser: fixed permits regex (`permit\b[^*:\n]{0,20}(?::?\*\*)?:?`) to match "Permit Required:" format; fixed base regex to match "Nearest Base Villages:" + note stripping; added `_extract_faq_section_raw` + `_parse_faqs_from_section` — parses bold-question/paragraph-answer FAQ format into `[{q, a}]` list; `upsert_page_from_draft` + `reparse_sections_from_draft` both now write `content_json.faqs`; 4 new tests (permits format, nearest base villages, FAQ parse, FAQ extract); 153/153 pass
+- Shared components created: `components/content/FAQAccordion.tsx` (client, smooth open/close, accent active state), `components/content/TableOfContents.tsx` (client, IntersectionObserver scroll spy, active highlight with border-l-2), `components/content/Breadcrumb.tsx`, `components/content/RelatedContent.tsx`, `components/content/AuthorBlock.tsx`, `components/content/UpdatedBadge.tsx`, `components/content/SafetyDisclaimer.tsx`, `components/content/AffiliateDisclosure.tsx`
+- Trek page rewrite: uses TableOfContents (scroll spy replaces hardcoded i===0), FAQAccordion (from content_json.faqs with HTML answers), Breadcrumb, AuthorBlock; added body-level Quick Facts section (`#quick-facts`) so TOC link scrolls correctly; cost fallback changed to generic "Contact for pricing" message; permits fallback made generic; difficulty badge uses tf.difficulty
+- CMSPageForm: FAQ textarea removed; replaced with structured Q&A pair editor (add/remove pairs); answer field accepts HTML from auto-parse or plain text; Re-parse sections button also updates FAQ state when new pairs extracted
+- `lib/api.ts`: `FAQItem` type exported; `CMSPage.content_json.faqs` typed; `CMSPagePayload.content_json.faqs` typed
+- New page templates: `app/(public)/packing/[slug]/page.tsx`, `app/(public)/permits/[slug]/page.tsx`, `app/(public)/guides/[slug]/page.tsx` — all CMS-powered with static fallbacks, use shared components
+- next build clean (89+ pages); 153/153 backend tests pass
 - Alembic migration `20260423_0009_pipeline.py` — creates `pipeline_runs` (id UUID PK, pipeline_type, status, current_stage, start/end_stage, input/output_json, error_detail, timestamps) and `pipeline_stages` (id UUID PK, pipeline_run_id FK, stage_name, agent_run_id FK→agent_runs, status, error_detail, timestamps)
 - `app/modules/pipeline/models.py` — `PipelineRun` + `PipelineStage` ORM models with relationship; `db/base.py` updated
 - `app/schemas/pipeline.py` — `PipelineRunCreate`, `PipelineRunResponse`, `PipelineStageResponse`, `PipelineTriggerResponse`

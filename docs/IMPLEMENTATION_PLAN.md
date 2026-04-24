@@ -103,14 +103,13 @@
 - Frontend: PipelineRun/Stage types + triggerPipeline/resumePipelineRun/cancelPipelineRun in lib/api.ts
 - /admin/pipeline/page.tsx rewritten as orchestration monitor with RunCard, StageTrack, TriggerForm
 
-### Step 18 — Public frontend content page templates
-- Trek guide page template (Master CMS data)
-- Packing list page template
-- Best-time / seasonal page template
-- Comparison page template
-- Permit guide page template
-- Beginner roundup page template
-- Region / category listing template
+### Step 18 — Public frontend content page templates [DONE]
+- Backend: FAQ parsing (_extract_faq_section_raw, _parse_faqs_from_section) + permits/base regex fixes; content_json.faqs structured [{q,a}] storage
+- Shared components: FAQAccordion (client, accordion), TableOfContents (client, IntersectionObserver scroll spy), Breadcrumb, RelatedContent, AuthorBlock, UpdatedBadge, SafetyDisclaimer, AffiliateDisclosure
+- Trek guide page: uses TableOfContents + FAQAccordion + Breadcrumb + AuthorBlock; Quick Facts body block anchored; generic cost/permits fallbacks; difficulty badge from tf.difficulty
+- CMSPageForm: FAQ section replaced with Q&A pair editor (add/remove pairs); faqs included in payload
+- New page templates: packing/[slug], permits/[slug], guides/[slug] — all CMS-powered with static fallbacks
+- lib/api.ts: FAQItem type added; CMSPage.content_json.faqs typed; CMSPagePayload extended
 
 ### Step 19 — SEO and schema infrastructure (frontend)
 - Next.js metadata API for all page types (title, description, OG)

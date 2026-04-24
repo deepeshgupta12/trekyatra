@@ -21,6 +21,8 @@ from app.modules.cms.service import (
     upsert_page_from_draft,
     _parse_sections_from_markdown,
     _extract_trek_facts_from_markdown,
+    _extract_faq_section_raw,
+    _parse_faqs_from_section,
 )
 from app.modules.content.models import ContentBrief, ContentDraft, KeywordCluster, PublishLog, TopicOpportunity
 from app.schemas.cms import CMSPageCreate, CMSPagePatch
@@ -323,6 +325,57 @@ def test_extract_trek_facts_altitude():
     facts = _extract_trek_facts_from_markdown(md)
     assert "altitude" in facts
     assert "3,647" in facts["altitude"] or "3647" in facts["altitude"]
+
+
+def test_extract_trek_facts_permits_required_format():
+    """'Permit Required: Yes — ...' must map to permits field."""
+    md = "**Permit Required:** Yes — Churdhar Wildlife Sanctuary entry permit"
+    facts = _extract_trek_facts_from_markdown(md)
+    assert "permits" in facts
+    assert "Yes" in facts["permits"]
+
+
+def test_extract_trek_facts_nearest_base_villages():
+    """'Nearest Base Villages: Nohradhar / Sarahan *(Note:...)*' — base extracted, note stripped."""
+    md = "**Nearest Base Villages:** Nohradhar / Sarahan *(Note: Sarahan here refers to the village near Nohradhar)*"
+    facts = _extract_trek_facts_from_markdown(md)
+    assert "base" in facts
+    assert "Nohradhar" in facts["base"]
+    # Note text should be stripped
+    assert "Note:" not in facts["base"]
+
+
+def test_parse_faqs_from_section_bold_format():
+    """Bold-question / paragraph-answer format parsed into [{q, a}] list."""
+    md = (
+        "**What is the altitude?**\n"
+        "The peak is at 3,647 m above sea level.\n\n"
+        "**Can beginners do this trek?**\n"
+        "Yes, but prior fitness training is recommended."
+    )
+    faqs = _parse_faqs_from_section(md)
+    assert len(faqs) == 2
+    assert faqs[0]["q"] == "What is the altitude?"
+    assert "3,647" in faqs[0]["a"]
+    assert faqs[1]["q"] == "Can beginners do this trek?"
+    assert "fitness" in faqs[1]["a"]
+
+
+def test_extract_faq_section_raw():
+    """FAQ section extracted by heading; content before next H2 returned."""
+    md = (
+        "## Some other section\n"
+        "Content here.\n\n"
+        "## Frequently Asked Questions About the Trek\n"
+        "**Q1?**\nAnswer 1.\n\n"
+        "**Q2?**\nAnswer 2.\n\n"
+        "## Safety Tips\n"
+        "Safety content."
+    )
+    raw = _extract_faq_section_raw(md)
+    assert "Q1?" in raw
+    assert "Answer 1" in raw
+    assert "Safety Tips" not in raw
 
 
 def test_api_reparse_sections_200_populates_sections():
