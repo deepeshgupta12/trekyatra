@@ -144,3 +144,13 @@ Done
 - `apps/web-next/components/admin/CMSPageForm.tsx` — Re-parse sections button (shown when `brief_id` exists); calls reparse endpoint, updates section state with returned HTML values
 - 2 new tests: `test_api_reparse_sections_422_when_no_brief_id`, `test_api_reparse_sections_200_populates_sections`
 - 141/141 backend tests pass; next build clean (89 pages)
+
+### Post-TC fix 3: Section parser overhaul + trek facts auto-extraction
+- `services/api/app/modules/cms/service.py:_SECTION_HEADING_MAP` — `faqs` moved to first position (first-match-wins; fixes FAQ content incorrectly landing in why_this_trek due to `about.*trek` match); `difficult\b` added to difficulty pattern (matches "How Difficult Is the X Trek?"); `key facts` + `overview` added to why_this_trek pattern
+- `services/api/app/modules/cms/service.py:_parse_sections_from_markdown` — heading regex changed from `^#{1,3}` to `^#{1,2}` so H3 sub-headings (e.g. "### May – June") are captured as section content, not treated as section boundaries; H1 now explicitly sets `current_key = "why_this_trek"` so intro paragraphs between H1 and first H2 are always captured
+- `services/api/app/modules/cms/service.py:_extract_trek_facts_from_markdown` — new helper; regex-extracts duration/altitude/difficulty/season/permits/base from structured markdown ("**Duration:** X days", "**Difficulty Level:** Moderate" etc.)
+- `services/api/app/modules/cms/service.py:upsert_page_from_draft` — now calls `_extract_trek_facts_from_markdown` and includes trek_facts in content_json at publish time
+- `services/api/app/modules/cms/service.py:reparse_sections_from_draft` — now calls `_extract_trek_facts_from_markdown`; merges extracted facts with editor-supplied values (editor values take priority)
+- `apps/web-next/app/(public)/trek/[slug]/page.tsx` — hardcoded fallbacks "Moderate" (difficulty), "Required" (permits), "Sankri" (base) replaced with "—"
+- `services/api/tests/test_cms.py` — 8 new parser/extraction unit tests: faqs-not-in-why_this_trek, H3-is-content, difficult-matches-difficulty, key-facts-maps-to-why_this_trek, H1-intro-captured, extract-duration, extract-difficulty, extract-altitude; 29/29 CMS tests pass; 148/149 total (1 pre-existing pipeline list test fails due to DB pollution, unrelated to this fix)
+- next build clean (89 pages)

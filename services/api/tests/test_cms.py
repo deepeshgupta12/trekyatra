@@ -19,6 +19,8 @@ from app.modules.cms.service import (
     list_pages,
     update_page,
     upsert_page_from_draft,
+    _parse_sections_from_markdown,
+    _extract_trek_facts_from_markdown,
 )
 from app.modules.content.models import ContentBrief, ContentDraft, KeywordCluster, PublishLog, TopicOpportunity
 from app.schemas.cms import CMSPageCreate, CMSPagePatch
@@ -244,6 +246,83 @@ def test_api_reparse_sections_422_when_no_brief_id():
     r = client.post("/api/v1/cms/pages/no-brief-page/reparse-sections")
     assert r.status_code == 422
     assert "brief_id" in r.json()["detail"]
+
+
+# ---------------------------------------------------------------------------
+# Section parser unit tests
+# ---------------------------------------------------------------------------
+
+def test_parser_faqs_not_in_why_this_trek():
+    """'Frequently Asked Questions About the X Trek' must map to faqs, not why_this_trek."""
+    md = ("Intro paragraph.\n\n"
+          "## Route Overview\nRoute content.\n\n"
+          "## Frequently Asked Questions About the Churdhar Trek\n"
+          "**Q: Is it hard?** A: Moderate.")
+    sections = _parse_sections_from_markdown(md)
+    assert "faqs" in sections, "faqs section missing"
+    assert "route_overview" in sections
+    # FAQs content must NOT appear in why_this_trek
+    why = sections.get("why_this_trek", "")
+    assert "Is it hard" not in why
+
+
+def test_parser_h3_is_content_not_boundary():
+    """H3 headings must be captured as section content, not reset the active section."""
+    md = ("## What Is the Best Time to Do This Trek\n"
+          "### May – June (Pre-Monsoon)\nWarm, dry, great views.\n"
+          "### September – October (Post-Monsoon)\nClear skies.")
+    sections = _parse_sections_from_markdown(md)
+    assert "best_time" in sections
+    best = sections["best_time"]
+    assert "Pre-Monsoon" in best or "Warm" in best, "H3 sub-heading content lost"
+    assert "Post-Monsoon" in best or "Clear skies" in best, "Second H3 content lost"
+
+
+def test_parser_difficult_matches_difficulty_section():
+    """'How Difficult Is the Trek?' must map to difficulty, not be dropped."""
+    md = ("## How Difficult Is the Churdhar Trek\n"
+          "This trek is moderately difficult and requires fitness.")
+    sections = _parse_sections_from_markdown(md)
+    assert "difficulty" in sections, "difficulty section not parsed from 'difficult' heading"
+
+
+def test_parser_key_facts_maps_to_why_this_trek():
+    """'What Are the Key Facts About X?' must map to why_this_trek."""
+    md = ("## What Are the Key Facts About Churdhar Peak\n"
+          "Duration: 5 days. Altitude: 3647m.")
+    sections = _parse_sections_from_markdown(md)
+    assert "why_this_trek" in sections
+
+
+def test_parser_h1_intro_captured():
+    """Content after H1 and before first H2 must be captured as why_this_trek."""
+    md = ("# Trek Title\n"
+          "This is an introductory paragraph about the trek.\n\n"
+          "## Route Overview\nRoute details here.")
+    sections = _parse_sections_from_markdown(md)
+    assert "why_this_trek" in sections
+    assert "introductory" in sections["why_this_trek"]
+
+
+def test_extract_trek_facts_duration():
+    md = "**Duration:** 5 to 6 days / 4 to 5 nights\n**Difficulty:** Moderate"
+    facts = _extract_trek_facts_from_markdown(md)
+    assert "duration" in facts
+    assert "5" in facts["duration"]
+
+
+def test_extract_trek_facts_difficulty():
+    md = "**Difficulty Level:** Moderate to Difficult\n**Base Village:** Nohradhar"
+    facts = _extract_trek_facts_from_markdown(md)
+    assert "difficulty" in facts
+    assert "Moderate" in facts["difficulty"]
+
+
+def test_extract_trek_facts_altitude():
+    md = "**Maximum Altitude:** 3,647 m (11,965 ft)"
+    facts = _extract_trek_facts_from_markdown(md)
+    assert "altitude" in facts
+    assert "3,647" in facts["altitude"] or "3647" in facts["altitude"]
 
 
 def test_api_reparse_sections_200_populates_sections():

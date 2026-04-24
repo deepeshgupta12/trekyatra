@@ -121,47 +121,50 @@ def _md_to_html(text: str | None) -> str:
 
 
 # Maps regex patterns (matched against lowercase headings) to section keys.
-# Patterns are intentionally broad to survive SEO-optimised question-form headings
-# (e.g. "How to Reach X?" → route_overview, "Is X Safe?" → safety).
+# Order matters — first match wins. faqs MUST come before why_this_trek so
+# "Frequently Asked Questions About the X Trek" matches faqs, not about.*trek.
 _SECTION_HEADING_MAP: list[tuple[str, str]] = [
-    (r"why.*trek|why.*choose|why.*visit|why.*special|about.*trek|overview.*trek|introduction|hidden gem", "why_this_trek"),
-    (r"route|trail|reach|access|how to get|getting there|from.*to.*trek|trek.*path|trek.*track|altitude.*distance|trail overview|route overview", "route_overview"),
-    (r"itinerary|day.wise|day by day|what each day|day \d|schedule", "itinerary"),
-    (r"best time|when to go|season|visit.*time|weather|climate|month", "best_time"),
-    (r"difficulty|fitness|experience required|who can|suitable for|level|grade|strenuous", "difficulty"),
-    (r"permit", "permits"),
-    (r"cost|budget|price|fee|expense|how much|package|charges|rate", "cost_estimate"),
-    (r"pack|gear|equipment|what to bring|what to carry|clothing|kit|bag", "packing"),
-    (r"safety|emergency|risk|precaution|tip|warning|hazard|ams|altitude sickness", "safety"),
     (r"faq|frequently asked|questions answered|common question|people also ask|q&a|queries", "faqs"),
+    (r"safety|emergency|risk|precaution|tip|warning|hazard|ams|altitude sickness", "safety"),
+    (r"pack|gear|equipment|what to bring|what to carry|clothing|kit|bag", "packing"),
+    (r"cost|budget|price|fee|expense|how much|package|charges|rate", "cost_estimate"),
+    (r"permit", "permits"),
+    (r"difficulty|difficult\b|fitness|experience required|who can|suitable for|level|grade|strenuous", "difficulty"),
+    (r"best time|when to go|season|visit.*time|weather|climate|month", "best_time"),
+    (r"itinerary|day.wise|day by day|what each day|day \d|schedule", "itinerary"),
+    (r"route|trail|reach|access|how to get|getting there|from.*to.*trek|trek.*path|trek.*track|altitude.*distance|trail overview|route overview", "route_overview"),
+    (r"why.*trek|why.*choose|why.*visit|why.*special|about.*trek|overview.*trek|introduction|hidden gem|key facts|overview", "why_this_trek"),
 ]
 
 
 def _parse_sections_from_markdown(text: str) -> dict[str, str]:
     """Split a markdown document into named sections keyed by content type.
 
-    Pre-heading content (intro paragraphs before the first matched H2/H3) is
-    captured as why_this_trek, which is where most agent-generated articles put
-    their opening summary.  Trailing punctuation (?, !) is stripped before
-    pattern matching so question-form SEO headings match correctly.
+    Only H1 and H2 headings act as section boundaries; H3+ are treated as content
+    so sub-headings (e.g. "### May – June") don't reset the active section.
+    H1 (document title) always opens why_this_trek so intro paragraphs are captured.
     """
     sections: dict[str, list[str]] = {}
-    # Intro text before the first matched heading → why_this_trek
     current_key: str | None = "why_this_trek"
     current_lines: list[str] = []
 
     for line in text.splitlines():
-        m = re.match(r"^#{1,3}\s+(.+)$", line)
+        # Only H1/H2 are section boundaries; H3+ fall through as content
+        m = re.match(r"^(#{1,2})\s+(.+)$", line)
         if m:
             if current_key and current_lines:
                 sections.setdefault(current_key, []).extend(current_lines)
-            # Strip trailing punctuation before matching (handles question-form headings)
-            heading = re.sub(r"[?!:]+$", "", m.group(1).lower()).strip()
-            current_key = None
-            for pattern, key in _SECTION_HEADING_MAP:
-                if re.search(pattern, heading):
-                    current_key = key
-                    break
+            hashes, heading_text = m.group(1), m.group(2)
+            heading = re.sub(r"[?!:]+$", "", heading_text.lower()).strip()
+            if len(hashes) == 1:
+                # H1 = document title; content that follows before first H2 is intro
+                current_key = "why_this_trek"
+            else:
+                current_key = None
+                for pattern, key in _SECTION_HEADING_MAP:
+                    if re.search(pattern, heading):
+                        current_key = key
+                        break
             current_lines = []
         elif current_key is not None:
             current_lines.append(line)
@@ -170,6 +173,30 @@ def _parse_sections_from_markdown(text: str) -> dict[str, str]:
         sections.setdefault(current_key, []).extend(current_lines)
 
     return {k: _md_to_html("\n".join(v).strip()) for k, v in sections.items() if v}
+
+
+# Patterns to auto-extract trek facts from raw markdown (key: value style).
+# Handles bold-label tables ("**Duration:** 5 days") and prose formats.
+_FACT_EXTRACT: list[tuple[str, str, re.Pattern]] = [
+    ("duration",   "duration",   re.compile(r"(?:\*\*)?duration(?:\*\*)?[:\s*]+([^\n|]{3,60}?)(?:\n|\||\*\*|$)", re.I)),
+    ("altitude",   "altitude",   re.compile(r"(?:\*\*)?(?:max(?:imum)?\s+)?(?:altitude|elevation|height)(?:\*\*)?[:\s*]+([^\n|]{3,60}?)(?:\n|\||\*\*|$)", re.I)),
+    ("difficulty", "difficulty", re.compile(r"(?:\*\*)?difficulty(?:\s+level)?(?:\*\*)?[:\s*]+([^\n|]{3,50}?)(?:\n|\||\*\*|$)", re.I)),
+    ("season",     "season",     re.compile(r"(?:\*\*)?(?:best\s+time|ideal\s+season|season)(?:\*\*)?[:\s*]+([^\n|]{3,80}?)(?:\n|\||\*\*|$)", re.I)),
+    ("permits",    "permits",    re.compile(r"(?:\*\*)?permits?(?:\*\*)?[:\s*]+([^\n|]{3,80}?)(?:\n|\||\*\*|$)", re.I)),
+    ("base",       "base",       re.compile(r"(?:\*\*)?(?:base\s+(?:camp|village|town)|nearest\s+town|starting\s+(?:point|village)|trailhead)(?:\*\*)?[:\s*]+([^\n|]{3,50}?)(?:\n|\||\*\*|$)", re.I)),
+]
+
+
+def _extract_trek_facts_from_markdown(text: str) -> dict[str, str]:
+    """Extract duration, altitude, difficulty, season, permits, base from raw markdown."""
+    facts: dict[str, str] = {}
+    for key, _label, pattern in _FACT_EXTRACT:
+        m = pattern.search(text)
+        if m:
+            val = m.group(1).strip().strip("*").strip()
+            if val and len(val) > 1:
+                facts[key] = val
+    return facts
 
 
 def _process_content_json(content_json: dict | None) -> dict | None:
@@ -214,8 +241,12 @@ def reparse_sections_from_draft(db: Session, *, page: CMSPage) -> CMSPage:
     if not sections:
         raise ValueError("No sections could be extracted from the draft markdown")
 
+    extracted_facts = _extract_trek_facts_from_markdown(raw_markdown)
     existing_json = dict(page.content_json) if page.content_json else {}
-    page.content_json = {**existing_json, "sections": sections}
+    # Merge: editor-supplied trek_facts override auto-extracted values
+    existing_facts = existing_json.get("trek_facts") or {}
+    merged_facts = {**extracted_facts, **{k: v for k, v in existing_facts.items() if v}}
+    page.content_json = {**existing_json, "sections": sections, "trek_facts": merged_facts}
     db.flush()
     cache_invalidate([page.slug])
     return page
@@ -227,7 +258,14 @@ def upsert_page_from_draft(db: Session, *, draft: ContentDraft) -> CMSPage:
     raw_markdown = draft.optimized_content or draft.content_markdown or ""
     content_html = _md_to_html(raw_markdown)
     sections = _parse_sections_from_markdown(raw_markdown)
-    content_json = {"sections": sections} if sections else None
+    trek_facts = _extract_trek_facts_from_markdown(raw_markdown)
+    content_json: dict | None = None
+    if sections or trek_facts:
+        content_json = {}
+        if sections:
+            content_json["sections"] = sections
+        if trek_facts:
+            content_json["trek_facts"] = trek_facts
 
     if existing:
         existing.title = draft.title

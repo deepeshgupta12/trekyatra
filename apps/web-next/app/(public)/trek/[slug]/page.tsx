@@ -79,10 +79,10 @@ export default async function TrekDetailPage({ params }: { params: { slug: strin
   const facts = [
     { icon: Clock,     label: "Duration",    value: tf.duration    || trek.duration    || "—" },
     { icon: TrendingUp,label: "Max altitude",value: tf.altitude    || trek.altitude    || "—" },
-    { icon: Mountain,  label: "Difficulty",  value: tf.difficulty  || trek.difficulty  || "Moderate" },
+    { icon: Mountain,  label: "Difficulty",  value: tf.difficulty  || trek.difficulty  || "—" },
     { icon: Calendar,  label: "Best season", value: tf.season      || trek.season      || "—" },
-    { icon: FileCheck, label: "Permits",     value: tf.permits     || "Required" },
-    { icon: MapPin,    label: "Base",        value: tf.base        || "Sankri" },
+    { icon: FileCheck, label: "Permits",     value: tf.permits     || "—" },
+    { icon: MapPin,    label: "Base",        value: tf.base        || "—" },
   ];
 
   const heroImg = cmsPage?.hero_image_url ?? trek.image ?? "/images/trek-forest.jpg";

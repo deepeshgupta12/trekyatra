@@ -117,9 +117,11 @@ This file tracks structural dependencies, source-of-truth modules, and Nexus/Git
 - `services/api/app/worker/celery_app.py` -> Celery instance; broker/backend from settings; includes smoke + agent_tasks + pipeline.tasks; beat_schedule: daily_discovery every 24h
 - `services/api/app/modules/pipeline/models.py` -> PipelineRun + PipelineStage ORM models; blast radius: LOW (new tables, no prior callers)
 - `services/api/app/modules/pipeline/service.py` -> PipelineOrchestrator (run/resume/stage dispatchers) + CRUD helpers; PIPELINE_STAGES list; CHECKPOINT_AFTER map; resume() from paused_at_draft_approval now resumes at seo_aeo (not publish); blast radius: LOW (only called by pipeline tasks and pipeline routes)
-- `services/api/app/modules/cms/service.py:reparse_sections_from_draft` -> re-parses content_json.sections from draft markdown; called by new reparse route; blast radius: LOW (new symbol)
+- `services/api/app/modules/cms/service.py:reparse_sections_from_draft` -> re-parses content_json.sections from draft markdown; now also calls _extract_trek_facts_from_markdown and merges trek_facts (editor values take priority); called by reparse route; blast radius: LOW
 - `services/api/app/modules/cms/service.py:_process_content_json` -> now skips HTML passthrough (values starting with '<'); affects create_page + update_page; blast radius: LOW
 - `services/api/app/api/routes/cms.py:reparse_cms_page_sections` -> POST /cms/pages/{slug}/reparse-sections; blast radius: LOW (new endpoint)
+- `services/api/app/modules/cms/service.py:_parse_sections_from_markdown` -> UPDATED: H1/H2-only boundaries (H3 = section content); H1 opens why_this_trek; faqs first in heading map (first-match-wins); difficult\b + key facts patterns added; blast radius: MEDIUM (called by upsert_page_from_draft + reparse_sections_from_draft + pipeline publish chain)
+- `services/api/app/modules/cms/service.py:_extract_trek_facts_from_markdown` -> NEW: regex extracts duration/altitude/difficulty/season/permits/base from structured markdown ("**Duration:** X days" etc.); called by upsert_page_from_draft + reparse_sections_from_draft; blast radius: LOW (new symbol)
 - `apps/web-next/app/globals.css` -> overflow-x changed from hidden to clip; affects all pages (sticky positioning fix)
 - `apps/web-next/components/admin/CMSPageForm.tsx` -> added Re-parse sections button; blast radius: LOW (leaf component)
 - `services/api/app/modules/pipeline/tasks.py` -> run_pipeline_task, resume_pipeline_task, daily_discovery_task Celery tasks
