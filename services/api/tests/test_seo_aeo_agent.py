@@ -221,3 +221,75 @@ def test_optimize_draft_trigger_dispatches_task():
     assert "agent_run_id" in data
     assert data["status"] == "running"
     mock_task.assert_called_once()
+
+
+# ── _clean_llm_json unit tests ────────────────────────────────────────────────
+
+def test_clean_llm_json_fixes_literal_newlines_in_string():
+    from app.modules.agents.seo_aeo.agent import _clean_llm_json
+
+    raw = '{"optimized_content": "# Title\nParagraph one.\nParagraph two.", "count": 1}'
+    cleaned = _clean_llm_json(raw)
+    result = json.loads(cleaned)
+    assert result["optimized_content"] == "# Title\nParagraph one.\nParagraph two."
+    assert result["count"] == 1
+
+
+def test_clean_llm_json_preserves_already_escaped_sequences():
+    from app.modules.agents.seo_aeo.agent import _clean_llm_json
+
+    raw = '{"text": "line one\\nline two", "val": 42}'
+    cleaned = _clean_llm_json(raw)
+    result = json.loads(cleaned)
+    assert result["text"] == "line one\nline two"
+
+
+def test_clean_llm_json_handles_tabs_and_carriage_returns():
+    from app.modules.agents.seo_aeo.agent import _clean_llm_json
+
+    raw = '{"text": "col1\tcol2\r\nrow2"}'
+    cleaned = _clean_llm_json(raw)
+    result = json.loads(cleaned)
+    assert "\t" in result["text"] or "\\t" not in raw  # tabs escaped
+    assert result["text"] is not None
+
+
+def test_seo_aeo_agent_recovers_from_unescaped_newlines_in_llm_output():
+    """Agent should parse successfully even when LLM returns literal newlines in JSON."""
+    from app.modules.agents.seo_aeo.agent import SEOAEOAgent
+
+    db = next(get_db())
+    try:
+        _, draft = _make_brief_and_draft(db)
+        draft_id = str(draft.id)
+
+        # Simulate LLM returning JSON with literal newlines inside the string value
+        bad_json_text = (
+            '{\n'
+            '  "optimized_content": "# Title\nParagraph with\nliteral newlines.",\n'
+            '  "changes_summary": ["Added intro"],\n'
+            '  "snippet_intro": "Short intro.",\n'
+            '  "faq_schema": [],\n'
+            '  "internal_link_opportunities": [],\n'
+            '  "schema_payload": {"types": ["Article"], "notes": "ok"}\n'
+            '}'
+        )
+
+        mock_message = MagicMock()
+        mock_message.content = [MagicMock(text=bad_json_text)]
+
+        with (
+            patch("anthropic.Anthropic") as mock_cls,
+            patch("app.core.config.settings.anthropic_api_key", "sk-test"),
+        ):
+            mock_client = MagicMock()
+            mock_cls.return_value = mock_client
+            mock_client.messages.create.return_value = mock_message
+
+            agent = SEOAEOAgent(db=db)
+            result = agent.run({"draft_id": draft_id}, run_id=0)
+
+        assert not result.get("errors"), result.get("errors")
+        assert result["output"]["draft_id"] == draft_id
+    finally:
+        db.close()

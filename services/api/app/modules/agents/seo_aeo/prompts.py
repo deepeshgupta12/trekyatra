@@ -44,5 +44,5 @@ Return a JSON object with EXACTLY this structure (raw JSON only, no fences):
 - Keep all original headings; you may improve their phrasing for question-form
 - optimized_content must be complete — do not truncate
 
-Return ONLY valid JSON.
+Return ONLY valid JSON. All newlines inside string values MUST be escaped as \\n — do NOT use literal line breaks inside any JSON string.
 """
