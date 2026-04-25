@@ -183,6 +183,10 @@ This file tracks structural dependencies, source-of-truth modules, and Nexus/Git
 - `apps/web-next/app/(admin)/admin/pipeline/page.tsx` -> UPDATED: `handleClearFailed()` + "Clear all" button in Failed/Cancelled section; imports `clearPipelineRuns`; blast radius: LOW
 - `services/api/tests/test_cms.py` -> UPDATED: 6 new tests (claim PATCH, 404, flagged-marker strip, bracket-marker strip, medical→safety, financial→cost); 174/174 total pass
 
+### Step 19 Bug Fixes — Pipeline keyword_cluster fallback
+- `services/api/app/modules/pipeline/service.py:_run_keyword_cluster` -> UPDATED: falls back to 10 most-recent DB topics when `topic_ids` from trend_discovery is empty; only hard-fails if DB has no topics at all; blast radius: LOW (0 direct callers — method is only dispatched by _dispatch_stage within same class)
+- `services/api/app/modules/agents/trend_discovery/agent.py:TrendDiscoveryAgent._store_results` -> UPDATED: added `logger.warning()` + `self.db.rollback()` in except block; fixes silent DB session corruption when first `create_topic` leaves an aborted transaction (all subsequent topic inserts would silently fail with PendingRollbackError); blast radius: LOW (0 direct callers — internal LangGraph node)
+
 ### Step 19 + Step 18 fixes blast radius
 - `apps/web-next/lib/schema.ts` -> NEW: schema builder utilities (buildArticleSchema, buildFAQSchema, buildBreadcrumbSchema, buildItemListSchema, buildWebSiteSchema); uses NEXT_PUBLIC_SITE_URL; blast radius: LOW (new file, imported only by page files)
 - `apps/web-next/components/seo/SchemaInjector.tsx` -> NEW: renders JSON-LD <script> tags; blast radius: LOW (leaf component, imported by trek/packing/permits/guides/homepage pages)

@@ -309,9 +309,18 @@ class PipelineOrchestrator:
 
     def _run_keyword_cluster(self, context: dict[str, Any]) -> dict[str, Any]:
         from app.modules.agents.keyword_cluster.agent import KeywordClusterAgent
+        from app.modules.content.models import TopicOpportunity
         topic_ids: list[str] = context.get("topic_ids") or []
         if not topic_ids:
-            raise ValueError("No topic_ids available for keyword_cluster stage.")
+            # Trend discovery stored 0 new topics — fall back to 10 most-recent DB topics
+            recent = self.db.scalars(
+                select(TopicOpportunity)
+                .order_by(TopicOpportunity.created_at.desc())
+                .limit(10)
+            ).all()
+            topic_ids = [str(t.id) for t in recent]
+            if not topic_ids:
+                raise ValueError("No topic_ids available for keyword_cluster stage.")
         input_data = {"topic_ids": topic_ids}
         agent_run = agent_service.start_run(self.db, "keyword_cluster", input_data)
         try:

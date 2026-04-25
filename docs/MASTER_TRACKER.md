@@ -214,6 +214,9 @@ What is done:
 - `_process_content_json()` now strips flagged HTML markers from already-stored HTML sections
 - Section patterns expanded: "safety" gains `medical|health.*altitude|mountain.*safe|know before`; "cost_estimate" gains `invest|spend|financial|tariff|expenditure`
 - 6 new backend tests; 174/174 pass; `next build` clean
+- Pipeline keyword_cluster fallback: `_run_keyword_cluster` now falls back to 10 most-recent DB topics when trend_discovery returns `topic_ids: []`, preventing hard failure on every re-run
+- TrendDiscoveryAgent `_store_results`: added `logger.warning()` + `self.db.rollback()` in except block — fixes silent DB session corruption when first `create_topic` leaves an aborted transaction (causing all subsequent topics to fail silently)
+- 174/174 backend tests pass; `next build` clean; GitNexus re-indexed (4,093 nodes | 7,032 edges | 155 flows)
 
 ### Step 19 — SEO and Schema Infrastructure (Frontend)
 Status: done

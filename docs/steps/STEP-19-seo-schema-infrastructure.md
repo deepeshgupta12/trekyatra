@@ -133,3 +133,6 @@ Done
 - Stale-run cleanup: on startup, any AgentRun or PipelineRun with status="running" is set to "cancelled" — prevents phantom runs after worker restart
 - CMS persistence (data not wiped): Docker bind mounts (./postgres-data, ./redis-data) are correct. If data appears wiped, check if test fixtures with autouse=True are deleting from the real DB or if pipeline runs are stuck at approval gates (no published CMS pages visible until pipeline completes)
 - Fact Check page: uses real DraftClaim data joined with ContentDraft for title; supports flagged_only toggle
+- GitNexus re-indexed post-step: 4,052 nodes | 6,910 edges | 115 clusters | 152 flows (commit fef0028)
+- Pipeline keyword_cluster fix: `_run_keyword_cluster` now falls back to 10 most-recent DB topics when trend_discovery returns `topic_ids: []`; root cause was TrendDiscoveryAgent `_store_results` silently swallowing exceptions — if the first `create_topic` failed with a non-IntegrityError, the DB session was left in an aborted transaction state, causing all subsequent topic inserts to fail with PendingRollbackError; fixed by adding `logger.warning()` + `self.db.rollback()` in the except block
+- GitNexus re-indexed post pipeline-fix: 4,093 nodes | 7,032 edges | 116 clusters | 155 flows

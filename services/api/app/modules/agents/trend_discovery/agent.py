@@ -1,9 +1,12 @@
 from __future__ import annotations
 
 import json
+import logging
 import re
 import uuid
 from typing import Any
+
+logger = logging.getLogger(__name__)
 
 from langgraph.graph import END, StateGraph
 from sqlalchemy.orm import Session
@@ -89,7 +92,9 @@ class TrendDiscoveryAgent(BaseAgent):
                 )
                 topic = create_topic(self.db, payload)
                 created_ids.append(str(topic.id))
-            except Exception:
+            except Exception as exc:
+                logger.warning("Failed to store topic %r: %s", t.get("title"), exc)
+                self.db.rollback()
                 skipped += 1
 
         return {
