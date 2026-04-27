@@ -11,6 +11,11 @@ import Breadcrumb from "@/components/content/Breadcrumb";
 import AuthorBlock from "@/components/content/AuthorBlock";
 import SafetyDisclaimer from "@/components/content/SafetyDisclaimer";
 import SchemaInjector from "@/components/seo/SchemaInjector";
+import InArticleAdSlot from "@/components/monetization/InArticleAdSlot";
+import AffiliateRail from "@/components/monetization/AffiliateRail";
+import TrustSignals from "@/components/trust/TrustSignals";
+import StickyMobileCTA from "@/components/trust/StickyMobileCTA";
+import type { AffiliateCardItem } from "@/components/monetization/AffiliateCard";
 import { buildArticleSchema, buildFAQSchema, buildBreadcrumbSchema } from "@/lib/schema";
 import {
   Bookmark, Share2, GitCompare, Sparkles, Clock, TrendingUp, Calendar,
@@ -122,6 +127,12 @@ export default async function TrekDetailPage({ params }: { params: { slug: strin
 
   // Structured FAQ items from CMS (auto-extracted or editor-supplied)
   const faqItems: FAQItem[] = cmsPage?.content_json?.faqs ?? [];
+
+  const gearItems: AffiliateCardItem[] = [
+    { title: "Quechua SH900 Trek Jacket", description: "Waterproof, windproof — rated for high-altitude winters.", affiliateUrl: "/gear", price: "From ₹4,999", badge: "Editor's pick" },
+    { title: "Tata Trekking Pole Set", description: "Adjustable, shock-absorbing — ideal for steep descents.", affiliateUrl: "/gear", price: "From ₹1,499" },
+    { title: "Wildcraft Trekking Backpack 55L", description: "Rain-cover included, structured hip belt for load distribution.", affiliateUrl: "/gear", price: "From ₹3,299" },
+  ];
 
   // JSON-LD schemas
   const pageUrl = `/treks/${params.slug}`;
@@ -248,6 +259,8 @@ export default async function TrekDetailPage({ params }: { params: { slug: strin
               )}
             </Block>
 
+            <InArticleAdSlot />
+
             <Block id="itinerary" eyebrow="Day-wise itinerary" title="What each day actually looks like">
               {S("itinerary") ? (
                 <div className="not-prose cms-section" dangerouslySetInnerHTML={{ __html: S("itinerary")! }} />
@@ -330,6 +343,8 @@ export default async function TrekDetailPage({ params }: { params: { slug: strin
               )}
             </Block>
 
+            <AffiliateRail items={gearItems} title="Recommended gear for this trek" />
+
             <Block id="safety" eyebrow="Safety" title="Staying safe on the mountain">
               {S("safety") ? (
                 <div className="not-prose cms-section" dangerouslySetInnerHTML={{ __html: S("safety")! }} />
@@ -371,6 +386,12 @@ export default async function TrekDetailPage({ params }: { params: { slug: strin
               )}
             </Block>
 
+            <TrustSignals
+              publishedAt={cmsPage?.published_at}
+              updatedAt={cmsPage?.updated_at}
+              factChecked={true}
+            />
+
             <AuthorBlock
               publishedAt={cmsPage?.published_at}
               updatedAt={cmsPage?.updated_at}
@@ -411,10 +432,12 @@ export default async function TrekDetailPage({ params }: { params: { slug: strin
         </div>
       </section>
 
-      <div className="lg:hidden sticky bottom-0 bg-background/95 backdrop-blur-md border-t border-border p-3 z-40 flex gap-2">
-        <Button variant="outline" size="default" className="flex-1"><Bookmark className="h-4 w-4" /> Save</Button>
-        <Button variant="hero" size="default" className="flex-[2]"><Sparkles className="h-4 w-4" /> Plan this trek</Button>
-      </div>
+      <StickyMobileCTA
+        label="Plan this trek — free"
+        subLabel="Matched with vetted operators. No spam."
+        href="/plan"
+        dismissKey="trek_sticky_cta"
+      />
     </>
   );
 }

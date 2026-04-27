@@ -262,3 +262,68 @@ export async function cancelPipelineRun(runId: string): Promise<PipelineRun> {
   }
   return res.json() as Promise<PipelineRun>;
 }
+
+// ---------------------------------------------------------------------------
+// Monetization — leads and newsletter
+// ---------------------------------------------------------------------------
+
+export interface LeadPayload {
+  name: string;
+  email: string;
+  phone?: string;
+  trek_interest: string;
+  message?: string;
+  source_page: string;
+  source_cluster?: string;
+  cta_type?: string;
+}
+
+export interface LeadResponse {
+  id: string;
+  name: string;
+  email: string;
+  trek_interest: string;
+  source_page: string;
+  created_at: string;
+}
+
+export async function submitLead(payload: LeadPayload): Promise<LeadResponse> {
+  const res = await fetch("/api/v1/leads", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(payload),
+  });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error((err as { detail?: string }).detail ?? `Lead submit failed (${res.status})`);
+  }
+  return res.json() as Promise<LeadResponse>;
+}
+
+export interface NewsletterPayload {
+  email: string;
+  name?: string;
+  source_page: string;
+  lead_magnet?: string;
+}
+
+export interface NewsletterResponse {
+  id: string;
+  email: string;
+  source_page: string;
+  already_subscribed: boolean;
+  created_at: string;
+}
+
+export async function subscribeNewsletter(payload: NewsletterPayload): Promise<NewsletterResponse> {
+  const res = await fetch("/api/v1/newsletter/subscribe", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(payload),
+  });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error((err as { detail?: string }).detail ?? `Subscribe failed (${res.status})`);
+  }
+  return res.json() as Promise<NewsletterResponse>;
+}

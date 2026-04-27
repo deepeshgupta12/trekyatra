@@ -119,13 +119,15 @@
 - robots.txt
 - Structured data smoke testing for top page types
 
-### Step 20 — Monetization frontend components
-- InArticleAdSlot, SidebarAdSlot components
-- AffiliateCard, AffiliateRail components
-- LeadForm component with backend submission
-- NewsletterCapture component
-- DisclosureBlock, TrustSignals components
-- StickyMobileCTA component
+### Step 20 — Monetization frontend components [DONE]
+- InArticleAdSlot, SidebarAdSlot, FooterAdSlot ad slot components (placeholder in dev, real AdSense when NEXT_PUBLIC_ADSENSE_ID set)
+- AffiliateCard, AffiliateRail, ComparisonTable, GearRecommendation affiliate components
+- LeadForm (POST /api/v1/leads), OperatorCard, ConsultationCTA lead generation components
+- NewsletterCapture, LeadMagnetCapture, InlineNewsletterBlock newsletter components
+- DisclosureBlock, TrustSignals, StickyMobileCTA trust components
+- Backend: lead_submissions + newsletter_subscribers tables, migration, ORM, schemas, services, routes, 8 tests
+- Trek page + packing page wired with ad slots, affiliate rail, trust signals, newsletter capture
+- AdSense script conditionally injected in root layout via NEXT_PUBLIC_ADSENSE_ID env var
 
 ### Step 21 — RBAC enforcement
 - RequireRole FastAPI dependency

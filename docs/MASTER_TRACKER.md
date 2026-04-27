@@ -29,7 +29,7 @@ All V0 foundations are shipped. The stack is live locally with:
 - Admin summary APIs, smoke tests, GitNexus indexed
 
 ## V1 Status — In Progress
-**Current next step: Step 20 — Monetization frontend components**
+**Current next step: Step 21 — RBAC enforcement**
 
 | Step | Title | Status |
 |------|-------|--------|
@@ -43,7 +43,7 @@ All V0 foundations are shipped. The stack is live locally with:
 | 17 | Full publish orchestration pipeline | done |
 | 18 | Public frontend content page templates | done |
 | 19 | SEO and schema infrastructure (frontend) | done |
-| 20 | Monetization frontend components | pending |
+| 20 | Monetization frontend components | done |
 | 21 | RBAC enforcement | pending |
 | 22 | Internal linking engine (basic) | pending |
 | 23 | Content refresh engine (basic) | pending |
@@ -200,6 +200,44 @@ What is done (enhancements, post-TC review):
 - Sticky sidebar root fix: `globals.css` changed `overflow-x: hidden` → `overflow-x: clip` on html/body; `hidden` on `<html>` re-assigns the scroll container away from the viewport, breaking `position: sticky` in Chromium/Safari
 - CMS empty sections fix: `cms/service.py:reparse_sections_from_draft` + `POST /cms/pages/{slug}/reparse-sections` route + Re-parse sections button in CMSPageForm; prevents double-processing HTML via `_process_content_json` passthrough; 2 new tests; 141/141 pass
 - Section parser overhaul (parser fix batch): `_parse_sections_from_markdown` updated to use `^#{1,2}` (H3 = content not boundary), H1 always opens why_this_trek (captures intro paragraphs), `faqs` moved to top of `_SECTION_HEADING_MAP` (first-match-wins; fixes FAQ content landing in why_this_trek), `difficult\b` added to difficulty pattern, `key facts` and `overview` added to why_this_trek pattern; `_extract_trek_facts_from_markdown` helper added — extracts duration/altitude/difficulty/season/permits/base from structured markdown; `upsert_page_from_draft` + `reparse_sections_from_draft` both write trek_facts to content_json; FE hardcoded fallbacks "Required"/"Sankri"/"Moderate" replaced with "—"; 8 new parser unit tests; 148/149 pass (1 pre-existing pipeline test pollution — unrelated)
+
+### Step 20 — Monetization Frontend Components
+Status: done
+What is done:
+- Alembic migration `20260427_0011_leads_newsletter.py` — creates `lead_submissions` (id, name, email, phone nullable, trek_interest, message nullable, source_page, source_cluster nullable, cta_type, created_at) and `newsletter_subscribers` (id, email UNIQUE, name nullable, source_page, lead_magnet nullable, created_at)
+- `modules/leads/models.py` — LeadSubmission ORM model
+- `modules/newsletter/models.py` — NewsletterSubscriber ORM model with UniqueConstraint on email
+- `db/base.py` — LeadSubmission + NewsletterSubscriber registered
+- `schemas/leads.py` — LeadCreate (custom email validator) + LeadResponse
+- `schemas/newsletter.py` — NewsletterSubscribeCreate + NewsletterSubscribeResponse (already_subscribed: bool)
+- `modules/leads/service.py` — create_lead()
+- `modules/newsletter/service.py` — subscribe() with idempotent duplicate detection
+- `api/routes/leads.py` — POST /api/v1/leads (201)
+- `api/routes/newsletter.py` — POST /api/v1/newsletter/subscribe (200)
+- `api/router.py` — leads_router + newsletter_router registered
+- `tests/test_leads_newsletter.py` — 8 tests; 182/182 backend tests pass
+- `apps/web-next/lib/api.ts` — LeadPayload, LeadResponse, NewsletterPayload, NewsletterResponse interfaces + submitLead() + subscribeNewsletter()
+- `apps/web-next/components/monetization/InArticleAdSlot.tsx` — conditional AdSense/placeholder
+- `apps/web-next/components/monetization/SidebarAdSlot.tsx` — 300×250 ad slot
+- `apps/web-next/components/monetization/FooterAdSlot.tsx` — 970×60 footer ad
+- `apps/web-next/components/monetization/AffiliateCard.tsx` — product card with rel="nofollow sponsored noopener"
+- `apps/web-next/components/monetization/AffiliateRail.tsx` — snap-scroll horizontal rail
+- `apps/web-next/components/monetization/ComparisonTable.tsx` — comparison table with checkmark icons
+- `apps/web-next/components/monetization/GearRecommendation.tsx` — inline affiliate gear mention
+- `apps/web-next/components/monetization/LeadForm.tsx` — name/email/phone/trek/message → POST /leads; localStorage-backed
+- `apps/web-next/components/monetization/OperatorCard.tsx` — operator display + embedded LeadForm
+- `apps/web-next/components/monetization/ConsultationCTA.tsx` — inline/card CTA wrapping LeadForm
+- `apps/web-next/components/monetization/NewsletterCapture.tsx` — email → POST /newsletter/subscribe; localStorage guards duplicate
+- `apps/web-next/components/monetization/LeadMagnetCapture.tsx` — download CTA wrapping NewsletterCapture
+- `apps/web-next/components/monetization/InlineNewsletterBlock.tsx` — mid-article wrapper for NewsletterCapture
+- `apps/web-next/components/trust/DisclosureBlock.tsx` — affiliate/ads/AI disclosure block
+- `apps/web-next/components/trust/TrustSignals.tsx` — date/author/fact-checked trust bar
+- `apps/web-next/components/trust/StickyMobileCTA.tsx` — lg:hidden sticky mobile CTA with localStorage 7-day dismiss
+- `apps/web-next/app/layout.tsx` — conditional AdSense script via NEXT_PUBLIC_ADSENSE_ID
+- `apps/web-next/app/(public)/trek/[slug]/page.tsx` — InArticleAdSlot + AffiliateRail + TrustSignals + StickyMobileCTA inserted
+- `apps/web-next/app/(public)/packing/[slug]/page.tsx` — AffiliateRail + NewsletterCapture inserted
+- `apps/web-next/app/(public)/.env.local.example` — NEXT_PUBLIC_ADSENSE_ID documented
+- `next build` clean (127 static pages); 182/182 backend tests pass
 
 ### Step 19 Bug Fixes — Fact-check wiring, flagged-marker stripping, pipeline clear
 Status: done

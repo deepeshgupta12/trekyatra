@@ -24,9 +24,20 @@ export const metadata: Metadata = {
   robots: { index: true, follow: true },
 };
 
+const ADSENSE_ID = process.env.NEXT_PUBLIC_ADSENSE_ID;
+
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en" suppressHydrationWarning>
+      <head>
+        {ADSENSE_ID && (
+          <script
+            async
+            src={`https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=${ADSENSE_ID}`}
+            crossOrigin="anonymous"
+          />
+        )}
+      </head>
       <body>
         <Providers>{children}</Providers>
       </body>

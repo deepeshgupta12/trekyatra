@@ -10,6 +10,9 @@ import UpdatedBadge from "@/components/content/UpdatedBadge";
 import SchemaInjector from "@/components/seo/SchemaInjector";
 import { buildArticleSchema, buildFAQSchema } from "@/lib/schema";
 import { Backpack, CheckSquare, ShoppingBag } from "lucide-react";
+import AffiliateRail from "@/components/monetization/AffiliateRail";
+import NewsletterCapture from "@/components/monetization/NewsletterCapture";
+import type { AffiliateCardItem } from "@/components/monetization/AffiliateCard";
 import Link from "next/link";
 
 export async function generateStaticParams() {
@@ -129,6 +132,22 @@ export default async function PackingPage({ params }: { params: { slug: string }
               <strong>Need gear?</strong> Browse our curated <Link href="/gear" className="text-accent underline">gear recommendations</Link> or get a <Link href="/plan" className="text-accent underline">personalised kit list</Link> from our team.
             </div>
           </div>
+
+          <AffiliateRail
+            title="Top-rated gear for this trek"
+            items={[
+              { title: "Quechua SH900 Trek Jacket", description: "Waterproof, windproof — rated for high-altitude use.", affiliateUrl: "/gear", price: "From ₹4,999", badge: "Editor's pick" } as AffiliateCardItem,
+              { title: "Wildcraft 55L Trekking Backpack", description: "Structured hip belt, rain cover included.", affiliateUrl: "/gear", price: "From ₹3,299" } as AffiliateCardItem,
+              { title: "Trekking Pole Set", description: "Adjustable, shock-absorbing — great for rocky trails.", affiliateUrl: "/gear", price: "From ₹1,499" } as AffiliateCardItem,
+            ]}
+          />
+
+          <NewsletterCapture
+            sourcePage={`/packing/${params.slug}`}
+            leadMagnet="packing-list"
+            title="Get the full packing checklist"
+            subtitle="Sign up and we'll send our complete trek-ready packing PDF plus seasonal gear updates."
+          />
 
           <AuthorBlock publishedAt={cmsPage?.published_at} updatedAt={cmsPage?.updated_at} />
         </div>

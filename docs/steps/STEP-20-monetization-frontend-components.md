@@ -105,13 +105,53 @@ PYTHONPATH=services/api .venv/bin/pytest services/api/tests/ -v
 ```
 
 ## Status
-pending
+Done
+
+## Files Created
+### Backend
+- `services/api/app/modules/leads/models.py`
+- `services/api/app/modules/leads/service.py`
+- `services/api/app/modules/newsletter/models.py`
+- `services/api/app/modules/newsletter/service.py`
+- `services/api/app/schemas/leads.py`
+- `services/api/app/schemas/newsletter.py`
+- `services/api/app/api/routes/leads.py`
+- `services/api/app/api/routes/newsletter.py`
+- `services/api/alembic/versions/20260427_0011_leads_newsletter.py`
+- `services/api/tests/test_leads_newsletter.py`
+
+### Frontend
+- `apps/web-next/components/monetization/InArticleAdSlot.tsx`
+- `apps/web-next/components/monetization/SidebarAdSlot.tsx`
+- `apps/web-next/components/monetization/FooterAdSlot.tsx`
+- `apps/web-next/components/monetization/AffiliateCard.tsx`
+- `apps/web-next/components/monetization/AffiliateRail.tsx`
+- `apps/web-next/components/monetization/ComparisonTable.tsx`
+- `apps/web-next/components/monetization/GearRecommendation.tsx`
+- `apps/web-next/components/monetization/LeadForm.tsx`
+- `apps/web-next/components/monetization/OperatorCard.tsx`
+- `apps/web-next/components/monetization/ConsultationCTA.tsx`
+- `apps/web-next/components/monetization/NewsletterCapture.tsx`
+- `apps/web-next/components/monetization/LeadMagnetCapture.tsx`
+- `apps/web-next/components/monetization/InlineNewsletterBlock.tsx`
+- `apps/web-next/components/trust/DisclosureBlock.tsx`
+- `apps/web-next/components/trust/TrustSignals.tsx`
+- `apps/web-next/components/trust/StickyMobileCTA.tsx`
+
+## Files Modified
+- `services/api/app/db/base.py` — LeadSubmission + NewsletterSubscriber registered
+- `services/api/app/api/router.py` — leads_router + newsletter_router added
+- `apps/web-next/lib/api.ts` — submitLead() + subscribeNewsletter() helpers added
+- `apps/web-next/app/layout.tsx` — conditional AdSense script in <head>
+- `apps/web-next/app/(public)/trek/[slug]/page.tsx` — InArticleAdSlot, AffiliateRail, TrustSignals, StickyMobileCTA inserted
+- `apps/web-next/app/(public)/packing/[slug]/page.tsx` — AffiliateRail, NewsletterCapture inserted
 
 ## Notes
-- In development, ad slots should render a clearly labelled placeholder div (not attempt to load AdSense scripts)
-- NEXT_PUBLIC_ADSENSE_ID env var controls whether AdSense script is injected; undefined = dev mode = placeholders
-- All affiliate links must use `rel="nofollow sponsored"` and include an `aria-label`
-- StickyMobileCTA: only visible on mobile (< 768px); includes a dismiss button (stores dismissal in localStorage for 7 days)
-- Lead form: phone field is optional; trek_interest is a dropdown of known trek names + "Other"
-- Newsletter form: should not show if user is already subscribed (check against a localStorage flag set on successful subscribe)
-- ComparisonTable: data driven by a JSON field on the WP post (comparison_items meta field); not hardcoded
+- Trek page actual path is `trek/[slug]` (singular), not `treks/[slug]` as originally in spec — corrected
+- AffiliateDisclosure and SafetyDisclaimer already existed in `components/content/` from Step 18 — not duplicated
+- Newsletter subscription is idempotent: POST returns `already_subscribed: true` on duplicate (no error)
+- StickyMobileCTA: `lg:hidden`, localStorage dismissal for 7 days, X button in corner
+- Email validation uses custom `@field_validator` (plain str + @/. check) — avoids `email-validator` package at test time; package still added to pyproject.toml for future EmailStr use
+- NEXT_PUBLIC_ADSENSE_ID env var controls whether AdSense script is injected; undefined = dev = placeholders
+- `next build` clean: 127 static pages, zero TypeScript errors
+- 182/182 backend tests pass

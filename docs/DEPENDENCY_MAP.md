@@ -213,6 +213,40 @@ This file tracks structural dependencies, source-of-truth modules, and Nexus/Git
 - `services/api/tests/test_cms.py` -> UPDATED: 11 new tests (table format, season-heading guard, H3 FAQ, clear endpoints); 168/168 total pass
 - `CLAUDE.md` -> UPDATED: Section 16 (Inter-Step Dependency Check Protocol) + Section 15 (Admin UI Design System) added; GitNexus skill table added to GitNexus section
 
+### Step 20 — Monetization Frontend Components blast radius
+- `services/api/alembic/versions/20260427_0011_leads_newsletter.py` — NEW: creates lead_submissions + newsletter_subscribers tables; blast radius: LOW (new tables, no callers yet)
+- `services/api/app/modules/leads/models.py` — NEW: LeadSubmission ORM model; blast radius: LOW
+- `services/api/app/modules/newsletter/models.py` — NEW: NewsletterSubscriber ORM model; blast radius: LOW
+- `services/api/app/db/base.py` — UPDATED: imports LeadSubmission + NewsletterSubscriber; blast radius: LOW (additive)
+- `services/api/app/schemas/leads.py` — NEW: LeadCreate (custom field_validator for email) + LeadResponse; blast radius: LOW
+- `services/api/app/schemas/newsletter.py` — NEW: NewsletterSubscribeCreate + NewsletterSubscribeResponse (already_subscribed bool); blast radius: LOW
+- `services/api/app/modules/leads/service.py` — NEW: create_lead(); blast radius: LOW
+- `services/api/app/modules/newsletter/service.py` — NEW: subscribe() with idempotent duplicate check; blast radius: LOW
+- `services/api/app/api/routes/leads.py` — NEW: POST /api/v1/leads (201); blast radius: LOW
+- `services/api/app/api/routes/newsletter.py` — NEW: POST /api/v1/newsletter/subscribe (200); blast radius: LOW
+- `services/api/app/api/router.py` — UPDATED: leads_router + newsletter_router registered; blast radius: LOW (additive)
+- `services/api/tests/test_leads_newsletter.py` — NEW: 8 tests; unique UUID-suffixed emails per run
+- `apps/web-next/lib/api.ts` — UPDATED: LeadPayload, LeadResponse, NewsletterPayload, NewsletterResponse + submitLead() + subscribeNewsletter(); blast radius: LOW (additive)
+- `apps/web-next/app/layout.tsx` — UPDATED: conditional AdSense <script> in <head> via NEXT_PUBLIC_ADSENSE_ID; blast radius: MEDIUM (root layout, affects all pages)
+- `apps/web-next/components/monetization/InArticleAdSlot.tsx` — NEW; blast radius: LOW (imported by trek page)
+- `apps/web-next/components/monetization/SidebarAdSlot.tsx` — NEW; blast radius: LOW
+- `apps/web-next/components/monetization/FooterAdSlot.tsx` — NEW; blast radius: LOW
+- `apps/web-next/components/monetization/AffiliateCard.tsx` — NEW: exports AffiliateCardItem interface; blast radius: LOW (imported by AffiliateRail + page files)
+- `apps/web-next/components/monetization/AffiliateRail.tsx` — NEW: snap-scroll rail; blast radius: LOW
+- `apps/web-next/components/monetization/ComparisonTable.tsx` — NEW; blast radius: LOW
+- `apps/web-next/components/monetization/GearRecommendation.tsx` — NEW; blast radius: LOW
+- `apps/web-next/components/monetization/LeadForm.tsx` — NEW: calls submitLead(); uses localStorage; blast radius: LOW
+- `apps/web-next/components/monetization/OperatorCard.tsx` — NEW: wraps LeadForm; blast radius: LOW
+- `apps/web-next/components/monetization/ConsultationCTA.tsx` — NEW: wraps LeadForm; blast radius: LOW
+- `apps/web-next/components/monetization/NewsletterCapture.tsx` — NEW: calls subscribeNewsletter(); localStorage guard + already_subscribed handling; blast radius: LOW
+- `apps/web-next/components/monetization/LeadMagnetCapture.tsx` — NEW: wraps NewsletterCapture; blast radius: LOW
+- `apps/web-next/components/monetization/InlineNewsletterBlock.tsx` — NEW: mid-article wrapper; blast radius: LOW
+- `apps/web-next/components/trust/DisclosureBlock.tsx` — NEW: affiliate/ads/AI disclosure; blast radius: LOW
+- `apps/web-next/components/trust/TrustSignals.tsx` — NEW: date/author/fact-checked trust bar; blast radius: LOW (imported by trek page)
+- `apps/web-next/components/trust/StickyMobileCTA.tsx` — NEW: lg:hidden sticky CTA, 7-day localStorage dismiss; blast radius: LOW (imported by trek page)
+- `apps/web-next/app/(public)/trek/[slug]/page.tsx` — UPDATED: InArticleAdSlot + AffiliateRail + TrustSignals + StickyMobileCTA inserted; blast radius: LOW (leaf page)
+- `apps/web-next/app/(public)/packing/[slug]/page.tsx` — UPDATED: AffiliateRail + NewsletterCapture inserted; blast radius: LOW (leaf page)
+
 ## Dependency Discipline Rules
 Before editing any existing frontend file:
 1. Identify entry file and route usage.

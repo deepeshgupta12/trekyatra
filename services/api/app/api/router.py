@@ -7,6 +7,8 @@ from app.api.routes.auth import router as auth_router
 from app.api.routes.content import router as content_router
 from app.api.routes.health import router as health_router
 from app.api.routes.cms import router as cms_router
+from app.api.routes.leads import router as leads_router
+from app.api.routes.newsletter import router as newsletter_router
 from app.api.routes.pipeline import router as pipeline_router
 from app.api.routes.publish import router as publish_router
 from app.api.routes.treks import router as treks_router
@@ -24,3 +26,5 @@ api_router.include_router(treks_router)
 api_router.include_router(worker_router)
 api_router.include_router(agent_runs_router)
 api_router.include_router(agent_triggers_router)
+api_router.include_router(leads_router)
+api_router.include_router(newsletter_router)
