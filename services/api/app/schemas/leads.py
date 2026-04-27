@@ -30,6 +30,18 @@ class LeadResponse(BaseModel):
     email: str
     trek_interest: str
     source_page: str
+    status: str = "new"
     created_at: datetime
 
     model_config = {"from_attributes": True}
+
+
+VALID_LEAD_STATUSES = {"new", "contacted", "converted", "archived"}
+
+
+class LeadStatusPatch(BaseModel):
+    status: str
+
+    def validate_status(self) -> None:
+        if self.status not in VALID_LEAD_STATUSES:
+            raise ValueError(f"Invalid status. Must be one of: {sorted(VALID_LEAD_STATUSES)}")

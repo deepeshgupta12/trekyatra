@@ -21,6 +21,7 @@ class LeadSubmission(Base):
     source_page: Mapped[str] = mapped_column(String(500), nullable=False)
     source_cluster: Mapped[str | None] = mapped_column(String(200), nullable=True)
     cta_type: Mapped[str | None] = mapped_column(String(100), nullable=True)
+    status: Mapped[str] = mapped_column(String(32), nullable=False, default="new")
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
 
     __table_args__ = (

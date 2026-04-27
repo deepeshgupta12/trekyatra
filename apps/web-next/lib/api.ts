@@ -327,3 +327,87 @@ export async function subscribeNewsletter(payload: NewsletterPayload): Promise<N
   }
   return res.json() as Promise<NewsletterResponse>;
 }
+
+// ---------------------------------------------------------------------------
+// Internal linking
+// ---------------------------------------------------------------------------
+
+export interface RelatedPage {
+  id: string;
+  slug: string;
+  title: string;
+  page_type: string;
+}
+
+export interface OrphanPage {
+  id: string;
+  slug: string;
+  title: string;
+  page_type: string;
+  published_at: string | null;
+  cms_page_id: string | null;
+  cluster_id: string | null;
+}
+
+export interface AnchorSuggestion {
+  text: string;
+  reason: string;
+}
+
+export async function fetchRelatedPages(slug: string, limit = 5): Promise<RelatedPage[]> {
+  return apiFetch<RelatedPage[]>(`/links/suggestions/${slug}?limit=${limit}`);
+}
+
+export async function triggerLinkSync(): Promise<{ synced: number; message: string }> {
+  const res = await fetch("/api/v1/admin/links/sync", { method: "POST" });
+  if (!res.ok) throw new Error(`Link sync failed (${res.status})`);
+  return res.json();
+}
+
+export async function fetchOrphanPages(): Promise<{ pages: OrphanPage[]; count: number }> {
+  return apiFetch<{ pages: OrphanPage[]; count: number }>("/admin/links/orphans");
+}
+
+export async function fetchAnchorSuggestions(slug: string): Promise<AnchorSuggestion[]> {
+  return apiFetch<AnchorSuggestion[]>(`/admin/links/anchors/${slug}`);
+}
+
+// ---------------------------------------------------------------------------
+// Admin leads
+// ---------------------------------------------------------------------------
+
+export interface AdminLead {
+  id: string;
+  name: string;
+  email: string;
+  trek_interest: string;
+  source_page: string;
+  status: string;
+  created_at: string;
+}
+
+export async function fetchAdminLeads(params?: { limit?: number; offset?: number; status?: string }): Promise<AdminLead[]> {
+  const q = params
+    ? "?" + new URLSearchParams(
+        Object.fromEntries(
+          Object.entries(params)
+            .filter(([, v]) => v !== undefined)
+            .map(([k, v]) => [k, String(v)])
+        )
+      )
+    : "";
+  return apiFetch<AdminLead[]>(`/admin/leads${q}`);
+}
+
+export async function patchLeadStatus(leadId: string, status: string): Promise<AdminLead> {
+  const res = await fetch(`/api/v1/admin/leads/${leadId}`, {
+    method: "PATCH",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ status }),
+  });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error((err as { detail?: string }).detail ?? `Status update failed (${res.status})`);
+  }
+  return res.json() as Promise<AdminLead>;
+}

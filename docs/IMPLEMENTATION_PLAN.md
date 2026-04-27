@@ -139,23 +139,24 @@
 - Next.js middleware: /admin/:path* requires auth cookie
 - conftest.py RBAC bypass for existing tests; 14 new RBAC tests; 199/199 pass
 
-### Step 22 — Internal linking engine + lead pipeline + newsletter platform
+### Step 22 — Internal linking engine + lead pipeline + newsletter platform [DONE]
 **A. Internal Linking Engine**
-- `pages` + `page_links` tables; sync from cms_pages on publish
+- `pages` + `page_links` tables (migration 0012); sync from cms_pages on publish
 - Related page suggestion service (cluster-based + page_type fallback)
 - Orphan page detection (daily Celery Beat task)
 - Anchor text suggestions service
-- APIs: POST /admin/links/sync, GET /links/suggestions/{id}, GET /admin/links/orphans, GET /admin/links/anchors/{id}
-- RelatedContent component wired to real API
-- Admin /admin/linking page rewritten with real data
+- APIs: POST /admin/links/sync, GET /links/suggestions/{slug}, GET /admin/links/orphans, GET /admin/links/anchors/{slug}
+- RelatedContent component wired to real API (pageSlug prop)
+- Admin /admin/linking page rewritten with real orphan data + sync trigger + anchor expand
 **B. Lead Pipeline**
 - lead_submissions.status column (new/contacted/converted/archived)
 - GET /admin/leads + PATCH /admin/leads/{id} endpoints
-- Admin lead email notification on new submission
-- /admin/leads frontend page
+- Admin lead email notification via SMTP (graceful skip if unconfigured)
+- /admin/leads frontend page (KPI row, status filter, mark-as-contacted action)
 **C. Newsletter Platform Wiring**
-- Mailchimp/Brevo sync (Celery task per subscriber + bulk sync endpoint)
+- Mailchimp/Brevo sync (Celery task per subscriber + /newsletter/sync admin endpoint)
 - NEWSLETTER_PLATFORM env var (graceful degradation if unset)
+- 12 new tests; 214/214 backend tests pass; next build clean; GitNexus 4,771 nodes | 8,189 edges | 172 flows
 
 ### Step 23 — Content refresh engine (basic)
 - Freshness interval field on pages/drafts

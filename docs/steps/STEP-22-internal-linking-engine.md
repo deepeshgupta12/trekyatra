@@ -139,7 +139,38 @@ npx gitnexus analyze --force
 ```
 
 ## Status
-pending
+Done
+
+## Files Created
+- `services/api/alembic/versions/20260427_0012_internal_linking_lead_status.py`
+- `services/api/app/modules/linking/__init__.py`
+- `services/api/app/modules/linking/models.py`
+- `services/api/app/modules/linking/service.py`
+- `services/api/app/modules/linking/tasks.py`
+- `services/api/app/modules/leads/tasks.py`
+- `services/api/app/modules/newsletter/tasks.py`
+- `services/api/app/api/routes/linking.py`
+- `services/api/app/api/routes/leads_admin.py`
+- `services/api/app/schemas/linking.py`
+- `services/api/tests/test_linking.py`
+- `apps/web-next/app/(admin)/admin/leads/page.tsx`
+
+## Files Modified
+- `services/api/app/modules/leads/models.py` — added `status` column
+- `services/api/app/modules/leads/service.py` — added `list_leads`, `update_lead_status`
+- `services/api/app/modules/newsletter/service.py` — fires `sync_subscriber_task.delay()` after subscribe
+- `services/api/app/api/routes/leads.py` — fires `notify_admin_new_lead_task.delay()` after submit
+- `services/api/app/api/routes/newsletter.py` — added admin `/newsletter/sync` endpoint
+- `services/api/app/api/router.py` — registered `linking_admin_router`, `linking_public_router`, `leads_admin_router`
+- `services/api/app/worker/celery_app.py` — added linking/leads/newsletter tasks + beat schedule entries
+- `services/api/app/modules/publish/service.py` — calls `sync_pages_from_cms()` after publish
+- `services/api/app/db/base.py` — registered Page, PageLink
+- `services/api/app/schemas/leads.py` — added `status` to `LeadResponse`, `VALID_LEAD_STATUSES`, `LeadStatusPatch`
+- `services/api/.env.example` — added SMTP + newsletter env vars
+- `apps/web-next/lib/api.ts` — added RelatedPage, OrphanPage, AnchorSuggestion, AdminLead types + fetch helpers
+- `apps/web-next/components/content/RelatedContent.tsx` — wired to `/links/suggestions/{slug}` when `pageSlug` prop given
+- `apps/web-next/app/(admin)/admin/linking/page.tsx` — rewritten with real API
+- `apps/web-next/app/(admin)/admin/layout.tsx` — added Leads nav item
 
 ## Notes
 - WordPress sync in original Step 22 doc is removed — WordPress has been replaced by Master CMS (Step 16). Pages table syncs from `cms_pages` instead.

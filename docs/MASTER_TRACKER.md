@@ -29,7 +29,7 @@ All V0 foundations are shipped. The stack is live locally with:
 - Admin summary APIs, smoke tests, GitNexus indexed
 
 ## V1 Status — In Progress
-**Current next step: Step 22 — Internal linking engine + lead pipeline + newsletter platform**
+**Current next step: Step 23 — Content refresh engine (basic)**
 
 | Step | Title | Status |
 |------|-------|--------|
@@ -45,9 +45,39 @@ All V0 foundations are shipped. The stack is live locally with:
 | 19 | SEO and schema infrastructure (frontend) | done |
 | 20 | Monetization frontend components | done |
 | 21 | RBAC enforcement | done |
-| 22 | Internal linking engine + lead pipeline + newsletter platform | pending |
+| 22 | Internal linking engine + lead pipeline + newsletter platform | done |
 | 23 | Content refresh engine (basic) | pending |
 | 24 | Analytics ingestion + admin panel full wiring | pending |
+
+### Step 22 — Internal Linking Engine + Lead Pipeline + Newsletter Platform
+Status: done
+What is done:
+- Alembic migration `20260427_0012_internal_linking_lead_status.py` — creates `pages` and `page_links` tables; adds `status` column to `lead_submissions`
+- `modules/linking/models.py` — `Page` + `PageLink` ORM models with FK relationships; registered in `db/base.py`
+- `schemas/linking.py` — PageResponse, RelatedPageResponse, AnchorSuggestion, SyncResponse, OrphanResponse
+- `modules/linking/service.py` — `sync_pages_from_cms`, `get_related_pages` (cluster-first + fallback), `get_orphan_pages`, `get_anchor_suggestions`
+- `modules/linking/tasks.py` — `sync_pages_task` (daily beat), `detect_orphans_task` (daily beat)
+- `modules/leads/service.py` — `list_leads` + `update_lead_status` added
+- `modules/leads/tasks.py` — `notify_admin_new_lead_task` (SMTP, graceful skip if unconfigured)
+- `modules/newsletter/tasks.py` — `sync_subscriber_task` (Mailchimp + Brevo, graceful skip)
+- `modules/newsletter/service.py` — fires `sync_subscriber_task.delay()` after DB insert
+- `api/routes/linking.py` — POST /admin/links/sync, GET /links/suggestions/{slug}, GET /admin/links/orphans, GET /admin/links/anchors/{slug}
+- `api/routes/leads_admin.py` — GET /admin/leads, PATCH /admin/leads/{id}
+- `api/routes/leads.py` — fires `notify_admin_new_lead_task.delay()` after submit
+- `api/routes/newsletter.py` — POST /newsletter/sync (admin)
+- `api/router.py` — linking public+admin, leads_admin registered
+- `worker/celery_app.py` — linking/leads/newsletter tasks + daily beat for sync_pages + detect_orphans
+- `modules/publish/service.py` — `sync_pages_from_cms()` hooked in after every publish (non-fatal)
+- `tests/test_linking.py` — 12 tests; 214/214 backend tests pass
+- Frontend: `lib/api.ts` — RelatedPage, OrphanPage, AnchorSuggestion, AdminLead types + fetch helpers
+- Frontend: `RelatedContent.tsx` — server-component path fetches from `/links/suggestions/{slug}` when `pageSlug` prop given
+- Frontend: `/admin/linking` page rewritten with real API: orphan table + sync trigger + anchor suggestions (inline row expand)
+- Frontend: `/admin/leads` page — paginated leads table, KPI row, status filter, mark-as-contacted action
+- Frontend: admin sidebar — Leads nav item added (Users icon)
+- GitNexus re-indexed: 4,771 nodes | 8,189 edges | 172 flows
+What remains:
+- SMTP creds must be configured in services/api/.env to enable lead email notifications
+- NEWSLETTER_PLATFORM, NEWSLETTER_PLATFORM_API_KEY, NEWSLETTER_LIST_ID must be set to activate external sync
 
 ### Step 21 — RBAC Enforcement (+ Step 21 Arch Fix: Separate CMS Auth)
 Status: done

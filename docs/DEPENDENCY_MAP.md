@@ -250,6 +250,34 @@ This file tracks structural dependencies, source-of-truth modules, and Nexus/Git
 - `apps/web-next/app/(public)/trek/[slug]/page.tsx` — UPDATED: InArticleAdSlot + AffiliateRail + TrustSignals + StickyMobileCTA inserted; blast radius: LOW (leaf page)
 - `apps/web-next/app/(public)/packing/[slug]/page.tsx` — UPDATED: AffiliateRail + NewsletterCapture inserted; blast radius: LOW (leaf page)
 
+### Step 22 — Internal Linking Engine + Lead Pipeline + Newsletter Platform blast radius
+- `services/api/alembic/versions/20260427_0012_internal_linking_lead_status.py` — NEW: creates `pages` + `page_links` tables; adds `status` column to `lead_submissions`; blast radius: LOW (new tables, additive column)
+- `services/api/app/modules/linking/models.py` — NEW: Page + PageLink ORM models; FK to cms_pages (CASCADE) + keyword_clusters (SET NULL); blast radius: LOW (new models)
+- `services/api/app/modules/linking/service.py` — NEW: sync_pages_from_cms, get_related_pages, get_orphan_pages, get_anchor_suggestions; blast radius: LOW (new module)
+- `services/api/app/modules/linking/tasks.py` — NEW: sync_pages_task + detect_orphans_task (Celery daily beat); blast radius: LOW
+- `services/api/app/modules/leads/models.py` — UPDATED: status column (String 32, NOT NULL, default "new"); blast radius: LOW (additive column)
+- `services/api/app/modules/leads/service.py` — UPDATED: list_leads + update_lead_status added; blast radius: LOW (additive)
+- `services/api/app/modules/leads/tasks.py` — NEW: notify_admin_new_lead_task (SMTP, graceful skip if unconfigured); blast radius: LOW
+- `services/api/app/modules/newsletter/tasks.py` — NEW: sync_subscriber_task (Mailchimp/Brevo, graceful skip); blast radius: LOW
+- `services/api/app/modules/newsletter/service.py` — UPDATED: subscribe() fires sync_subscriber_task.delay() after DB insert; blast radius: LOW (additive side-effect)
+- `services/api/app/api/routes/linking.py` — NEW: POST /admin/links/sync, GET /links/suggestions/{slug}, GET /admin/links/orphans, GET /admin/links/anchors/{slug}; blast radius: LOW (new routes)
+- `services/api/app/api/routes/leads_admin.py` — NEW: GET /admin/leads, PATCH /admin/leads/{id}; blast radius: LOW (new routes)
+- `services/api/app/api/routes/leads.py` — UPDATED: fires notify_admin_new_lead_task.delay() after create; blast radius: LOW (additive side-effect)
+- `services/api/app/api/routes/newsletter.py` — UPDATED: POST /newsletter/sync (admin) added; blast radius: LOW (additive endpoint)
+- `services/api/app/api/router.py` — UPDATED: linking_admin_router, linking_public_router, leads_admin_router registered; blast radius: LOW (additive)
+- `services/api/app/worker/celery_app.py` — UPDATED: include list + 2 beat schedule entries (daily-sync-pages, daily-detect-orphans); blast radius: LOW (additive)
+- `services/api/app/modules/publish/service.py` — UPDATED: sync_pages_from_cms() called after publish (non-fatal try/except); blast radius: LOW (additive, failure is silent)
+- `services/api/app/schemas/leads.py` — UPDATED: LeadResponse gains status field; VALID_LEAD_STATUSES set + LeadStatusPatch schema added; blast radius: LOW (additive)
+- `services/api/app/schemas/linking.py` — NEW: PageResponse, RelatedPageResponse, AnchorSuggestion, SyncResponse, OrphanResponse; blast radius: LOW
+- `services/api/app/db/base.py` — UPDATED: Page + PageLink registered; blast radius: LOW (additive)
+- `services/api/.env.example` — UPDATED: SMTP + newsletter platform env vars documented; blast radius: LOW (docs only)
+- `services/api/tests/test_linking.py` — NEW: 12 tests (sync, related pages, orphans, anchors, leads list/filter/patch); blast radius: LOW
+- `apps/web-next/lib/api.ts` — UPDATED: RelatedPage, OrphanPage, AnchorSuggestion, AdminLead types + 5 fetch helpers; blast radius: LOW (additive)
+- `apps/web-next/components/content/RelatedContent.tsx` — UPDATED: accepts optional pageSlug prop; server-component async path fetches from /links/suggestions/{slug}; static items prop path unchanged; blast radius: LOW (leaf component, no change to existing callers using items prop)
+- `apps/web-next/app/(admin)/admin/linking/page.tsx` — REWRITTEN: real API; orphan table + sync trigger + anchor suggestion row-expand; blast radius: LOW (leaf admin page)
+- `apps/web-next/app/(admin)/admin/leads/page.tsx` — NEW: admin leads table; KPI row; status filter; mark-as-contacted action; blast radius: LOW
+- `apps/web-next/app/(admin)/admin/layout.tsx` — UPDATED: Leads nav item (Users icon, href /admin/leads) added to Growth group; blast radius: MEDIUM (admin layout, visible to all admin pages)
+
 ### Step 21 — RBAC Enforcement blast radius
 - `services/api/app/core/security.py:create_access_token` — UPDATED: optional `roles: list[str]` param; roles added to JWT payload; blast radius: HIGH (called by create_session_for_user → signup/login/google_auth); change is additive and backward-compatible
 - `services/api/app/modules/auth/service.py:create_session_for_user` — UPDATED: reads user.roles slugs and passes to create_access_token; blast radius: MEDIUM (called by signup/login/google_auth routes)

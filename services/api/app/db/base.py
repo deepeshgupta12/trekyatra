@@ -4,6 +4,7 @@ from app.modules.auth.models import AuthIdentity, User, UserSession
 from app.modules.cms.models import CMSPage
 from app.modules.content.models import BriefVersion, ContentBrief, ContentDraft, DraftClaim, KeywordCluster, PublishLog, TopicOpportunity
 from app.modules.leads.models import LeadSubmission
+from app.modules.linking.models import Page, PageLink
 from app.modules.newsletter.models import NewsletterSubscriber
 from app.modules.pipeline.models import PipelineRun, PipelineStage
 from app.modules.rbac.models import Permission, Role
@@ -28,4 +29,6 @@ __all__ = [
     "PipelineStage",
     "LeadSubmission",
     "NewsletterSubscriber",
+    "Page",
+    "PageLink",
 ]

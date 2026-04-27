@@ -10,6 +10,9 @@ celery_app = Celery(
         "app.worker.tasks.smoke",
         "app.worker.tasks.agent_tasks",
         "app.modules.pipeline.tasks",
+        "app.modules.linking.tasks",
+        "app.modules.leads.tasks",
+        "app.modules.newsletter.tasks",
     ],
 )
 
@@ -25,7 +28,15 @@ celery_app.conf.update(
     beat_schedule={
         "daily-content-discovery": {
             "task": "pipeline.daily_discovery",
-            "schedule": 86400,  # every 24 hours; crontab(hour=6, minute=0) when celery[beat] is in use
+            "schedule": 86400,
+        },
+        "daily-sync-pages": {
+            "task": "linking.sync_pages",
+            "schedule": 86400,
+        },
+        "daily-detect-orphans": {
+            "task": "linking.detect_orphans",
+            "schedule": 86400,
         },
     },
 )

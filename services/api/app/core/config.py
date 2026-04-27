@@ -41,6 +41,18 @@ class Settings(BaseSettings):
     admin_cookie_name: str = "trekyatra_admin_token"
     admin_token_expire_hours: int = 24
 
+    # SMTP — used for lead notification emails (gracefully disabled if unset)
+    smtp_host: str | None = None
+    smtp_port: int = 587
+    smtp_user: str | None = None
+    smtp_password: str | None = None
+    smtp_from_email: str = "noreply@trekyatra.com"
+
+    # Newsletter platform wiring (mailchimp | brevo); gracefully disabled if unset
+    newsletter_platform: str | None = None
+    newsletter_platform_api_key: str | None = None
+    newsletter_list_id: str | None = None
+
     model_config = SettingsConfigDict(
         env_file=".env",
         env_file_encoding="utf-8",

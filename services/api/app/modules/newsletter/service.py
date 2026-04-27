@@ -11,6 +11,7 @@ from app.schemas.newsletter import NewsletterSubscribeCreate, NewsletterSubscrib
 
 
 def subscribe(db: Session, payload: NewsletterSubscribeCreate) -> NewsletterSubscribeResponse:
+    from app.modules.newsletter.tasks import sync_subscriber_task
     existing = db.scalar(
         select(NewsletterSubscriber).where(NewsletterSubscriber.email == payload.email)
     )
@@ -22,6 +23,7 @@ def subscribe(db: Session, payload: NewsletterSubscribeCreate) -> NewsletterSubs
             already_subscribed=True,
             created_at=existing.created_at,
         )
+
     subscriber = NewsletterSubscriber(
         id=uuid.uuid4(),
         email=payload.email,
@@ -33,6 +35,7 @@ def subscribe(db: Session, payload: NewsletterSubscribeCreate) -> NewsletterSubs
     db.add(subscriber)
     db.commit()
     db.refresh(subscriber)
+    sync_subscriber_task.delay(subscriber.email, subscriber.name)
     return NewsletterSubscribeResponse(
         id=subscriber.id,
         email=subscriber.email,
