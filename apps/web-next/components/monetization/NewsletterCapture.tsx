@@ -80,7 +80,7 @@ export default function NewsletterCapture({
         />
         {error && <p className="text-xs text-destructive">{error}</p>}
         <Button type="submit" variant="hero" className="w-full" disabled={loading}>
-          {loading ? <><Loader2 className="h-4 w-4 animate-spin" /> Subscribing…</> : "Subscribe — it&apos;s free"}
+          {loading ? <><Loader2 className="h-4 w-4 animate-spin" /> Subscribing…</> : "Subscribe — it's free"}
         </Button>
         <p className="text-[10px] text-muted-foreground text-center">No spam. Unsubscribe any time.</p>
       </form>

@@ -176,15 +176,15 @@ export default async function TrekDetailPage({ params }: { params: { slug: strin
               <Star className="h-3 w-3 text-accent fill-accent" /> {formatUpdatedAt(cmsPage?.published_at ?? cmsPage?.updated_at)}
             </span>
           </div>
-          <h1 className="font-display text-5xl md:text-7xl font-semibold leading-[0.95] mb-4 max-w-4xl">
+          <h1 className="font-display text-4xl sm:text-5xl md:text-7xl font-semibold leading-[0.95] mb-4 max-w-4xl">
             {cmsDisplayName ?? trek.name}
           </h1>
-          <p className="text-lg text-surface/85 max-w-2xl mb-6">{trek.description}</p>
-          <div className="flex flex-wrap items-center gap-3">
-            <Button variant="hero" size="lg"><Sparkles className="h-4 w-4" /> Plan this trek</Button>
-            <Button variant="glass" size="lg"><Bookmark className="h-4 w-4" /> Save</Button>
-            <Button variant="glass" size="lg"><GitCompare className="h-4 w-4" /> Compare</Button>
-            <Button variant="glass" size="lg"><Share2 className="h-4 w-4" /> Share</Button>
+          <p className="text-base sm:text-lg text-surface/85 max-w-2xl mb-6">{trek.description}</p>
+          <div className="flex flex-wrap items-center gap-2 sm:gap-3">
+            <Button variant="hero" size="default"><Sparkles className="h-4 w-4" /> Plan this trek</Button>
+            <Button variant="glass" size="default"><Bookmark className="h-4 w-4" /> Save</Button>
+            <Button variant="glass" size="default"><GitCompare className="h-4 w-4" /> Compare</Button>
+            <Button variant="glass" size="default"><Share2 className="h-4 w-4" /> Share</Button>
           </div>
         </div>
       </section>
@@ -216,7 +216,7 @@ export default async function TrekDetailPage({ params }: { params: { slug: strin
             </div>
           </aside>
 
-          <article className="prose prose-lg max-w-none">
+          <article className="prose prose-lg max-w-none min-w-0">
             <Block id="why-this-trek" eyebrow="Why this trek" title={`Why ${cmsDisplayName ?? trek.name} is on every trekker's list`}>
               {S("why_this_trek") ? (
                 <div className="not-prose cms-section" dangerouslySetInnerHTML={{ __html: S("why_this_trek")! }} />
@@ -311,7 +311,7 @@ export default async function TrekDetailPage({ params }: { params: { slug: strin
               ) : (
                 <div className="not-prose p-5 rounded-2xl bg-warning/10 border border-warning/30 flex gap-3 mb-4">
                   <Info className="h-5 w-5 text-warning flex-shrink-0 mt-0.5" />
-                  <div className="text-sm">Check with the local forest department for current permit requirements before starting the trek.</div>
+                  <div className="text-sm min-w-0">Check with the local forest department for current permit requirements before starting the trek.</div>
                 </div>
               )}
             </Block>
@@ -322,7 +322,7 @@ export default async function TrekDetailPage({ params }: { params: { slug: strin
               ) : (
                 <div className="not-prose p-5 rounded-2xl bg-muted/50 border border-border flex gap-3">
                   <Wallet className="h-5 w-5 text-muted-foreground flex-shrink-0 mt-0.5" />
-                  <div className="text-sm text-muted-foreground">
+                  <div className="text-sm text-muted-foreground min-w-0">
                     Trek costs vary by operator, group size, and season. <Link href="/plan" className="text-accent underline">Get in touch</Link> for a tailored quote or compare operators on our planning page.
                   </div>
                 </div>

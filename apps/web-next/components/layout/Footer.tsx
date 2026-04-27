@@ -55,7 +55,7 @@ export const Footer = () => (
       <path d="M0,80 L0,50 L120,28 L240,46 L360,18 L480,40 L600,12 L720,38 L840,22 L960,44 L1080,20 L1200,42 L1200,80 Z" fill="hsl(var(--background))" />
     </svg>
 
-    <div className="container-wide pt-32 pb-12 relative">
+    <div className="container-wide pt-32 pb-24 lg:pb-12 relative">
       <div className="rounded-2xl bg-surface/5 border border-surface/10 backdrop-blur-sm p-8 md:p-10 mb-16 grid md:grid-cols-2 gap-8 items-center">
         <div>
           <div className="text-xs uppercase tracking-[0.25em] text-accent-glow mb-3">The Trail Letter</div>
@@ -64,13 +64,13 @@ export const Footer = () => (
           </h3>
           <p className="text-surface/70 text-sm">One slow, considered email every month. No spam, ever.</p>
         </div>
-        <form className="flex gap-2" onSubmit={(e) => e.preventDefault()}>
+        <form className="flex flex-col sm:flex-row gap-2" onSubmit={(e) => e.preventDefault()}>
           <input
             type="email"
             placeholder="you@trail.in"
-            className="flex-1 h-13 px-5 rounded-full bg-surface/10 border border-surface/20 text-surface placeholder:text-surface/40 focus:outline-none focus:border-accent"
+            className="flex-1 h-12 px-5 rounded-full bg-surface/10 border border-surface/20 text-surface placeholder:text-surface/40 focus:outline-none focus:border-accent"
           />
-          <Button variant="hero" size="lg" type="submit">
+          <Button variant="hero" size="lg" type="submit" className="w-full sm:w-auto">
             Subscribe <ArrowRight className="h-4 w-4" />
           </Button>
         </form>

@@ -15,7 +15,7 @@ export default function Plan() {
             Tell us where you want to go. We&apos;ll handle the rest.
           </h1>
           <p className="text-surface/80 text-lg max-w-xl mb-6">Free planning help in 48 hours. Vetted operators, honest pricing, real human guidance.</p>
-          <div className="flex items-center gap-6 text-sm text-surface/70">
+          <div className="flex flex-wrap items-center gap-3 sm:gap-5 text-sm text-surface/70">
             <span className="flex items-center gap-1.5"><Check className="h-4 w-4 text-success" /> No spam</span>
             <span className="flex items-center gap-1.5"><Check className="h-4 w-4 text-success" /> No pressure</span>
             <span className="flex items-center gap-1.5"><Check className="h-4 w-4 text-success" /> Vetted operators only</span>
