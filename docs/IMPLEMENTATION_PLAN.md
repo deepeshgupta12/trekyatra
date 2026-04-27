@@ -129,21 +129,32 @@
 - Trek page + packing page wired with ad slots, affiliate rail, trust signals, newsletter capture
 - AdSense script conditionally injected in root layout via NEXT_PUBLIC_ADSENSE_ID env var
 
-### Step 21 — RBAC enforcement
-- RequireRole FastAPI dependency
-- Admin endpoint protection (all /admin/* routes)
-- Role seeding script (Super Admin, Editor, Reviewer)
-- Assign roles API: POST /admin/users/{id}/roles
-- Next.js middleware: admin access check via session role
-- Role-protected route tests
+### Step 21 — RBAC enforcement [DONE]
+- RequireRole FastAPI dependency (named singletons: require_admin, require_editor, require_pipeline, require_agent_admin, require_super_admin)
+- Router-level protection on admin, publish, content, pipeline, agent_triggers, agent_runs, worker, cms routes
+- Role seeding script (Super Admin, Admin, Editor, Reviewer, Content Ops) + assign_admin.py
+- User management API: GET/POST/DELETE /admin/users/{id}/roles (super_admin only)
+- JWT payload extended with roles list
+- Next.js middleware: /admin/:path* requires auth cookie
+- conftest.py RBAC bypass for existing tests; 14 new RBAC tests; 199/199 pass
 
-### Step 22 — Internal linking engine (basic)
-- `pages` table (id, slug, title, cluster_id, page_type)
-- `page_links` table (from_page_id, to_page_id, anchor_text)
-- Related page suggestion service
-- Orphan page detection service
-- API: GET /api/v1/links/suggestions/{page_id}
-- API: GET /api/v1/links/orphans
+### Step 22 — Internal linking engine + lead pipeline + newsletter platform
+**A. Internal Linking Engine**
+- `pages` + `page_links` tables; sync from cms_pages on publish
+- Related page suggestion service (cluster-based + page_type fallback)
+- Orphan page detection (daily Celery Beat task)
+- Anchor text suggestions service
+- APIs: POST /admin/links/sync, GET /links/suggestions/{id}, GET /admin/links/orphans, GET /admin/links/anchors/{id}
+- RelatedContent component wired to real API
+- Admin /admin/linking page rewritten with real data
+**B. Lead Pipeline**
+- lead_submissions.status column (new/contacted/converted/archived)
+- GET /admin/leads + PATCH /admin/leads/{id} endpoints
+- Admin lead email notification on new submission
+- /admin/leads frontend page
+**C. Newsletter Platform Wiring**
+- Mailchimp/Brevo sync (Celery task per subscriber + bulk sync endpoint)
+- NEWSLETTER_PLATFORM env var (graceful degradation if unset)
 
 ### Step 23 — Content refresh engine (basic)
 - Freshness interval field on pages/drafts

@@ -109,9 +109,11 @@ def create_session_for_user(
     db.add(session)
     db.flush()
 
+    role_slugs = [r.slug for r in user.roles]
     token, expires_at = create_access_token(
         user_id=user.id,
         session_id=session.id,
+        roles=role_slugs,
     )
     session.session_token_hash = hash_token(token)
     session.expires_at = expires_at

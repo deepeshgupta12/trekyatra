@@ -1,6 +1,7 @@
 from fastapi import APIRouter
 
 from app.api.routes.admin import router as admin_router
+from app.api.routes.users import router as users_router
 from app.api.routes.agent_runs import router as agent_runs_router
 from app.api.routes.agent_triggers import router as agent_triggers_router
 from app.api.routes.auth import router as auth_router
@@ -28,3 +29,4 @@ api_router.include_router(agent_runs_router)
 api_router.include_router(agent_triggers_router)
 api_router.include_router(leads_router)
 api_router.include_router(newsletter_router)
+api_router.include_router(users_router)

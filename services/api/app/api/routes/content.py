@@ -1,5 +1,6 @@
 import uuid
 
+from app.modules.auth.dependencies import require_editor
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 
@@ -34,7 +35,7 @@ from app.schemas.content import (
     TopicOpportunityResponse,
 )
 
-router = APIRouter(tags=["content"])
+router = APIRouter(tags=["content"], dependencies=[Depends(require_editor)])
 
 
 @router.get("/topics", response_model=list[TopicOpportunityResponse])

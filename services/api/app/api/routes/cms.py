@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import uuid
 
+from app.modules.auth.dependencies import require_editor
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy.orm import Session
 
@@ -15,7 +16,7 @@ from app.schemas.cms import (
     CMSPageResponse,
 )
 
-router = APIRouter(prefix="/cms", tags=["cms"])
+router = APIRouter(prefix="/cms", tags=["cms"], dependencies=[Depends(require_editor)])
 
 
 @router.get("/pages", response_model=list[CMSPageResponse])

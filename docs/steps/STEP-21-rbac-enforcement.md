@@ -94,11 +94,36 @@ npx gitnexus analyze --force
 ```
 
 ## Status
-pending
+Done
+
+## Files Created
+- `services/api/app/schemas/rbac.py` — RoleResponse, RoleAssignRequest, UserWithRolesResponse schemas
+- `services/api/app/modules/rbac/service.py` — seed_roles, get_role_by_slug, assign_role_to_user, revoke_role_from_user, list_users_with_roles
+- `services/api/app/api/routes/users.py` — GET /admin/users, POST /admin/users/{id}/roles, DELETE /admin/users/{id}/roles/{slug} (all require super_admin)
+- `services/api/tests/conftest.py` — autouse pytest fixture that bypasses RBAC for all test files except test_rbac.py
+- `services/api/tests/test_rbac.py` — 14 tests covering 401, 403, role seeding, assignment, revocation, user management API
+- `scripts/seed_roles.py` — standalone script to idempotently seed 5 default roles
+- `scripts/assign_admin.py` — standalone script to assign a role to a user by email
+
+## Files Modified
+- `services/api/app/core/security.py` — create_access_token gains optional `roles: list[str]` param; roles included in JWT payload
+- `services/api/app/modules/auth/service.py` — create_session_for_user reads user.roles and passes slugs to create_access_token
+- `services/api/app/modules/auth/dependencies.py` — RequireRole class added; named singletons: require_super_admin, require_admin, require_editor, require_pipeline, require_agent_admin
+- `services/api/app/api/routes/admin.py` — router-level Depends(require_admin)
+- `services/api/app/api/routes/publish.py` — router-level Depends(require_editor)
+- `services/api/app/api/routes/content.py` — router-level Depends(require_editor)
+- `services/api/app/api/routes/pipeline.py` — router-level Depends(require_pipeline)
+- `services/api/app/api/routes/agent_triggers.py` — router-level Depends(require_agent_admin)
+- `services/api/app/api/routes/agent_runs.py` — router-level Depends(require_admin)
+- `services/api/app/api/routes/worker.py` — router-level Depends(require_admin)
+- `services/api/app/api/routes/cms.py` — router-level Depends(require_editor)
+- `services/api/app/api/router.py` — users_router registered
+- `apps/web-next/middleware.ts` — /admin/:path* added to matcher; unauthenticated admin visits redirect to /auth/sign-in
 
 ## Notes
-- JWT roles payload: add `"roles": ["admin"]` to the token claims; `get_current_user` resolves this from DB on each request (do not trust JWT roles alone — verify from DB)
-- RequireRole is a dependency factory: `Depends(RequireRole(["admin", "super_admin"]))` — any matching role passes
-- Seed roles with: Super Admin (all permissions), Admin (all content + publish), Editor (create/edit content, no admin config), Reviewer (read + approve/reject briefs+drafts only), Content Ops (create topics/clusters only)
-- The role check in Next.js middleware is a belt-and-suspenders UX guard only — the real enforcement is in the FastAPI dependencies
-- After this step, any dev login must use an account with admin role to access the admin panel
+- RequireRole is a named singleton class: import `require_admin` etc. from dependencies.py. Use as `Depends(require_admin)` in router.
+- JWT roles are informational only — enforcement is always from DB (user.roles relationship loaded lazily per request).
+- conftest.py bypass strategy: `app.dependency_overrides` with autouse fixture; test_rbac.py skips the bypass and tests real enforcement.
+- Superusers (is_superuser=True) bypass all role checks — future escape hatch.
+- To activate in local dev: sign up at /auth/sign-up, then run `PYTHONPATH=services/api .venv/bin/python scripts/assign_admin.py --email <you> --role admin`
+- 199/199 backend tests pass; next build clean.

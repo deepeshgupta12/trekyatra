@@ -74,3 +74,39 @@ def get_current_user(
     if not user or not user.is_active:
         raise _unauthorized("User not found or inactive.")
     return user
+
+
+# ──────────────────────────────────────────────────────────────────────────────
+# Role-based access control
+# ──────────────────────────────────────────────────────────────────────────────
+
+class RequireRole:
+    """FastAPI dependency that enforces role-based access control.
+
+    Superusers (is_superuser=True) bypass all role checks.
+
+    Named singletons at the bottom of this module are the keys used in
+    ``app.dependency_overrides`` during testing.
+    """
+
+    def __init__(self, roles: list[str]) -> None:
+        self.roles = set(roles)
+
+    def __call__(self, user: User = Depends(get_current_user)) -> User:
+        if user.is_superuser:
+            return user
+        user_slugs = {r.slug for r in user.roles}
+        if not user_slugs & self.roles:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="Insufficient permissions.",
+            )
+        return user
+
+
+# Named singletons — import these in route files and in conftest.py overrides
+require_super_admin = RequireRole(["super_admin"])
+require_admin = RequireRole(["admin", "super_admin"])
+require_editor = RequireRole(["admin", "editor", "super_admin"])
+require_pipeline = RequireRole(["admin", "super_admin"])
+require_agent_admin = RequireRole(["admin", "super_admin"])

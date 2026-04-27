@@ -65,7 +65,9 @@ def generate_placeholder_hash() -> str:
     return hash_token(secrets.token_urlsafe(48))
 
 
-def create_access_token(*, user_id: uuid.UUID, session_id: uuid.UUID) -> tuple[str, datetime]:
+def create_access_token(
+    *, user_id: uuid.UUID, session_id: uuid.UUID, roles: list[str] | None = None
+) -> tuple[str, datetime]:
     expires_at = datetime.now(timezone.utc) + timedelta(
         minutes=settings.auth_access_token_expire_minutes
     )
@@ -75,6 +77,7 @@ def create_access_token(*, user_id: uuid.UUID, session_id: uuid.UUID) -> tuple[s
         "typ": "access",
         "iat": datetime.now(timezone.utc),
         "exp": expires_at,
+        "roles": roles or [],
     }
     token = jwt.encode(
         payload,

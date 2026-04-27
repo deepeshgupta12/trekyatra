@@ -1,10 +1,11 @@
-from fastapi import APIRouter
+from app.modules.auth.dependencies import require_admin
+from fastapi import APIRouter, Depends
 
 import redis as redis_lib
 
 from app.core.config import settings
 
-router = APIRouter(prefix="/worker", tags=["worker"])
+router = APIRouter(prefix="/worker", tags=["worker"], dependencies=[Depends(require_admin)])
 
 
 @router.get("/health")

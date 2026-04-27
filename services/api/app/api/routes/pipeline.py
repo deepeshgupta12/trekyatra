@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import uuid
 
+from app.modules.auth.dependencies import require_pipeline
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy import delete
 from sqlalchemy.orm import Session
@@ -15,7 +16,7 @@ from app.schemas.pipeline import (
     PipelineTriggerResponse,
 )
 
-router = APIRouter(prefix="/admin/pipeline", tags=["pipeline"])
+router = APIRouter(prefix="/admin/pipeline", tags=["pipeline"], dependencies=[Depends(require_pipeline)])
 
 
 @router.post("/run", response_model=PipelineTriggerResponse)

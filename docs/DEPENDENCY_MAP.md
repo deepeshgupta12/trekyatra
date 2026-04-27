@@ -247,6 +247,28 @@ This file tracks structural dependencies, source-of-truth modules, and Nexus/Git
 - `apps/web-next/app/(public)/trek/[slug]/page.tsx` — UPDATED: InArticleAdSlot + AffiliateRail + TrustSignals + StickyMobileCTA inserted; blast radius: LOW (leaf page)
 - `apps/web-next/app/(public)/packing/[slug]/page.tsx` — UPDATED: AffiliateRail + NewsletterCapture inserted; blast radius: LOW (leaf page)
 
+### Step 21 — RBAC Enforcement blast radius
+- `services/api/app/core/security.py:create_access_token` — UPDATED: optional `roles: list[str]` param; roles added to JWT payload; blast radius: HIGH (called by create_session_for_user → signup/login/google_auth); change is additive and backward-compatible
+- `services/api/app/modules/auth/service.py:create_session_for_user` — UPDATED: reads user.roles slugs and passes to create_access_token; blast radius: MEDIUM (called by signup/login/google_auth routes)
+- `services/api/app/modules/auth/dependencies.py` — UPDATED: RequireRole class + named singletons (require_super_admin, require_admin, require_editor, require_pipeline, require_agent_admin); blast radius: HIGH (imported by all protected route files)
+- `services/api/app/schemas/rbac.py` — NEW: RoleResponse, RoleAssignRequest, UserWithRolesResponse; blast radius: LOW (only used by users.py route)
+- `services/api/app/modules/rbac/service.py` — NEW: seed_roles, assign/revoke helpers, list_users_with_roles; blast radius: LOW (called by users route + scripts)
+- `services/api/app/api/routes/users.py` — NEW: user management endpoints (super_admin guarded); blast radius: LOW (new file)
+- `services/api/app/api/routes/admin.py` — UPDATED: router-level Depends(require_admin); blast radius: MEDIUM (all admin summary routes now require admin role)
+- `services/api/app/api/routes/publish.py` — UPDATED: Depends(require_editor); blast radius: MEDIUM
+- `services/api/app/api/routes/content.py` — UPDATED: Depends(require_editor); blast radius: MEDIUM
+- `services/api/app/api/routes/pipeline.py` — UPDATED: Depends(require_pipeline); blast radius: MEDIUM
+- `services/api/app/api/routes/agent_triggers.py` — UPDATED: Depends(require_agent_admin); blast radius: MEDIUM
+- `services/api/app/api/routes/agent_runs.py` — UPDATED: Depends(require_admin); blast radius: MEDIUM
+- `services/api/app/api/routes/worker.py` — UPDATED: Depends(require_admin); blast radius: LOW
+- `services/api/app/api/routes/cms.py` — UPDATED: Depends(require_editor); blast radius: MEDIUM
+- `services/api/app/api/router.py` — UPDATED: users_router registered; blast radius: LOW (additive)
+- `services/api/tests/conftest.py` — NEW: autouse RBAC bypass fixture; skips bypass for test_rbac.py; blast radius: HIGH (affects all test files)
+- `services/api/tests/test_rbac.py` — NEW: 14 RBAC tests; blast radius: LOW
+- `scripts/seed_roles.py` — NEW: standalone role seeding script; blast radius: LOW
+- `scripts/assign_admin.py` — NEW: CLI role assignment by email; blast radius: LOW
+- `apps/web-next/middleware.ts` — UPDATED: /admin/:path* added to matcher + redirect guard; blast radius: MEDIUM (affects all admin page requests in Next.js edge runtime)
+
 ## Dependency Discipline Rules
 Before editing any existing frontend file:
 1. Identify entry file and route usage.

@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import uuid
 
+from app.modules.auth.dependencies import require_editor
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 
@@ -9,7 +10,7 @@ from app.db.session import get_db
 from app.modules.publish.service import get_publish_logs, publish_to_cms, update_draft_status
 from app.schemas.publish import DraftPublishResponse, DraftStatusPatch, PublishLogResponse
 
-router = APIRouter(prefix="/admin/drafts", tags=["publish"])
+router = APIRouter(prefix="/admin/drafts", tags=["publish"], dependencies=[Depends(require_editor)])
 
 
 @router.patch("/{draft_id}/status", response_model=dict)

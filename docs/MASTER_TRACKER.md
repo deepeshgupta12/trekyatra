@@ -29,7 +29,7 @@ All V0 foundations are shipped. The stack is live locally with:
 - Admin summary APIs, smoke tests, GitNexus indexed
 
 ## V1 Status — In Progress
-**Current next step: Step 21 — RBAC enforcement**
+**Current next step: Step 22 — Internal linking engine + lead pipeline + newsletter platform**
 
 | Step | Title | Status |
 |------|-------|--------|
@@ -44,10 +44,29 @@ All V0 foundations are shipped. The stack is live locally with:
 | 18 | Public frontend content page templates | done |
 | 19 | SEO and schema infrastructure (frontend) | done |
 | 20 | Monetization frontend components | done |
-| 21 | RBAC enforcement | pending |
-| 22 | Internal linking engine (basic) | pending |
+| 21 | RBAC enforcement | done |
+| 22 | Internal linking engine + lead pipeline + newsletter platform | pending |
 | 23 | Content refresh engine (basic) | pending |
 | 24 | Analytics ingestion + admin panel full wiring | pending |
+
+### Step 21 — RBAC Enforcement
+Status: done
+What is done:
+- RequireRole class in dependencies.py with named singletons (require_super_admin, require_admin, require_editor, require_pipeline, require_agent_admin)
+- Router-level RBAC applied to: admin, publish, content, pipeline, agent_triggers, agent_runs, worker, cms routes
+- create_access_token extended with roles list in JWT payload
+- create_session_for_user loads user.roles and passes slugs to JWT
+- services/api/app/schemas/rbac.py — RoleResponse, RoleAssignRequest, UserWithRolesResponse
+- services/api/app/modules/rbac/service.py — seed_roles, assign/revoke role helpers, list_users_with_roles
+- services/api/app/api/routes/users.py — GET/POST/DELETE /admin/users (super_admin guarded)
+- services/api/app/api/router.py — users_router registered
+- services/api/tests/conftest.py — autouse RBAC bypass fixture (skips test_rbac.py)
+- services/api/tests/test_rbac.py — 14 tests: 401, 403, role seeding, assignment, revocation, user API
+- scripts/seed_roles.py + scripts/assign_admin.py — management scripts
+- apps/web-next/middleware.ts — /admin/:path* matcher added; unauthenticated redirected to sign-in
+- 199/199 backend tests pass; next build clean
+What remains:
+- User must sign up locally, then run assign_admin.py to gain admin access
 
 ## Step History
 

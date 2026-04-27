@@ -2,12 +2,13 @@ from __future__ import annotations
 
 from pydantic import BaseModel
 from fastapi import APIRouter, Depends
+from app.modules.auth.dependencies import require_agent_admin
 from sqlalchemy.orm import Session
 
 from app.db.session import get_db
 from app.modules.agents import service as agent_service
 
-router = APIRouter(prefix="/admin/agents", tags=["agent-triggers"])
+router = APIRouter(prefix="/admin/agents", tags=["agent-triggers"], dependencies=[Depends(require_agent_admin)])
 
 
 class DiscoverTrendsRequest(BaseModel):
