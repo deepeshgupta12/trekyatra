@@ -1,14 +1,15 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { useState } from "react";
 import { Logo } from "@/components/brand/Logo";
 import {
   LayoutDashboard, Search, Layers, FileText, CheckSquare, Link2,
   DollarSign, BarChart2, Terminal, Settings, ChevronRight, Menu, X,
-  GitBranch, Bot, GitMerge, Database,
+  GitBranch, Bot, GitMerge, Database, LogOut,
 } from "lucide-react";
+import { adminLogout } from "@/lib/admin-auth-api";
 
 const NAV_GROUPS = [
   {
@@ -102,7 +103,13 @@ function NavContent({ pathname, onClose }: { pathname: string; onClose?: () => v
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
+  const router = useRouter();
   const [drawerOpen, setDrawerOpen] = useState(false);
+
+  async function handleSignOut() {
+    await adminLogout();
+    router.push("/admin/sign-in");
+  }
 
   const currentLabel =
     NAV_GROUPS.flatMap((g) => g.items).find((n) =>
@@ -146,6 +153,15 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
           <span className="text-white/30 text-xs hidden lg:block">Admin</span>
           <ChevronRight className="h-3.5 w-3.5 text-white/15 hidden lg:block" />
           <span className="text-white/70 text-sm font-medium">{currentLabel}</span>
+          <div className="ml-auto">
+            <button
+              onClick={handleSignOut}
+              className="flex items-center gap-1.5 text-white/30 hover:text-white/70 text-xs transition-colors"
+            >
+              <LogOut className="h-3.5 w-3.5" />
+              <span className="hidden sm:inline">Sign out</span>
+            </button>
+          </div>
         </header>
 
         <main className="flex-1 p-4 lg:p-6 overflow-auto">{children}</main>

@@ -129,12 +129,13 @@
 - Trek page + packing page wired with ad slots, affiliate rail, trust signals, newsletter capture
 - AdSense script conditionally injected in root layout via NEXT_PUBLIC_ADSENSE_ID env var
 
-### Step 21 — RBAC enforcement [DONE]
-- RequireRole FastAPI dependency (named singletons: require_admin, require_editor, require_pipeline, require_agent_admin, require_super_admin)
-- Router-level protection on admin, publish, content, pipeline, agent_triggers, agent_runs, worker, cms routes
-- Role seeding script (Super Admin, Admin, Editor, Reviewer, Content Ops) + assign_admin.py
-- User management API: GET/POST/DELETE /admin/users/{id}/roles (super_admin only)
-- JWT payload extended with roles list
+### Step 21 — RBAC enforcement + separate CMS auth [DONE]
+- RequireRole FastAPI dependency (retained) + get_current_admin (new, validates trekyatra_admin_token)
+- All admin routes now use get_current_admin (credential-based, no shared user DB)
+- Admin login at /admin/sign-in — separate from public /auth/sign-in
+- ADMIN_EMAIL + ADMIN_PASSWORD in env; no DB table for CMS admin
+- Role seeding script + assign_admin.py (for public user roles, not CMS access)
+- Next.js middleware checks trekyatra_admin_token for /admin/*
 - Next.js middleware: /admin/:path* requires auth cookie
 - conftest.py RBAC bypass for existing tests; 14 new RBAC tests; 199/199 pass
 

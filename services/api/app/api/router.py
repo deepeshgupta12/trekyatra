@@ -1,6 +1,7 @@
 from fastapi import APIRouter
 
 from app.api.routes.admin import router as admin_router
+from app.api.routes.admin_auth import router as admin_auth_router
 from app.api.routes.users import router as users_router
 from app.api.routes.agent_runs import router as agent_runs_router
 from app.api.routes.agent_triggers import router as agent_triggers_router
@@ -18,6 +19,7 @@ from app.api.routes.worker import router as worker_router
 api_router = APIRouter()
 api_router.include_router(health_router, tags=["health"])
 api_router.include_router(auth_router)
+api_router.include_router(admin_auth_router)
 api_router.include_router(cms_router)
 api_router.include_router(admin_router)
 api_router.include_router(content_router)

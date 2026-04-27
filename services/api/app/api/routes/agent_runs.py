@@ -1,4 +1,4 @@
-from app.modules.auth.dependencies import require_admin
+from app.modules.auth.dependencies import get_current_admin
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy import delete
 from sqlalchemy.orm import Session
@@ -8,7 +8,7 @@ from app.modules.agents import service as agent_service
 from app.modules.agents.models import AgentRun
 from app.schemas.agents import AgentRunResponse
 
-router = APIRouter(prefix="/admin/agent-runs", tags=["agent-runs"], dependencies=[Depends(require_admin)])
+router = APIRouter(prefix="/admin/agent-runs", tags=["agent-runs"], dependencies=[Depends(get_current_admin)])
 
 
 @router.get("/{run_id}", response_model=AgentRunResponse)

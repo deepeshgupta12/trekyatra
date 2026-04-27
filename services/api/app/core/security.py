@@ -65,6 +65,21 @@ def generate_placeholder_hash() -> str:
     return hash_token(secrets.token_urlsafe(48))
 
 
+def create_admin_token(email: str) -> tuple[str, datetime]:
+    """Issue a stateless admin JWT (no DB session, no user record)."""
+    expires_at = datetime.now(timezone.utc) + timedelta(
+        hours=settings.admin_token_expire_hours
+    )
+    payload = {
+        "sub": email,
+        "typ": "admin_access",
+        "iat": datetime.now(timezone.utc),
+        "exp": expires_at,
+    }
+    token = jwt.encode(payload, settings.auth_jwt_secret, algorithm=settings.auth_jwt_algorithm)
+    return token, expires_at
+
+
 def create_access_token(
     *, user_id: uuid.UUID, session_id: uuid.UUID, roles: list[str] | None = None
 ) -> tuple[str, datetime]:

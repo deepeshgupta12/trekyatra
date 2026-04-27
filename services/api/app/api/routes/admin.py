@@ -5,7 +5,7 @@ from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from app.db.session import get_db
-from app.modules.auth.dependencies import require_admin
+from app.modules.auth.dependencies import get_current_admin
 from app.modules.admin.service import (
     summarize_briefs,
     summarize_clusters,
@@ -25,7 +25,7 @@ from app.schemas.admin import (
     TopicSummary,
 )
 
-router = APIRouter(prefix="/admin", tags=["admin"], dependencies=[Depends(require_admin)])
+router = APIRouter(prefix="/admin", tags=["admin"], dependencies=[Depends(get_current_admin)])
 
 
 @router.get("/dashboard/summary", response_model=DashboardSummaryResponse)

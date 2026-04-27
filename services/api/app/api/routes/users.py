@@ -4,7 +4,7 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 
 from app.db.session import get_db
-from app.modules.auth.dependencies import require_super_admin
+from app.modules.auth.dependencies import get_current_admin
 from app.modules.rbac.service import (
     assign_role_to_user,
     list_users_with_roles,
@@ -15,7 +15,7 @@ from app.schemas.rbac import RoleAssignRequest, RoleResponse, UserWithRolesRespo
 router = APIRouter(
     prefix="/admin/users",
     tags=["users"],
-    dependencies=[Depends(require_super_admin)],
+    dependencies=[Depends(get_current_admin)],
 )
 
 

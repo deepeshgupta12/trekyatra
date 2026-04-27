@@ -13,6 +13,27 @@ from app.db.session import get_db
 from app.modules.auth.models import User, UserSession
 
 
+def get_current_admin(request: Request) -> dict:
+    """FastAPI dependency for CMS admin routes.
+
+    Validates the trekyatra_admin_token cookie (completely separate from the public
+    user cookie). Returns the decoded JWT payload on success. Raises 401 otherwise.
+    """
+    token = request.cookies.get(settings.admin_cookie_name)
+    if not token:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Admin authentication required.",
+        )
+    payload = parse_access_token(token)
+    if not payload or payload.get("typ") != "admin_access":
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Invalid or expired admin session.",
+        )
+    return payload
+
+
 def _unauthorized(detail: str = "Authentication required.") -> HTTPException:
     return HTTPException(
         status_code=status.HTTP_401_UNAUTHORIZED,

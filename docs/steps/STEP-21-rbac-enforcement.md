@@ -94,36 +94,54 @@ npx gitnexus analyze --force
 ```
 
 ## Status
-Done
+Done (+ Architectural Fix: Separate CMS Auth)
 
-## Files Created
+## Architectural Fix — Post-TC Review
+
+After TC testing revealed that:
+1. `/admin/dashboard` 404s (correct URL is `/admin`)
+2. Regular users receive 403 because user RBAC was incorrectly applied to CMS admin routes
+
+**Critical requirement added by user:** CMS admin auth must be completely separate from public user auth. No shared user DB. Only guyshazam12@gmail.com should have CMS admin access.
+
+**Resolution:** Replaced RequireRole on all admin routes with a new `get_current_admin` dependency that validates a separate `trekyatra_admin_token` cookie issued by a credential-based admin login flow (ADMIN_EMAIL + ADMIN_PASSWORD in env). No DB table required. Public user auth remains untouched.
+
+## Files Created (original + arch fix)
 - `services/api/app/schemas/rbac.py` — RoleResponse, RoleAssignRequest, UserWithRolesResponse schemas
-- `services/api/app/modules/rbac/service.py` — seed_roles, get_role_by_slug, assign_role_to_user, revoke_role_from_user, list_users_with_roles
-- `services/api/app/api/routes/users.py` — GET /admin/users, POST /admin/users/{id}/roles, DELETE /admin/users/{id}/roles/{slug} (all require super_admin)
-- `services/api/tests/conftest.py` — autouse pytest fixture that bypasses RBAC for all test files except test_rbac.py
-- `services/api/tests/test_rbac.py` — 14 tests covering 401, 403, role seeding, assignment, revocation, user management API
+- `services/api/app/modules/rbac/service.py` — seed_roles, assign_role_to_user, revoke_role_from_user, list_users_with_roles
+- `services/api/app/api/routes/users.py` — GET/POST/DELETE /admin/users (now requires get_current_admin)
+- `services/api/app/api/routes/admin_auth.py` (NEW) — POST /admin/auth/login, POST /admin/auth/logout, GET /admin/auth/me
+- `services/api/tests/conftest.py` — autouse fixture bypasses get_current_admin + RequireRole singletons for all test files except test_rbac.py
+- `services/api/tests/test_rbac.py` — 20 tests: admin token guards, admin auth endpoints, role seeding, role assignment, user management API
 - `scripts/seed_roles.py` — standalone script to idempotently seed 5 default roles
 - `scripts/assign_admin.py` — standalone script to assign a role to a user by email
+- `apps/web-next/app/(admin-auth)/layout.tsx` (NEW) — minimal pass-through layout for admin auth pages
+- `apps/web-next/app/(admin-auth)/admin/sign-in/page.tsx` (NEW) — standalone admin sign-in form (no sidebar)
+- `apps/web-next/lib/admin-auth-api.ts` (NEW) — adminLogin, adminLogout, getAdminMe client helpers
 
-## Files Modified
-- `services/api/app/core/security.py` — create_access_token gains optional `roles: list[str]` param; roles included in JWT payload
+## Files Modified (original + arch fix)
+- `services/api/app/core/config.py` — admin_email, admin_password, admin_cookie_name, admin_token_expire_hours settings added
+- `services/api/app/core/security.py` — create_access_token gains roles; create_admin_token() added (stateless JWT, typ: admin_access)
+- `services/api/app/modules/auth/dependencies.py` — RequireRole class + named singletons; get_current_admin added (validates trekyatra_admin_token)
 - `services/api/app/modules/auth/service.py` — create_session_for_user reads user.roles and passes slugs to create_access_token
-- `services/api/app/modules/auth/dependencies.py` — RequireRole class added; named singletons: require_super_admin, require_admin, require_editor, require_pipeline, require_agent_admin
-- `services/api/app/api/routes/admin.py` — router-level Depends(require_admin)
-- `services/api/app/api/routes/publish.py` — router-level Depends(require_editor)
-- `services/api/app/api/routes/content.py` — router-level Depends(require_editor)
-- `services/api/app/api/routes/pipeline.py` — router-level Depends(require_pipeline)
-- `services/api/app/api/routes/agent_triggers.py` — router-level Depends(require_agent_admin)
-- `services/api/app/api/routes/agent_runs.py` — router-level Depends(require_admin)
-- `services/api/app/api/routes/worker.py` — router-level Depends(require_admin)
-- `services/api/app/api/routes/cms.py` — router-level Depends(require_editor)
-- `services/api/app/api/router.py` — users_router registered
-- `apps/web-next/middleware.ts` — /admin/:path* added to matcher; unauthenticated admin visits redirect to /auth/sign-in
+- `services/api/app/api/routes/admin.py` — Depends(get_current_admin)
+- `services/api/app/api/routes/publish.py` — Depends(get_current_admin)
+- `services/api/app/api/routes/content.py` — Depends(get_current_admin)
+- `services/api/app/api/routes/pipeline.py` — Depends(get_current_admin)
+- `services/api/app/api/routes/agent_triggers.py` — Depends(get_current_admin)
+- `services/api/app/api/routes/agent_runs.py` — Depends(get_current_admin)
+- `services/api/app/api/routes/worker.py` — Depends(get_current_admin)
+- `services/api/app/api/routes/cms.py` — Depends(get_current_admin)
+- `services/api/app/api/router.py` — admin_auth_router registered
+- `apps/web-next/middleware.ts` — checks trekyatra_admin_token for /admin/*; redirects to /admin/sign-in; /admin/sign-in exempt from check
+- `apps/web-next/app/(admin)/admin/layout.tsx` — Sign out button added to header
+- `services/api/.env.example` — ADMIN_EMAIL, ADMIN_PASSWORD, ADMIN_COOKIE_NAME, ADMIN_TOKEN_EXPIRE_HOURS added
 
 ## Notes
-- RequireRole is a named singleton class: import `require_admin` etc. from dependencies.py. Use as `Depends(require_admin)` in router.
-- JWT roles are informational only — enforcement is always from DB (user.roles relationship loaded lazily per request).
-- conftest.py bypass strategy: `app.dependency_overrides` with autouse fixture; test_rbac.py skips the bypass and tests real enforcement.
-- Superusers (is_superuser=True) bypass all role checks — future escape hatch.
-- To activate in local dev: sign up at /auth/sign-up, then run `PYTHONPATH=services/api .venv/bin/python scripts/assign_admin.py --email <you> --role admin`
-- 199/199 backend tests pass; next build clean.
+- CMS admin auth is completely separate from public user auth: different cookie, different endpoint, no DB table
+- Admin JWT: typ="admin_access", sub=admin_email, stateless (no session revocation — admin must clear cookie)
+- ADMIN_PASSWORD must be set in services/api/.env to enable admin login (503 if unset)
+- Public user auth (/auth/sign-in, /auth/sign-up) is entirely unaffected
+- Admin URL is /admin (not /admin/dashboard) — the Dashboard nav item links to /admin root
+- RequireRole class retained in dependencies.py for possible future use but no longer applied to any route
+- 202/202 backend tests pass; next build clean (128 pages); GitNexus 4519 nodes | 7744 edges | 165 flows

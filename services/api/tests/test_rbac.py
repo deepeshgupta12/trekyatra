@@ -1,8 +1,13 @@
 """
-RBAC enforcement tests.
+Admin auth + RBAC enforcement tests.
 
 These tests are deliberately NOT covered by the conftest.py bypass fixture —
-they verify that role guards actually block or allow requests as expected.
+they verify that admin auth guards actually block or allow requests as expected.
+
+Architecture after Step 21 fix:
+- Admin routes use get_current_admin (checks trekyatra_admin_token cookie)
+- Public user routes remain unchanged (trekyatra_access_token cookie)
+- No shared user DB for CMS access: admin credentials come from env config
 """
 
 import uuid
@@ -12,6 +17,8 @@ from fastapi.testclient import TestClient
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
+from app.core.config import settings
+from app.core.security import create_admin_token
 from app.db.session import SessionLocal
 from app.main import app
 from app.modules.auth.models import User
@@ -38,7 +45,7 @@ def _make_user(db: Session, email: str) -> User:
 
 
 def _login_client(db: Session, user: User) -> TestClient:
-    """Return a TestClient with the auth cookie set for this user."""
+    """Return a TestClient with the public auth cookie set (trekyatra_access_token)."""
     _session, token = create_session_for_user(
         db, user=user, ip_address="127.0.0.1", user_agent="pytest"
     )
@@ -70,40 +77,23 @@ def anon_client():
 
 @pytest.fixture()
 def regular_user_client(db):
+    """Client authenticated with a public user session (no admin token)."""
     user = _make_user(db, _unique_email())
     db.flush()
     return _login_client(db, user)
 
 
 @pytest.fixture()
-def admin_client(db):
-    user = _make_user(db, _unique_email())
-    db.flush()
-    assign_role_to_user(db, user.id, "admin")
-    db.flush()
-    return _login_client(db, user)
-
-
-@pytest.fixture()
-def editor_client(db):
-    user = _make_user(db, _unique_email())
-    db.flush()
-    assign_role_to_user(db, user.id, "editor")
-    db.flush()
-    return _login_client(db, user)
-
-
-@pytest.fixture()
-def super_admin_client(db):
-    user = _make_user(db, _unique_email())
-    db.flush()
-    assign_role_to_user(db, user.id, "super_admin")
-    db.flush()
-    return _login_client(db, user)
+def admin_token_client():
+    """Client authenticated with a valid trekyatra_admin_token cookie."""
+    token, _ = create_admin_token(settings.admin_email)
+    client = TestClient(app, raise_server_exceptions=False)
+    client.cookies.set(settings.admin_cookie_name, token)
+    return client
 
 
 # ──────────────────────────────────────────────────────────────────────────────
-# Test cases
+# Admin endpoint auth guard tests
 # ──────────────────────────────────────────────────────────────────────────────
 
 class TestAdminEndpointGuards:
@@ -111,18 +101,14 @@ class TestAdminEndpointGuards:
         r = anon_client.get("/api/v1/admin/dashboard/summary")
         assert r.status_code == 401
 
-    def test_regular_user_gets_403(self, regular_user_client):
+    def test_user_token_gets_401_on_admin_route(self, regular_user_client):
+        """Public user cookie does not grant CMS admin access — completely separate auth."""
         r = regular_user_client.get("/api/v1/admin/dashboard/summary")
-        assert r.status_code == 403
+        assert r.status_code == 401
 
-    def test_admin_gets_200(self, admin_client):
-        r = admin_client.get("/api/v1/admin/dashboard/summary")
+    def test_admin_token_gets_200(self, admin_token_client):
+        r = admin_token_client.get("/api/v1/admin/dashboard/summary")
         assert r.status_code == 200
-
-    def test_editor_gets_403_on_admin_route(self, editor_client):
-        """Editor role is not sufficient for /admin routes (require_admin)."""
-        r = editor_client.get("/api/v1/admin/dashboard/summary")
-        assert r.status_code == 403
 
 
 class TestPublishEndpointGuards:
@@ -130,15 +116,50 @@ class TestPublishEndpointGuards:
         r = anon_client.get("/api/v1/admin/drafts/nonexistent/publish-log")
         assert r.status_code == 401
 
-    def test_editor_can_access_publish_routes(self, editor_client):
-        """Editors have require_editor which covers publish routes — must not get 401/403."""
-        r = editor_client.get("/api/v1/admin/drafts/00000000-0000-0000-0000-000000000000/publish-log")
+    def test_user_token_gets_401_on_publish_route(self, regular_user_client):
+        """Publish routes require admin token, not user token."""
+        r = regular_user_client.get(
+            "/api/v1/admin/drafts/00000000-0000-0000-0000-000000000000/publish-log"
+        )
+        assert r.status_code == 401
+
+    def test_admin_token_can_access_publish_routes(self, admin_token_client):
+        r = admin_token_client.get(
+            "/api/v1/admin/drafts/00000000-0000-0000-0000-000000000000/publish-log"
+        )
         assert r.status_code not in (401, 403)
 
-    def test_admin_can_access_publish_routes(self, admin_client):
-        r = admin_client.get("/api/v1/admin/drafts/00000000-0000-0000-0000-000000000000/publish-log")
-        assert r.status_code not in (401, 403)
 
+# ──────────────────────────────────────────────────────────────────────────────
+# Admin auth endpoints
+# ──────────────────────────────────────────────────────────────────────────────
+
+class TestAdminAuthEndpoints:
+    def test_login_with_no_password_configured_returns_503(self, anon_client):
+        """When ADMIN_PASSWORD is not set in env, login is disabled."""
+        r = anon_client.post(
+            "/api/v1/admin/auth/login",
+            json={"email": "anyone@example.com", "password": "anything"},
+        )
+        assert r.status_code == 503
+
+    def test_me_without_admin_token_returns_401(self, anon_client):
+        r = anon_client.get("/api/v1/admin/auth/me")
+        assert r.status_code == 401
+
+    def test_me_with_admin_token_returns_email(self, admin_token_client):
+        r = admin_token_client.get("/api/v1/admin/auth/me")
+        assert r.status_code == 200
+        assert r.json()["email"] == settings.admin_email
+
+    def test_logout_returns_200(self, admin_token_client):
+        r = admin_token_client.post("/api/v1/admin/auth/logout")
+        assert r.status_code == 200
+
+
+# ──────────────────────────────────────────────────────────────────────────────
+# RBAC role seeding (DB-level, unchanged)
+# ──────────────────────────────────────────────────────────────────────────────
 
 class TestRoleSeeding:
     def test_seed_roles_creates_five_roles(self, db):
@@ -157,6 +178,10 @@ class TestRoleSeeding:
         slugs = [r.slug for r in roles]
         assert slugs.count("admin") == 1
 
+
+# ──────────────────────────────────────────────────────────────────────────────
+# RBAC role assignment (DB-level, unchanged)
+# ──────────────────────────────────────────────────────────────────────────────
 
 class TestRoleAssignment:
     def test_assign_and_verify_role(self, db):
@@ -192,33 +217,36 @@ class TestRoleAssignment:
         assert "reviewer" not in [r.slug for r in user.roles]
 
 
-class TestUserManagementAPI:
-    def test_list_users_requires_super_admin(self, admin_client):
-        """Even admin role is not sufficient — super_admin required."""
-        r = admin_client.get("/api/v1/admin/users")
-        assert r.status_code == 403
+# ──────────────────────────────────────────────────────────────────────────────
+# User management API (now requires admin token, not super_admin role)
+# ──────────────────────────────────────────────────────────────────────────────
 
-    def test_super_admin_can_list_users(self, super_admin_client):
-        r = super_admin_client.get("/api/v1/admin/users")
+class TestUserManagementAPI:
+    def test_no_admin_token_gets_401(self, regular_user_client):
+        r = regular_user_client.get("/api/v1/admin/users")
+        assert r.status_code == 401
+
+    def test_admin_token_can_list_users(self, admin_token_client):
+        r = admin_token_client.get("/api/v1/admin/users")
         assert r.status_code == 200
         assert isinstance(r.json(), list)
 
-    def test_super_admin_can_assign_role(self, super_admin_client, db):
+    def test_admin_token_can_assign_role(self, admin_token_client, db):
         user = _make_user(db, _unique_email())
         db.flush()
         db.commit()
-        r = super_admin_client.post(
+        r = admin_token_client.post(
             f"/api/v1/admin/users/{user.id}/roles",
             json={"role_slug": "editor"},
         )
         assert r.status_code == 201
         assert r.json()["slug"] == "editor"
 
-    def test_assign_invalid_role_returns_404(self, super_admin_client, db):
+    def test_assign_invalid_role_returns_404(self, admin_token_client, db):
         user = _make_user(db, _unique_email())
         db.flush()
         db.commit()
-        r = super_admin_client.post(
+        r = admin_token_client.post(
             f"/api/v1/admin/users/{user.id}/roles",
             json={"role_slug": "nonexistent"},
         )

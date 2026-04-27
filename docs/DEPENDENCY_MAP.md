@@ -48,7 +48,9 @@ This file tracks structural dependencies, source-of-truth modules, and Nexus/Git
 - `lib/trekApi.ts` -> trek API adapter with mergeImage() and safe static fallback
 - `lib/auth-api.ts` -> typed client-only fetch helpers for all 5 auth endpoints (me/login/signup/logout/google)
 - `lib/auth-context.tsx` -> React AuthContext; bootstraps from GET /me; exposes user, isLoading, login(), signup(), loginWithGoogle(), logout(), refresh()
-- `middleware.ts` -> Next.js route guard; protects /account/* and bounces authed users from /auth/sign-in, /auth/sign-up
+- `lib/admin-auth-api.ts` -> CMS admin auth helpers: adminLogin (POST /admin/auth/login), adminLogout, getAdminMe; uses trekyatra_admin_token cookie
+- `app/(admin-auth)/admin/sign-in/page.tsx` -> Standalone admin sign-in page at /admin/sign-in; no sidebar; calls adminLogin(); redirects to /admin on success
+- `middleware.ts` -> Next.js route guard; /admin/* checks trekyatra_admin_token (redirects to /admin/sign-in); /account/* checks trekyatra_access_token; /admin/sign-in exempt from admin auth check
 - `next.config.mjs` -> Next.js config; rewrites /api/* → FastAPI; transpilePackages: [@react-oauth/google]
 - `env.local.example` -> template for NEXT_PUBLIC_GOOGLE_CLIENT_ID
 - `public/images/` -> local trek and hero images
@@ -84,7 +86,8 @@ This file tracks structural dependencies, source-of-truth modules, and Nexus/Git
 - `services/api/app/schemas/treks.py` -> public trek response contracts
 - `services/api/app/modules/auth/models.py` -> users, auth identities, sessions
 - `services/api/app/modules/auth/service.py` -> email + Google auth business logic; session creation; login_or_register_google_user
-- `services/api/app/modules/auth/dependencies.py` -> current user/current session dependencies
+- `services/api/app/modules/auth/dependencies.py` -> current user/current session dependencies; get_current_admin (validates trekyatra_admin_token, returns JWT payload dict); RequireRole class (retained but no longer applied to routes); blast radius: MEDIUM (10 route files import from here)
+- `services/api/app/api/routes/admin_auth.py` -> CMS admin auth: POST /admin/auth/login (issues trekyatra_admin_token cookie), POST /admin/auth/logout, GET /admin/auth/me; credential-based, no DB; blast radius: LOW
 - `services/api/app/modules/cms/models.py` -> CMSPage ORM model + hero_image_url (String 512, nullable); blast radius: LOW (new table, no prior callers)
 - `services/api/app/modules/cms/service.py` -> CMS CRUD helpers; _md_to_html (markdown→HTML at storage); _parse_sections_from_markdown (agent output → content_json.sections); _process_content_json (section markdown→HTML for manual saves); upsert_page_from_draft (publish bridge, now also populates content_json.sections); cache_invalidate/cache_invalidate_all (Redis DB 2, 5-min TTL); blast radius: MEDIUM (called by publish service + CMS create/update routes)
 - `services/api/app/modules/content/models.py` -> topic, cluster, brief (+ structured_brief, word_count_target, versions rel), draft (+ optimized_content, claims rel, cms_page_id), publish_log (+ cms_page_id, published_url), BriefVersion, DraftClaim ORM models; blast radius: MEDIUM

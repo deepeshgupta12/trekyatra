@@ -35,6 +35,12 @@ class Settings(BaseSettings):
     auth_cookie_secure: bool = False
     auth_cookie_samesite: str = "lax"
 
+    # CMS admin credentials — completely separate from public user auth
+    admin_email: str = "guyshazam12@gmail.com"
+    admin_password: str | None = None
+    admin_cookie_name: str = "trekyatra_admin_token"
+    admin_token_expire_hours: int = 24
+
     model_config = SettingsConfigDict(
         env_file=".env",
         env_file_encoding="utf-8",

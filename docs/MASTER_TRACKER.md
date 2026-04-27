@@ -49,24 +49,29 @@ All V0 foundations are shipped. The stack is live locally with:
 | 23 | Content refresh engine (basic) | pending |
 | 24 | Analytics ingestion + admin panel full wiring | pending |
 
-### Step 21 — RBAC Enforcement
+### Step 21 — RBAC Enforcement (+ Step 21 Arch Fix: Separate CMS Auth)
 Status: done
 What is done:
 - RequireRole class in dependencies.py with named singletons (require_super_admin, require_admin, require_editor, require_pipeline, require_agent_admin)
-- Router-level RBAC applied to: admin, publish, content, pipeline, agent_triggers, agent_runs, worker, cms routes
 - create_access_token extended with roles list in JWT payload
-- create_session_for_user loads user.roles and passes slugs to JWT
 - services/api/app/schemas/rbac.py — RoleResponse, RoleAssignRequest, UserWithRolesResponse
 - services/api/app/modules/rbac/service.py — seed_roles, assign/revoke role helpers, list_users_with_roles
-- services/api/app/api/routes/users.py — GET/POST/DELETE /admin/users (super_admin guarded)
-- services/api/app/api/router.py — users_router registered
-- services/api/tests/conftest.py — autouse RBAC bypass fixture (skips test_rbac.py)
-- services/api/tests/test_rbac.py — 14 tests: 401, 403, role seeding, assignment, revocation, user API
 - scripts/seed_roles.py + scripts/assign_admin.py — management scripts
-- apps/web-next/middleware.ts — /admin/:path* matcher added; unauthenticated redirected to sign-in
-- 199/199 backend tests pass; next build clean
+- ARCHITECTURAL FIX: Separated CMS admin auth from public user auth entirely (no shared DB)
+  - get_current_admin dependency added to dependencies.py (validates trekyatra_admin_token cookie)
+  - create_admin_token() added to security.py (stateless JWT, typ: admin_access)
+  - Settings: admin_email, admin_password, admin_cookie_name, admin_token_expire_hours added to config.py
+  - NEW routes/admin_auth.py: POST /admin/auth/login, POST /admin/auth/logout, GET /admin/auth/me
+  - All 9 admin route routers (admin, publish, content, pipeline, agent_triggers, agent_runs, worker, cms, users) switched from RequireRole to get_current_admin
+  - apps/web-next/middleware.ts — checks trekyatra_admin_token for /admin/* (not user token); redirects to /admin/sign-in
+  - apps/web-next/app/(admin-auth)/admin/sign-in/page.tsx — standalone admin sign-in page (no sidebar)
+  - apps/web-next/app/(admin)/admin/layout.tsx — Sign out button added to header
+  - apps/web-next/lib/admin-auth-api.ts — adminLogin, adminLogout, getAdminMe client helpers
+  - conftest.py bypass updated to override get_current_admin
+  - test_rbac.py rewritten: 20 tests (admin token guards, admin auth endpoints, role seeding, role assignment, user management API)
+  - 202/202 backend tests pass; next build clean (128 pages); GitNexus re-indexed 4519 nodes | 7744 edges | 165 flows
 What remains:
-- User must sign up locally, then run assign_admin.py to gain admin access
+- Admin password is set in services/api/.env — change from TrekAdmin@2026 to your preferred password
 
 ## Step History
 
