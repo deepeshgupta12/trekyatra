@@ -29,7 +29,7 @@ All V0 foundations are shipped. The stack is live locally with:
 - Admin summary APIs, smoke tests, GitNexus indexed
 
 ## V1 Status — In Progress
-**Current next step: Step 23 — Content refresh engine (basic)**
+**Current next step: Step 24 — Analytics ingestion + admin panel full wiring**
 
 | Step | Title | Status |
 |------|-------|--------|
@@ -46,8 +46,32 @@ All V0 foundations are shipped. The stack is live locally with:
 | 20 | Monetization frontend components | done |
 | 21 | RBAC enforcement | done |
 | 22 | Internal linking engine + lead pipeline + newsletter platform | done |
-| 23 | Content refresh engine (basic) | pending |
+| 23 | Content refresh engine (basic) | done |
 | 24 | Analytics ingestion + admin panel full wiring | pending |
+
+### Step 23 — Content Refresh Engine (Basic)
+Status: done
+What is done:
+- Alembic migration `20260427_0013_content_refresh.py` — adds `freshness_interval_days`, `last_refreshed_at`, `do_not_refresh` to `pages`; adds `freshness_interval_days` to `content_drafts`; creates `refresh_logs` table (page_id FK→pages, triggered_by, trigger_at, completed_at, result, notes)
+- `modules/linking/models.py` — Page model updated with 3 new fields
+- `modules/content/models.py` — ContentDraft updated with `freshness_interval_days`
+- `modules/refresh/__init__.py`, `models.py` — RefreshLog ORM model
+- `modules/refresh/service.py` — `get_stale_pages` (excludes do_not_refresh, uses PostgreSQL interval arithmetic); `create_refresh_log`, `update_refresh_log`, `get_refresh_logs`
+- `modules/refresh/tasks.py` — `refresh_task` (Celery: SEOAEOAgent re-run → flag check → upsert_page_from_draft or requires_review gate); `auto_refresh_task` (Celery beat: detect 5 stale pages, dispatch refresh_task per page)
+- `api/routes/refresh.py` — GET /admin/refresh/stale, POST /admin/refresh/trigger, GET /admin/refresh/logs; all require get_current_admin
+- `schemas/refresh.py` — StalePageResponse, RefreshTriggerRequest, RefreshLogResponse, RefreshTriggerResponse
+- `db/base.py` — RefreshLog registered
+- `api/router.py` — refresh_router registered
+- `worker/celery_app.py` — `app.modules.refresh.tasks` added to include; `daily-auto-refresh` beat entry (86400s)
+- `tests/test_refresh.py` — 13 tests (stale detection, do_not_refresh exclusion, recently-refreshed exclusion, trigger 404/422/happy-path with mock dispatch, logs list); 227/227 backend tests pass
+- `lib/api.ts` — StalePage, RefreshLog, RefreshTriggerResponse interfaces + fetchStalePages, triggerRefresh, fetchRefreshLogs helpers
+- `app/(admin)/admin/refresh/page.tsx` — stale pages table with Refresh-now button per row; refresh log history table with result badge; responsive, matches design system
+- `app/(admin)/admin/layout.tsx` — "Content Refresh" nav item (RefreshCw icon) added to Growth group
+- `next build` clean; 227/227 backend tests pass; GitNexus re-indexed
+What remains:
+- Celery worker must be restarted to pick up `refresh.run_refresh` and `refresh.auto_refresh` tasks
+- `sync_pages_from_cms` does not yet populate `last_refreshed_at` on sync — all synced pages start with NULL (treated as most stale); this is correct behavior, pages will be refreshed on first beat cycle
+- Beat schedule runs daily — adjust `freshness_interval_days` per page_type (30/60/90/120 days) via DB update if needed
 
 ### Step 22 — Internal Linking Engine + Lead Pipeline + Newsletter Platform
 Status: done

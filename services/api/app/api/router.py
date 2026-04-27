@@ -16,6 +16,7 @@ from app.api.routes.linking import public_router as linking_public_router
 from app.api.routes.newsletter import router as newsletter_router
 from app.api.routes.pipeline import router as pipeline_router
 from app.api.routes.publish import router as publish_router
+from app.api.routes.refresh import router as refresh_router
 from app.api.routes.treks import router as treks_router
 from app.api.routes.worker import router as worker_router
 
@@ -37,4 +38,5 @@ api_router.include_router(leads_admin_router)
 api_router.include_router(linking_admin_router)
 api_router.include_router(linking_public_router)
 api_router.include_router(newsletter_router)
+api_router.include_router(refresh_router)
 api_router.include_router(users_router)

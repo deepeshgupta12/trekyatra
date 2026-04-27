@@ -13,6 +13,7 @@ celery_app = Celery(
         "app.modules.linking.tasks",
         "app.modules.leads.tasks",
         "app.modules.newsletter.tasks",
+        "app.modules.refresh.tasks",
     ],
 )
 
@@ -36,6 +37,10 @@ celery_app.conf.update(
         },
         "daily-detect-orphans": {
             "task": "linking.detect_orphans",
+            "schedule": 86400,
+        },
+        "daily-auto-refresh": {
+            "task": "refresh.auto_refresh",
             "schedule": 86400,
         },
     },

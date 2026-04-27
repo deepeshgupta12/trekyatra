@@ -158,7 +158,7 @@
 - NEWSLETTER_PLATFORM env var (graceful degradation if unset)
 - 12 new tests; 214/214 backend tests pass; next build clean; GitNexus 4,771 nodes | 8,189 edges | 172 flows
 
-### Step 23 — Content refresh engine (basic)
+### Step 23 — Content refresh engine (basic) [DONE]
 - Freshness interval field on pages/drafts
 - Stale content detection service
 - Refresh queue (Celery Beat daily task)

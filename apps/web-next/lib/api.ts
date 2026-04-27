@@ -411,3 +411,65 @@ export async function patchLeadStatus(leadId: string, status: string): Promise<A
   }
   return res.json() as Promise<AdminLead>;
 }
+
+
+// ---------------------------------------------------------------------------
+// Content refresh engine (Step 23)
+// ---------------------------------------------------------------------------
+
+export interface StalePage {
+  id: string;
+  slug: string;
+  title: string;
+  page_type: string;
+  freshness_interval_days: number;
+  last_refreshed_at: string | null;
+  do_not_refresh: boolean;
+  days_stale: number | null;
+}
+
+export interface RefreshLog {
+  id: string;
+  page_id: string;
+  triggered_by: string;
+  trigger_at: string;
+  completed_at: string | null;
+  result: string;
+  notes: string | null;
+  created_at: string;
+}
+
+export interface RefreshTriggerResponse {
+  queued: number;
+  logs: RefreshLog[];
+}
+
+export async function fetchStalePages(limit = 50): Promise<StalePage[]> {
+  return apiFetch<StalePage[]>(`/admin/refresh/stale?limit=${limit}`);
+}
+
+export async function triggerRefresh(pageIds: string[]): Promise<RefreshTriggerResponse> {
+  const res = await fetch("/api/v1/admin/refresh/trigger", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ page_ids: pageIds }),
+  });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error((err as { detail?: string }).detail ?? `Refresh trigger failed (${res.status})`);
+  }
+  return res.json() as Promise<RefreshTriggerResponse>;
+}
+
+export async function fetchRefreshLogs(params?: { limit?: number; offset?: number }): Promise<RefreshLog[]> {
+  const q = params
+    ? "?" + new URLSearchParams(
+        Object.fromEntries(
+          Object.entries(params)
+            .filter(([, v]) => v !== undefined)
+            .map(([k, v]) => [k, String(v)])
+        )
+      )
+    : "";
+  return apiFetch<RefreshLog[]>(`/admin/refresh/logs${q}`);
+}

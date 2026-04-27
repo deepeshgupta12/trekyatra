@@ -91,7 +91,30 @@ npx gitnexus analyze --force
 ```
 
 ## Status
-pending
+Done
+
+## Files Created
+- `services/api/alembic/versions/20260427_0013_content_refresh.py`
+- `services/api/app/modules/refresh/__init__.py`
+- `services/api/app/modules/refresh/models.py`
+- `services/api/app/modules/refresh/service.py`
+- `services/api/app/modules/refresh/tasks.py`
+- `services/api/app/api/routes/refresh.py`
+- `services/api/app/schemas/refresh.py`
+- `services/api/tests/test_refresh.py`
+- `apps/web-next/app/(admin)/admin/refresh/page.tsx`
+
+## Files Modified
+- `services/api/app/modules/linking/models.py` — Page: freshness_interval_days, last_refreshed_at, do_not_refresh
+- `services/api/app/modules/content/models.py` — ContentDraft: freshness_interval_days
+- `services/api/app/db/base.py` — RefreshLog registered
+- `services/api/app/api/router.py` — refresh_router registered
+- `services/api/app/worker/celery_app.py` — refresh tasks + daily beat
+- `apps/web-next/lib/api.ts` — StalePage, RefreshLog types + 3 fetch helpers
+- `apps/web-next/app/(admin)/admin/layout.tsx` — Content Refresh nav item
+- `docs/MASTER_TRACKER.md`
+- `docs/DEPENDENCY_MAP.md`
+- `docs/IMPLEMENTATION_PLAN.md`
 
 ## Notes
 - Auto-refresh must never publish directly if any new fact-check flags appear — always gate through requires_review

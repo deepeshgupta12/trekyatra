@@ -118,6 +118,7 @@ class ContentDraft(UUIDPrimaryKeyMixin, TimestampMixin, Base):
 
     published_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
     cms_page_id: Mapped[uuid.UUID | None] = mapped_column(Uuid, nullable=True)
+    freshness_interval_days: Mapped[int] = mapped_column(Integer, nullable=False, default=90)
 
     brief: Mapped[ContentBrief] = relationship(back_populates="drafts")
     claims: Mapped[list["DraftClaim"]] = relationship(

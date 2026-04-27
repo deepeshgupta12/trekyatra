@@ -278,6 +278,24 @@ This file tracks structural dependencies, source-of-truth modules, and Nexus/Git
 - `apps/web-next/app/(admin)/admin/leads/page.tsx` — NEW: admin leads table; KPI row; status filter; mark-as-contacted action; blast radius: LOW
 - `apps/web-next/app/(admin)/admin/layout.tsx` — UPDATED: Leads nav item (Users icon, href /admin/leads) added to Growth group; blast radius: MEDIUM (admin layout, visible to all admin pages)
 
+### Step 23 — Content Refresh Engine blast radius
+- `services/api/alembic/versions/20260427_0013_content_refresh.py` — NEW: adds freshness_interval_days + last_refreshed_at + do_not_refresh to `pages`; adds freshness_interval_days to `content_drafts`; creates `refresh_logs` table; blast radius: LOW (additive columns + new table)
+- `services/api/app/modules/linking/models.py:Page` — UPDATED: freshness_interval_days (Integer, default 90), last_refreshed_at (DateTime nullable), do_not_refresh (Boolean, default False) added; blast radius: LOW (only affects Linking module callers; columns are additive)
+- `services/api/app/modules/content/models.py:ContentDraft` — UPDATED: freshness_interval_days (Integer, default 90) added; blast radius: LOW (additive column; no existing query references it)
+- `services/api/app/modules/refresh/__init__.py` — NEW: package init; blast radius: LOW
+- `services/api/app/modules/refresh/models.py` — NEW: RefreshLog ORM (id, page_id FK→pages CASCADE, triggered_by, trigger_at, completed_at, result, notes, created_at); blast radius: LOW
+- `services/api/app/modules/refresh/service.py` — NEW: get_stale_pages (PostgreSQL interval arithmetic, excludes do_not_refresh), create_refresh_log, update_refresh_log, get_refresh_logs; blast radius: LOW (new module, no callers except refresh routes and tasks)
+- `services/api/app/modules/refresh/tasks.py` — NEW: refresh_task (Celery: SEOAEOAgent re-run → flagged-claim gate → upsert_page_from_draft or requires_review); auto_refresh_task (beat: detects 5 stale pages, dispatches refresh_task); blast radius: LOW
+- `services/api/app/api/routes/refresh.py` — NEW: GET /admin/refresh/stale, POST /admin/refresh/trigger, GET /admin/refresh/logs; all require get_current_admin; blast radius: LOW
+- `services/api/app/schemas/refresh.py` — NEW: StalePageResponse, RefreshTriggerRequest, RefreshLogResponse, RefreshTriggerResponse; blast radius: LOW
+- `services/api/app/db/base.py` — UPDATED: RefreshLog imported and registered; blast radius: LOW (additive)
+- `services/api/app/api/router.py` — UPDATED: refresh_router registered; blast radius: LOW (additive)
+- `services/api/app/worker/celery_app.py` — UPDATED: app.modules.refresh.tasks in include list; daily-auto-refresh beat entry (86400s); blast radius: LOW (additive)
+- `services/api/tests/test_refresh.py` — NEW: 13 tests (stale detection, do_not_refresh guard, recently-refreshed guard, trigger happy-path/404/422, logs list); blast radius: LOW
+- `apps/web-next/lib/api.ts` — UPDATED: StalePage, RefreshLog, RefreshTriggerResponse interfaces + fetchStalePages, triggerRefresh, fetchRefreshLogs; blast radius: LOW (additive)
+- `apps/web-next/app/(admin)/admin/refresh/page.tsx` — NEW: stale pages table + Refresh-now button per row + refresh log history; blast radius: LOW
+- `apps/web-next/app/(admin)/admin/layout.tsx` — UPDATED: "Content Refresh" nav item (RefreshCw icon) added to Growth group; blast radius: MEDIUM (admin layout affects all admin pages)
+
 ### Step 21 — RBAC Enforcement blast radius
 - `services/api/app/core/security.py:create_access_token` — UPDATED: optional `roles: list[str]` param; roles added to JWT payload; blast radius: HIGH (called by create_session_for_user → signup/login/google_auth); change is additive and backward-compatible
 - `services/api/app/modules/auth/service.py:create_session_for_user` — UPDATED: reads user.roles slugs and passes to create_access_token; blast radius: MEDIUM (called by signup/login/google_auth routes)

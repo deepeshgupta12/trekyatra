@@ -7,7 +7,7 @@ import { Logo } from "@/components/brand/Logo";
 import {
   LayoutDashboard, Search, Layers, FileText, CheckSquare, Link2,
   DollarSign, BarChart2, Terminal, Settings, ChevronRight, Menu, X,
-  GitBranch, Bot, GitMerge, Database, LogOut, Users,
+  GitBranch, Bot, GitMerge, Database, LogOut, Users, RefreshCw,
 } from "lucide-react";
 import { adminLogout } from "@/lib/admin-auth-api";
 
@@ -29,6 +29,7 @@ const NAV_GROUPS = [
     items: [
       { href: "/admin/linking", label: "Internal Linking", icon: Link2 },
       { href: "/admin/leads", label: "Leads", icon: Users },
+      { href: "/admin/refresh", label: "Content Refresh", icon: RefreshCw },
       { href: "/admin/monetization", label: "Monetization", icon: DollarSign },
       { href: "/admin/analytics", label: "Analytics", icon: BarChart2 },
     ],

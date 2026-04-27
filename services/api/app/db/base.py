@@ -8,6 +8,7 @@ from app.modules.linking.models import Page, PageLink
 from app.modules.newsletter.models import NewsletterSubscriber
 from app.modules.pipeline.models import PipelineRun, PipelineStage
 from app.modules.rbac.models import Permission, Role
+from app.modules.refresh.models import RefreshLog
 
 __all__ = [
     "Base",
@@ -31,4 +32,5 @@ __all__ = [
     "NewsletterSubscriber",
     "Page",
     "PageLink",
+    "RefreshLog",
 ]
