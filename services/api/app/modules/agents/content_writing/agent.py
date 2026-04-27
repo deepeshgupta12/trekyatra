@@ -24,6 +24,38 @@ MODEL = "claude-sonnet-4-6"
 CONFIDENCE_FLAG_THRESHOLD = 0.7
 
 
+def _clean_llm_json(raw: str) -> str:
+    """Escape literal control characters inside JSON string values.
+
+    LLMs sometimes emit real newlines/tabs inside a JSON string instead of \\n/\\t,
+    making json.loads fail with 'Invalid control character'.  Walk char-by-char,
+    tracking whether we are inside a string, and escape the offending bytes.
+    """
+    result: list[str] = []
+    in_string = False
+    i = 0
+    while i < len(raw):
+        ch = raw[i]
+        if ch == "\\" and in_string:
+            result.append(ch)
+            i += 1
+            if i < len(raw):
+                result.append(raw[i])
+        elif ch == '"':
+            in_string = not in_string
+            result.append(ch)
+        elif in_string and ch == "\n":
+            result.append("\\n")
+        elif in_string and ch == "\r":
+            result.append("\\r")
+        elif in_string and ch == "\t":
+            result.append("\\t")
+        else:
+            result.append(ch)
+        i += 1
+    return "".join(result)
+
+
 def _slugify(text: str) -> str:
     slug = re.sub(r"[^a-z0-9]+", "-", text.lower()).strip("-")[:72]
     return f"{slug}-{str(uuid.uuid4())[:8]}"
@@ -125,8 +157,11 @@ class ContentWritingAgent(BaseAgent):
 
         try:
             draft_data: dict[str, Any] = json.loads(raw)
-        except json.JSONDecodeError as exc:
-            return {"errors": [f"LLM returned invalid JSON: {exc}. raw_length={len(raw)}"]}
+        except json.JSONDecodeError:
+            try:
+                draft_data = json.loads(_clean_llm_json(raw))
+            except json.JSONDecodeError as exc:
+                return {"errors": [f"LLM returned invalid JSON: {exc}. raw_length={len(raw)}"]}
 
         return {"output": {"draft": draft_data}}
 

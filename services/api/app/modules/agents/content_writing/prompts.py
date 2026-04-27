@@ -49,5 +49,6 @@ Return a JSON object with EXACTLY this structure (no extra keys, raw JSON only):
 - A claim with confidence < 0.7 means you are uncertain — set flagged_for_review: true
 - Do NOT invent permit fees, altitudes, or distances — flag them as needing verification
 
+CRITICAL: All string values must be valid JSON strings. Escape ALL newlines as \\n, ALL tabs as \\t, ALL double-quotes inside strings as \\". Do NOT use literal newlines inside any JSON string value.
 Return ONLY valid JSON. No explanation, no markdown fences.
 """
