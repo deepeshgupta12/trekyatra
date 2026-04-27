@@ -69,13 +69,6 @@ def publish_to_cms(db: Session, *, draft_id: uuid.UUID) -> DraftPublishResponse:
     draft.cms_page_id = cms_page.id
     db.flush()
 
-    # Sync linking index so the newly published page is immediately discoverable
-    try:
-        from app.modules.linking.service import sync_pages_from_cms
-        sync_pages_from_cms(db)
-    except Exception:
-        pass  # non-critical; daily beat will catch up
-
     return DraftPublishResponse(
         draft_id=draft.id,
         status="succeeded",

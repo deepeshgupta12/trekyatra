@@ -2,11 +2,11 @@ from __future__ import annotations
 
 import uuid
 
-from app.modules.auth.dependencies import get_current_admin
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy.orm import Session
 
 from app.db.session import get_db
+from app.modules.auth.dependencies import get_current_admin
 from app.modules.cms import service as cms_service
 from app.schemas.cms import (
     CMSCacheInvalidateRequest,
@@ -16,7 +16,11 @@ from app.schemas.cms import (
     CMSPageResponse,
 )
 
-router = APIRouter(prefix="/cms", tags=["cms"], dependencies=[Depends(get_current_admin)])
+# Public read endpoints — no auth (called server-side by Next.js without cookies)
+router = APIRouter(prefix="/cms", tags=["cms"])
+
+# Admin write endpoints — require admin token
+_admin = Depends(get_current_admin)
 
 
 @router.get("/pages", response_model=list[CMSPageResponse])
@@ -31,7 +35,7 @@ def list_cms_pages(
     return [CMSPageResponse.model_validate(p) for p in pages]
 
 
-@router.post("/pages", response_model=CMSPageResponse, status_code=status.HTTP_201_CREATED)
+@router.post("/pages", response_model=CMSPageResponse, status_code=status.HTTP_201_CREATED, dependencies=[_admin])
 def create_cms_page(body: CMSPageCreate, db: Session = Depends(get_db)) -> CMSPageResponse:
     existing = cms_service.get_page_by_slug(db, body.slug)
     if existing:
@@ -50,7 +54,7 @@ def get_cms_page(slug: str, db: Session = Depends(get_db)) -> CMSPageResponse:
     return CMSPageResponse.model_validate(page)
 
 
-@router.patch("/pages/{slug}", response_model=CMSPageResponse)
+@router.patch("/pages/{slug}", response_model=CMSPageResponse, dependencies=[_admin])
 def patch_cms_page(
     slug: str,
     body: CMSPagePatch,
@@ -65,7 +69,7 @@ def patch_cms_page(
     return CMSPageResponse.model_validate(page)
 
 
-@router.post("/pages/{slug}/reparse-sections", response_model=CMSPageResponse)
+@router.post("/pages/{slug}/reparse-sections", response_model=CMSPageResponse, dependencies=[_admin])
 def reparse_cms_page_sections(slug: str, db: Session = Depends(get_db)) -> CMSPageResponse:
     """Re-extract content_json.sections from the page's source draft markdown."""
     page = cms_service.get_page_by_slug(db, slug)
@@ -80,7 +84,7 @@ def reparse_cms_page_sections(slug: str, db: Session = Depends(get_db)) -> CMSPa
     return CMSPageResponse.model_validate(page)
 
 
-@router.delete("/pages/{slug}", status_code=status.HTTP_204_NO_CONTENT)
+@router.delete("/pages/{slug}", status_code=status.HTTP_204_NO_CONTENT, dependencies=[_admin])
 def delete_cms_page(slug: str, db: Session = Depends(get_db)) -> None:
     page = cms_service.get_page_by_slug(db, slug)
     if not page:
@@ -89,7 +93,7 @@ def delete_cms_page(slug: str, db: Session = Depends(get_db)) -> None:
     db.commit()
 
 
-@router.post("/cache/invalidate", response_model=CMSCacheInvalidateResponse)
+@router.post("/cache/invalidate", response_model=CMSCacheInvalidateResponse, dependencies=[_admin])
 def invalidate_cache(body: CMSCacheInvalidateRequest) -> CMSCacheInvalidateResponse:
     if body.scope == "all":
         cms_service.cache_invalidate_all()
