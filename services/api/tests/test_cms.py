@@ -6,7 +6,7 @@ from unittest.mock import patch
 
 import pytest
 from fastapi.testclient import TestClient
-from sqlalchemy import delete
+from sqlalchemy import delete, select
 
 from app.db.session import SessionLocal
 from app.main import app
@@ -32,22 +32,28 @@ client = TestClient(app)
 
 @pytest.fixture(autouse=True)
 def clean_state():
+    # Snapshot pre-existing CMS page IDs so real published content is preserved
+    with SessionLocal() as db:
+        pre_cms_ids = list(r[0] for r in db.execute(select(CMSPage.id)).all())
     with SessionLocal() as db:
         db.execute(delete(PublishLog))
         db.execute(delete(ContentDraft))
         db.execute(delete(ContentBrief))
         db.execute(delete(KeywordCluster))
         db.execute(delete(TopicOpportunity))
-        db.execute(delete(CMSPage))
         db.commit()
     yield
     with SessionLocal() as db:
+        # Delete only CMS pages created during this test run
+        if pre_cms_ids:
+            db.execute(delete(CMSPage).where(CMSPage.id.not_in(pre_cms_ids)))
+        else:
+            db.execute(delete(CMSPage))
         db.execute(delete(PublishLog))
         db.execute(delete(ContentDraft))
         db.execute(delete(ContentBrief))
         db.execute(delete(KeywordCluster))
         db.execute(delete(TopicOpportunity))
-        db.execute(delete(CMSPage))
         db.commit()
 
 
@@ -72,22 +78,25 @@ def test_create_page_and_get_by_slug():
 
 def test_list_pages_returns_all():
     with SessionLocal() as db:
+        before = len(list_pages(db))
         create_page(db, data=CMSPageCreate(slug="trek-a", page_type="trek_guide", title="Trek A"))
         create_page(db, data=CMSPageCreate(slug="trek-b", page_type="trek_guide", title="Trek B"))
         db.commit()
         pages = list_pages(db)
-    assert len(pages) == 2
+    assert len(pages) == before + 2
 
 
 def test_list_pages_filters_by_status():
     with SessionLocal() as db:
+        before_drafts = len(list_pages(db, status="draft"))
+        before_published = len(list_pages(db, status="published"))
         create_page(db, data=CMSPageCreate(slug="draft-page", page_type="trek_guide", title="Draft", status="draft"))
         create_page(db, data=CMSPageCreate(slug="pub-page", page_type="trek_guide", title="Published", status="published"))
         db.commit()
         drafts = list_pages(db, status="draft")
         published = list_pages(db, status="published")
-    assert len(drafts) == 1
-    assert len(published) == 1
+    assert len(drafts) == before_drafts + 1
+    assert len(published) == before_published + 1
 
 
 def test_update_page_sets_published_at_on_publish():
@@ -175,10 +184,10 @@ def test_cache_invalidate_all_swallows_redis_errors():
 # API route tests
 # ---------------------------------------------------------------------------
 
-def test_api_list_pages_empty():
+def test_api_list_pages_returns_list():
     r = client.get("/api/v1/cms/pages")
     assert r.status_code == 200
-    assert r.json() == []
+    assert isinstance(r.json(), list)
 
 
 def test_api_create_page_201():

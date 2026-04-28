@@ -6,7 +6,7 @@ from unittest.mock import patch
 
 import pytest
 from fastapi.testclient import TestClient
-from sqlalchemy import delete
+from sqlalchemy import delete, select
 
 from app.db.session import SessionLocal
 from app.main import app
@@ -18,22 +18,28 @@ client = TestClient(app)
 
 @pytest.fixture(autouse=True)
 def clean_state():
+    # Snapshot pre-existing CMS page IDs so real published content is preserved
+    with SessionLocal() as db:
+        pre_cms_ids = list(r[0] for r in db.execute(select(CMSPage.id)).all())
     with SessionLocal() as db:
         db.execute(delete(PublishLog))
         db.execute(delete(ContentDraft))
         db.execute(delete(ContentBrief))
         db.execute(delete(KeywordCluster))
         db.execute(delete(TopicOpportunity))
-        db.execute(delete(CMSPage))
         db.commit()
     yield
     with SessionLocal() as db:
+        # Delete only CMS pages created during this test run
+        if pre_cms_ids:
+            db.execute(delete(CMSPage).where(CMSPage.id.not_in(pre_cms_ids)))
+        else:
+            db.execute(delete(CMSPage))
         db.execute(delete(PublishLog))
         db.execute(delete(ContentDraft))
         db.execute(delete(ContentBrief))
         db.execute(delete(KeywordCluster))
         db.execute(delete(TopicOpportunity))
-        db.execute(delete(CMSPage))
         db.commit()
 
 
@@ -111,12 +117,15 @@ def test_publish_to_cms_succeeds() -> None:
 
 
 def test_publish_creates_cms_page_in_db() -> None:
+    with SessionLocal() as db:
+        before = db.query(CMSPage).count()
     draft_id = _create_draft_in_state("approved")
     client.post(f"/api/v1/admin/drafts/{draft_id}/publish")
     with SessionLocal() as db:
         pages = db.query(CMSPage).all()
-    assert len(pages) == 1
-    assert pages[0].status == "published"
+        new_pages = [p for p in pages if p.status == "published"]
+    assert len(pages) == before + 1
+    assert any(p.status == "published" for p in new_pages)
 
 
 def test_publish_log_recorded_after_publish() -> None:
