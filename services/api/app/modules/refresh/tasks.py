@@ -51,8 +51,12 @@ def refresh_task(self, page_id: str, log_id: str, triggered_by: str = "manual") 
                 db.commit()
                 return {"result": "failed", "reason": "no_draft"}
 
+            now = datetime.now(timezone.utc)
             recovery_slug = f"{cms_page_row.slug}-refresh-{uuid.uuid4().hex[:8]}"
             brief = ContentBrief(
+                id=uuid.uuid4(),
+                created_at=now,
+                updated_at=now,
                 title=cms_page_row.title,
                 slug=recovery_slug,
                 target_keyword=page.slug.replace("-", " "),
@@ -62,6 +66,9 @@ def refresh_task(self, page_id: str, log_id: str, triggered_by: str = "manual") 
             db.flush()
 
             draft = ContentDraft(
+                id=uuid.uuid4(),
+                created_at=now,
+                updated_at=now,
                 brief_id=brief.id,
                 title=cms_page_row.title,
                 slug=cms_page_row.slug,
