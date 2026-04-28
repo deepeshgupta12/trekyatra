@@ -46,7 +46,7 @@ def refresh_task(self, page_id: str, log_id: str, triggered_by: str = "manual") 
 
         # Re-run SEO/AEO optimization
         agent = SEOAEOAgent(db=db)
-        result = agent.run(input={"draft_id": str(draft.id)})
+        result = agent.run(input_data={"draft_id": str(draft.id)})
 
         if result.get("errors"):
             notes = "; ".join(result["errors"])
