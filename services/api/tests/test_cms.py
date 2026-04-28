@@ -30,30 +30,31 @@ from app.schemas.cms import CMSPageCreate, CMSPagePatch
 client = TestClient(app)
 
 
+def _delete_new(db, model, pre_ids: list) -> None:
+    """Delete rows created during a test, preserving pre-existing real data."""
+    if pre_ids:
+        db.execute(delete(model).where(model.id.not_in(pre_ids)))
+    else:
+        db.execute(delete(model))
+
+
 @pytest.fixture(autouse=True)
 def clean_state():
-    # Snapshot pre-existing CMS page IDs so real published content is preserved
+    # Snapshot all content table IDs to preserve real pipeline data
     with SessionLocal() as db:
-        pre_cms_ids = list(r[0] for r in db.execute(select(CMSPage.id)).all())
-    with SessionLocal() as db:
-        db.execute(delete(PublishLog))
-        db.execute(delete(ContentDraft))
-        db.execute(delete(ContentBrief))
-        db.execute(delete(KeywordCluster))
-        db.execute(delete(TopicOpportunity))
-        db.commit()
+        pre_cms = list(r[0] for r in db.execute(select(CMSPage.id)).all())
+        pre_draft = list(r[0] for r in db.execute(select(ContentDraft.id)).all())
+        pre_brief = list(r[0] for r in db.execute(select(ContentBrief.id)).all())
+        pre_cluster = list(r[0] for r in db.execute(select(KeywordCluster.id)).all())
+        pre_topic = list(r[0] for r in db.execute(select(TopicOpportunity.id)).all())
     yield
     with SessionLocal() as db:
-        # Delete only CMS pages created during this test run
-        if pre_cms_ids:
-            db.execute(delete(CMSPage).where(CMSPage.id.not_in(pre_cms_ids)))
-        else:
-            db.execute(delete(CMSPage))
-        db.execute(delete(PublishLog))
-        db.execute(delete(ContentDraft))
-        db.execute(delete(ContentBrief))
-        db.execute(delete(KeywordCluster))
-        db.execute(delete(TopicOpportunity))
+        # FK-safe order: ContentBrief first (CASCADE → ContentDraft → PublishLog)
+        _delete_new(db, ContentBrief, pre_brief)
+        _delete_new(db, ContentDraft, pre_draft)  # safety: drafts without a brief
+        _delete_new(db, CMSPage, pre_cms)
+        _delete_new(db, KeywordCluster, pre_cluster)
+        _delete_new(db, TopicOpportunity, pre_topic)
         db.commit()
 
 
