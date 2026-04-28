@@ -69,9 +69,35 @@ What is done:
 - `app/(admin)/admin/layout.tsx` — "Content Refresh" nav item (RefreshCw icon) added to Growth group
 - `next build` clean; 227/227 backend tests pass; GitNexus re-indexed
 What remains:
-- Celery worker must be restarted to pick up `refresh.run_refresh` and `refresh.auto_refresh` tasks
-- `sync_pages_from_cms` does not yet populate `last_refreshed_at` on sync — all synced pages start with NULL (treated as most stale); this is correct behavior, pages will be refreshed on first beat cycle
 - Beat schedule runs daily — adjust `freshness_interval_days` per page_type (30/60/90/120 days) via DB update if needed
+
+### Post-Step 23 Bug Fixes (commits 783a004 → d3bd4c7)
+Status: done
+Four bugs found during end-to-end testing of the Step 23 refresh flow and the pipeline orchestrator. All fixed as separate labelled bug-fix commits. 227/227 backend tests pass after each fix. GitNexus re-indexed at d3bd4c7 (4,991 nodes | 8,545 edges).
+
+**Bug 1 — Pipeline StaleDataError on pipeline_stages UPDATE (commit 783a004)**
+- Symptom: `StaleDataError: UPDATE statement on table 'pipeline_stages' expected to update 1 row(s); 0 were matched` on `run_pipeline` and `resume_pipeline` Celery tasks
+- Root cause: `TrendDiscoveryAgent._store_results` calls `self.db.rollback()` on duplicate topic errors. SQLAlchemy's `rollback()` always expires ALL session-tracked objects regardless of `expire_on_commit=False`. The `stage_record` (PipelineStage) held by `_execute_stages` was expired; subsequent `_update_stage` commit matched 0 rows.
+- Fix: `_update_stage` and `_update_run` now call `db.get(Model, id)` to re-fetch a fresh ORM instance by PK before setting attributes and committing. Both silently no-op if the row is missing.
+- Files changed: `services/api/app/modules/pipeline/service.py`
+
+**Bug 2 — Published pages not appearing in Content Refresh queue (commit b5e44a7)**
+- Symptom: Pipeline-published pages visible in Master CMS but absent from `/admin/refresh/stale`
+- Root cause: `publish_to_cms` wrote to `cms_pages` but never called `sync_pages_from_cms`. The `pages` table (which Content Refresh queries) was only populated by the daily Celery beat or a manual `/admin/links/sync` trigger. The Step 22 MASTER_TRACKER and DEPENDENCY_MAP incorrectly stated this sync was hooked in — it was not in the actual code.
+- Fix: `publish_to_cms` now calls `sync_pages_from_cms(db)` after `upsert_page_from_draft`, within the same transaction (flush only; caller commits). Applies to both manual publish and pipeline `_run_publish`.
+- Files changed: `services/api/app/modules/publish/service.py`
+
+**Bug 3 — refresh_task TypeError: unexpected keyword argument 'input' (commit 96c85e2)**
+- Symptom: `Task refresh.run_refresh raised unexpected: TypeError("BaseAgent.run() got an unexpected keyword argument 'input'")`
+- Root cause: `refresh_task` called `agent.run(input={...})`. `BaseAgent.run()` signature is `run(self, input_data, run_id=None)` — the parameter is `input_data`, not `input`.
+- Fix: Changed `input=` to `input_data=` on line 49 of `modules/refresh/tasks.py`.
+- Files changed: `services/api/app/modules/refresh/tasks.py`
+
+**Bug 4 — Test fixtures wiping real pipeline data on every test run (commits b4fc9e1, d3bd4c7)**
+- Symptom: `refresh.run_refresh` returned `result: failed, reason: no_draft` even for pages with a published CMS entry. After investigation: `test_publish.py` and `test_cms.py` `clean_state` fixtures ran `DELETE FROM content_briefs` (which CASCADE-deletes `content_drafts`) and `DELETE FROM cms_pages` on every test run, destroying all real pipeline data.
+- Root cause: Blanket `DELETE` on all content tables in `autouse=True` fixtures targeting the shared dev database.
+- Fix: Replaced blanket deletes with snapshot approach — record pre-existing IDs for all 5 content tables before each test, delete only newly-created rows post-test in FK-safe order (ContentBrief first → CASCADE to ContentDraft → PublishLog, then CMSPage, KeywordCluster, TopicOpportunity). Count-exact test assertions updated to delta assertions.
+- Files changed: `services/api/tests/test_cms.py`, `services/api/tests/test_publish.py`
 
 ### Step 22 — Internal Linking Engine + Lead Pipeline + Newsletter Platform
 Status: done

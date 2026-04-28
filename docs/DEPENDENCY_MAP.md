@@ -266,7 +266,7 @@ This file tracks structural dependencies, source-of-truth modules, and Nexus/Git
 - `services/api/app/api/routes/newsletter.py` — UPDATED: POST /newsletter/sync (admin) added; blast radius: LOW (additive endpoint)
 - `services/api/app/api/router.py` — UPDATED: linking_admin_router, linking_public_router, leads_admin_router registered; blast radius: LOW (additive)
 - `services/api/app/worker/celery_app.py` — UPDATED: include list + 2 beat schedule entries (daily-sync-pages, daily-detect-orphans); blast radius: LOW (additive)
-- `services/api/app/modules/publish/service.py` — UPDATED: sync_pages_from_cms() called after publish (non-fatal try/except); blast radius: LOW (additive, failure is silent)
+- `services/api/app/modules/publish/service.py` — NOTE: Step 22 stated sync_pages_from_cms() was hooked in here — it was NOT in the actual code. This was fixed in the post-Step-23 bug fix (commit b5e44a7); see below.
 - `services/api/app/schemas/leads.py` — UPDATED: LeadResponse gains status field; VALID_LEAD_STATUSES set + LeadStatusPatch schema added; blast radius: LOW (additive)
 - `services/api/app/schemas/linking.py` — NEW: PageResponse, RelatedPageResponse, AnchorSuggestion, SyncResponse, OrphanResponse; blast radius: LOW
 - `services/api/app/db/base.py` — UPDATED: Page + PageLink registered; blast radius: LOW (additive)
@@ -295,6 +295,14 @@ This file tracks structural dependencies, source-of-truth modules, and Nexus/Git
 - `apps/web-next/lib/api.ts` — UPDATED: StalePage, RefreshLog, RefreshTriggerResponse interfaces + fetchStalePages, triggerRefresh, fetchRefreshLogs; blast radius: LOW (additive)
 - `apps/web-next/app/(admin)/admin/refresh/page.tsx` — NEW: stale pages table + Refresh-now button per row + refresh log history; blast radius: LOW
 - `apps/web-next/app/(admin)/admin/layout.tsx` — UPDATED: "Content Refresh" nav item (RefreshCw icon) added to Growth group; blast radius: MEDIUM (admin layout affects all admin pages)
+
+### Post-Step 23 Bug Fixes blast radius (commits 783a004 → d3bd4c7)
+- `services/api/app/modules/pipeline/service.py:_update_stage` — FIXED: re-queries PipelineStage by PK before UPDATE; callers: `_execute_stages` only; blast radius: LOW (internal to Pipeline module; all 3 pipeline Celery tasks benefit)
+- `services/api/app/modules/pipeline/service.py:_update_run` — FIXED: re-queries PipelineRun by PK before UPDATE; same pattern as _update_stage; blast radius: LOW
+- `services/api/app/modules/publish/service.py:publish_to_cms` — FIXED: now calls `sync_pages_from_cms(db)` after upsert_page_from_draft; both callers (publish_draft route + PipelineOrchestrator._run_publish) benefit; blast radius: LOW (additive, same transaction)
+- `services/api/app/modules/refresh/tasks.py:refresh_task` — FIXED: `agent.run(input=...)` → `agent.run(input_data=...)`; blast radius: LOW (internal Celery task only)
+- `services/api/tests/test_cms.py:clean_state` — FIXED: snapshot-based cleanup for all 5 content tables; blast radius: LOW (test-only)
+- `services/api/tests/test_publish.py:clean_state` — FIXED: same snapshot approach; blast radius: LOW (test-only)
 
 ### Step 21 — RBAC Enforcement blast radius
 - `services/api/app/core/security.py:create_access_token` — UPDATED: optional `roles: list[str]` param; roles added to JWT payload; blast radius: HIGH (called by create_session_for_user → signup/login/google_auth); change is additive and backward-compatible

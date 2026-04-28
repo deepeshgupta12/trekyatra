@@ -122,3 +122,14 @@ Done
 - freshness_interval_days defaults: seasonal pages = 30, permit pages = 60, general guides = 90, gear pages = 120
 - V2 will add ranking-signal-based prioritization (pages with decaying CTR jump the queue)
 - The weekly summary is a simple JSON payload stored in a job_summaries table — wired to admin analytics dashboard in Step 24
+
+## Post-Ship Bug Fixes
+Three bugs found during end-to-end testing after Step 23 shipped:
+
+1. **Pipeline StaleDataError** (commit 783a004) — `_update_stage`/`_update_run` in `pipeline/service.py` failed when `TrendDiscoveryAgent.db.rollback()` expired all session-tracked objects. Fix: re-query by PK before every UPDATE.
+
+2. **Published pages absent from stale queue** (commit b5e44a7) — `publish_to_cms` never called `sync_pages_from_cms`, so newly published pages never entered the `pages` table that `get_stale_pages` queries. Fix: `sync_pages_from_cms(db)` called at end of `publish_to_cms`, within same transaction.
+
+3. **refresh_task TypeError** (commit 96c85e2) — `refresh_task` called `agent.run(input=...)` but `BaseAgent.run()` signature is `run(self, input_data, ...)`. Fix: `input=` → `input_data=`.
+
+4. **Test fixtures wiping real pipeline data** (commits b4fc9e1, d3bd4c7) — `clean_state` in `test_cms.py` and `test_publish.py` did blanket `DELETE FROM content_briefs` (CASCADE to drafts) and `DELETE FROM cms_pages`, destroying all real pipeline content on every test run. Fix: snapshot pre-existing IDs for all 5 content tables; post-test cleanup deletes only newly-created rows.
