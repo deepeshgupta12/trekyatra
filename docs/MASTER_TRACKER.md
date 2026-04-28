@@ -29,7 +29,7 @@ All V0 foundations are shipped. The stack is live locally with:
 - Admin summary APIs, smoke tests, GitNexus indexed
 
 ## V1 Status — Complete ✓
-**All V1 steps delivered. Next phase: V2 (Steps 25–32).**
+**All V1 steps delivered. V2 in progress (Steps 25–32).**
 
 | Step | Title | Status |
 |------|-------|--------|
@@ -48,6 +48,39 @@ All V0 foundations are shipped. The stack is live locally with:
 | 22 | Internal linking engine + lead pipeline + newsletter platform | done |
 | 23 | Content refresh engine (basic) | done |
 | 24 | Analytics ingestion + admin panel full wiring | done |
+
+## V2 Status — In Progress
+| Step | Title | Status |
+|------|-------|--------|
+| 25 | Advanced fact validation system | done |
+| 26 | Cannibalization detection + consolidation agent | pending |
+| 27 | Topical authority scoring | pending |
+| 28 | Automated internal link injection | pending |
+| 29 | Content performance feedback loop | pending |
+| 30 | Multi-format content expansion | pending |
+| 31 | Advanced monetization layer | pending |
+| 32 | Production hardening | pending |
+
+### Step 25 — Advanced Fact Validation System
+Status: done
+What is done:
+- Alembic migration `20260428_0015_draft_claims_ymyl.py` — adds `evidence_url` (nullable Text) and `ymyl_flag` (bool, server_default=false) to `draft_claims`; applied with `alembic upgrade head`
+- `modules/agents/fact_validation/__init__.py`, `agent.py` — ClaimExtractionAgent (LangGraph 3-node: fetch_draft → extract_claims → store_claims); YMYL_CLAIM_TYPES = {altitude, safety_advisory, permit_requirement, emergency_contact, medical_advisory}; uses `.replace()` not `.format()` to avoid KeyError from JSON `{}` blocks in extraction prompt; clears existing claims before re-inserting; `evidence_url = None` in V2.0 (EvidenceSearchAgent mocked)
+- `api/routes/fact_validation.py` — POST /admin/drafts/{id}/fact-check → FactCheckTriggerResponse (draft_id, claims_extracted, ymyl_claims, flagged_claims); requires get_current_admin
+- `api/router.py` — fact_validation_router registered
+- `modules/content/models.py` — DraftClaim: `ymyl_flag: Mapped[bool]`, `evidence_url: Mapped[str | None]` added
+- `schemas/content.py` — DraftClaimCreate + DraftClaimResponse: ymyl_flag + evidence_url added
+- `schemas/admin.py` — ClaimResponse: ymyl_flag + evidence_url added
+- `api/routes/admin.py` — list_fact_check_claims + patch_fact_check_claim pass new fields in ClaimResponse
+- `api/routes/content.py` — get_draft_claims serialization updated for new fields
+- `tests/test_fact_validation.py` — 7 tests (model field check, ORM insert, agent mock 4 claims + YMYL detection, claim clearing on re-run, endpoint 200/404/400); 239/239 backend tests pass
+- Pre-existing fix: test_refresh.py stale pages test uses `?limit=200` (50+ real pages in DB exceed default limit=50)
+- `lib/api.ts` — FactCheckClaim: `ymyl_flag: boolean` + `evidence_url: string | null`; `FactCheckTriggerResult` interface; `triggerFactCheck(draftId)` helper
+- `app/(admin)/admin/fact-check/page.tsx` — rewritten: claims grouped by draft (byDraft map), per-draft "Re-run fact-check" button (triggerFactCheck), YMYL badge (ShieldAlert/red), evidence URL link, YMYL+flagged counts in header, confidence bar, flaggedOnly filter
+- `next build` clean (zero TypeScript errors); 239/239 backend tests pass
+What remains:
+- V2.1 micro-task: wire `trackEvent("admin_draft_approved")` / `trackEvent("admin_draft_published")` in `/admin/drafts` page (flagged V1 code gap, separate scope)
+- V2.1: EvidenceSearchAgent with real web search (Brave/Serper API) behind feature flag
 
 ### Step 24 — Analytics Ingestion + Admin Panel Full Wiring
 Status: done

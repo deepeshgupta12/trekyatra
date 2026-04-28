@@ -179,11 +179,14 @@
 
 ## V2 — Smarter Automation and Business Depth (Steps 25–32)
 
-### Step 25 — Advanced fact validation system
-- Claim → evidence mapping engine
-- Confidence scoring per claim
-- Mandatory human-review flags for safety/YMYL content
-- Fact-check inspector in admin UI
+### Step 25 — Advanced fact validation system [DONE]
+- Claim → evidence mapping engine (ClaimExtractionAgent with LangGraph)
+- Confidence scoring per claim (0.0–1.0 float)
+- YMYL tagging: altitude, safety_advisory, permit_requirement, emergency_contact, medical_advisory
+- Mandatory human-review flags for safety/YMYL content (flagged_for_review gate)
+- `evidence_url` + `ymyl_flag` columns added to draft_claims (Alembic migration)
+- POST /api/v1/admin/drafts/{id}/fact-check endpoint (triggers ClaimExtractionAgent)
+- Fact-check inspector in admin UI: claims grouped by draft, per-draft re-run, YMYL badge, confidence bar
 
 ### Step 26 — Cannibalization detection + consolidation agent
 - Keyword overlap detection across pages

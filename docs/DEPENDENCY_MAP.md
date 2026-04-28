@@ -304,6 +304,25 @@ This file tracks structural dependencies, source-of-truth modules, and Nexus/Git
 - `services/api/tests/test_cms.py:clean_state` — FIXED: snapshot-based cleanup for all 5 content tables; blast radius: LOW (test-only)
 - `services/api/tests/test_publish.py:clean_state` — FIXED: same snapshot approach; blast radius: LOW (test-only)
 
+### Step 25 — Advanced Fact Validation System blast radius
+- `services/api/alembic/versions/20260428_0015_draft_claims_ymyl.py` — NEW: additive nullable columns `evidence_url` (Text) + `ymyl_flag` (bool, default false) on `draft_claims`; blast radius: LOW (additive, no existing callers break)
+- `services/api/app/modules/content/models.py:DraftClaim` — UPDATED: ymyl_flag + evidence_url added; blast radius: HIGH (37 symbols reference DraftClaim) — change is additive, no existing callers break; all callers unaffected because columns have server defaults
+- `services/api/app/schemas/content.py:DraftClaimCreate` — UPDATED: ymyl_flag (bool, default False) + evidence_url (str|None) added; blast radius: LOW (additive fields with defaults)
+- `services/api/app/schemas/content.py:DraftClaimResponse` — UPDATED: ymyl_flag + evidence_url added; blast radius: LOW (additive fields)
+- `services/api/app/schemas/admin.py:ClaimResponse` — UPDATED: ymyl_flag (bool, default False) + evidence_url (str|None) added; blast radius: LOW (only used by admin fact-check routes)
+- `services/api/app/api/routes/admin.py:list_fact_check_claims` — UPDATED: passes ymyl_flag + evidence_url in ClaimResponse; blast radius: LOW (fact-check admin endpoint only)
+- `services/api/app/api/routes/admin.py:patch_fact_check_claim` — UPDATED: passes ymyl_flag + evidence_url in ClaimResponse; blast radius: LOW
+- `services/api/app/api/routes/content.py:get_draft_claims` — UPDATED: serialization dict includes ymyl_flag + evidence_url; blast radius: LOW (draft claims endpoint only)
+- `services/api/app/modules/agents/fact_validation/__init__.py` — NEW: package init; blast radius: LOW
+- `services/api/app/modules/agents/fact_validation/agent.py:ClaimExtractionAgent` — NEW: 3-node LangGraph agent; YMYL_CLAIM_TYPES set; uses `.replace()` not `.format()` for prompt; blast radius: LOW (new module, called only by fact_validation route)
+- `services/api/app/api/routes/fact_validation.py` — NEW: POST /admin/drafts/{id}/fact-check → FactCheckTriggerResponse; requires get_current_admin; blast radius: LOW (new route)
+- `services/api/app/api/router.py` — UPDATED: fact_validation_router registered; blast radius: LOW (additive)
+- `services/api/tests/test_fact_validation.py` — NEW: 7 tests; blast radius: LOW (test-only)
+- `services/api/tests/test_refresh.py` — UPDATED: stale pages test uses `?limit=200`; blast radius: LOW (test-only; fixes pre-existing false-failure due to 50+ real pages in DB)
+- `apps/web-next/lib/api.ts:FactCheckClaim` — UPDATED: ymyl_flag + evidence_url added; blast radius: LOW (only used by admin fact-check page)
+- `apps/web-next/lib/api.ts:triggerFactCheck` — NEW: POST /admin/drafts/{id}/fact-check helper; blast radius: LOW (leaf function)
+- `apps/web-next/app/(admin)/admin/fact-check/page.tsx` — REWRITTEN: claims grouped by draft (byDraft map), per-draft Re-run button, YMYL badge (ShieldAlert/red), evidence URL link, YMYL+flagged counts in header, confidence bar, flaggedOnly filter; blast radius: LOW (leaf admin page)
+
 ### Step 21 — RBAC Enforcement blast radius
 - `services/api/app/core/security.py:create_access_token` — UPDATED: optional `roles: list[str]` param; roles added to JWT payload; blast radius: HIGH (called by create_session_for_user → signup/login/google_auth); change is additive and backward-compatible
 - `services/api/app/modules/auth/service.py:create_session_for_user` — UPDATED: reads user.roles slugs and passes to create_access_token; blast radius: MEDIUM (called by signup/login/google_auth routes)

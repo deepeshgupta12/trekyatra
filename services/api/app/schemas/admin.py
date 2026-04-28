@@ -46,6 +46,8 @@ class ClaimResponse(BaseModel):
     claim_type: str
     confidence_score: float
     flagged_for_review: bool
+    ymyl_flag: bool = False
+    evidence_url: str | None = None
     created_at: datetime
 
 

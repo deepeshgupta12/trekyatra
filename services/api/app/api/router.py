@@ -18,6 +18,7 @@ from app.api.routes.pipeline import router as pipeline_router
 from app.api.routes.publish import router as publish_router
 from app.api.routes.analytics import admin_router as analytics_admin_router
 from app.api.routes.analytics import public_router as analytics_public_router
+from app.api.routes.fact_validation import router as fact_validation_router
 from app.api.routes.refresh import router as refresh_router
 from app.api.routes.treks import router as treks_router
 from app.api.routes.worker import router as worker_router
@@ -42,5 +43,6 @@ api_router.include_router(linking_public_router)
 api_router.include_router(newsletter_router)
 api_router.include_router(analytics_public_router)
 api_router.include_router(analytics_admin_router)
+api_router.include_router(fact_validation_router)
 api_router.include_router(refresh_router)
 api_router.include_router(users_router)

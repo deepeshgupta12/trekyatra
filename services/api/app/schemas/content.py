@@ -161,6 +161,8 @@ class DraftClaimCreate(BaseModel):
     claim_type: str = Field(max_length=64)
     confidence_score: float
     flagged_for_review: bool = False
+    ymyl_flag: bool = False
+    evidence_url: str | None = None
 
 
 class DraftClaimResponse(BaseModel):
@@ -172,4 +174,6 @@ class DraftClaimResponse(BaseModel):
     claim_type: str
     confidence_score: float
     flagged_for_review: bool
+    ymyl_flag: bool
+    evidence_url: str | None
     created_at: datetime

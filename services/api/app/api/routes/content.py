@@ -257,6 +257,8 @@ def get_draft_claims(
                 "claim_type": r.claim_type,
                 "confidence_score": r.confidence_score,
                 "flagged_for_review": r.flagged_for_review,
+                "ymyl_flag": r.ymyl_flag,
+                "evidence_url": r.evidence_url,
                 "created_at": r.created_at,
             }
         )

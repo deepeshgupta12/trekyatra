@@ -96,6 +96,8 @@ def list_fact_check_claims(
             claim_type=row.DraftClaim.claim_type,
             confidence_score=row.DraftClaim.confidence_score,
             flagged_for_review=row.DraftClaim.flagged_for_review,
+            ymyl_flag=row.DraftClaim.ymyl_flag,
+            evidence_url=row.DraftClaim.evidence_url,
             created_at=row.DraftClaim.created_at,
         )
         for row in rows
@@ -125,5 +127,7 @@ def patch_fact_check_claim(
         claim_type=updated.claim_type,
         confidence_score=updated.confidence_score,
         flagged_for_review=updated.flagged_for_review,
+        ymyl_flag=updated.ymyl_flag,
+        evidence_url=updated.evidence_url,
         created_at=updated.created_at,
     )

@@ -51,8 +51,30 @@ Upgrade the basic fact-check flags from Step 15 into a structured claim → evid
 - `apps/web-next/lib/api.ts` — claim fetch/approve helpers
 
 ## Status
-pending
+Done
+
+## Files Created
+- `services/api/alembic/versions/20260428_0015_draft_claims_ymyl.py` — adds `evidence_url` (nullable Text) and `ymyl_flag` (bool, server_default=false) to `draft_claims`
+- `services/api/app/modules/agents/fact_validation/__init__.py` — package init
+- `services/api/app/modules/agents/fact_validation/agent.py` — ClaimExtractionAgent (LangGraph 3-node: fetch_draft → extract_claims → store_claims); YMYL_CLAIM_TYPES set; uses `.replace("{content}", ...)` not `.format()` to avoid KeyError from JSON {} in prompt; clears existing claims before re-inserting; evidence_url=None in V2.0
+- `services/api/app/api/routes/fact_validation.py` — POST /admin/drafts/{id}/fact-check → FactCheckTriggerResponse (draft_id, claims_extracted, ymyl_claims, flagged_claims)
+- `services/api/tests/test_fact_validation.py` — 7 tests (model field existence, ORM insert with new fields, agent mock with 4 claims inserted + YMYL detection, claim clearing on re-run, endpoint 200/404/400)
+
+## Files Modified
+- `services/api/app/modules/content/models.py` — DraftClaim: `ymyl_flag: Mapped[bool]` + `evidence_url: Mapped[str | None]`
+- `services/api/app/schemas/content.py` — DraftClaimCreate + DraftClaimResponse: `ymyl_flag`, `evidence_url` added
+- `services/api/app/schemas/admin.py` — ClaimResponse: `ymyl_flag`, `evidence_url` added
+- `services/api/app/api/routes/admin.py` — list_fact_check_claims + patch_fact_check_claim: pass ymyl_flag + evidence_url in ClaimResponse
+- `services/api/app/api/routes/content.py` — get_draft_claims serialization: ymyl_flag + evidence_url included
+- `services/api/app/api/router.py` — fact_validation_router registered
+- `services/api/tests/test_refresh.py` — pre-existing fix: ?limit=200 for stale pages query (50+ real pages in DB)
+- `apps/web-next/lib/api.ts` — FactCheckClaim: `ymyl_flag: boolean` + `evidence_url: string | null`; added `FactCheckTriggerResult` interface + `triggerFactCheck(draftId)` function
+- `apps/web-next/app/(admin)/admin/fact-check/page.tsx` — rewritten: claims grouped by draft (byDraft reduce), per-draft Re-run button (triggerFactCheck), YMYL badge (ShieldAlert/red), evidence URL link, YMYL+flagged counts in header, confidence bar, flaggedOnly filter
 
 ## Notes
-- Web search for evidence requires external API (Brave Search or Serper) — mock in V2.0 with static fixtures; real API in V2.1 behind feature flag
-- YMYL tag set: `['safety', 'altitude_sickness', 'permits', 'emergency_contacts', 'difficulty']` — stored as JSON array on cms_pages
+- Step 25 doc referred to "FactClaim" model — actual model is DraftClaim (in content/models.py). Renamed throughout.
+- Prompt uses `.replace("{content}", ...)` not `.format()` because the JSON example blocks `{...}` in the prompt would cause Python KeyError.
+- EvidenceSearchAgent mocked in V2.0: `evidence_url = None` for all claims. Real web search (Brave/Serper API) deferred to V2.1 behind feature flag.
+- 239/239 backend tests pass; `next build` clean with zero TypeScript errors.
+- GitNexus re-index required after this step.
+- V1 code gap (separate from Step 25 scope): admin publish/approve `trackEvent` not yet wired in `/admin/drafts` page — flagged for V2.1 micro-task.

@@ -222,6 +222,8 @@ def create_draft_claim(db: Session, payload: DraftClaimCreate) -> DraftClaim:
         claim_type=payload.claim_type,
         confidence_score=payload.confidence_score,
         flagged_for_review=payload.flagged_for_review,
+        ymyl_flag=payload.ymyl_flag,
+        evidence_url=payload.evidence_url,
         created_at=_utc_now(),
     )
     db.add(claim)

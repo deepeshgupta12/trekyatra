@@ -95,7 +95,7 @@ def test_stale_pages_includes_past_interval():
         _create_page(db, slug, cms, last_refreshed_at=old_date, freshness_interval_days=90)
         db.commit()
 
-    resp = client.get("/api/v1/admin/refresh/stale")
+    resp = client.get("/api/v1/admin/refresh/stale?limit=200")
     assert resp.status_code == 200
     slugs = [p["slug"] for p in resp.json()]
     assert slug in slugs

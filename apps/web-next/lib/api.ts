@@ -86,7 +86,16 @@ export interface FactCheckClaim {
   claim_type: string;
   confidence_score: number;
   flagged_for_review: boolean;
+  ymyl_flag: boolean;
+  evidence_url: string | null;
   created_at: string;
+}
+
+export interface FactCheckTriggerResult {
+  draft_id: string;
+  claims_extracted: number;
+  ymyl_claims: number;
+  flagged_claims: number;
 }
 
 export async function fetchFactCheckClaims(flaggedOnly = false): Promise<FactCheckClaim[]> {
@@ -101,6 +110,14 @@ export async function patchFactCheckClaim(id: string, flaggedForReview: boolean)
   });
   if (!res.ok) throw new Error(`Claim update failed (${res.status})`);
   return res.json() as Promise<FactCheckClaim>;
+}
+
+export async function triggerFactCheck(draftId: string): Promise<FactCheckTriggerResult> {
+  const res = await fetch(`/api/v1/admin/drafts/${draftId}/fact-check`, {
+    method: "POST",
+  });
+  if (!res.ok) throw new Error(`Fact-check trigger failed (${res.status})`);
+  return res.json() as Promise<FactCheckTriggerResult>;
 }
 
 export async function clearPipelineRuns(): Promise<{ deleted_runs: number; deleted_stages: number }> {

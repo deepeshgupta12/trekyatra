@@ -180,6 +180,8 @@ class DraftClaim(UUIDPrimaryKeyMixin, Base):
     claim_type: Mapped[str] = mapped_column(String(64), nullable=False)
     confidence_score: Mapped[float] = mapped_column(Float, nullable=False)
     flagged_for_review: Mapped[bool] = mapped_column(default=False, nullable=False)
+    ymyl_flag: Mapped[bool] = mapped_column(default=False, nullable=False)
+    evidence_url: Mapped[str | None] = mapped_column(Text, nullable=True)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
 
     draft: Mapped["ContentDraft"] = relationship(back_populates="claims")
