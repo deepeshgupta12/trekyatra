@@ -71,9 +71,9 @@ What is done:
 What remains:
 - Beat schedule runs daily — adjust `freshness_interval_days` per page_type (30/60/90/120 days) via DB update if needed
 
-### Post-Step 23 Bug Fixes (commits 783a004 → d3bd4c7)
+### Post-Step 23 Bug Fixes (commits 783a004 → current)
 Status: done
-Four bugs found during end-to-end testing of the Step 23 refresh flow and the pipeline orchestrator. All fixed as separate labelled bug-fix commits. 227/227 backend tests pass after each fix. GitNexus re-indexed at d3bd4c7 (4,991 nodes | 8,545 edges).
+Five bugs found during end-to-end testing of the Step 23 refresh flow and the pipeline orchestrator. All fixed as separate labelled bug-fix commits. 227/227 backend tests pass after each fix.
 
 **Bug 1 — Pipeline StaleDataError on pipeline_stages UPDATE (commit 783a004)**
 - Symptom: `StaleDataError: UPDATE statement on table 'pipeline_stages' expected to update 1 row(s); 0 were matched` on `run_pipeline` and `resume_pipeline` Celery tasks
@@ -98,6 +98,12 @@ Four bugs found during end-to-end testing of the Step 23 refresh flow and the pi
 - Root cause: Blanket `DELETE` on all content tables in `autouse=True` fixtures targeting the shared dev database.
 - Fix: Replaced blanket deletes with snapshot approach — record pre-existing IDs for all 5 content tables before each test, delete only newly-created rows post-test in FK-safe order (ContentBrief first → CASCADE to ContentDraft → PublishLog, then CMSPage, KeywordCluster, TopicOpportunity). Count-exact test assertions updated to delta assertions.
 - Files changed: `services/api/tests/test_cms.py`, `services/api/tests/test_publish.py`
+
+**Bug 5 — refresh_task hard-fails with "no_draft" when ContentDraft was previously deleted**
+- Symptom: Clicking "Refresh" on a published page returns `result: failed, reason: no_draft` even though the page exists in `cms_pages`. Happens when the page's `ContentDraft` row was wiped by test runs before the Bug 4 isolation fix landed.
+- Root cause: `refresh_task` queried `ContentDraft` by `cms_page_id` and immediately returned failure when no row found, with no recovery path. Pages whose draft chains were deleted by earlier blanket test deletes are permanently stuck in a "can't refresh" state.
+- Fix: When no `ContentDraft` is found, `refresh_task` now looks up the `CMSPage` record and reconstructs a stub `ContentBrief` + `ContentDraft` from it (title, slug, content_html), flushes both, then proceeds with the SEO/AEO agent and re-publish as normal. The refresh succeeds for any published page regardless of draft chain history.
+- Files changed: `services/api/app/modules/refresh/tasks.py`
 
 ### Step 22 — Internal Linking Engine + Lead Pipeline + Newsletter Platform
 Status: done

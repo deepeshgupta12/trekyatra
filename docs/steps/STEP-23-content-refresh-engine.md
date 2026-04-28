@@ -133,3 +133,5 @@ Three bugs found during end-to-end testing after Step 23 shipped:
 3. **refresh_task TypeError** (commit 96c85e2) — `refresh_task` called `agent.run(input=...)` but `BaseAgent.run()` signature is `run(self, input_data, ...)`. Fix: `input=` → `input_data=`.
 
 4. **Test fixtures wiping real pipeline data** (commits b4fc9e1, d3bd4c7) — `clean_state` in `test_cms.py` and `test_publish.py` did blanket `DELETE FROM content_briefs` (CASCADE to drafts) and `DELETE FROM cms_pages`, destroying all real pipeline content on every test run. Fix: snapshot pre-existing IDs for all 5 content tables; post-test cleanup deletes only newly-created rows.
+
+5. **refresh_task "no_draft" hard failure** — `refresh_task` returned `failed/no_draft` when a published page's `ContentDraft` row was missing (e.g. deleted by test runs before isolation fix landed). Fix: when no draft found, reconstruct a stub `ContentBrief` + `ContentDraft` from the existing `CMSPage` record (title, slug, content_html), flush both, then proceed with the SEO/AEO agent and re-publish as normal. This makes refresh resilient to lost draft rows without requiring a full pipeline re-run.
