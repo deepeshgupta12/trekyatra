@@ -37,6 +37,7 @@ def publish_to_cms(db: Session, *, draft_id: uuid.UUID) -> DraftPublishResponse:
     """Publish an approved draft to the Master CMS (creates/updates a CMSPage record)."""
     from app.modules.cms.models import CMSPage
     from app.modules.cms.service import upsert_page_from_draft
+    from app.modules.linking.service import sync_pages_from_cms
 
     draft = db.scalar(select(ContentDraft).where(ContentDraft.id == draft_id))
     if draft is None:
@@ -68,6 +69,11 @@ def publish_to_cms(db: Session, *, draft_id: uuid.UUID) -> DraftPublishResponse:
     draft.published_at = datetime.now(timezone.utc)
     draft.cms_page_id = cms_page.id
     db.flush()
+
+    # Sync the newly published page into the `pages` table so linking engine
+    # and content refresh queue pick it up immediately without waiting for the
+    # daily Celery beat.
+    sync_pages_from_cms(db)
 
     return DraftPublishResponse(
         draft_id=draft.id,
