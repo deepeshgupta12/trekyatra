@@ -83,10 +83,14 @@ def cancel_pipeline_run(db: Session, run_id: uuid.UUID) -> PipelineRun | None:
 
 
 def _update_run(db: Session, run: PipelineRun, **kwargs: Any) -> None:
+    # Re-query by PK — agent rollbacks expire all session-tracked objects
+    fresh_run = db.get(PipelineRun, run.id)
+    if fresh_run is None:
+        return
     for k, v in kwargs.items():
-        setattr(run, k, v)
+        setattr(fresh_run, k, v)
     db.commit()
-    db.refresh(run)
+    db.refresh(fresh_run)
 
 
 def _create_stage(
@@ -105,10 +109,14 @@ def _create_stage(
 
 
 def _update_stage(db: Session, stage: PipelineStage, **kwargs: Any) -> None:
+    # Re-query by PK — agent rollbacks expire all session-tracked objects
+    fresh_stage = db.get(PipelineStage, stage.id)
+    if fresh_stage is None:
+        return
     for k, v in kwargs.items():
-        setattr(stage, k, v)
+        setattr(fresh_stage, k, v)
     db.commit()
-    db.refresh(stage)
+    db.refresh(fresh_stage)
 
 
 # ── Orchestrator ──────────────────────────────────────────────────────────────
