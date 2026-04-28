@@ -473,3 +473,63 @@ export async function fetchRefreshLogs(params?: { limit?: number; offset?: numbe
     : "";
   return apiFetch<RefreshLog[]>(`/admin/refresh/logs${q}`);
 }
+
+// ---------------------------------------------------------------------------
+// Analytics
+// ---------------------------------------------------------------------------
+
+export interface AnalyticsSummary {
+  leads_last_30d: number;
+  affiliate_clicks_last_30d: number;
+  newsletter_subscribers_total: number;
+  pages_published_total: number;
+  pipeline_runs_last_30d: number;
+  agent_runs_last_30d: number;
+}
+
+export interface AffiliateClickPayload {
+  page_slug: string;
+  affiliate_program: string;
+  affiliate_link_url?: string;
+  session_id?: string;
+}
+
+export async function fetchAnalyticsSummary(): Promise<AnalyticsSummary> {
+  return apiFetch<AnalyticsSummary>("/admin/analytics/summary");
+}
+
+export async function trackAffiliateClick(payload: AffiliateClickPayload): Promise<void> {
+  await fetch("/api/v1/track/affiliate-click", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(payload),
+  }).catch(() => undefined); // fire-and-forget; never throw
+}
+
+// ---------------------------------------------------------------------------
+// Agent Runs
+// ---------------------------------------------------------------------------
+
+export interface AgentRun {
+  id: number;
+  agent_type: string;
+  status: string;
+  input_json: string | null;
+  output_json: string | null;
+  error: string | null;
+  started_at: string | null;
+  completed_at: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export async function fetchAgentRuns(params?: { limit?: number; status?: string }): Promise<AgentRun[]> {
+  const q = params
+    ? "?" + new URLSearchParams(
+        Object.entries(params)
+          .filter(([, v]) => v !== undefined)
+          .map(([k, v]) => [k, String(v)])
+      )
+    : "";
+  return apiFetch<AgentRun[]>(`/admin/agent-runs${q}`);
+}

@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { subscribeNewsletter } from "@/lib/api";
+import { trackEvent } from "@/lib/analytics";
 import { Button } from "@/components/ui/button";
 import { Loader2, CheckCircle } from "lucide-react";
 
@@ -37,6 +38,7 @@ export default function NewsletterCapture({
     try {
       const res = await subscribeNewsletter({ email, name: name || undefined, source_page: sourcePage, lead_magnet: leadMagnet });
       if (typeof window !== "undefined") localStorage.setItem("newsletter_subscribed", "1");
+      if (!res.already_subscribed) trackEvent("newsletter_subscribe", { source_page: sourcePage });
       setAlreadySubscribed(res.already_subscribed);
       setDone(true);
     } catch (err: unknown) {

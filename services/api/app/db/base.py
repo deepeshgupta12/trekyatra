@@ -1,4 +1,5 @@
 from app.db.base_class import Base
+from app.modules.analytics.models import AffiliateClick
 from app.modules.agents.models import AgentRun
 from app.modules.auth.models import AuthIdentity, User, UserSession
 from app.modules.cms.models import CMSPage
@@ -33,4 +34,5 @@ __all__ = [
     "Page",
     "PageLink",
     "RefreshLog",
+    "AffiliateClick",
 ]

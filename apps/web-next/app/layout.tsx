@@ -25,11 +25,22 @@ export const metadata: Metadata = {
 };
 
 const ADSENSE_ID = process.env.NEXT_PUBLIC_ADSENSE_ID;
+const GA4_ID = process.env.NEXT_PUBLIC_GA4_ID;
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en" suppressHydrationWarning>
       <head>
+        {GA4_ID && (
+          <>
+            <script async src={`https://www.googletagmanager.com/gtag/js?id=${GA4_ID}`} />
+            <script
+              dangerouslySetInnerHTML={{
+                __html: `window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag('js',new Date());gtag('config','${GA4_ID}');`,
+              }}
+            />
+          </>
+        )}
         {ADSENSE_ID && (
           <script
             async

@@ -450,3 +450,25 @@ Before editing any backend file:
 - `alembic/versions/20260422_0004_publish_log.py` adds `publish_logs` table and two columns to `content_drafts` (reversible)
 - `apps/web-next/app/(admin)/admin/drafts/page.tsx` rewritten as client component — fetches `/api/v1/drafts`, `/api/v1/admin/drafts/{id}/status`, `/api/v1/admin/drafts/{id}/publish`; no shared layout changes
 - GitNexus re-indexed: 2072 nodes, 3465 edges, 74 flows
+
+### Step 24 executed blast radius
+- `app/modules/analytics/` created: new independent module; no existing code depends on it
+- `app/modules/analytics/models.py` — AffiliateClick ORM; depends on `db.base.Base`, `db.mixins.UUIDPrimaryKeyMixin`
+- `app/modules/analytics/service.py` — depends on `analytics.models`, `modules.leads.models`, `modules.newsletter.models`, `modules.cms.models`, `modules.pipeline.models`, `modules.agents.models`; all read-only COUNT queries (no writes to other modules)
+- `app/schemas/analytics.py` — new schema file; no existing schemas depend on it
+- `app/api/routes/analytics.py` — dual routers (public + admin); depends on `analytics.service`, `schemas.analytics`, `auth.dependencies`
+- `app/db/base.py` changed: AffiliateClick imported and registered — additive; all existing importers unaffected
+- `app/api/router.py` changed: analytics_public_router + analytics_admin_router registered — additive
+- `alembic/versions/20260428_0014_analytics.py` — `affiliate_clicks` table; reversible via downgrade
+- `apps/web-next/lib/analytics.ts` created: trackEvent utility; consumed by AffiliateCard, LeadForm, NewsletterCapture — no other files depend on it
+- `apps/web-next/lib/api.ts` changed: AnalyticsSummary, AffiliateClickPayload, AgentRun interfaces added; fetchAnalyticsSummary, trackAffiliateClick, fetchAgentRuns helpers added — additive; no existing callers affected
+- `apps/web-next/components/monetization/AffiliateCard.tsx` changed: onClick tracking added — additive; no layout or parent changes
+- `apps/web-next/components/monetization/LeadForm.tsx` changed: trackEvent on submit — additive
+- `apps/web-next/components/monetization/NewsletterCapture.tsx` changed: trackEvent on subscribe — additive
+- `apps/web-next/app/layout.tsx` changed: GA4 script injection in head — conditional on NEXT_PUBLIC_GA4_ID; safe no-op if unset
+- `apps/web-next/app/(admin)/admin/page.tsx` rewritten: "use client" component; fetches analytics summary + agent runs; no API contract changes
+- `apps/web-next/app/(admin)/admin/analytics/page.tsx` rewritten: "use client" component; fetches analytics summary; no new API surface
+- `apps/web-next/app/(admin)/admin/logs/page.tsx` rewritten: "use client" component; fetches /admin/agent-runs; no new API surface
+- `apps/web-next/.env.local.example` changed: NEXT_PUBLIC_GA4_ID documented — additive
+- `services/api/tests/test_cms.py` changed: 2 tests fixed with limit=10000 to handle 50+ pages in dev DB — no functional change
+- GitNexus re-indexed: 5,106 nodes | 8,744 edges | 165 clusters | 172 flows

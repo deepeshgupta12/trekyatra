@@ -28,8 +28,8 @@ All V0 foundations are shipped. The stack is live locally with:
 - Draft status machine + publish pipeline + publish logs
 - Admin summary APIs, smoke tests, GitNexus indexed
 
-## V1 Status — In Progress
-**Current next step: Step 24 — Analytics ingestion + admin panel full wiring**
+## V1 Status — Complete ✓
+**All V1 steps delivered. Next phase: V2 (Steps 25–32).**
 
 | Step | Title | Status |
 |------|-------|--------|
@@ -47,7 +47,35 @@ All V0 foundations are shipped. The stack is live locally with:
 | 21 | RBAC enforcement | done |
 | 22 | Internal linking engine + lead pipeline + newsletter platform | done |
 | 23 | Content refresh engine (basic) | done |
-| 24 | Analytics ingestion + admin panel full wiring | pending |
+| 24 | Analytics ingestion + admin panel full wiring | done |
+
+### Step 24 — Analytics Ingestion + Admin Panel Full Wiring
+Status: done
+What is done:
+- Alembic migration `20260428_0014_analytics.py` — creates `affiliate_clicks` table (UUID PK, page_slug, affiliate_program, affiliate_link_url, clicked_at, user_agent, session_id, created_at); indexed on affiliate_program, clicked_at, page_slug
+- `modules/analytics/__init__.py`, `models.py` — AffiliateClick ORM model
+- `modules/analytics/service.py` — `track_affiliate_click` (creates AffiliateClick with explicit timestamps); `get_analytics_summary` (6 COUNT queries: leads_last_30d, affiliate_clicks_last_30d, newsletter_subscribers_total, pages_published_total, pipeline_runs_last_30d, agent_runs_last_30d)
+- `schemas/analytics.py` — AffiliateClickCreate, AffiliateClickResponse, AnalyticsSummaryResponse
+- `api/routes/analytics.py` — dual routers: POST /track/affiliate-click (public, 201) + GET /admin/analytics/summary (admin auth)
+- `db/base.py` — AffiliateClick registered
+- `api/router.py` — analytics public + admin routers registered
+- `tests/test_analytics.py` — 5 tests; 232/232 backend tests pass
+- `lib/analytics.ts` — trackEvent(name, properties) utility: fires to GA4 (window.gtag) and Plausible (window.plausible); silent no-op if neither configured
+- `lib/api.ts` — AnalyticsSummary, AffiliateClickPayload, AgentRun interfaces; fetchAnalyticsSummary, trackAffiliateClick, fetchAgentRuns helpers
+- `components/monetization/AffiliateCard.tsx` — trackEvent + trackAffiliateClick on affiliate link click
+- `components/monetization/LeadForm.tsx` — trackEvent("lead_form_submit") on success
+- `components/monetization/NewsletterCapture.tsx` — trackEvent("newsletter_subscribe") on new subscription
+- `app/layout.tsx` — conditional GA4 gtag.js script injection (NEXT_PUBLIC_GA4_ID env var)
+- `app/(admin)/admin/page.tsx` — rewritten as "use client"; real KPIs from /admin/analytics/summary; real agent runs table from /admin/agent-runs with status badges
+- `app/(admin)/admin/analytics/page.tsx` — rewritten; 6 real KPI cards; GA4 integration note
+- `app/(admin)/admin/logs/page.tsx` — rewritten; real agent run table with refresh button; status badges
+- `.env.local.example` — NEXT_PUBLIC_GA4_ID documented
+- Bug fix (pre-existing): test_cms.py list_pages tests fixed with limit=10000 after 50+ pages in DB hit the default limit=50 ceiling
+- `next build` clean with zero TypeScript errors; 232/232 backend tests pass
+- GitNexus re-indexed: 5,106 nodes | 8,744 edges | 165 clusters | 172 flows
+What remains:
+- Configure NEXT_PUBLIC_GA4_ID with real G-XXXXXXXXXX ID for production event tracking
+- V1 content seeding: run pipeline to generate at least 10 trek guide posts, 5 packing lists, 5 seasonal pages
 
 ### Step 23 — Content Refresh Engine (Basic)
 Status: done

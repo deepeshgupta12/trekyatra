@@ -166,7 +166,7 @@
 - Refresh logs table
 - Admin UI: refresh queue page
 
-### Step 24 — Analytics ingestion + admin panel full wiring
+### Step 24 — Analytics ingestion + admin panel full wiring [DONE]
 - GA4 / analytics event setup (page_view, lead_submit, affiliate_click)
 - `affiliate_clicks` table and click-tracking endpoint
 - `lead_submissions` table and submission API

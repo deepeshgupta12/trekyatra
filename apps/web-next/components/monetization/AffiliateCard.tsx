@@ -1,6 +1,10 @@
+"use client";
+
 import Link from "next/link";
 import { ExternalLink } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { trackEvent } from "@/lib/analytics";
+import { trackAffiliateClick } from "@/lib/api";
 
 export interface AffiliateCardItem {
   title: string;
@@ -35,7 +39,20 @@ export default function AffiliateCard({ item }: Props) {
         <p className="font-semibold text-sm leading-tight">{item.title}</p>
         <p className="text-xs text-muted-foreground leading-relaxed">{item.description}</p>
         {item.price && <p className="text-sm font-semibold text-foreground">{item.price}</p>}
-        <Link href={item.affiliateUrl} target="_blank" rel="nofollow sponsored noopener" aria-label={`Check price for ${item.title}`}>
+        <Link
+          href={item.affiliateUrl}
+          target="_blank"
+          rel="nofollow sponsored noopener"
+          aria-label={`Check price for ${item.title}`}
+          onClick={() => {
+            trackEvent("affiliate_click", { title: item.title, url: item.affiliateUrl });
+            trackAffiliateClick({
+              page_slug: typeof window !== "undefined" ? window.location.pathname : "/",
+              affiliate_program: new URL(item.affiliateUrl, "https://x.com").hostname.replace("www.", ""),
+              affiliate_link_url: item.affiliateUrl,
+            });
+          }}
+        >
           <Button variant="outline" size="sm" className="w-full mt-1 text-xs gap-1.5">
             <ExternalLink className="h-3 w-3" /> Check price
           </Button>

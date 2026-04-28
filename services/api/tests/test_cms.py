@@ -79,23 +79,23 @@ def test_create_page_and_get_by_slug():
 
 def test_list_pages_returns_all():
     with SessionLocal() as db:
-        before = len(list_pages(db))
+        before = len(list_pages(db, limit=10000))
         create_page(db, data=CMSPageCreate(slug="trek-a", page_type="trek_guide", title="Trek A"))
         create_page(db, data=CMSPageCreate(slug="trek-b", page_type="trek_guide", title="Trek B"))
         db.commit()
-        pages = list_pages(db)
+        pages = list_pages(db, limit=10000)
     assert len(pages) == before + 2
 
 
 def test_list_pages_filters_by_status():
     with SessionLocal() as db:
-        before_drafts = len(list_pages(db, status="draft"))
-        before_published = len(list_pages(db, status="published"))
+        before_drafts = len(list_pages(db, status="draft", limit=10000))
+        before_published = len(list_pages(db, status="published", limit=10000))
         create_page(db, data=CMSPageCreate(slug="draft-page", page_type="trek_guide", title="Draft", status="draft"))
         create_page(db, data=CMSPageCreate(slug="pub-page", page_type="trek_guide", title="Published", status="published"))
         db.commit()
-        drafts = list_pages(db, status="draft")
-        published = list_pages(db, status="published")
+        drafts = list_pages(db, status="draft", limit=10000)
+        published = list_pages(db, status="published", limit=10000)
     assert len(drafts) == before_drafts + 1
     assert len(published) == before_published + 1
 
