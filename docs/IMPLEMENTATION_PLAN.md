@@ -188,8 +188,11 @@
 - POST /api/v1/admin/drafts/{id}/fact-check endpoint (triggers ClaimExtractionAgent)
 - Fact-check inspector in admin UI: claims grouped by draft, per-draft re-run, YMYL badge, confidence bar
 
-### Step 26 — Cannibalization detection + consolidation agent
-- Keyword overlap detection across pages
+### Step 26 — Cannibalization detection + consolidation agent [DONE]
+- Keyword overlap detection across pages (string-match on primary_keyword + supporting_keywords)
+- CannibalizationIssue table with severity (low/medium/high) + recommendation (merge/redirect/differentiate)
+- ConsolidationAgent: merges two pages into a new ContentDraft via Claude; requires human approval
+- Admin UI: scan trigger, severity/status filters, merge/dismiss/resolve actions per issue
 - Merge / redirect / canonical recommendation engine
 - Admin cannibalization report
 

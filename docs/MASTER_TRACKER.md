@@ -53,13 +53,35 @@ All V0 foundations are shipped. The stack is live locally with:
 | Step | Title | Status |
 |------|-------|--------|
 | 25 | Advanced fact validation system | done |
-| 26 | Cannibalization detection + consolidation agent | pending |
+| 26 | Cannibalization detection + consolidation agent | done |
 | 27 | Topical authority scoring | pending |
 | 28 | Automated internal link injection | pending |
 | 29 | Content performance feedback loop | pending |
 | 30 | Multi-format content expansion | pending |
 | 31 | Advanced monetization layer | pending |
 | 32 | Production hardening | pending |
+
+### Step 26 — Cannibalization Detection + Consolidation Agent
+Status: done
+What is done:
+- Alembic migration `20260429_0016_cannibalization_issues.py` — creates `cannibalization_issues` table (page_a_id + page_b_id FK→pages CASCADE, shared_keywords JSON, severity VARCHAR(16), recommendation VARCHAR(32), status VARCHAR(32) default=open, resolved_at nullable, created_at); 4 indexes on page_a_id, page_b_id, severity, status
+- `modules/cannibalization/__init__.py`, `models.py` — CannibalizationIssue ORM
+- `modules/cannibalization/service.py` — detect_cannibalization() (pairwise keyword overlap detection: full keyword set = {primary_keyword} ∪ supporting_keywords; ≥2 shared → issue; upserts on re-run); get_issues(severity, status, limit); resolve_issue(); get_issue()
+- Severity: HIGH (same primary_keyword or 5+ shared), MEDIUM (3–4 shared), LOW (2 shared)
+- Recommendation: merge (HIGH/same-primary), redirect (MEDIUM), differentiate (LOW)
+- `modules/agents/consolidation/__init__.py`, `agent.py` — ConsolidationAgent (LangGraph 3-node: fetch_pages → merge_content → store_draft); creates ContentBrief stub + ContentDraft with status=requires_review
+- `api/routes/cannibalization.py` — GET /admin/cannibalization (filter by severity/status), POST /detect, POST /{id}/resolve, POST /{id}/merge; all require get_current_admin
+- `api/router.py` — cannibalization_router registered
+- `schemas/cannibalization.py` — CannibalizationIssueResponse (enriched with page slugs/titles), DetectResponse, ResolveRequest, MergeResponse
+- `db/base.py` — CannibalizationIssue registered
+- `tests/test_cannibalization.py` — 17 tests (severity/recommendation unit tests, detect service, list/filter, resolve 200/422/404, merge 400/404/happy-path with mocked LLM); 256/256 backend tests pass
+- Pre-existing fix: test_refresh.py stale pages tests now use `?limit=500`; refresh.py endpoint le raised to 1000 (from 200) to accommodate growing test data
+- `lib/api.ts` — CannibalizationIssue interface + fetchCannibalizationIssues, detectCannibalization, resolveCannibalizationIssue, triggerConsolidationMerge helpers
+- `app/(admin)/admin/cannibalization/page.tsx` — new page: scan button, severity+status filter pills, issue cards with shared keyword chips, Merge/Dismiss/Resolve actions
+- `app/(admin)/admin/layout.tsx` — "Cannibalization" nav item (Swords icon) added to Growth group
+- `next build` clean; 256/256 backend tests pass; GitNexus 5,663 nodes | 9,587 edges | 181 flows
+What remains:
+- V2.1: Embedding-similarity upgrade for semantic (not just string-match) keyword overlap detection (Step 35 prereq)
 
 ### Step 25 — Advanced Fact Validation System
 Status: done

@@ -80,7 +80,7 @@ def test_stale_pages_includes_null_last_refreshed():
         _create_page(db, slug, cms, last_refreshed_at=None)
         db.commit()
 
-    resp = client.get("/api/v1/admin/refresh/stale")
+    resp = client.get("/api/v1/admin/refresh/stale?limit=500")
     assert resp.status_code == 200
     slugs = [p["slug"] for p in resp.json()]
     assert slug in slugs
@@ -138,7 +138,7 @@ def test_stale_page_response_shape():
         _create_page(db, slug, cms, last_refreshed_at=None)
         db.commit()
 
-    resp = client.get("/api/v1/admin/refresh/stale")
+    resp = client.get("/api/v1/admin/refresh/stale?limit=500")
     assert resp.status_code == 200
     items = [p for p in resp.json() if p["slug"] == slug]
     assert len(items) == 1

@@ -1,5 +1,6 @@
 from app.db.base_class import Base
 from app.modules.analytics.models import AffiliateClick
+from app.modules.cannibalization.models import CannibalizationIssue
 from app.modules.agents.models import AgentRun
 from app.modules.auth.models import AuthIdentity, User, UserSession
 from app.modules.cms.models import CMSPage
@@ -35,4 +36,5 @@ __all__ = [
     "PageLink",
     "RefreshLog",
     "AffiliateClick",
+    "CannibalizationIssue",
 ]

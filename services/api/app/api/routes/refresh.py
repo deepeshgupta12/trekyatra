@@ -40,7 +40,7 @@ def _to_stale_response(page: Page) -> StalePageResponse:
 
 @router.get("/stale", response_model=list[StalePageResponse])
 def list_stale_pages(
-    limit: int = Query(default=50, ge=1, le=200),
+    limit: int = Query(default=50, ge=1, le=1000),
     db: Session = Depends(get_db),
 ) -> list[StalePageResponse]:
     pages = get_stale_pages(db, limit=limit)

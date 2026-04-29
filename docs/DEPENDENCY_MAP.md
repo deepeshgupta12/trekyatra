@@ -304,6 +304,21 @@ This file tracks structural dependencies, source-of-truth modules, and Nexus/Git
 - `services/api/tests/test_cms.py:clean_state` — FIXED: snapshot-based cleanup for all 5 content tables; blast radius: LOW (test-only)
 - `services/api/tests/test_publish.py:clean_state` — FIXED: same snapshot approach; blast radius: LOW (test-only)
 
+### Step 26 — Cannibalization Detection + Consolidation Agent blast radius
+- `services/api/alembic/versions/20260429_0016_cannibalization_issues.py` — NEW: creates `cannibalization_issues` table; blast radius: LOW (new table, no existing callers)
+- `services/api/app/modules/cannibalization/models.py:CannibalizationIssue` — NEW: ORM model (FK→pages CASCADE × 2); blast radius: LOW (new model)
+- `services/api/app/modules/cannibalization/service.py` — NEW: detect_cannibalization, get_issues, resolve_issue, get_issue; blast radius: LOW (new module, called only by cannibalization route)
+- `services/api/app/modules/agents/consolidation/agent.py:ConsolidationAgent` — NEW: 3-node LangGraph agent; creates ContentBrief stub + ContentDraft; blast radius: LOW (new file, called only by /merge route)
+- `services/api/app/api/routes/cannibalization.py` — NEW: 4 endpoints; blast radius: LOW (new routes)
+- `services/api/app/schemas/cannibalization.py` — NEW: 4 schemas; blast radius: LOW (new file)
+- `services/api/app/db/base.py` — UPDATED: CannibalizationIssue imported; blast radius: LOW (additive)
+- `services/api/app/api/router.py` — UPDATED: cannibalization_router registered; blast radius: LOW (additive)
+- `services/api/app/api/routes/refresh.py:list_stale_pages` — UPDATED: limit raised from le=200 to le=1000; blast radius: LOW (additive relaxation of constraint)
+- `services/api/tests/test_refresh.py` — UPDATED: 2 stale page tests use ?limit=500 (growing test data exceeds prior limit); blast radius: LOW (test-only)
+- `apps/web-next/lib/api.ts` — UPDATED: CannibalizationIssue + 3 helper interfaces + 4 fetch functions; blast radius: LOW (additive)
+- `apps/web-next/app/(admin)/admin/cannibalization/page.tsx` — NEW: scan trigger, severity+status filter pills, issue cards, merge/dismiss/resolve actions; blast radius: LOW (leaf admin page)
+- `apps/web-next/app/(admin)/admin/layout.tsx` — UPDATED: "Cannibalization" nav item (Swords icon) added to Growth group; blast radius: MEDIUM (admin layout, affects all admin pages)
+
 ### Step 25 — Advanced Fact Validation System blast radius
 - `services/api/alembic/versions/20260428_0015_draft_claims_ymyl.py` — NEW: additive nullable columns `evidence_url` (Text) + `ymyl_flag` (bool, default false) on `draft_claims`; blast radius: LOW (additive, no existing callers break)
 - `services/api/app/modules/content/models.py:DraftClaim` — UPDATED: ymyl_flag + evidence_url added; blast radius: HIGH (37 symbols reference DraftClaim) — change is additive, no existing callers break; all callers unaffected because columns have server defaults

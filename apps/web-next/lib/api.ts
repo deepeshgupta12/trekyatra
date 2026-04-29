@@ -550,3 +550,74 @@ export async function fetchAgentRuns(params?: { limit?: number; status?: string 
     : "";
   return apiFetch<AgentRun[]>(`/admin/agent-runs${q}`);
 }
+
+// ---------------------------------------------------------------------------
+// Cannibalization Detection
+// ---------------------------------------------------------------------------
+
+export interface CannibalizationIssue {
+  id: string;
+  page_a_id: string;
+  page_b_id: string;
+  page_a_slug: string;
+  page_b_slug: string;
+  page_a_title: string;
+  page_b_title: string;
+  shared_keywords: string[];
+  severity: "low" | "medium" | "high";
+  recommendation: "merge" | "redirect" | "differentiate";
+  status: "open" | "accepted" | "dismissed" | "resolved";
+  resolved_at: string | null;
+  created_at: string;
+}
+
+export interface DetectCannibalizationResult {
+  issues_found: number;
+  new_issues: number;
+}
+
+export interface MergeResult {
+  draft_id: string;
+  brief_id: string;
+  message: string;
+}
+
+export async function fetchCannibalizationIssues(params?: {
+  severity?: string;
+  status?: string;
+  limit?: number;
+}): Promise<CannibalizationIssue[]> {
+  const q = params
+    ? "?" + new URLSearchParams(
+        Object.entries(params)
+          .filter(([, v]) => v !== undefined)
+          .map(([k, v]) => [k, String(v)])
+      )
+    : "";
+  return apiFetch<CannibalizationIssue[]>(`/admin/cannibalization${q}`);
+}
+
+export async function detectCannibalization(): Promise<DetectCannibalizationResult> {
+  const res = await fetch(`${apiBase}/api/v1/admin/cannibalization/detect`, { method: "POST" });
+  if (!res.ok) throw new Error(`API ${res.status}: detect cannibalization`);
+  return res.json();
+}
+
+export async function resolveCannibalizationIssue(
+  id: string,
+  status: "accepted" | "dismissed" | "resolved"
+): Promise<CannibalizationIssue> {
+  const res = await fetch(`${apiBase}/api/v1/admin/cannibalization/${id}/resolve`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ status }),
+  });
+  if (!res.ok) throw new Error(`API ${res.status}: resolve issue`);
+  return res.json();
+}
+
+export async function triggerConsolidationMerge(id: string): Promise<MergeResult> {
+  const res = await fetch(`${apiBase}/api/v1/admin/cannibalization/${id}/merge`, { method: "POST" });
+  if (!res.ok) throw new Error(`API ${res.status}: trigger merge`);
+  return res.json();
+}
