@@ -304,6 +304,25 @@ This file tracks structural dependencies, source-of-truth modules, and Nexus/Git
 - `services/api/tests/test_cms.py:clean_state` — FIXED: snapshot-based cleanup for all 5 content tables; blast radius: LOW (test-only)
 - `services/api/tests/test_publish.py:clean_state` — FIXED: same snapshot approach; blast radius: LOW (test-only)
 
+### Step 27 — Newsletter Automation + Repurposing Agent blast radius
+- `services/api/alembic/versions/20260429_0017_newsletter_campaigns.py` — NEW: creates `newsletter_campaigns` + `social_snippets` tables; blast radius: LOW (new tables, no existing callers)
+- `services/api/app/modules/newsletter/models.py` — UPDATED: NewsletterCampaign + SocialSnippet ORM models added alongside existing NewsletterSubscriber; blast radius: LOW (additive, no existing callers reference new classes)
+- `services/api/app/modules/newsletter/service.py` — UPDATED: list_campaigns, get_campaign, send_campaign, _send_mailchimp, _send_brevo, list_snippets added; existing `subscribe()` unchanged; blast radius: LOW (new functions only; existing callers of subscribe() unaffected)
+- `services/api/app/modules/newsletter/tasks.py` — UPDATED: auto_generate_newsletter_task Celery task added; existing sync_subscriber_task unchanged; blast radius: LOW (additive)
+- `services/api/app/modules/agents/newsletter/__init__.py` — NEW: package init; blast radius: LOW
+- `services/api/app/modules/agents/newsletter/agent.py:NewsletterAgent` — NEW: 3-node LangGraph; reads published CMSPages (read-only query); writes NewsletterCampaign; blast radius: LOW (new file, called only by /generate route)
+- `services/api/app/modules/agents/social_repurpose/__init__.py` — NEW: package init; blast radius: LOW
+- `services/api/app/modules/agents/social_repurpose/agent.py:SocialRepurposeAgent` — NEW: 3-node LangGraph; reads CMSPage + Page (read-only); writes SocialSnippet; blast radius: LOW (new file, called only by /repurpose route)
+- `services/api/app/schemas/newsletter.py` — UPDATED: 5 new schema classes (NewsletterCampaignResponse, GenerateCampaignResponse, SendCampaignResponse, SocialSnippetResponse, RepurposeResponse) added; existing schemas unchanged; blast radius: LOW (additive)
+- `services/api/app/db/base.py` — UPDATED: NewsletterCampaign + SocialSnippet registered; blast radius: LOW (additive)
+- `services/api/app/api/routes/newsletter_admin.py` — NEW: 6 endpoints; blast radius: LOW (new file)
+- `services/api/app/api/router.py` — UPDATED: newsletter_admin_router + newsletter_pages_router registered; blast radius: LOW (additive)
+- `services/api/app/worker/celery_app.py` — UPDATED: weekly-newsletter-generate beat entry (604800s); blast radius: LOW (additive beat schedule only)
+- `services/api/tests/test_newsletter_agent.py` — NEW: 15 tests (1 conditionally skipped); blast radius: LOW (test-only)
+- `apps/web-next/lib/api.ts` — UPDATED: 5 interfaces + 5 fetch helpers; blast radius: LOW (additive, no existing callers modified)
+- `apps/web-next/app/(admin)/admin/newsletter/page.tsx` — NEW: campaigns tab (iframe preview modal + Send action) + snippets tab (repurpose form + clipboard copy); blast radius: LOW (leaf admin page)
+- `apps/web-next/app/(admin)/admin/layout.tsx` — UPDATED: "Newsletter" nav item (Mail icon) added to Growth group before Cannibalization; blast radius: MEDIUM (admin layout, visible to all admin pages — additive change only)
+
 ### Step 26 — Cannibalization Detection + Consolidation Agent blast radius
 - `services/api/alembic/versions/20260429_0016_cannibalization_issues.py` — NEW: creates `cannibalization_issues` table; blast radius: LOW (new table, no existing callers)
 - `services/api/app/modules/cannibalization/models.py:CannibalizationIssue` — NEW: ORM model (FK→pages CASCADE × 2); blast radius: LOW (new model)

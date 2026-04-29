@@ -196,7 +196,7 @@
 - Merge / redirect / canonical recommendation engine
 - Admin cannibalization report
 
-### Step 27 — Newsletter automation + repurposing agent
+### Step 27 — Newsletter automation + repurposing agent [DONE]
 - NewsletterAgent: weekly digest from published content
 - Social snippet generation (captions, Pinterest pin copy)
 - Email marketing integration (Mailchimp / ConvertKit / equivalent)

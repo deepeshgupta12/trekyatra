@@ -28,3 +28,51 @@ class NewsletterSubscribeResponse(BaseModel):
     created_at: datetime
 
     model_config = {"from_attributes": True}
+
+
+# ── Campaign schemas ──────────────────────────────────────────────────────────
+
+class NewsletterCampaignResponse(BaseModel):
+    id: uuid.UUID
+    week_label: str
+    subject: str
+    preview_text: str | None
+    body_html: str
+    status: str
+    sent_at: datetime | None
+    created_at: datetime
+
+    model_config = {"from_attributes": True}
+
+
+class GenerateCampaignResponse(BaseModel):
+    campaign_id: uuid.UUID
+    week_label: str
+    subject: str
+    message: str
+
+
+class SendCampaignResponse(BaseModel):
+    campaign_id: uuid.UUID
+    status: str
+    message: str
+
+
+# ── Social snippet schemas ────────────────────────────────────────────────────
+
+class SocialSnippetResponse(BaseModel):
+    id: uuid.UUID
+    page_id: uuid.UUID | None
+    platform: str
+    copy: str
+    copy_title: str | None
+    status: str
+    created_at: datetime
+
+    model_config = {"from_attributes": True}
+
+
+class RepurposeResponse(BaseModel):
+    page_slug: str
+    snippets_created: int
+    snippet_ids: list[uuid.UUID]

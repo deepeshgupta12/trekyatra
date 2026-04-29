@@ -50,6 +50,28 @@ def _sync_brevo(email: str, name: str | None) -> None:
     logger.info("Brevo sync done for %s (status %s)", email, resp.status_code)
 
 
+@celery_app.task(name="newsletter.auto_generate")
+def auto_generate_newsletter_task() -> dict:
+    """Weekly beat task: auto-generate a newsletter draft (human approves before send)."""
+    from app.db.session import SessionLocal
+    from app.modules.agents.newsletter.agent import NewsletterAgent
+    db = SessionLocal()
+    try:
+        agent = NewsletterAgent(db=db)
+        result = agent.run(input_data={})
+        if result.get("errors"):
+            logger.warning("auto_generate_newsletter_task errors: %s", result["errors"])
+            return {"generated": False, "errors": result["errors"]}
+        campaign_id = result.get("output", {}).get("campaign_id")
+        logger.info("auto_generate_newsletter_task: campaign %s created", campaign_id)
+        return {"generated": True, "campaign_id": campaign_id}
+    except Exception as exc:
+        logger.exception("auto_generate_newsletter_task failed: %s", exc)
+        return {"generated": False, "error": str(exc)}
+    finally:
+        db.close()
+
+
 @celery_app.task(name="newsletter.sync_subscriber", bind=True, max_retries=3)
 def sync_subscriber_task(self, email: str, name: str | None = None) -> dict:
     """Sync a new subscriber to the configured newsletter platform (Mailchimp or Brevo).

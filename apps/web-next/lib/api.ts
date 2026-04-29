@@ -621,3 +621,100 @@ export async function triggerConsolidationMerge(id: string): Promise<MergeResult
   if (!res.ok) throw new Error(`API ${res.status}: trigger merge`);
   return res.json();
 }
+
+// ── Newsletter + Social Repurpose (Step 27) ──────────────────────────────────
+
+export interface NewsletterCampaign {
+  id: string;
+  week_label: string;
+  subject: string;
+  preview_text: string | null;
+  body_html: string;
+  status: "draft" | "sent" | string;
+  sent_at: string | null;
+  created_at: string;
+}
+
+export interface GenerateCampaignResult {
+  campaign_id: string;
+  week_label: string;
+  subject: string;
+  message: string;
+}
+
+export interface SendCampaignResult {
+  campaign_id: string;
+  status: string;
+  message: string;
+}
+
+export interface SocialSnippet {
+  id: string;
+  page_id: string | null;
+  platform: "instagram" | "pinterest" | "twitter" | string;
+  copy: string;
+  copy_title: string | null;
+  status: string;
+  created_at: string;
+}
+
+export interface RepurposeResult {
+  page_slug: string;
+  snippets_created: number;
+  snippet_ids: string[];
+}
+
+export async function fetchNewsletterCampaigns(params?: {
+  status?: string;
+  limit?: number;
+}): Promise<NewsletterCampaign[]> {
+  const q = params
+    ? "?" + new URLSearchParams(
+        Object.entries(params)
+          .filter(([, v]) => v !== undefined)
+          .map(([k, v]) => [k, String(v)])
+      )
+    : "";
+  return apiFetch<NewsletterCampaign[]>(`/admin/newsletter${q}`);
+}
+
+export async function generateNewsletter(): Promise<GenerateCampaignResult> {
+  const res = await fetch(`${apiBase}/api/v1/admin/newsletter/generate`, { method: "POST" });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error(err.detail || `API ${res.status}: generate newsletter`);
+  }
+  return res.json();
+}
+
+export async function sendNewsletterCampaign(id: string): Promise<SendCampaignResult> {
+  const res = await fetch(`${apiBase}/api/v1/admin/newsletter/${id}/send`, { method: "POST" });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error(err.detail || `API ${res.status}: send campaign`);
+  }
+  return res.json();
+}
+
+export async function fetchSocialSnippets(params?: {
+  platform?: string;
+  limit?: number;
+}): Promise<SocialSnippet[]> {
+  const q = params
+    ? "?" + new URLSearchParams(
+        Object.entries(params)
+          .filter(([, v]) => v !== undefined)
+          .map(([k, v]) => [k, String(v)])
+      )
+    : "";
+  return apiFetch<SocialSnippet[]>(`/admin/newsletter/snippets/list${q}`);
+}
+
+export async function repurposePage(slug: string): Promise<RepurposeResult> {
+  const res = await fetch(`${apiBase}/api/v1/admin/pages/${slug}/repurpose`, { method: "POST" });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error(err.detail || `API ${res.status}: repurpose page`);
+  }
+  return res.json();
+}

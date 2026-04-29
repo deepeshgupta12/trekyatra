@@ -43,5 +43,9 @@ celery_app.conf.update(
             "task": "refresh.auto_refresh",
             "schedule": 86400,
         },
+        "weekly-newsletter-generate": {
+            "task": "newsletter.auto_generate",
+            "schedule": 604800,  # 7 days
+        },
     },
 )

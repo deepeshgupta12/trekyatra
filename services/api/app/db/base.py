@@ -7,7 +7,7 @@ from app.modules.cms.models import CMSPage
 from app.modules.content.models import BriefVersion, ContentBrief, ContentDraft, DraftClaim, KeywordCluster, PublishLog, TopicOpportunity
 from app.modules.leads.models import LeadSubmission
 from app.modules.linking.models import Page, PageLink
-from app.modules.newsletter.models import NewsletterSubscriber
+from app.modules.newsletter.models import NewsletterCampaign, NewsletterSubscriber, SocialSnippet
 from app.modules.pipeline.models import PipelineRun, PipelineStage
 from app.modules.rbac.models import Permission, Role
 from app.modules.refresh.models import RefreshLog
@@ -32,6 +32,8 @@ __all__ = [
     "PipelineStage",
     "LeadSubmission",
     "NewsletterSubscriber",
+    "NewsletterCampaign",
+    "SocialSnippet",
     "Page",
     "PageLink",
     "RefreshLog",

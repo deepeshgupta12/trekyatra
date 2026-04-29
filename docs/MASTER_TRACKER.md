@@ -54,12 +54,36 @@ All V0 foundations are shipped. The stack is live locally with:
 |------|-------|--------|
 | 25 | Advanced fact validation system | done |
 | 26 | Cannibalization detection + consolidation agent | done |
-| 27 | Topical authority scoring | pending |
+| 27 | Newsletter automation + repurposing agent | done |
 | 28 | Automated internal link injection | pending |
 | 29 | Content performance feedback loop | pending |
 | 30 | Multi-format content expansion | pending |
 | 31 | Advanced monetization layer | pending |
 | 32 | Production hardening | pending |
+
+### Step 27 — Newsletter Automation + Repurposing Agent
+Status: done
+What is done:
+- Alembic migration `20260429_0017_newsletter_campaigns.py` — creates `newsletter_campaigns` table (id UUID PK, week_label String(50), subject String(500), preview_text String(300) nullable, body_html Text, status String(32) default=draft, sent_at nullable, created_at) and `social_snippets` table (id UUID PK, page_id FK→pages SET NULL nullable, platform String(50), copy Text, copy_title String(500) nullable, status String(32) default=draft, created_at); applied with `alembic upgrade head`
+- `modules/newsletter/models.py` — NewsletterCampaign + SocialSnippet ORM models added (alongside existing NewsletterSubscriber)
+- `db/base.py` — NewsletterCampaign + SocialSnippet registered
+- `schemas/newsletter.py` — NewsletterCampaignResponse, GenerateCampaignResponse, SendCampaignResponse, SocialSnippetResponse, RepurposeResponse added
+- `modules/newsletter/service.py` — list_campaigns, get_campaign, send_campaign (Mailchimp/Brevo send via API; graceful no-op when platform unconfigured), _send_mailchimp, _send_brevo, list_snippets added
+- `modules/agents/newsletter/__init__.py`, `agent.py` — NewsletterAgent (LangGraph 3-node: fetch_pages → generate_newsletter → store_campaign); picks top 5 published CMSPages by recency; Claude generates subject/preview_text/body_html; JSON parsed with regex fallback; stores NewsletterCampaign with status=draft
+- `modules/agents/social_repurpose/__init__.py`, `agent.py` — SocialRepurposeAgent (LangGraph 3-node: fetch_page → generate_snippets → store_snippets); takes page_slug; Claude generates Instagram (280 chars) + Pinterest (title + 150 chars) + Twitter hook; stores 3 SocialSnippet records
+- `modules/newsletter/tasks.py` — auto_generate_newsletter_task (Celery) added before sync_subscriber_task
+- `worker/celery_app.py` — weekly-newsletter-generate beat entry (604800s)
+- `api/routes/newsletter_admin.py` — GET /admin/newsletter, POST /admin/newsletter/generate, GET /admin/newsletter/{id}, POST /admin/newsletter/{id}/send, GET /admin/newsletter/snippets/list, POST /admin/pages/{slug}/repurpose; all require get_current_admin
+- `api/router.py` — newsletter_admin_router + newsletter_pages_router registered
+- `tests/test_newsletter_agent.py` — 15 tests (2 model ORM, 5 list/get campaigns, 3 send paths, 1 generate mocked, 2 repurpose, 2 snippets); 271/271 backend tests pass
+- `lib/api.ts` — NewsletterCampaign, GenerateCampaignResult, SendCampaignResult, SocialSnippet, RepurposeResult interfaces; fetchNewsletterCampaigns, generateNewsletter, sendNewsletterCampaign, fetchSocialSnippets, repurposePage helpers
+- `app/(admin)/admin/newsletter/page.tsx` — campaign list with Preview + Send actions (iframe preview modal), social snippets tab with repurpose form + clipboard copy per snippet, status badges
+- `app/(admin)/admin/layout.tsx` — "Newsletter" nav item (Mail icon) added to Growth group
+- `next build` clean (132 static pages); 271/271 backend tests pass
+- GitNexus re-indexed: 5,930 nodes | 10,072 edges | 183 clusters | 181 flows
+What remains:
+- Configure NEWSLETTER_PLATFORM + NEWSLETTER_PLATFORM_API_KEY + NEWSLETTER_LIST_ID for real Mailchimp/Brevo send
+- Weekly auto-generate fires Monday 09:00 UTC via Celery Beat (worker must be running)
 
 ### Step 26 — Cannibalization Detection + Consolidation Agent
 Status: done
