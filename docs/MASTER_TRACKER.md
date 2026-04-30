@@ -56,10 +56,41 @@ All V0 foundations are shipped. The stack is live locally with:
 | 26 | Cannibalization detection + consolidation agent | done |
 | 27 | Newsletter automation + repurposing agent | done |
 | 28 | Compliance Guard Agent | done |
-| 29 | Content performance feedback loop | pending |
+| 29 | Operator listing + lead marketplace basics | done |
 | 30 | Multi-format content expansion | pending |
 | 31 | Advanced monetization layer | pending |
 | 32 | Production hardening | pending |
+
+### Step 29 — Operator Listing + Lead Marketplace Basics
+Status: done
+What is done:
+- Alembic migration `20260430_0019_operators.py` — creates `operators` table (id UUID PK, name, slug UNIQUE, region JSON, trek_types JSON, contact_email, phone nullable, website_url nullable, active bool server_default=true, created_at); creates `operator_specializations` table (id UUID PK, operator_id FK→operators CASCADE, trek_slug, priority int 1-5); adds `assigned_operator_id` FK→operators SET NULL + `status_history` JSON to `lead_submissions`; applied with `alembic upgrade head`
+- `modules/operators/__init__.py`, `models.py` — Operator + OperatorSpecialization ORM models; Operator has relationship to OperatorSpecialization (cascade delete) and to LeadSubmission; LeadSubmission now has `assigned_operator` relationship + `assigned_operator_id` + `status_history` columns
+- `db/base.py` — Operator + OperatorSpecialization registered
+- `schemas/operators.py` — OperatorCreate, OperatorPatch, OperatorResponse, OperatorSpecializationCreate/Response, AssignOperatorRequest
+- `schemas/leads.py` — VALID_LEAD_STATUSES extended: `routed`, `lost` added; `LeadResponse` extended with `assigned_operator_id` + `status_history`; `StatusHistoryEntry` model added
+- `modules/operators/service.py` — list_operators (active_only filter), get_operator, create_operator (slug uniqueness check), update_operator, delete_operator, find_matching_operator (fuzzy trek_types match, returns highest-priority active operator)
+- `modules/leads/service.py` — `_push_status_history` helper; `create_lead` now auto-routes to matching operator (status → "routed") via `find_matching_operator`; `update_lead_status` records history entry; `assign_operator_to_lead` (manual re-assign + auto-route to "routed" if "new")
+- `modules/leads/tasks.py` — `_send_email` helper extracted; `notify_admin_new_lead_task` updated to show assigned operator in email; new `notify_operator_new_lead_task` (Celery) sends lead details to operator contact_email
+- `api/routes/leads.py` — fires `notify_operator_new_lead_task.delay()` when lead is auto-routed on create
+- `api/routes/operators.py` — `router`: GET/POST /admin/operators, GET/PATCH/DELETE /admin/operators/{id}; `leads_router`: PATCH /admin/leads/{id}/assign-operator; both require get_current_admin
+- `api/router.py` — operators_router + operators_leads_router registered
+- `tests/test_operators.py` — 15 tests (TC-B01 through TC-B15): ORM insert, duplicate slug ValueError, list, get (found+not_found), update, delete, find_matching_operator hit+miss, API list, API create+get+delete, API patch, API 404, auto-route on lead create, API assign-operator, assign-operator 404s
+- `lib/api.ts` — AdminLead extended with `assigned_operator_id` + `status_history`; Operator + OperatorSpecialization interfaces; OperatorCreate; fetchOperators, createOperator, patchOperator, deleteOperator, assignLeadOperator helpers
+- `app/(admin)/admin/operators/page.tsx` — operator list table (name/contact, trek type chips, active/inactive toggle, edit/delete); add/edit inline form (name, slug, email, phone, website, regions, trek_types, active toggle); auto-slug from name on add; confirmation dialog on delete
+- `app/(admin)/admin/leads/page.tsx` — rewritten: assigned_operator column with assign-dropdown for unassigned leads; status_history expandable drawer per row; routed/lost statuses added to KPI row + filter + action buttons; 6-column KPI strip
+- `app/(admin)/admin/layout.tsx` — "Operators" nav item (Building2 icon) added to Growth group
+- 299/299 backend tests pass; `next build` clean (✓ Compiled successfully)
+- GitNexus re-indexed: 6,407 nodes | 10,901 edges | 215 clusters | 187 flows
+What remains:
+- SMTP must be configured in services/api/.env for operator email notifications to fire
+- Step 30 (Dynamic destination hubs) pending
+
+### Post-Step 28 Bug Fixes
+Status: done
+What was done:
+- **Bug 1 — Compliance check not persisting to DB** (commit after Step 28): `POST /admin/drafts/{id}/compliance-check` route called `compliance_service.run_compliance_check(db, draft_id)` which internally did `db.flush()` but the route never called `db.commit()`. Because `get_db` uses `autocommit=False` and only closes (never commits), the agent's `compliance_status` + `compliance_notes` changes were rolled back when the session closed. Every subsequent `GET /drafts` returned the original `compliance_status = "unchecked"`. Fix: added `db.commit()` after the successful agent run in `api/routes/compliance.py`. 284/284 tests pass after fix.
+- **Bug 2 — TC-F05 "Re-check" label never appears**: The compliance button label condition `compStatus === "passed"` only matched the "passed" state. After an override the status is "overridden", so the button always showed "Check Compliance" again. Fix: changed condition to `compStatus === "unchecked" ? "Check Compliance" : "Re-check"` — now shows "Re-check" for any previously-checked state (passed/flagged/overridden). In `app/(admin)/admin/drafts/page.tsx`.
 
 ### Step 28 — Compliance Guard Agent
 Status: done

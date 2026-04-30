@@ -38,6 +38,8 @@ def compliance_check(
     if result.get("errors"):
         raise HTTPException(status_code=400, detail=result["errors"][0])
 
+    db.commit()  # persist compliance_status + compliance_notes set by agent's db.flush()
+
     out = result.get("output", {})
     results_raw = out.get("results", [])
     return ComplianceCheckResponse(

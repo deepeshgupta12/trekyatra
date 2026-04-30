@@ -61,8 +61,33 @@ Build an operator data model and a basic lead marketplace where submitted leads 
 - `apps/web-next/lib/api.ts`
 
 ## Status
-pending
+Done
+
+## Files Created
+- `services/api/alembic/versions/20260430_0019_operators.py`
+- `services/api/app/modules/operators/__init__.py`
+- `services/api/app/modules/operators/models.py`
+- `services/api/app/modules/operators/service.py`
+- `services/api/app/api/routes/operators.py`
+- `services/api/app/schemas/operators.py`
+- `services/api/tests/test_operators.py`
+- `apps/web-next/app/(admin)/admin/operators/page.tsx`
+
+## Files Modified
+- `services/api/app/modules/leads/models.py` — added assigned_operator_id FK, status_history JSON, assigned_operator relationship
+- `services/api/app/modules/leads/service.py` — routing logic, _push_status_history, assign_operator_to_lead
+- `services/api/app/modules/leads/tasks.py` — notify_operator_new_lead_task, _send_email helper
+- `services/api/app/api/routes/leads.py` — fires notify_operator_new_lead_task on routed leads
+- `services/api/app/db/base.py` — Operator + OperatorSpecialization registered
+- `services/api/app/api/router.py` — operators_router + operators_leads_router registered
+- `services/api/app/schemas/leads.py` — routed/lost statuses, assigned_operator_id + status_history on LeadResponse
+- `apps/web-next/app/(admin)/admin/leads/page.tsx` — operator column, assign-dropdown, history drawer, new statuses
+- `apps/web-next/app/(admin)/admin/layout.tsx` — Operators nav item
+- `apps/web-next/lib/api.ts` — Operator types + CRUD helpers + assignLeadOperator
 
 ## Notes
 - Operator email notification uses the same SMTP config as Step 22. If SMTP is unconfigured, routing still happens (DB update) but email is skipped gracefully.
-- Token-authenticated lead status update link: sign a JWT with {lead_id, operator_id, exp: 7 days}, validate on PATCH /leads/operator-update/{token} — no full auth needed for operators.
+- Token-authenticated operator update link deferred — JWT infrastructure exists (security.py), can be added as a micro-enhancement in a later step.
+- Auto-routing uses case-insensitive substring match between `trek_interest` and operator `trek_types`. Highest-priority specialization score wins when multiple operators match.
+- `status_history` is a JSON array: [{status, changed_at, changed_by}]. `changed_by` is "system" for auto-routes, "admin" for manual status updates.
+- 299/299 backend tests pass; next build clean; GitNexus 6,407 nodes | 10,901 edges

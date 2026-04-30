@@ -31,12 +31,20 @@ class LeadResponse(BaseModel):
     trek_interest: str
     source_page: str
     status: str = "new"
+    assigned_operator_id: uuid.UUID | None = None
+    status_history: list[dict] | None = None
     created_at: datetime
 
     model_config = {"from_attributes": True}
 
 
-VALID_LEAD_STATUSES = {"new", "contacted", "converted", "archived"}
+VALID_LEAD_STATUSES = {"new", "routed", "contacted", "converted", "lost", "archived"}
+
+
+class StatusHistoryEntry(BaseModel):
+    status: str
+    changed_at: str
+    changed_by: str = "system"
 
 
 class LeadStatusPatch(BaseModel):

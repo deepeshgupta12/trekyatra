@@ -400,7 +400,90 @@ export interface AdminLead {
   trek_interest: string;
   source_page: string;
   status: string;
+  assigned_operator_id: string | null;
+  status_history: { status: string; changed_at: string; changed_by: string }[] | null;
   created_at: string;
+}
+
+export interface OperatorSpecialization {
+  id: string;
+  operator_id: string;
+  trek_slug: string;
+  priority: number;
+}
+
+export interface Operator {
+  id: string;
+  name: string;
+  slug: string;
+  region: string[] | null;
+  trek_types: string[] | null;
+  contact_email: string;
+  phone: string | null;
+  website_url: string | null;
+  active: boolean;
+  created_at: string;
+  specializations: OperatorSpecialization[];
+}
+
+export interface OperatorCreate {
+  name: string;
+  slug: string;
+  contact_email: string;
+  region?: string[];
+  trek_types?: string[];
+  phone?: string;
+  website_url?: string;
+  active?: boolean;
+}
+
+export async function fetchOperators(activeOnly?: boolean): Promise<Operator[]> {
+  const q = activeOnly ? "?active_only=true" : "";
+  return apiFetch<Operator[]>(`/admin/operators${q}`);
+}
+
+export async function createOperator(payload: OperatorCreate): Promise<Operator> {
+  const res = await fetch(`/api/v1/admin/operators`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(payload),
+  });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error((err as { detail?: string }).detail ?? `Create operator failed (${res.status})`);
+  }
+  return res.json();
+}
+
+export async function patchOperator(id: string, patch: Partial<Omit<OperatorCreate, "slug">>): Promise<Operator> {
+  const res = await fetch(`/api/v1/admin/operators/${id}`, {
+    method: "PATCH",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(patch),
+  });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error((err as { detail?: string }).detail ?? `Patch operator failed (${res.status})`);
+  }
+  return res.json();
+}
+
+export async function deleteOperator(id: string): Promise<void> {
+  const res = await fetch(`/api/v1/admin/operators/${id}`, { method: "DELETE" });
+  if (!res.ok) throw new Error(`Delete operator failed (${res.status})`);
+}
+
+export async function assignLeadOperator(leadId: string, operatorId: string): Promise<AdminLead> {
+  const res = await fetch(`/api/v1/admin/leads/${leadId}/assign-operator`, {
+    method: "PATCH",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ operator_id: operatorId }),
+  });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error((err as { detail?: string }).detail ?? `Assign operator failed (${res.status})`);
+  }
+  return res.json();
 }
 
 export async function fetchAdminLeads(params?: { limit?: number; offset?: number; status?: string }): Promise<AdminLead[]> {

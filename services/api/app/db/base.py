@@ -6,6 +6,7 @@ from app.modules.auth.models import AuthIdentity, User, UserSession
 from app.modules.cms.models import CMSPage
 from app.modules.content.models import BriefVersion, ContentBrief, ContentDraft, DraftClaim, KeywordCluster, PublishLog, TopicOpportunity
 from app.modules.leads.models import LeadSubmission
+from app.modules.operators.models import Operator, OperatorSpecialization
 from app.modules.linking.models import Page, PageLink
 from app.modules.newsletter.models import NewsletterCampaign, NewsletterSubscriber, SocialSnippet
 from app.modules.pipeline.models import PipelineRun, PipelineStage
@@ -14,6 +15,8 @@ from app.modules.compliance.models import ComplianceRule
 from app.modules.refresh.models import RefreshLog
 
 __all__ = [
+    "Operator",
+    "OperatorSpecialization",
     "Base",
     "User",
     "AuthIdentity",

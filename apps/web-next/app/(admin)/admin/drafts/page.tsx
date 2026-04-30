@@ -583,7 +583,7 @@ export default function DraftReview() {
                       ) : (
                         <Shield className="h-3.5 w-3.5" />
                       )}
-                      {compStatus === "passed" ? "Re-check" : "Check Compliance"}
+                      {compStatus === "unchecked" ? "Check Compliance" : "Re-check"}
                     </Button>
                   )}
 

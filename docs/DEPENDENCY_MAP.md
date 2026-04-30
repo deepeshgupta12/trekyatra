@@ -216,6 +216,29 @@ This file tracks structural dependencies, source-of-truth modules, and Nexus/Git
 - `services/api/tests/test_cms.py` -> UPDATED: 11 new tests (table format, season-heading guard, H3 FAQ, clear endpoints); 168/168 total pass
 - `CLAUDE.md` -> UPDATED: Section 16 (Inter-Step Dependency Check Protocol) + Section 15 (Admin UI Design System) added; GitNexus skill table added to GitNexus section
 
+### Post-Step 28 Bug Fixes blast radius
+- `services/api/app/api/routes/compliance.py:compliance_check` -> UPDATED: added `db.commit()` after successful `run_compliance_check`; without this the agent's `db.flush()` was rolled back when the session closed (`autocommit=False` + `get_db` never commits); blast radius: LOW (0 upstream callers)
+- `apps/web-next/app/(admin)/admin/drafts/page.tsx` -> UPDATED: "Re-check" label condition changed from `compStatus === "passed"` to `compStatus !== "unchecked"` — shows "Re-check" for passed/flagged/overridden states; blast radius: LOW (leaf admin page)
+
+### Step 29 — Operator Listing + Lead Marketplace blast radius
+- `services/api/alembic/versions/20260430_0019_operators.py` — NEW: operators + operator_specializations tables; adds assigned_operator_id FK + status_history JSON to lead_submissions; blast radius: LOW (new tables, additive columns)
+- `services/api/app/modules/operators/models.py` — NEW: Operator + OperatorSpecialization ORM; blast radius: LOW (new models)
+- `services/api/app/modules/operators/service.py` — NEW: CRUD + find_matching_operator; blast radius: LOW (new module, called only by leads service + operators routes)
+- `services/api/app/schemas/operators.py` — NEW: OperatorCreate, OperatorPatch, OperatorResponse, AssignOperatorRequest; blast radius: LOW
+- `services/api/app/api/routes/operators.py` — NEW: GET/POST/GET/PATCH/DELETE /admin/operators + PATCH /admin/leads/{id}/assign-operator; blast radius: LOW
+- `services/api/app/db/base.py` — UPDATED: Operator + OperatorSpecialization registered; blast radius: LOW (additive)
+- `services/api/app/api/router.py` — UPDATED: operators_router + operators_leads_router registered; blast radius: LOW (additive)
+- `services/api/app/modules/leads/models.py` — UPDATED: added assigned_operator_id FK (SET NULL), status_history JSON, assigned_operator relationship; blast radius: MEDIUM (5 callers: create_lead, base.py, tasks.py, service.py, analytics/service.py)
+- `services/api/app/modules/leads/service.py` — UPDATED: _push_status_history helper; create_lead auto-routes; update_lead_status records history; assign_operator_to_lead added; blast radius: MEDIUM (2 route callers: leads.py + leads_admin.py)
+- `services/api/app/modules/leads/tasks.py` — UPDATED: _send_email extracted; notify_admin_new_lead_task shows operator line; notify_operator_new_lead_task added; blast radius: LOW (Celery tasks, no sync callers)
+- `services/api/app/api/routes/leads.py` — UPDATED: fires notify_operator_new_lead_task.delay() when lead is routed; blast radius: LOW (leaf route)
+- `services/api/app/schemas/leads.py` — UPDATED: routed/lost added to VALID_LEAD_STATUSES; assigned_operator_id + status_history added to LeadResponse; blast radius: MEDIUM (used by leads + leads_admin routes)
+- `services/api/tests/test_operators.py` — NEW: 15 tests; blast radius: LOW (test file)
+- `apps/web-next/lib/api.ts` — UPDATED: AdminLead extended; Operator + helpers added; blast radius: LOW (additive)
+- `apps/web-next/app/(admin)/admin/operators/page.tsx` — NEW: operator list + inline add/edit form; blast radius: LOW (leaf admin page)
+- `apps/web-next/app/(admin)/admin/leads/page.tsx` — REWRITTEN: operator column, assign-dropdown, history drawer, new statuses; blast radius: LOW (leaf admin page)
+- `apps/web-next/app/(admin)/admin/layout.tsx` — UPDATED: Operators nav item (Building2) added; blast radius: LOW (nav only)
+
 ### Step 20 — Monetization Frontend Components blast radius
 - `services/api/alembic/versions/20260427_0011_leads_newsletter.py` — NEW: creates lead_submissions + newsletter_subscribers tables; blast radius: LOW (new tables, no callers yet)
 - `services/api/app/modules/leads/models.py` — NEW: LeadSubmission ORM model; blast radius: LOW

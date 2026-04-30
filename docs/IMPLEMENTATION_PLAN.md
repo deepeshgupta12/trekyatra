@@ -209,7 +209,7 @@
 - Safety disclaimer enforcement on sensitive pages
 - Human-review escalation rules
 
-### Step 29 — Operator listing + lead marketplace basics
+### Step 29 — Operator listing + lead marketplace basics [DONE]
 - Operator model (name, region, trek types, contact)
 - Lead routing by category/region/operator
 - Operator admin management
