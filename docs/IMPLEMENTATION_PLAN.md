@@ -215,7 +215,7 @@
 - Operator admin management
 - Lead lifecycle tracking (new → contacted → converted)
 
-### Step 30 — Dynamic destination hubs
+### Step 30 — Dynamic destination hubs [DONE]
 - Programmatic destination hub pages
 - Auto-generated regional cluster landing pages
 - Seasonal landing pages (automated seasonal content refresh)

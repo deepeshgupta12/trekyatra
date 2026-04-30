@@ -59,9 +59,33 @@ Build programmatic destination hub pages (regional and seasonal) that auto-aggre
 - `apps/web-next/lib/api.ts`
 
 ## Status
-pending
+Done
+
+## Files Created
+- `services/api/app/modules/agents/seasonal_content/__init__.py`
+- `services/api/app/modules/agents/seasonal_content/agent.py`
+- `services/api/app/modules/hubs/__init__.py`
+- `services/api/app/modules/hubs/tasks.py`
+- `services/api/app/schemas/hubs.py`
+- `services/api/app/api/routes/hubs.py`
+- `services/api/tests/test_hubs.py`
+- `apps/web-next/app/(public)/trek-types/[slug]/page.tsx`
+- `apps/web-next/app/(admin)/admin/hubs/page.tsx`
+
+## Files Modified
+- `services/api/app/api/router.py` — hubs_router registered
+- `services/api/app/worker/celery_app.py` — `app.modules.hubs.tasks` in include; `quarterly-seasonal-hub-regeneration` beat entry (90 days)
+- `apps/web-next/app/(public)/regions/[slug]/page.tsx` — CMS-first data fetch (regional_hub), BreadcrumbSchema, FAQAccordion, static fallback
+- `apps/web-next/app/(public)/seasons/[slug]/page.tsx` — CMS-first data fetch (seasonal_hub), BreadcrumbSchema, FAQAccordion, Leaf icon for spring; static fallback preserved
+- `apps/web-next/app/(admin)/admin/layout.tsx` — "Destination Hubs" nav item (Globe icon) added to Growth group
+- `apps/web-next/lib/api.ts` — HubPage, HubRegenerateResult interfaces; fetchHubPages, regenerateHub helpers
 
 ## Notes
-- Regional and seasonal hubs are high-priority SEO pages — must have valid `TravelDestination` schema markup and canonical URLs.
-- SeasonalContentAgent generates 600–900 word overview pages; max_tokens = 2000.
-- Cluster hub pages use the existing ContentWritingAgent with a new system prompt variant for category overviews.
+- No Alembic migration — CMSPage already has `page_type` field; hub pages stored as `seasonal_hub`, `cluster_hub`, `regional_hub` values.
+- SeasonalContentAgent supports 4 slugs: winter, summer, monsoon, spring. `max_tokens = 2000`. Output stored as CMSPage with slug `seasons/{slug}`.
+- `POST /admin/hubs/{slug:path}/regenerate` — path param captures slashes (e.g., `seasons/winter`). Seasonal hubs regenerate via SeasonalContentAgent; cluster/regional hubs return 501 (use pipeline).
+- Quarterly beat task (`hubs.regenerate_seasonal_hubs`) runs every 90 days — regenerates all 4 seasons.
+- regions/[slug] and seasons/[slug] now CMS-first with full static fallback when no hub page exists.
+- trek-types/[slug] is a new server component; no static params — fully dynamic, graceful fallback.
+- Admin /admin/hubs shows existing hub pages + "Generate Missing Seasonal Hubs" panel for seasons not yet generated.
+- 308/308 backend tests pass; `next build` clean; GitNexus re-indexed: 6,572 nodes | 11,155 edges | 220 clusters | 178 flows.

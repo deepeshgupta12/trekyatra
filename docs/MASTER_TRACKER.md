@@ -57,9 +57,32 @@ All V0 foundations are shipped. The stack is live locally with:
 | 27 | Newsletter automation + repurposing agent | done |
 | 28 | Compliance Guard Agent | done |
 | 29 | Operator listing + lead marketplace basics | done |
-| 30 | Multi-format content expansion | pending |
+| 30 | Dynamic destination hubs | done |
 | 31 | Advanced monetization layer | pending |
 | 32 | Production hardening | pending |
+
+### Step 30 — Dynamic Destination Hubs
+Status: done
+What is done:
+- No Alembic migration — CMSPage already has `page_type`; hub pages use values `seasonal_hub`, `cluster_hub`, `regional_hub`
+- `modules/agents/seasonal_content/__init__.py`, `agent.py` — SeasonalContentAgent (LangGraph 3-node: prepare_context → generate_content → store_page); supports 4 slugs: winter/summer/monsoon/spring; generates 700–900 word seasonal overview; upserts CMSPage slug=`seasons/{slug}` with status=published; `max_tokens = 2000`; SEASON_META dict drives titles/months/overview/regions prompts
+- `modules/hubs/__init__.py`, `tasks.py` — `regenerate_seasonal_hubs_task` Celery task (name: `hubs.regenerate_seasonal_hubs`); iterates all 4 seasons; graceful per-season error catch
+- `schemas/hubs.py` — HubPageResponse, HubRegenerateRequest, HubRegenerateResponse; HUB_PAGE_TYPES set; VALID_SEASON_SLUGS set
+- `api/routes/hubs.py` — GET /admin/hubs (filter by hub_type); POST /admin/hubs/{slug:path}/regenerate (path param captures slashes); seasonal → SeasonalContentAgent; cluster/regional → 501 (pipeline managed); both require get_current_admin
+- `api/router.py` — hubs_router registered
+- `worker/celery_app.py` — `app.modules.hubs.tasks` in include list; `quarterly-seasonal-hub-regeneration` beat entry (7776000s = 90 days)
+- `tests/test_hubs.py` — 9 tests: SEASON_META coverage, unknown season error, agent creates page (mocked LLM), API list (all + filtered + invalid type), API regenerate seasonal (mocked LLM), API regenerate cluster returns 501, API regenerate invalid season returns 422
+- `lib/api.ts` — HubPage, HubRegenerateResult interfaces; fetchHubPages, regenerateHub helpers
+- `app/(public)/trek-types/[slug]/page.tsx` — new server component; CMS-powered cluster hub page; hero + breadcrumb + cms_section prose + FAQ + CTA; static template fallback; generateMetadata with canonical/OG; revalidate=3600
+- `app/(public)/regions/[slug]/page.tsx` — CMS-first (fetchCMSPage `regions/{slug}`); renders CMS content_html block if available; FAQAccordion from content_json.faqs; BreadcrumbSchema; static fallback preserved
+- `app/(public)/seasons/[slug]/page.tsx` — CMS-first (fetchCMSPage `seasons/{slug}`); renders CMS content if available; FAQAccordion from content_json.faqs; BreadcrumbSchema; spring slug + Leaf icon added; AffiliateDisclosure appended
+- `app/(admin)/admin/hubs/page.tsx` — Hub list table (type badge, status badge, last updated, Regenerate button per seasonal hub, View link); KPI strip (total/seasonal/cluster/regional); filter pills by hub_type; "Generate Missing Seasonal Hubs" panel for seasons not yet generated; real-time message feedback per slug
+- `app/(admin)/admin/layout.tsx` — "Destination Hubs" nav item (Globe icon) added to Growth group after Operators
+- 308/308 backend tests pass; `next build` clean; GitNexus re-indexed: 6,572 nodes | 11,155 edges | 220 clusters | 178 flows
+What remains:
+- ANTHROPIC_API_KEY required for SeasonalContentAgent to generate real content
+- cluster_hub regeneration via pipeline (POST /admin/hubs/trek-types/{slug}/regenerate returns 501 — use pipeline trigger instead)
+- regional_hub content generation: create CMSPages with page_type=regional_hub via pipeline or manual CMS editor
 
 ### Step 29 — Operator Listing + Lead Marketplace Basics
 Status: done

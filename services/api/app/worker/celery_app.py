@@ -14,6 +14,7 @@ celery_app = Celery(
         "app.modules.leads.tasks",
         "app.modules.newsletter.tasks",
         "app.modules.refresh.tasks",
+        "app.modules.hubs.tasks",
     ],
 )
 
@@ -46,6 +47,10 @@ celery_app.conf.update(
         "weekly-newsletter-generate": {
             "task": "newsletter.auto_generate",
             "schedule": 604800,  # 7 days
+        },
+        "quarterly-seasonal-hub-regeneration": {
+            "task": "hubs.regenerate_seasonal_hubs",
+            "schedule": 7776000,  # 90 days
         },
     },
 )

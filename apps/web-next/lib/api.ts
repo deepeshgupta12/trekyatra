@@ -851,3 +851,48 @@ export async function overrideCompliance(draftId: string, overrideNote: string):
   }
   return res.json();
 }
+
+// ---------------------------------------------------------------------------
+// Hubs (Step 30)
+// ---------------------------------------------------------------------------
+
+export interface HubPage {
+  id: string;
+  slug: string;
+  page_type: "seasonal_hub" | "cluster_hub" | "regional_hub";
+  title: string;
+  status: string;
+  published_at: string | null;
+  updated_at: string | null;
+  seo_title: string | null;
+  hero_image_url: string | null;
+}
+
+export interface HubRegenerateResult {
+  slug: string;
+  hub_type: string;
+  message: string;
+  page_id: string | null;
+}
+
+export async function fetchHubPages(hubType?: string): Promise<HubPage[]> {
+  const qs = hubType ? `?hub_type=${encodeURIComponent(hubType)}` : "";
+  const res = await fetch(`${apiBase}/api/v1/admin/hubs${qs}`);
+  if (!res.ok) throw new Error(`API ${res.status}: fetch hubs`);
+  return res.json();
+}
+
+export async function regenerateHub(slug: string): Promise<HubRegenerateResult> {
+  const encodedSlug = slug.split("/").map(encodeURIComponent).join("/");
+  const res = await fetch(`${apiBase}/api/v1/admin/hubs/${encodedSlug}/regenerate`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({}),
+  });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error(err.detail || `API ${res.status}: regenerate hub`);
+  }
+  return res.json();
+}
+

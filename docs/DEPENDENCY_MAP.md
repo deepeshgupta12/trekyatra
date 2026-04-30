@@ -220,6 +220,23 @@ This file tracks structural dependencies, source-of-truth modules, and Nexus/Git
 - `services/api/app/api/routes/compliance.py:compliance_check` -> UPDATED: added `db.commit()` after successful `run_compliance_check`; without this the agent's `db.flush()` was rolled back when the session closed (`autocommit=False` + `get_db` never commits); blast radius: LOW (0 upstream callers)
 - `apps/web-next/app/(admin)/admin/drafts/page.tsx` -> UPDATED: "Re-check" label condition changed from `compStatus === "passed"` to `compStatus !== "unchecked"` — shows "Re-check" for passed/flagged/overridden states; blast radius: LOW (leaf admin page)
 
+### Step 30 — Dynamic Destination Hubs blast radius
+- `services/api/app/modules/agents/seasonal_content/__init__.py` — NEW: package init; blast radius: LOW
+- `services/api/app/modules/agents/seasonal_content/agent.py:SeasonalContentAgent` — NEW: 3-node LangGraph; reads SEASON_META; calls Claude (max_tokens=2000); upserts CMSPage (seasonal_hub); blast radius: LOW (new module, called only by hubs route)
+- `services/api/app/modules/hubs/__init__.py` — NEW: package init; blast radius: LOW
+- `services/api/app/modules/hubs/tasks.py:regenerate_seasonal_hubs_task` — NEW: quarterly Celery task; iterates 4 seasons; blast radius: LOW (new Celery task, no sync callers)
+- `services/api/app/schemas/hubs.py` — NEW: HubPageResponse, HubRegenerateRequest/Response; HUB_PAGE_TYPES set; blast radius: LOW (new file)
+- `services/api/app/api/routes/hubs.py` — NEW: GET /admin/hubs + POST /admin/hubs/{slug:path}/regenerate; requires get_current_admin; blast radius: LOW (new routes)
+- `services/api/app/api/router.py` — UPDATED: hubs_router registered; blast radius: LOW (additive)
+- `services/api/app/worker/celery_app.py` — UPDATED: `app.modules.hubs.tasks` in include; `quarterly-seasonal-hub-regeneration` beat entry (7776000s); blast radius: LOW (additive)
+- `services/api/tests/test_hubs.py` — NEW: 9 tests; blast radius: LOW (test-only)
+- `apps/web-next/lib/api.ts` — UPDATED: HubPage, HubRegenerateResult interfaces; fetchHubPages, regenerateHub helpers; blast radius: LOW (additive)
+- `apps/web-next/app/(public)/trek-types/[slug]/page.tsx` — NEW: CMS-powered cluster hub page; server component; blast radius: LOW (leaf page)
+- `apps/web-next/app/(public)/regions/[slug]/page.tsx` — UPDATED: CMS-first fetchCMSPage + FAQAccordion + BreadcrumbSchema; static fallback preserved; blast radius: LOW (leaf page)
+- `apps/web-next/app/(public)/seasons/[slug]/page.tsx` — UPDATED: CMS-first fetchCMSPage + FAQAccordion + BreadcrumbSchema; spring slug + Leaf icon; AffiliateDisclosure; blast radius: LOW (leaf page)
+- `apps/web-next/app/(admin)/admin/hubs/page.tsx` — NEW: hub list table + KPI strip + filter pills + missing seasonal hubs panel; blast radius: LOW (leaf admin page)
+- `apps/web-next/app/(admin)/admin/layout.tsx` — UPDATED: "Destination Hubs" nav item (Globe icon) after Operators; blast radius: MEDIUM (admin layout, visible to all admin pages)
+
 ### Step 29 — Operator Listing + Lead Marketplace blast radius
 - `services/api/alembic/versions/20260430_0019_operators.py` — NEW: operators + operator_specializations tables; adds assigned_operator_id FK + status_history JSON to lead_submissions; blast radius: LOW (new tables, additive columns)
 - `services/api/app/modules/operators/models.py` — NEW: Operator + OperatorSpecialization ORM; blast radius: LOW (new models)
