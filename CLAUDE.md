@@ -1,7 +1,7 @@
 <!-- gitnexus:start -->
 # GitNexus — Code Intelligence
 
-This project is indexed by GitNexus as **trekyatra** (5431 symbols, 9141 relationships, 173 execution flows). Use the GitNexus MCP tools to understand code, assess impact, and navigate safely.
+This project is indexed by GitNexus as **trekyatra** (6164 symbols, 10475 relationships, 187 execution flows). Use the GitNexus MCP tools to understand code, assess impact, and navigate safely.
 
 > If any GitNexus tool warns the index is stale, run `npx gitnexus analyze` in terminal first.
 
@@ -278,23 +278,44 @@ A step is **not done** until every item in this checklist is confirmed:
 - [ ] All new env vars documented in `.env.example`
 - [ ] Git commit created with correct format
 - [ ] Git push executed (after all above pass)
+- [ ] **Backend Test Cases** delivered to user in the completion message
 - [ ] **Frontend Test Cases** delivered to user in the completion message
 
 Only after ALL items above are checked off does the message "Step X is complete" get sent to the user.
 
 ---
 
-## 12. Frontend Test Case Delivery Standard
+## 12. Test Case Delivery Standard
 
-Every step with frontend changes must end with a formatted test case block in the final message to the user. This is how the user validates the step before confirming it closed.
+Every step must end with both Backend Test Cases and Frontend Test Cases delivered to the user in the final message. These are how the user validates the step before confirming it closed.
 
-### Format
+### Backend Test Cases Format
+
+List every new backend test with: test ID, test name, and one line on what it verifies.
+
+```
+## Backend Test Cases — Step XX: [Step Title]
+
+Run: PYTHONPATH=services/api .venv/bin/pytest services/api/tests/test_<module>.py -v
+
+### TC-B01: test_<name>
+Verifies: <one-line description of what the test asserts>
+
+### TC-B02: test_<name>
+Verifies: <one-line description>
+...
+```
+
+Every backend test case must be labelled TC-B01, TC-B02, etc. so the user can cross-reference failing tests by ID.
+
+### Frontend Test Cases Format
+
 ```
 ## Frontend Test Cases — Step XX: [Step Title]
 
 Run: cd apps/web-next && npm run dev (then open http://localhost:3000)
 
-### TC-01: [Feature name — happy path]
+### TC-F01: [Feature name — happy path]
 URL: http://localhost:3000/path
 Steps:
   1. ...
@@ -302,19 +323,19 @@ Steps:
 Expected result: ...
 Pass = ...
 
-### TC-02: [Feature name — empty/error state]
+### TC-F02: [Feature name — empty/error state]
 ...
 
-### TC-03: [Mobile layout]
+### TC-F03: [Mobile layout]
 Resize browser to 375px width.
 Visit: http://localhost:3000/path
 Expected: ...
 
-### TC-04: [Auth-gated behavior, if applicable]
+### TC-F04: [Auth-gated behavior, if applicable]
 ...
 ```
 
-Cover at minimum: happy path, one error/edge case, mobile layout check, and any auth-sensitive flows. Label each test case TC-01, TC-02, etc. so the user can report back by number.
+Cover at minimum: happy path, one error/edge case, mobile layout check, and any auth-sensitive flows. Label each test case TC-F01, TC-F02, etc. so the user can report back by number.
 
 ---
 
@@ -324,8 +345,8 @@ Cover at minimum: happy path, one error/edge case, mobile layout check, and any 
 - Report blast radius results before making any code changes
 - Report each sub-task as it completes (migration done, routes done, tests passing, build clean, etc.)
 - If anything deviates from the step doc scope, flag it explicitly before implementing
-- After git push, state: commit hash, what was pushed, and list the frontend test cases
-- Never say "step X is complete" without delivering the full step completion gate checklist
+- After git push, state: commit hash, what was pushed, and list both backend and frontend test cases
+- Never say "step X is complete" without delivering both the Backend Test Cases and Frontend Test Cases blocks
 
 ---
 

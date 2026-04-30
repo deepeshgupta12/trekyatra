@@ -39,11 +39,24 @@ def publish_to_cms(db: Session, *, draft_id: uuid.UUID) -> DraftPublishResponse:
     from app.modules.cms.service import upsert_page_from_draft
     from app.modules.linking.service import sync_pages_from_cms
 
+    from app.modules.compliance.service import run_compliance_check
+
     draft = db.scalar(select(ContentDraft).where(ContentDraft.id == draft_id))
     if draft is None:
         raise ValueError(f"Draft {draft_id} not found.")
     if draft.status != "approved":
         raise ValueError(f"Draft must be in 'approved' state to publish. Current: '{draft.status}'.")
+
+    # Compliance gate: auto-check then block if flagged (unless already overridden)
+    if draft.compliance_status == "unchecked":
+        run_compliance_check(db, draft_id)
+        # Re-fetch after agent write
+        draft = db.scalar(select(ContentDraft).where(ContentDraft.id == draft_id))
+
+    if draft.compliance_status == "flagged":
+        raise ValueError(
+            "Draft failed compliance check. Fix flagged issues or use compliance-override before publishing."
+        )
 
     log = PublishLog(draft_id=draft.id, status="pending")
     db.add(log)

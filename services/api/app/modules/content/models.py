@@ -120,6 +120,17 @@ class ContentDraft(UUIDPrimaryKeyMixin, TimestampMixin, Base):
     cms_page_id: Mapped[uuid.UUID | None] = mapped_column(Uuid, nullable=True)
     freshness_interval_days: Mapped[int] = mapped_column(Integer, nullable=False, default=90)
 
+    # Step 28 — compliance
+    compliance_status: Mapped[str] = mapped_column(
+        String(32), nullable=False, default="unchecked", index=True
+    )
+    compliance_notes: Mapped[list[dict] | None] = mapped_column(JSON, nullable=True)
+    compliance_override_note: Mapped[str | None] = mapped_column(Text, nullable=True)
+    compliance_overridden_by: Mapped[str | None] = mapped_column(String(255), nullable=True)
+    compliance_overridden_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True), nullable=True
+    )
+
     brief: Mapped[ContentBrief] = relationship(back_populates="drafts")
     claims: Mapped[list["DraftClaim"]] = relationship(
         back_populates="draft",

@@ -107,8 +107,11 @@ def test_publish_requires_approved_status() -> None:
 
 
 def test_publish_to_cms_succeeds() -> None:
+    # Compliance check is mocked: these tests cover the publish flow, not compliance logic
     draft_id = _create_draft_in_state("approved")
-    r = client.post(f"/api/v1/admin/drafts/{draft_id}/publish")
+    with patch("app.modules.compliance.service.run_compliance_check") as mock_cc:
+        mock_cc.return_value = {"output": {"compliance_status": "passed"}, "errors": []}
+        r = client.post(f"/api/v1/admin/drafts/{draft_id}/publish")
     assert r.status_code == 200
     data = r.json()
     assert data["status"] == "succeeded"
@@ -121,7 +124,9 @@ def test_publish_creates_cms_page_in_db() -> None:
     with SessionLocal() as db:
         before = db.query(CMSPage).count()
     draft_id = _create_draft_in_state("approved")
-    client.post(f"/api/v1/admin/drafts/{draft_id}/publish")
+    with patch("app.modules.compliance.service.run_compliance_check") as mock_cc:
+        mock_cc.return_value = {"output": {"compliance_status": "passed"}, "errors": []}
+        client.post(f"/api/v1/admin/drafts/{draft_id}/publish")
     with SessionLocal() as db:
         pages = db.query(CMSPage).all()
         new_pages = [p for p in pages if p.status == "published"]
@@ -131,7 +136,9 @@ def test_publish_creates_cms_page_in_db() -> None:
 
 def test_publish_log_recorded_after_publish() -> None:
     draft_id = _create_draft_in_state("approved")
-    client.post(f"/api/v1/admin/drafts/{draft_id}/publish")
+    with patch("app.modules.compliance.service.run_compliance_check") as mock_cc:
+        mock_cc.return_value = {"output": {"compliance_status": "passed"}, "errors": []}
+        client.post(f"/api/v1/admin/drafts/{draft_id}/publish")
     r = client.get(f"/api/v1/admin/drafts/{draft_id}/publish-log")
     assert r.status_code == 200
     logs = r.json()

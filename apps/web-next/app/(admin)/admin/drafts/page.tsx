@@ -11,8 +11,17 @@ import {
   Sparkles,
   FileText,
   Flag,
+  Shield,
+  ShieldCheck,
+  ShieldX,
+  ShieldAlert,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import {
+  ComplianceResultItem,
+  runComplianceCheck,
+  overrideCompliance,
+} from "@/lib/api";
 
 interface Draft {
   id: string;
@@ -23,6 +32,8 @@ interface Draft {
   confidence_score: number | null;
   content_markdown: string | null;
   optimized_content: string | null;
+  compliance_status: string;
+  compliance_notes: ComplianceResultItem[] | null;
   created_at: string;
 }
 
@@ -50,6 +61,20 @@ const STATUS_STYLE: Record<string, string> = {
   published: "text-pine bg-pine/10 border border-pine/20",
 };
 
+const COMPLIANCE_STYLE: Record<string, string> = {
+  unchecked: "text-white/40 bg-white/5 border border-white/10",
+  passed: "text-pine bg-pine/10 border border-pine/20",
+  flagged: "text-red-400 bg-red-400/10 border border-red-400/20",
+  overridden: "text-amber-400 bg-amber-400/10 border border-amber-400/20",
+};
+
+const COMPLIANCE_LABELS: Record<string, string> = {
+  unchecked: "Not Checked",
+  passed: "Compliant",
+  flagged: "Flagged",
+  overridden: "Override",
+};
+
 const CLAIM_TYPE_LABEL: Record<string, string> = {
   altitude: "Altitude",
   route_distance: "Distance",
@@ -61,6 +86,13 @@ const CLAIM_TYPE_LABEL: Record<string, string> = {
   other: "Other",
 };
 
+function ComplianceIcon({ status }: { status: string }) {
+  if (status === "passed") return <ShieldCheck className="h-3.5 w-3.5" />;
+  if (status === "flagged") return <ShieldX className="h-3.5 w-3.5" />;
+  if (status === "overridden") return <ShieldAlert className="h-3.5 w-3.5" />;
+  return <Shield className="h-3.5 w-3.5" />;
+}
+
 export default function DraftReview() {
   const [drafts, setDrafts] = useState<Draft[]>([]);
   const [loading, setLoading] = useState(true);
@@ -70,6 +102,10 @@ export default function DraftReview() {
   const [expanded, setExpanded] = useState<Record<string, boolean>>({});
   const [claims, setClaims] = useState<Record<string, DraftClaim[]>>({});
   const [claimsLoading, setClaimsLoading] = useState<Record<string, boolean>>({});
+
+  // Override drawer state
+  const [overrideOpen, setOverrideOpen] = useState<Record<string, boolean>>({});
+  const [overrideNote, setOverrideNote] = useState<Record<string, string>>({});
 
   // Write-draft trigger form
   const [writeBriefId, setWriteBriefId] = useState("");
@@ -175,6 +211,34 @@ export default function DraftReview() {
     }
   }
 
+  async function runCheck(draftId: string) {
+    setActionLoading(prev => ({ ...prev, [draftId]: "compliance" }));
+    try {
+      await runComplianceCheck(draftId);
+      await fetchDrafts();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Compliance check failed.");
+    } finally {
+      setActionLoading(prev => { const n = { ...prev }; delete n[draftId]; return n; });
+    }
+  }
+
+  async function submitOverride(draftId: string) {
+    const note = overrideNote[draftId]?.trim();
+    if (!note) return;
+    setActionLoading(prev => ({ ...prev, [draftId]: "override" }));
+    try {
+      await overrideCompliance(draftId, note);
+      setOverrideOpen(prev => ({ ...prev, [draftId]: false }));
+      setOverrideNote(prev => ({ ...prev, [draftId]: "" }));
+      await fetchDrafts();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Override failed.");
+    } finally {
+      setActionLoading(prev => { const n = { ...prev }; delete n[draftId]; return n; });
+    }
+  }
+
   async function triggerWriteDraft(e: React.FormEvent) {
     e.preventDefault();
     if (!writeBriefId.trim()) return;
@@ -271,6 +335,9 @@ export default function DraftReview() {
             const draftClaims = claims[d.id] ?? [];
             const flaggedClaims = draftClaims.filter(c => c.flagged_for_review);
             const previewContent = d.optimized_content || d.content_markdown;
+            const compStatus = d.compliance_status ?? "unchecked";
+            const compNotes: ComplianceResultItem[] = d.compliance_notes ?? [];
+            const isOverrideOpen = overrideOpen[d.id] ?? false;
 
             return (
               <div key={d.id} className="bg-[#14161f] rounded-2xl border border-white/10 overflow-hidden">
@@ -281,6 +348,11 @@ export default function DraftReview() {
                       <h3 className="text-white font-semibold text-sm">{d.title}</h3>
                       <span className={`text-xs font-medium px-2.5 py-0.5 rounded-full flex-shrink-0 ${STATUS_STYLE[d.status] ?? "text-white/40 bg-white/5 border border-white/10"}`}>
                         {STATUS_LABELS[d.status] ?? d.status}
+                      </span>
+                      {/* Compliance badge */}
+                      <span className={`inline-flex items-center gap-1 text-xs font-medium px-2.5 py-0.5 rounded-full flex-shrink-0 ${COMPLIANCE_STYLE[compStatus] ?? COMPLIANCE_STYLE.unchecked}`}>
+                        <ComplianceIcon status={compStatus} />
+                        {COMPLIANCE_LABELS[compStatus] ?? compStatus}
                       </span>
                       {d.optimized_content && (
                         <span className="text-xs font-medium px-2.5 py-0.5 rounded-full text-purple-400 bg-purple-500/10 border border-purple-400/20 flex-shrink-0">
@@ -306,6 +378,83 @@ export default function DraftReview() {
                 {/* Expanded detail */}
                 {isExpanded && (
                   <div className="border-t border-white/8 px-5 pb-5 pt-4 space-y-4">
+                    {/* Compliance results */}
+                    {compNotes.length > 0 && (
+                      <div>
+                        <div className="flex items-center gap-2 mb-2">
+                          <Shield className="h-3.5 w-3.5 text-white/40" />
+                          <p className="text-xs text-white/40 font-medium">
+                            Compliance results — {compNotes.filter(r => r.status === "fail").length} failed, {compNotes.filter(r => r.status === "warn").length} warnings
+                          </p>
+                        </div>
+                        <div className="space-y-1.5">
+                          {compNotes.map((item, i) => (
+                            <div
+                              key={i}
+                              className={`rounded-xl px-3 py-2 text-xs flex items-start gap-2 ${
+                                item.status === "fail"
+                                  ? "bg-red-400/8 border border-red-400/20"
+                                  : item.status === "warn"
+                                  ? "bg-amber-400/8 border border-amber-400/20"
+                                  : "bg-white/3 border border-white/8"
+                              }`}
+                            >
+                              <span className={`font-medium px-1.5 py-0.5 rounded text-xs flex-shrink-0 ${
+                                item.status === "fail" ? "bg-red-400/20 text-red-400"
+                                : item.status === "warn" ? "bg-amber-400/20 text-amber-400"
+                                : "bg-white/10 text-white/50"
+                              }`}>
+                                {item.status.toUpperCase()}
+                              </span>
+                              <div className="flex-1 min-w-0">
+                                <p className={`font-medium ${item.status === "fail" ? "text-red-300/90" : item.status === "warn" ? "text-amber-300/80" : "text-white/60"}`}>
+                                  {item.rule}
+                                </p>
+                                {item.note && <p className="text-white/40 mt-0.5">{item.note}</p>}
+                                {item.suggestion && (
+                                  <p className="text-white/30 mt-0.5 italic">{item.suggestion}</p>
+                                )}
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Override input (for flagged drafts) */}
+                    {compStatus === "flagged" && isOverrideOpen && (
+                      <div className="bg-amber-400/5 border border-amber-400/20 rounded-xl p-3 space-y-2">
+                        <p className="text-amber-400 text-xs font-medium">Compliance Override — Editor note required</p>
+                        <textarea
+                          value={overrideNote[d.id] ?? ""}
+                          onChange={e => setOverrideNote(prev => ({ ...prev, [d.id]: e.target.value }))}
+                          placeholder="Explain why this content is approved despite compliance flags…"
+                          rows={3}
+                          className="w-full bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-white text-xs placeholder:text-white/20 focus:outline-none focus:border-amber-400/40 resize-none"
+                        />
+                        <div className="flex gap-2">
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            className="border-white/20 text-white/60 hover:text-white"
+                            onClick={() => setOverrideOpen(prev => ({ ...prev, [d.id]: false }))}
+                            disabled={!!busy}
+                          >
+                            Cancel
+                          </Button>
+                          <Button
+                            variant="hero"
+                            size="sm"
+                            disabled={!!busy || !(overrideNote[d.id]?.trim())}
+                            onClick={() => submitOverride(d.id)}
+                          >
+                            {busy === "override" ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : null}
+                            Confirm Override
+                          </Button>
+                        </div>
+                      </div>
+                    )}
+
                     {/* Fact-check claims */}
                     {claimsLoading[d.id] ? (
                       <div className="flex items-center gap-2 text-white/40 text-xs">
@@ -411,6 +560,48 @@ export default function DraftReview() {
                       onClick={() => patchStatus(d.id, "draft")}
                     >
                       Send Back
+                    </Button>
+                  )}
+
+                  {/* Compliance check — available for non-published drafts */}
+                  {d.status !== "published" && (
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className={`border-white/20 ${
+                        compStatus === "flagged"
+                          ? "text-red-400 hover:text-red-300"
+                          : compStatus === "passed"
+                          ? "text-pine hover:text-pine/80"
+                          : "text-white/60 hover:text-white"
+                      }`}
+                      disabled={!!busy}
+                      onClick={() => runCheck(d.id)}
+                    >
+                      {busy === "compliance" ? (
+                        <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                      ) : (
+                        <Shield className="h-3.5 w-3.5" />
+                      )}
+                      {compStatus === "passed" ? "Re-check" : "Check Compliance"}
+                    </Button>
+                  )}
+
+                  {/* Override button — only for flagged */}
+                  {compStatus === "flagged" && d.status !== "published" && !isOverrideOpen && (
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="border-amber-400/30 text-amber-400 hover:text-amber-300"
+                      disabled={!!busy}
+                      onClick={() => {
+                        setOverrideOpen(prev => ({ ...prev, [d.id]: true }));
+                        setExpanded(prev => ({ ...prev, [d.id]: true }));
+                        loadClaims(d.id);
+                      }}
+                    >
+                      <ShieldAlert className="h-3.5 w-3.5" />
+                      Override
                     </Button>
                   )}
 

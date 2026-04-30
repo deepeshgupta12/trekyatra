@@ -525,3 +525,23 @@ Before editing any backend file:
 - `apps/web-next/.env.local.example` changed: NEXT_PUBLIC_GA4_ID documented — additive
 - `services/api/tests/test_cms.py` changed: 2 tests fixed with limit=10000 to handle 50+ pages in dev DB — no functional change
 - GitNexus re-indexed: 5,106 nodes | 8,744 edges | 165 clusters | 172 flows
+
+### Step 28 executed blast radius
+- `alembic/versions/20260430_0018_compliance_fields.py` — additive: 5 columns on `content_drafts`, new `compliance_rules` table; reversible via downgrade
+- `app/modules/compliance/` created — new independent module; no existing code depends on it at module level
+- `app/modules/compliance/models.py` — ComplianceRule ORM; depends on `db.base.Base`, stdlib `uuid`/`datetime`
+- `app/modules/compliance/service.py` — depends on `compliance.models`, `agents.compliance.agent`, `content.models.ContentDraft`; all writes scoped to compliance columns
+- `app/modules/agents/compliance/` created — new agent module; depends on `langchain_anthropic`, `langgraph`, `content.models.ContentDraft`; reads draft, writes compliance_status + compliance_notes
+- `app/schemas/compliance.py` — new schema file; consumed by `api/routes/compliance.py` only
+- `app/api/routes/compliance.py` — two routers; depends on `compliance.service`, `schemas.compliance`, `auth.dependencies`; both require get_current_admin
+- `app/db/base.py` changed: ComplianceRule imported and registered — additive; all existing importers unaffected
+- `app/api/router.py` changed: compliance_router + compliance_rules_router registered — additive
+- `app/modules/content/models.py` changed: ContentDraft gained 5 compliance columns — additive; all existing readers/writers of ContentDraft unaffected (new columns nullable/defaulted)
+- `app/modules/publish/service.py` changed: publish_to_cms gained compliance gate — BREAKING for unchecked drafts with risky content (auto-runs check; may return 400 if flagged); existing tests updated with mock patch
+- `services/api/tests/test_publish.py` changed: 3 publish success tests patched to mock compliance — no functional test regression
+- `services/api/tests/test_compliance.py` created — 13 new tests; all isolated to compliance tables
+- `apps/web-next/lib/api.ts` changed: 3 interfaces + 2 helpers appended — additive; no existing callers affected
+- `apps/web-next/app/(admin)/admin/drafts/page.tsx` changed: Draft interface + compliance UI added — additive; existing status/claims/publish flows unchanged
+- `apps/web-next/next.config.mjs` changed: experimental.proxyTimeout: 120_000 — affects all proxied /api/v1 calls; raises timeout ceiling from 30s to 120s
+- `CLAUDE.md` + `docs/PROCESS_GUARDRAILS.md` changed: process documentation only; no code impact
+- GitNexus re-indexed post-step: 6,164 nodes | 10,475 edges | 200 clusters | 187 flows

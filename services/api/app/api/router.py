@@ -21,6 +21,8 @@ from app.api.routes.analytics import public_router as analytics_public_router
 from app.api.routes.newsletter_admin import pages_router as newsletter_pages_router
 from app.api.routes.newsletter_admin import router as newsletter_admin_router
 from app.api.routes.cannibalization import router as cannibalization_router
+from app.api.routes.compliance import router as compliance_router
+from app.api.routes.compliance import rules_router as compliance_rules_router
 from app.api.routes.fact_validation import router as fact_validation_router
 from app.api.routes.refresh import router as refresh_router
 from app.api.routes.treks import router as treks_router
@@ -49,6 +51,8 @@ api_router.include_router(analytics_admin_router)
 api_router.include_router(newsletter_admin_router)
 api_router.include_router(newsletter_pages_router)
 api_router.include_router(cannibalization_router)
+api_router.include_router(compliance_router)
+api_router.include_router(compliance_rules_router)
 api_router.include_router(fact_validation_router)
 api_router.include_router(refresh_router)
 api_router.include_router(users_router)

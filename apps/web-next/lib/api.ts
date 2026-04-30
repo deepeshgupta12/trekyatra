@@ -718,3 +718,53 @@ export async function repurposePage(slug: string): Promise<RepurposeResult> {
   }
   return res.json();
 }
+
+// ---------------------------------------------------------------------------
+// Compliance (Step 28)
+// ---------------------------------------------------------------------------
+
+export interface ComplianceResultItem {
+  rule: string;
+  rule_type: string;
+  status: "pass" | "fail" | "warn";
+  note: string;
+  suggestion: string | null;
+}
+
+export interface ComplianceCheckResult {
+  draft_id: string;
+  compliance_status: "passed" | "flagged";
+  results: ComplianceResultItem[];
+  checked_rules: number;
+  failed_rules: number;
+}
+
+export interface ComplianceOverrideResult {
+  draft_id: string;
+  compliance_status: string;
+  overridden_by: string;
+  override_note: string;
+  overridden_at: string;
+}
+
+export async function runComplianceCheck(draftId: string): Promise<ComplianceCheckResult> {
+  const res = await fetch(`${apiBase}/api/v1/admin/drafts/${draftId}/compliance-check`, { method: "POST" });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error(err.detail || `API ${res.status}: compliance check`);
+  }
+  return res.json();
+}
+
+export async function overrideCompliance(draftId: string, overrideNote: string): Promise<ComplianceOverrideResult> {
+  const res = await fetch(`${apiBase}/api/v1/admin/drafts/${draftId}/compliance-override`, {
+    method: "PATCH",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ override_note: overrideNote }),
+  });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error(err.detail || `API ${res.status}: compliance override`);
+  }
+  return res.json();
+}

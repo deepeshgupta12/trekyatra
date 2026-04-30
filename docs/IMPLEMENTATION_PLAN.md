@@ -202,7 +202,7 @@
 - Email marketing integration (Mailchimp / ConvertKit / equivalent)
 - Newsletter subscriber management
 
-### Step 28 — Compliance guard agent
+### Step 28 — Compliance guard agent [DONE]
 - Trust & Compliance Guard Agent
 - Disclosure presence enforcement
 - Risky-wording detection

@@ -10,6 +10,7 @@ from app.modules.linking.models import Page, PageLink
 from app.modules.newsletter.models import NewsletterCampaign, NewsletterSubscriber, SocialSnippet
 from app.modules.pipeline.models import PipelineRun, PipelineStage
 from app.modules.rbac.models import Permission, Role
+from app.modules.compliance.models import ComplianceRule
 from app.modules.refresh.models import RefreshLog
 
 __all__ = [
@@ -39,4 +40,5 @@ __all__ = [
     "RefreshLog",
     "AffiliateClick",
     "CannibalizationIssue",
+    "ComplianceRule",
 ]

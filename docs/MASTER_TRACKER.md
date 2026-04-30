@@ -55,11 +55,32 @@ All V0 foundations are shipped. The stack is live locally with:
 | 25 | Advanced fact validation system | done |
 | 26 | Cannibalization detection + consolidation agent | done |
 | 27 | Newsletter automation + repurposing agent | done |
-| 28 | Automated internal link injection | pending |
+| 28 | Compliance Guard Agent | done |
 | 29 | Content performance feedback loop | pending |
 | 30 | Multi-format content expansion | pending |
 | 31 | Advanced monetization layer | pending |
 | 32 | Production hardening | pending |
+
+### Step 28 — Compliance Guard Agent
+Status: done
+What is done:
+- Alembic migration `20260430_0018_compliance_fields.py` — adds `compliance_status` (String(32), server_default='unchecked', indexed), `compliance_notes` (JSON nullable), `compliance_override_note` (Text nullable), `compliance_overridden_by` (String(255) nullable), `compliance_overridden_at` (DateTime nullable) to `content_drafts`; creates `compliance_rules` table (id UUID PK, name unique, rule_type, description, rule_config JSON, is_active Boolean, created_at); applied with `alembic upgrade head`
+- `modules/compliance/models.py` — ComplianceRule ORM model registered in `db/base.py`
+- `modules/compliance/service.py` — seed_default_rules (idempotent: 4 default rules; skips if any exist), list_rules, run_compliance_check (seeds then runs agent), override_compliance (sets overridden + audit trail)
+- `modules/agents/compliance/agent.py` — ComplianceGuardAgent (LangGraph 3-node: fetch_draft → run_compliance → store_report); claude-haiku-4-5-20251001; 4 rules: affiliate_disclosure (string match), safety_disclaimer (difficulty-triggered), risky_wording (LLM call using .replace not .format), ymyl_claims (count≥2 threshold); stores compliance_status + compliance_notes on draft
+- `schemas/compliance.py` — ComplianceRuleResponse, ComplianceResultItem, ComplianceCheckResponse, ComplianceOverrideRequest, ComplianceOverrideResponse
+- `api/routes/compliance.py` — POST /admin/drafts/{id}/compliance-check, PATCH /admin/drafts/{id}/compliance-override, GET /admin/compliance/rules; registered in router.py
+- `modules/publish/service.py` — compliance gate added to publish_to_cms: auto-runs check for unchecked drafts; blocks publish if flagged (unless overridden)
+- `tests/test_compliance.py` — 13 tests (TC-B01 through TC-B13): ORM insert, seed idempotency, list rules, API list rules, 404 check, happy-path mocked LLM, status persists, override 404/happy-path/audit-trail, publish blocked when flagged, publish allowed when overridden, publish auto-checks unchecked
+- `tests/test_publish.py` — 3 existing publish success tests updated to mock compliance check (patch target: `app.modules.compliance.service.run_compliance_check`)
+- `lib/api.ts` — ComplianceResultItem, ComplianceCheckResult, ComplianceOverrideResult interfaces; runComplianceCheck, overrideCompliance helpers
+- `app/(admin)/admin/drafts/page.tsx` — compliance_status + compliance_notes added to Draft interface; compliance badge (unchecked/passed/flagged/overridden) per card header; per-rule result list in expanded view (fail=red, warn=amber, pass=muted); Run Compliance Check button in action bar; Override button + note textarea for flagged drafts
+- `next.config.mjs` — experimental.proxyTimeout: 120_000 (fixes TC-03 ECONNRESET for all LLM-backed admin endpoints)
+- `CLAUDE.md` + `PROCESS_GUARDRAILS.md` — Backend Test Cases added to Step Completion Gate; TC-B01/TC-F01 format documented in Section 12
+- 284/284 backend tests pass; next build clean (132 static pages)
+- GitNexus re-indexed: 6,164 nodes | 10,475 edges | 200 clusters | 187 flows
+What remains:
+- Step 29 (Operator listing + lead marketplace) pending
 
 ### Step 27 — Newsletter Automation + Repurposing Agent
 Status: done

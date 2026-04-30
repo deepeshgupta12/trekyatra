@@ -68,7 +68,8 @@
 - [ ] All 4 MD files updated
 - [ ] All new env vars in `.env.example`
 - [ ] Git commit created + pushed
-- [ ] Frontend Test Cases delivered to user
+- [ ] Backend Test Cases delivered to user (TC-B01, TC-B02, ...)
+- [ ] Frontend Test Cases delivered to user (TC-F01, TC-F02, ...)
 
 ---
 
