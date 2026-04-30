@@ -208,6 +208,8 @@ def _draft_to_response(row) -> ContentDraftResponse:
             "version": row.version,
             "confidence_score": row.confidence_score,
             "status": row.status,
+            "compliance_status": row.compliance_status,
+            "compliance_notes": row.compliance_notes,
             "created_at": row.created_at,
         }
     )

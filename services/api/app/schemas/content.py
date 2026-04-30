@@ -152,6 +152,8 @@ class ContentDraftResponse(BaseModel):
     version: int
     confidence_score: float | None
     status: str
+    compliance_status: str
+    compliance_notes: list[dict] | None
     created_at: datetime
 
 
