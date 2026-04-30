@@ -28,6 +28,8 @@ from app.api.routes.operators import leads_router as operators_leads_router
 from app.api.routes.fact_validation import router as fact_validation_router
 from app.api.routes.refresh import router as refresh_router
 from app.api.routes.hubs import router as hubs_router
+from app.api.routes.email_sequences import admin_router as email_sequences_admin_router
+from app.api.routes.email_sequences import public_router as email_sequences_public_router
 from app.api.routes.treks import router as treks_router
 from app.api.routes.worker import router as worker_router
 
@@ -62,3 +64,5 @@ api_router.include_router(users_router)
 api_router.include_router(operators_router)
 api_router.include_router(operators_leads_router)
 api_router.include_router(hubs_router)
+api_router.include_router(email_sequences_admin_router)
+api_router.include_router(email_sequences_public_router)

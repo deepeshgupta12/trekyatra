@@ -3,7 +3,7 @@ from __future__ import annotations
 import uuid
 from datetime import datetime
 
-from sqlalchemy import DateTime, Index, String, Text, UniqueConstraint
+from sqlalchemy import Boolean, DateTime, Index, JSON, String, Text, UniqueConstraint
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import Mapped, mapped_column
 
@@ -18,6 +18,8 @@ class NewsletterSubscriber(Base):
     name: Mapped[str | None] = mapped_column(String(200), nullable=True)
     source_page: Mapped[str] = mapped_column(String(500), nullable=False)
     lead_magnet: Mapped[str | None] = mapped_column(String(200), nullable=True)
+    preferences: Mapped[dict | None] = mapped_column(JSON, nullable=True)
+    active: Mapped[bool] = mapped_column(Boolean, server_default="true", nullable=False)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
 
     __table_args__ = (

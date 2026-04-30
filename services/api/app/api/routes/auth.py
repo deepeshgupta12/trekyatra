@@ -88,6 +88,12 @@ def signup_email(
     db.refresh(session)
 
     _set_auth_cookie(response, token)
+    try:
+        from app.modules.email_sequences.tasks import send_welcome_email_task
+        send_welcome_email_task.delay(user.email, user.full_name)
+    except Exception:
+        pass
+
     return AuthResponse(
         user=UserResponse.model_validate(
             {

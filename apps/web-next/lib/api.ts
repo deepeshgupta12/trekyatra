@@ -896,3 +896,52 @@ export async function regenerateHub(slug: string): Promise<HubRegenerateResult> 
   return res.json();
 }
 
+// ---------------------------------------------------------------------------
+// Email Sequences (Step 31)
+// ---------------------------------------------------------------------------
+
+export interface EmailSequenceStep {
+  id: string;
+  sequence_id: string;
+  step_number: number;
+  subject: string;
+  delay_days: number;
+  created_at: string;
+}
+
+export interface EmailSequence {
+  id: string;
+  name: string;
+  slug: string;
+  description: string | null;
+  created_at: string;
+  step_count: number;
+  enrollment_count: number;
+  steps?: EmailSequenceStep[];
+}
+
+export interface SeedSequencesResult {
+  seeded: number;
+  message: string;
+}
+
+export async function fetchEmailSequences(): Promise<EmailSequence[]> {
+  const res = await fetch(`${apiBase}/api/v1/admin/email-sequences`);
+  if (!res.ok) throw new Error(`API ${res.status}: fetch email sequences`);
+  return res.json();
+}
+
+export async function fetchEmailSequence(id: string): Promise<EmailSequence> {
+  const res = await fetch(`${apiBase}/api/v1/admin/email-sequences/${id}`);
+  if (!res.ok) throw new Error(`API ${res.status}: fetch email sequence`);
+  return res.json();
+}
+
+export async function seedEmailSequences(): Promise<SeedSequencesResult> {
+  const res = await fetch(`${apiBase}/api/v1/admin/email-sequences/seed`, {
+    method: "POST",
+  });
+  if (!res.ok) throw new Error(`API ${res.status}: seed email sequences`);
+  return res.json();
+}
+

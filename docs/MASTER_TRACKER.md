@@ -58,8 +58,33 @@ All V0 foundations are shipped. The stack is live locally with:
 | 28 | Compliance Guard Agent | done |
 | 29 | Operator listing + lead marketplace basics | done |
 | 30 | Dynamic destination hubs | done |
-| 31 | Advanced monetization layer | pending |
-| 32 | Production hardening | pending |
+| 31 | Email automation and audience workflows | done |
+| 32 | Deeper dashboards and revenue attribution | pending |
+
+### Step 31 — Email Automation and Audience Workflows
+Status: done
+What is done:
+- Alembic migration `20260430_0020_email_sequences.py` — adds `preferences` JSON + `active` Boolean to `newsletter_subscribers`; creates `subscriber_tags` (subscriber_id FK, tag, created_at, unique(subscriber_id,tag)); `email_sequences` (id UUID, name, slug unique, description, created_at); `email_sequence_steps` (id UUID, sequence_id FK, step_number, subject, body_template, delay_days, created_at); `subscriber_sequence_enrollments` (id UUID, subscriber_id FK, sequence_id FK, current_step, next_send_at, enrolled_at, status, unique(subscriber_id,sequence_id)); applied with `alembic upgrade head`
+- `modules/email_sequences/__init__.py`, `models.py` — SubscriberTag, EmailSequence, EmailSequenceStep, SubscriberSequenceEnrollment ORM models; registered in db/base.py
+- `modules/email_sequences/service.py` — seed_default_sequences (3 built-in sequences: winter_trek_nurture, monsoon_prep, general_trek_discovery; idempotent); add_subscriber_tag (idempotent); enroll_subscriber + enroll_by_tag (tag→sequence routing); update_subscriber_preferences; generate_preferences_token/verify_preferences_token (HMAC-SHA256); get_pending_enrollments
+- `modules/email_sequences/tasks.py` — send_welcome_email_task (Celery; pulls 3 top trek_guide CMS pages for recommendations; graceful no-op when SMTP unconfigured; try/except wrap in auth route); process_nurture_sequences_task (daily Celery beat; Jinja2 template render; step advance; status=completed on last step; preference.nurture check; graceful per-enrollment error catch)
+- `api/routes/email_sequences.py` — admin_router: GET /admin/email-sequences, GET /admin/email-sequences/{id}, POST /admin/email-sequences/seed, POST /admin/email-sequences/{id}/enroll/{subscriber_id}; public_router: PATCH /newsletter/preferences (HMAC token), GET /newsletter/unsubscribe (sets active=False)
+- `schemas/email_sequences.py` — EmailSequenceResponse, EmailSequenceStepResponse, SubscriberSequenceEnrollmentResponse, SubscriberPreferencesUpdate, SeedSequencesResponse
+- `api/router.py` — email_sequences_admin_router + email_sequences_public_router registered
+- `modules/newsletter/models.py` — preferences + active fields added to NewsletterSubscriber
+- `modules/leads/service.py` — subscriber tagging hook after create_lead commit: looks up subscriber by email, calls add_subscriber_tag + enroll_by_tag; graceful exception handling
+- `api/routes/auth.py` — send_welcome_email_task.delay(user.email, user.full_name) fired after email signup (try/except — never breaks signup)
+- `worker/celery_app.py` — app.modules.email_sequences.tasks in include list; daily-nurture-sequences beat entry (86400s)
+- `pyproject.toml` — jinja2>=3.1,<4.0 added
+- `tests/test_email_sequences.py` — 17 tests (TC-B01 through TC-B17): ORM tag insert, seed 3 sequences, idempotency, tag service, enroll_by_tag winter/fallback, enrollment idempotency, prefs update, HMAC token, API list/detail/seed/404, prefs invalid token, unsubscribe valid token, welcome task no-SMTP, lead tagging
+- `lib/api.ts` — EmailSequence, EmailSequenceStep, SeedSequencesResult; fetchEmailSequences, fetchEmailSequence, seedEmailSequences
+- `app/(admin)/admin/email-sequences/page.tsx` — sequence list (expandable steps panel), KPI strip (sequences/steps/enrollments), Seed button, info card explaining welcome/tagging/nurture/unsubscribe flow
+- `app/(admin)/admin/layout.tsx` — "Email Sequences" nav item (Workflow icon) added to Growth group after Newsletter
+- 325/325 backend tests pass; `next build` clean (136 static pages); GitNexus re-indexed: 6,857 nodes | 11,664 edges | 236 clusters | 185 flows
+What remains:
+- SMTP must be configured in services/api/.env for welcome + nurture emails to fire
+- Jinja2 installed (3.1.6) — required for process_nurture_sequences_task template rendering
+- Digest weekly send uses existing weekly-newsletter-generate Celery beat (Step 27 NewsletterAgent); no additional beat task needed
 
 ### Step 30 — Dynamic Destination Hubs
 Status: done

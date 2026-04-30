@@ -15,6 +15,7 @@ celery_app = Celery(
         "app.modules.newsletter.tasks",
         "app.modules.refresh.tasks",
         "app.modules.hubs.tasks",
+        "app.modules.email_sequences.tasks",
     ],
 )
 
@@ -51,6 +52,10 @@ celery_app.conf.update(
         "quarterly-seasonal-hub-regeneration": {
             "task": "hubs.regenerate_seasonal_hubs",
             "schedule": 7776000,  # 90 days
+        },
+        "daily-nurture-sequences": {
+            "task": "email_sequences.process_nurture_sequences",
+            "schedule": 86400,  # 24 hours
         },
     },
 )

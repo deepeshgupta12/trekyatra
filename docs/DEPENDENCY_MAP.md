@@ -585,3 +585,22 @@ Before editing any backend file:
 - `apps/web-next/next.config.mjs` changed: experimental.proxyTimeout: 120_000 — affects all proxied /api/v1 calls; raises timeout ceiling from 30s to 120s
 - `CLAUDE.md` + `docs/PROCESS_GUARDRAILS.md` changed: process documentation only; no code impact
 - GitNexus re-indexed post-step: 6,164 nodes | 10,475 edges | 200 clusters | 187 flows
+### Step 31 — Email Automation and Audience Workflows blast radius
+- `services/api/alembic/versions/20260430_0020_email_sequences.py` — NEW: subscriber_tags, email_sequences, email_sequence_steps, subscriber_sequence_enrollments tables; preferences JSON + active Boolean on newsletter_subscribers; blast radius: LOW (new tables, additive columns)
+- `services/api/app/modules/email_sequences/models.py` — NEW: SubscriberTag, EmailSequence, EmailSequenceStep, SubscriberSequenceEnrollment ORM models; blast radius: LOW (new module)
+- `services/api/app/modules/email_sequences/service.py` — NEW: seed_default_sequences, add_subscriber_tag, enroll_subscriber, enroll_by_tag, update_subscriber_preferences, generate/verify_preferences_token, get_pending_enrollments; blast radius: LOW (called by tasks + routes only)
+- `services/api/app/modules/email_sequences/tasks.py` — NEW: send_welcome_email_task + process_nurture_sequences_task Celery tasks; blast radius: LOW (async tasks, no sync callers)
+- `services/api/app/api/routes/email_sequences.py` — NEW: admin_router (GET/GET/{id}/POST seed/POST enroll) + public_router (PATCH /newsletter/preferences, GET /newsletter/unsubscribe); blast radius: LOW (new routes)
+- `services/api/app/schemas/email_sequences.py` — NEW: response schemas; blast radius: LOW
+- `services/api/app/modules/newsletter/models.py` — UPDATED: preferences JSON + active Boolean added to NewsletterSubscriber; blast radius: MEDIUM (7 direct callers: subscribe, base.py, newsletter service, analytics service, newsletter_admin, social_repurpose agent, newsletter agent — all additive-safe since new fields are nullable/have defaults)
+- `services/api/app/modules/leads/service.py` — UPDATED: subscriber tagging hook added after commit in create_lead; blast radius: LOW (1 direct caller: submit_lead route; tagging is try/except wrapped)
+- `services/api/app/api/routes/auth.py` — UPDATED: send_welcome_email_task.delay() fired after signup; try/except wrapped; blast radius: LOW (never blocks signup response)
+- `services/api/app/worker/celery_app.py` — UPDATED: email_sequences tasks in include; daily-nurture-sequences beat entry; blast radius: LOW (additive)
+- `services/api/app/db/base.py` — UPDATED: 4 new models registered; blast radius: LOW (additive)
+- `services/api/app/api/router.py` — UPDATED: email_sequences_admin_router + email_sequences_public_router registered; blast radius: LOW (additive)
+- `services/api/pyproject.toml` — UPDATED: jinja2>=3.1,<4.0 added; blast radius: LOW (new transitive dep)
+- `services/api/tests/test_email_sequences.py` — NEW: 17 tests; blast radius: LOW (test file)
+- `apps/web-next/lib/api.ts` — UPDATED: EmailSequence, EmailSequenceStep, SeedSequencesResult; fetchEmailSequences, fetchEmailSequence, seedEmailSequences; blast radius: LOW (additive)
+- `apps/web-next/app/(admin)/admin/email-sequences/page.tsx` — NEW: admin email sequences list page; blast radius: LOW (leaf admin page)
+- `apps/web-next/app/(admin)/admin/layout.tsx` — UPDATED: Email Sequences nav item (Workflow icon) added to Growth group; blast radius: MEDIUM (admin nav, affects sidebar for all admin pages)
+- GitNexus re-indexed: 6,857 nodes | 11,664 edges | 236 clusters | 185 flows

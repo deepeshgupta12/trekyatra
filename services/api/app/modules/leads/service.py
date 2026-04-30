@@ -56,6 +56,21 @@ def create_lead(db: Session, payload: LeadCreate) -> LeadSubmission:
     db.add(lead)
     db.commit()
     db.refresh(lead)
+
+    # Tag matching newsletter subscriber and enroll in nurture sequence
+    if payload.trek_interest and payload.email:
+        try:
+            from app.modules.newsletter.models import NewsletterSubscriber
+            from app.modules.email_sequences.service import add_subscriber_tag, enroll_by_tag
+            subscriber = db.scalar(
+                select(NewsletterSubscriber).where(NewsletterSubscriber.email == payload.email)
+            )
+            if subscriber:
+                add_subscriber_tag(db, subscriber.id, payload.trek_interest.lower())
+                enroll_by_tag(db, subscriber.id, payload.trek_interest)
+        except Exception:
+            logger.warning("Lead subscriber tagging failed for email=%s", payload.email)
+
     return lead
 
 

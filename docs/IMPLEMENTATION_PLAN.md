@@ -220,7 +220,7 @@
 - Auto-generated regional cluster landing pages
 - Seasonal landing pages (automated seasonal content refresh)
 
-### Step 31 — Email automation and audience workflows
+### Step 31 — Email automation and audience workflows [DONE]
 - Automated welcome email on signup
 - Season-based nurture sequences
 - Trek interest tagging on subscribers

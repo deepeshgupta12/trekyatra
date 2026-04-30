@@ -13,6 +13,12 @@ from app.modules.pipeline.models import PipelineRun, PipelineStage
 from app.modules.rbac.models import Permission, Role
 from app.modules.compliance.models import ComplianceRule
 from app.modules.refresh.models import RefreshLog
+from app.modules.email_sequences.models import (
+    EmailSequence,
+    EmailSequenceStep,
+    SubscriberSequenceEnrollment,
+    SubscriberTag,
+)
 
 __all__ = [
     "Operator",
@@ -44,4 +50,8 @@ __all__ = [
     "AffiliateClick",
     "CannibalizationIssue",
     "ComplianceRule",
+    "EmailSequence",
+    "EmailSequenceStep",
+    "SubscriberSequenceEnrollment",
+    "SubscriberTag",
 ]
