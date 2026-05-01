@@ -1054,12 +1054,18 @@ export async function triggerExecutiveSummary(): Promise<{ task_id: string; stat
 export interface BookmarkResponse {
   id: string;
   user_id: string;
-  cms_page_id: string;
+  cms_page_id: string | null;
+  trek_slug: string | null;
   created_at: string;
   slug: string | null;
   title: string | null;
   page_type: string | null;
   hero_image_url: string | null;
+}
+
+export interface BookmarkCheckResponse {
+  bookmarked: boolean;
+  bookmark_id: string | null;
 }
 
 export interface DownloadResponse {
@@ -1120,6 +1126,38 @@ export async function removeBookmark(cms_page_id: string): Promise<void> {
     credentials: "include",
   });
   if (!res.ok) throw new Error(`API ${res.status}`);
+}
+
+export async function addBookmarkBySlug(
+  trek_slug: string,
+  title?: string,
+  hero_image_url?: string,
+): Promise<BookmarkResponse> {
+  const res = await fetch(`${apiBase}/api/v1/account/bookmarks/by-slug`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    credentials: "include",
+    body: JSON.stringify({ trek_slug, title, hero_image_url }),
+  });
+  if (!res.ok) throw new Error(`API ${res.status}`);
+  return res.json();
+}
+
+export async function removeBookmarkBySlug(trek_slug: string): Promise<void> {
+  const res = await fetch(
+    `${apiBase}/api/v1/account/bookmarks/by-slug/${encodeURIComponent(trek_slug)}`,
+    { method: "DELETE", credentials: "include" },
+  );
+  if (!res.ok) throw new Error(`API ${res.status}`);
+}
+
+export async function checkBookmark(trek_slug: string): Promise<BookmarkCheckResponse> {
+  const res = await fetch(
+    `${apiBase}/api/v1/account/bookmarks/check/${encodeURIComponent(trek_slug)}`,
+    { credentials: "include" },
+  );
+  if (!res.ok) throw new Error(`API ${res.status}`);
+  return res.json();
 }
 
 export async function fetchDownloads(): Promise<DownloadResponse[]> {

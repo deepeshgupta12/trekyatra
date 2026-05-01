@@ -84,3 +84,10 @@ Done
 - BookmarkButton placed in components/account/ (not components/ui/) to keep it account-domain specific.
 - Onboarding saves trek_experience (maps experience level) and preferred_regions (interests array). fitness_level and budget_range are null until user updates them via profile edit.
 - 363 backend tests pass (20 new for this step); next build clean (137 static pages); GitNexus: 7,396 nodes | 12,613 edges | 266 clusters | 199 flows
+
+## Bug Fix Round 2 (bookmark root cause)
+- Migration `20260501_0023_bookmark_by_slug.py` applied: cms_page_id nullable, trek_slug/bookmark_title/bookmark_image_url added to user_bookmarks; partial unique indexes
+- Bookmark button now works for all static treks via addBookmarkBySlug/removeBookmarkBySlug
+- Unauthenticated bookmark queue: localStorage pendingBookmarks flushed on login/signup
+- Dashboard counts update reactively via bookmark-changed window event
+- 363/363 tests still pass; next build clean

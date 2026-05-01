@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { Bookmark, ExternalLink } from "lucide-react";
-import { BookmarkResponse, fetchBookmarks, removeBookmark } from "@/lib/api";
+import { BookmarkResponse, fetchBookmarks, removeBookmark, removeBookmarkBySlug } from "@/lib/api";
 import { Button } from "@/components/ui/button";
 
 const PAGE_TYPE_LABELS: Record<string, string> = {
@@ -26,10 +26,17 @@ export default function SavedTreks() {
   }, []);
 
   async function handleRemove(b: BookmarkResponse) {
-    setRemoving(b.cms_page_id);
+    setRemoving(b.id);
     try {
-      await removeBookmark(b.cms_page_id);
-      setBookmarks((prev) => prev.filter((x) => x.cms_page_id !== b.cms_page_id));
+      if (b.trek_slug) {
+        await removeBookmarkBySlug(b.trek_slug);
+      } else if (b.cms_page_id) {
+        await removeBookmark(b.cms_page_id);
+      }
+      setBookmarks((prev) => prev.filter((x) => x.id !== b.id));
+      if (typeof window !== "undefined") {
+        window.dispatchEvent(new CustomEvent("bookmark-changed"));
+      }
     } finally {
       setRemoving(null);
     }
@@ -100,10 +107,10 @@ export default function SavedTreks() {
                     variant="outline"
                     size="sm"
                     className="text-xs text-red-400 border-red-400/20 hover:bg-red-400/10"
-                    disabled={removing === b.cms_page_id}
+                    disabled={removing === b.id}
                     onClick={() => handleRemove(b)}
                   >
-                    {removing === b.cms_page_id ? "…" : "Remove"}
+                    {removing === b.id ? "…" : "Remove"}
                   </Button>
                 </div>
               </div>

@@ -7,7 +7,8 @@ from pydantic import BaseModel
 class BookmarkResponse(BaseModel):
     id: UUID
     user_id: UUID
-    cms_page_id: UUID
+    cms_page_id: UUID | None = None
+    trek_slug: str | None = None
     created_at: datetime
     slug: str | None = None
     title: str | None = None
@@ -19,6 +20,17 @@ class BookmarkResponse(BaseModel):
 
 class BookmarkCreate(BaseModel):
     cms_page_id: UUID
+
+
+class BookmarkBySlugCreate(BaseModel):
+    trek_slug: str
+    title: str | None = None
+    hero_image_url: str | None = None
+
+
+class BookmarkCheckResponse(BaseModel):
+    bookmarked: bool
+    bookmark_id: UUID | None = None
 
 
 class DownloadResponse(BaseModel):

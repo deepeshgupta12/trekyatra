@@ -3,7 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import { Bookmark, Mountain, Clock, TrendingUp } from "lucide-react";
-import { fetchCMSPage, addBookmark, removeBookmark } from "@/lib/api";
+import { addBookmarkBySlug, removeBookmarkBySlug } from "@/lib/api";
 
 export type Trek = {
   slug: string;
@@ -36,16 +36,35 @@ export const TrekCard = ({ trek, featured = false, initialBookmarked = false }: 
     if (loading) return;
     setLoading(true);
     try {
-      const page = await fetchCMSPage(trek.slug);
       if (bookmarked) {
-        await removeBookmark(page.id);
+        await removeBookmarkBySlug(trek.slug);
         setBookmarked(false);
       } else {
-        await addBookmark(page.id);
+        await addBookmarkBySlug(trek.slug, trek.name, trek.image);
         setBookmarked(true);
       }
-    } catch {
-      // CMS page not found or unauthenticated — silent fail
+      if (typeof window !== "undefined") {
+        window.dispatchEvent(new CustomEvent("bookmark-changed"));
+      }
+    } catch (err: unknown) {
+      const msg = (err as { message?: string })?.message ?? "";
+      const status = msg.match(/API (\d+)/)?.[1];
+      if (status === "401" || status === "403") {
+        // Unauthenticated: queue slug in localStorage for merging on login
+        try {
+          const pending = JSON.parse(
+            localStorage.getItem("pendingBookmarks") ?? "[]",
+          ) as string[];
+          if (!pending.includes(trek.slug)) {
+            pending.push(trek.slug);
+            localStorage.setItem("pendingBookmarks", JSON.stringify(pending));
+          }
+          setBookmarked(true); // optimistic visual feedback
+        } catch {
+          // localStorage not available
+        }
+      }
+      // Other errors: silent fail (network, server errors)
     } finally {
       setLoading(false);
     }

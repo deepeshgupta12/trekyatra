@@ -89,9 +89,24 @@ What is done:
 What remains:
 - Trek alert delivery task not implemented (flagged as out of scope — Step 33 stores subscriptions; delivery fires in a future beat task)
 
-### Step 33 Bug Fixes (post-TC)
-- `components/trek/TrekCard.tsx` — FIXED: bookmark button now calls real API; on click fetches CMS page by slug (fetchCMSPage(trek.slug)) then calls addBookmark/removeBookmark; local `bookmarked` state with optimistic toggle; filled icon when bookmarked; graceful silent fail if CMS page not found (unpublished trek) or user unauthenticated; blast radius: MEDIUM (TrekCard used on explore, homepage, account dashboard, and trek rail components)
-- `app/(public)/account/page.tsx` — FIXED: converted from server component (static hardcoded STATS = [12,3,7,2]) to client component; fetches fetchBookmarks() + fetchDownloads() + fetchAlerts() on mount; stats show real counts; "Recently saved" section shows real bookmarked CMS pages with hero image + page type label + view link (not static trek cards); loading state shows "—" placeholders during fetch; 363/363 backend tests pass; next build clean (137 static pages)
+### Step 33 Bug Fixes Round 1 (post-TC)
+- `components/trek/TrekCard.tsx` — partial fix: calls fetchCMSPage(trek.slug) then addBookmark; still broken for static treks with no cms_pages row (fetchCMSPage returns 404, catch swallows silently)
+- `app/(public)/account/page.tsx` — FIXED: client component with real API counts
+
+### Step 33 Bug Fixes Round 2 (bookmark root cause + unauthenticated queue + reactive dashboard)
+Root cause: static trek slugs (kedarkantha, valley-of-flowers, etc.) have no row in cms_pages — fetchCMSPage 404 → silent catch → bookmark never saved.
+Fix:
+- Migration `20260501_0023_bookmark_by_slug.py` — drops uq_user_bookmark constraint; makes cms_page_id nullable; adds trek_slug VARCHAR(300) + bookmark_title VARCHAR(500) + bookmark_image_url TEXT nullable columns; partial unique indexes: (user_id,cms_page_id) WHERE cms_page_id IS NOT NULL + (user_id,trek_slug) WHERE trek_slug IS NOT NULL
+- `modules/account/models.py` — UserBookmark: cms_page_id nullable, trek_slug/bookmark_title/bookmark_image_url added
+- `schemas/account.py` — BookmarkResponse: cms_page_id nullable, trek_slug field added; new BookmarkBySlugCreate + BookmarkCheckResponse schemas
+- `modules/account/service.py` — add_bookmark_by_slug (first resolves CMS page by slug, else stores slug-only); remove_bookmark_by_slug (finds by trek_slug or cms_page FK); check_bookmark; list_bookmarks updated to enrich slug-only bookmarks
+- `api/routes/account.py` — POST /account/bookmarks/by-slug, DELETE /account/bookmarks/by-slug/{trek_slug}, GET /account/bookmarks/check/{trek_slug}
+- `components/trek/TrekCard.tsx` — handleBookmark now calls addBookmarkBySlug/removeBookmarkBySlug directly (no fetchCMSPage lookup); on 401/403 queues slug in localStorage pendingBookmarks; dispatches bookmark-changed custom event on success
+- `lib/auth-context.tsx` — flushPendingBookmarks() reads localStorage pendingBookmarks after login/signup/loginWithGoogle and POSTs each to API; dispatches bookmark-changed on flush
+- `app/(public)/account/page.tsx` — listens for bookmark-changed window event and re-fetches bookmark counts reactively (no page reload needed)
+- `app/(public)/account/saved/page.tsx` — handleRemove uses b.id as removing key; calls removeBookmarkBySlug if trek_slug else removeBookmark; dispatches bookmark-changed
+- `lib/api.ts` — BookmarkResponse: cms_page_id nullable, trek_slug added; BookmarkCheckResponse type; addBookmarkBySlug, removeBookmarkBySlug, checkBookmark helpers
+- 363/363 backend tests pass; next build clean
 
 ### Step 32 — Deeper Dashboards and Revenue Attribution
 Status: done

@@ -61,18 +61,119 @@ def list_bookmarks(db: Session, user_id: UUID) -> list[dict]:
     ).all())
     result = []
     for b in bookmarks:
-        page = db.scalar(select(CMSPage).where(CMSPage.id == b.cms_page_id))
+        page = None
+        if b.cms_page_id:
+            page = db.scalar(select(CMSPage).where(CMSPage.id == b.cms_page_id))
+        elif b.trek_slug:
+            page = db.scalar(select(CMSPage).where(CMSPage.slug == b.trek_slug))
         result.append({
             "id": b.id,
             "user_id": b.user_id,
             "cms_page_id": b.cms_page_id,
+            "trek_slug": b.trek_slug,
             "created_at": b.created_at,
-            "slug": page.slug if page else None,
-            "title": page.title if page else None,
-            "page_type": page.page_type if page else None,
-            "hero_image_url": page.hero_image_url if page else None,
+            "slug": page.slug if page else b.trek_slug,
+            "title": page.title if page else b.bookmark_title,
+            "page_type": page.page_type if page else ("trek_guide" if b.trek_slug else None),
+            "hero_image_url": page.hero_image_url if page else b.bookmark_image_url,
         })
     return result
+
+
+def add_bookmark_by_slug(
+    db: Session,
+    user_id: UUID,
+    trek_slug: str,
+    title: str | None = None,
+    hero_image_url: str | None = None,
+) -> UserBookmark:
+    # First try to resolve to a CMS page
+    page = db.scalar(select(CMSPage).where(CMSPage.slug == trek_slug))
+    if page:
+        return add_bookmark(db, user_id, page.id)
+
+    # No CMS page — store by slug directly
+    existing = db.scalar(
+        select(UserBookmark).where(
+            UserBookmark.user_id == user_id,
+            UserBookmark.trek_slug == trek_slug,
+        )
+    )
+    if existing:
+        # Update title/image if provided and not already set
+        if title and not existing.bookmark_title:
+            existing.bookmark_title = title
+        if hero_image_url and not existing.bookmark_image_url:
+            existing.bookmark_image_url = hero_image_url
+        db.commit()
+        db.refresh(existing)
+        return existing
+
+    bookmark = UserBookmark(
+        user_id=user_id,
+        trek_slug=trek_slug,
+        bookmark_title=title,
+        bookmark_image_url=hero_image_url,
+    )
+    db.add(bookmark)
+    try:
+        db.commit()
+        db.refresh(bookmark)
+    except IntegrityError:
+        db.rollback()
+        bookmark = db.scalar(
+            select(UserBookmark).where(
+                UserBookmark.user_id == user_id,
+                UserBookmark.trek_slug == trek_slug,
+            )
+        )
+    return bookmark
+
+
+def remove_bookmark_by_slug(db: Session, user_id: UUID, trek_slug: str) -> bool:
+    # Try slug-based bookmark first
+    bookmark = db.scalar(
+        select(UserBookmark).where(
+            UserBookmark.user_id == user_id,
+            UserBookmark.trek_slug == trek_slug,
+        )
+    )
+    if not bookmark:
+        # Fall back: bookmark was stored via CMS page whose slug matches
+        page = db.scalar(select(CMSPage).where(CMSPage.slug == trek_slug))
+        if page:
+            bookmark = db.scalar(
+                select(UserBookmark).where(
+                    UserBookmark.user_id == user_id,
+                    UserBookmark.cms_page_id == page.id,
+                )
+            )
+    if not bookmark:
+        return False
+    db.delete(bookmark)
+    db.commit()
+    return True
+
+
+def check_bookmark(db: Session, user_id: UUID, trek_slug: str) -> dict:
+    # Check slug-based bookmark
+    bookmark = db.scalar(
+        select(UserBookmark).where(
+            UserBookmark.user_id == user_id,
+            UserBookmark.trek_slug == trek_slug,
+        )
+    )
+    if not bookmark:
+        # Check CMS-page-based bookmark for this slug
+        page = db.scalar(select(CMSPage).where(CMSPage.slug == trek_slug))
+        if page:
+            bookmark = db.scalar(
+                select(UserBookmark).where(
+                    UserBookmark.user_id == user_id,
+                    UserBookmark.cms_page_id == page.id,
+                )
+            )
+    return {"bookmarked": bookmark is not None, "bookmark_id": bookmark.id if bookmark else None}
 
 
 # --- Downloads ---

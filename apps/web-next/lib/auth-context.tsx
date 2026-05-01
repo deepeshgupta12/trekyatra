@@ -9,6 +9,7 @@ import {
   signupEmail,
   type UserResponse,
 } from "@/lib/auth-api";
+import { addBookmarkBySlug } from "@/lib/api";
 
 type AuthContextValue = {
   user: UserResponse | null;
@@ -36,6 +37,29 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setUser(current);
   }, []);
 
+  // Merge any bookmarks queued while the user was logged out
+  const flushPendingBookmarks = useCallback(async () => {
+    try {
+      const pending = JSON.parse(
+        localStorage.getItem("pendingBookmarks") ?? "[]",
+      ) as string[];
+      if (pending.length === 0) return;
+      for (const slug of pending) {
+        try {
+          await addBookmarkBySlug(slug);
+        } catch {
+          // best-effort; skip failures
+        }
+      }
+      localStorage.removeItem("pendingBookmarks");
+      if (typeof window !== "undefined") {
+        window.dispatchEvent(new CustomEvent("bookmark-changed"));
+      }
+    } catch {
+      // localStorage unavailable
+    }
+  }, []);
+
   useEffect(() => {
     refresh().finally(() => setIsLoading(false));
   }, [refresh]);
@@ -43,7 +67,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const login = useCallback(async (email: string, password: string) => {
     const res = await loginEmail({ email, password });
     setUser(res.user);
-  }, []);
+    await flushPendingBookmarks();
+  }, [flushPendingBookmarks]);
 
   const signup = useCallback(
     async (payload: {
@@ -54,14 +79,16 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }) => {
       const res = await signupEmail(payload);
       setUser(res.user);
+      await flushPendingBookmarks();
     },
-    []
+    [flushPendingBookmarks],
   );
 
   const loginWithGoogle = useCallback(async (access_token: string) => {
     const res = await googleAuth(access_token);
     setUser(res.user);
-  }, []);
+    await flushPendingBookmarks();
+  }, [flushPendingBookmarks]);
 
   const logout = useCallback(async () => {
     await logoutApi();

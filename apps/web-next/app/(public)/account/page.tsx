@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
 import { Bookmark, BarChart2, Download, Bell, ExternalLink } from "lucide-react";
 import { useAuth } from "@/lib/auth-context";
@@ -25,9 +25,9 @@ export default function AccountDashboard() {
   const [alertCount, setAlertCount] = useState(0);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
+  const loadData = useCallback(() => {
     Promise.all([
-      fetchBookmarks().catch(() => []),
+      fetchBookmarks().catch(() => [] as BookmarkResponse[]),
       fetchDownloads().catch(() => []),
       fetchAlerts().catch(() => []),
     ]).then(([bk, dl, al]) => {
@@ -35,6 +35,19 @@ export default function AccountDashboard() {
       setDownloadCount(dl.length);
       setAlertCount(al.length);
     }).finally(() => setLoading(false));
+  }, []);
+
+  useEffect(() => {
+    loadData();
+  }, [loadData]);
+
+  // Reactively refresh counts whenever any page bookmarks/unbookmarks
+  useEffect(() => {
+    const handler = () => {
+      fetchBookmarks().catch(() => [] as BookmarkResponse[]).then(setBookmarks);
+    };
+    window.addEventListener("bookmark-changed", handler);
+    return () => window.removeEventListener("bookmark-changed", handler);
   }, []);
 
   const stats = [
