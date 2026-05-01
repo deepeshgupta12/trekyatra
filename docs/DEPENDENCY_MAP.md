@@ -641,3 +641,7 @@ Before editing any backend file:
 - `apps/web-next/app/(auth)/auth/onboarding/page.tsx` — UPDATED: step 3 submit wired to upsertUserProfile + router.push("/explore"); blast radius: LOW (leaf auth page)
 - `apps/web-next/lib/api.ts` — UPDATED: 5 account types + 9 account helpers; blast radius: LOW (additive)
 - GitNexus re-indexed: 7,396 nodes | 12,613 edges | 266 clusters | 199 flows
+
+### Step 33 Bug Fixes blast radius
+- `apps/web-next/components/trek/TrekCard.tsx` — UPDATED: bookmark button now calls fetchCMSPage(slug) → addBookmark/removeBookmark; local bookmarked state with optimistic toggle; graceful silent fail on 401/404; blast radius: MEDIUM (used on explore page, homepage, account dashboard, trek rails — all get working bookmark toggle)
+- `apps/web-next/app/(public)/account/page.tsx` — REWRITTEN: converted from server component with hardcoded stats to client component; fetches fetchBookmarks + fetchDownloads + fetchAlerts; real counts in stat cards; Recently Saved shows real bookmarked CMS pages; blast radius: LOW (leaf account page)

@@ -87,8 +87,11 @@ What is done:
 - `lib/api.ts` — BookmarkResponse, DownloadResponse, TrekAlertResponse, UserProfileResponse/Update interfaces; fetchBookmarks, addBookmark, removeBookmark, fetchDownloads, fetchAlerts, addAlert, removeAlert, fetchUserProfile, upsertUserProfile helpers
 - 363/363 backend tests pass (20 new); next build clean (137 static pages); GitNexus: 7,396 nodes | 12,613 edges | 266 clusters | 199 flows
 What remains:
-- BookmarkButton must be placed on trek/guide pages by whoever adds it to those templates (no trek template changes in scope for Step 33)
-- Trek alert delivery task not implemented (flagged as out of scope — Step 33 stores subscriptions; delivery fire in a future beat task)
+- Trek alert delivery task not implemented (flagged as out of scope — Step 33 stores subscriptions; delivery fires in a future beat task)
+
+### Step 33 Bug Fixes (post-TC)
+- `components/trek/TrekCard.tsx` — FIXED: bookmark button now calls real API; on click fetches CMS page by slug (fetchCMSPage(trek.slug)) then calls addBookmark/removeBookmark; local `bookmarked` state with optimistic toggle; filled icon when bookmarked; graceful silent fail if CMS page not found (unpublished trek) or user unauthenticated; blast radius: MEDIUM (TrekCard used on explore, homepage, account dashboard, and trek rail components)
+- `app/(public)/account/page.tsx` — FIXED: converted from server component (static hardcoded STATS = [12,3,7,2]) to client component; fetches fetchBookmarks() + fetchDownloads() + fetchAlerts() on mount; stats show real counts; "Recently saved" section shows real bookmarked CMS pages with hero image + page type label + view link (not static trek cards); loading state shows "—" placeholders during fetch; 363/363 backend tests pass; next build clean (137 static pages)
 
 ### Step 32 — Deeper Dashboards and Revenue Attribution
 Status: done
