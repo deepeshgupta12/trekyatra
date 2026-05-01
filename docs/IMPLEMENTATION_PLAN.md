@@ -226,22 +226,22 @@
 - Trek interest tagging on subscribers
 - Digest opt-in/opt-out management
 
-### Step 32 — Deeper dashboards and revenue attribution
-- Cluster-level revenue attribution
-- Page-type RPM and EPC dashboards
-- Affiliate performance by product category
-- Content decay dashboard
-- Weekly automated executive summary
+### Step 32 — Deeper dashboards and revenue attribution [DONE]
+- revenue_attributions, revenue_config, executive_summaries tables; daily aggregation + weekly beat tasks
+- GET /admin/revenue/by-cluster, /by-page-type, /decaying-pages, /config, /summaries endpoints
+- ExecutiveSummaryAgent (LangGraph 3-node: gather → generate → store)
+- /admin/revenue page: cluster table, page-type table, decay list, config editor, summary history
 
 ---
 
 ## V3 — Platform Expansion (Steps 33–37)
 
-### Step 33 — Premium user accounts + bookmarks
-- Saved treks and saved pages feature
-- Download history for digital products
-- Custom trek alert subscriptions
-- Onboarding form data persisted to backend
+### Step 33 — Premium user accounts + bookmarks [DONE]
+- user_bookmarks, user_downloads, trek_alerts, user_profiles tables + migration 0022
+- Full account CRUD APIs (bookmarks, downloads, alerts, profile) via get_current_user auth
+- BookmarkButton client component (components/account/BookmarkButton.tsx)
+- account/saved + account/downloads pages rewritten to call real API
+- Onboarding form wired to PATCH /account/profile (trek_experience, preferred_regions)
 
 ### Step 34 — Digital product checkout and file delivery
 - Digital product catalog (planners, checklists, guides)

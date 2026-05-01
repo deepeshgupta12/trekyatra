@@ -945,3 +945,227 @@ export async function seedEmailSequences(): Promise<SeedSequencesResult> {
   return res.json();
 }
 
+
+// ---------------------------------------------------------------------------
+// Revenue (Step 32)
+// ---------------------------------------------------------------------------
+
+export interface ClusterRevenueRow {
+  cluster_id: string | null;
+  cluster_name: string | null;
+  total_revenue_inr: number;
+  total_clicks: number;
+  total_leads: number;
+}
+
+export interface PageTypeRevenueRow {
+  page_type: string | null;
+  total_revenue_inr: number;
+  total_clicks: number;
+  total_leads: number;
+}
+
+export interface DecayingPageRow {
+  page_id: string | null;
+  page_type: string | null;
+  affiliate_clicks_last_7: number;
+  affiliate_clicks_prev_7: number;
+  decay_pct: number;
+}
+
+export interface RevenueConfig {
+  id: string;
+  key: string;
+  value_float: number;
+  updated_at: string;
+}
+
+export interface ExecutiveSummaryResponse {
+  id: string;
+  week_label: string;
+  content_md: string;
+  sent_at: string | null;
+  created_at: string;
+}
+
+export async function fetchRevenueByCluster(): Promise<ClusterRevenueRow[]> {
+  const res = await fetch(`${apiBase}/api/v1/admin/revenue/by-cluster`, { credentials: "include" });
+  if (!res.ok) throw new Error(`API ${res.status}`);
+  return res.json();
+}
+
+export async function fetchRevenueByPageType(): Promise<PageTypeRevenueRow[]> {
+  const res = await fetch(`${apiBase}/api/v1/admin/revenue/by-page-type`, { credentials: "include" });
+  if (!res.ok) throw new Error(`API ${res.status}`);
+  return res.json();
+}
+
+export async function fetchDecayingPages(): Promise<DecayingPageRow[]> {
+  const res = await fetch(`${apiBase}/api/v1/admin/revenue/decaying-pages`, { credentials: "include" });
+  if (!res.ok) throw new Error(`API ${res.status}`);
+  return res.json();
+}
+
+export async function aggregateRevenue(days = 7): Promise<{ aggregated: number; period_start: string; period_end: string }> {
+  const res = await fetch(`${apiBase}/api/v1/admin/revenue/aggregate?days=${days}`, {
+    method: "POST",
+    credentials: "include",
+  });
+  if (!res.ok) throw new Error(`API ${res.status}`);
+  return res.json();
+}
+
+export async function fetchRevenueConfig(): Promise<RevenueConfig[]> {
+  const res = await fetch(`${apiBase}/api/v1/admin/revenue/config`, { credentials: "include" });
+  if (!res.ok) throw new Error(`API ${res.status}`);
+  return res.json();
+}
+
+export async function patchRevenueConfig(key: string, value_float: number): Promise<RevenueConfig> {
+  const res = await fetch(`${apiBase}/api/v1/admin/revenue/config/${key}`, {
+    method: "PATCH",
+    headers: { "Content-Type": "application/json" },
+    credentials: "include",
+    body: JSON.stringify({ value_float }),
+  });
+  if (!res.ok) throw new Error(`API ${res.status}`);
+  return res.json();
+}
+
+export async function fetchExecutiveSummaries(): Promise<ExecutiveSummaryResponse[]> {
+  const res = await fetch(`${apiBase}/api/v1/admin/revenue/summaries`, { credentials: "include" });
+  if (!res.ok) throw new Error(`API ${res.status}`);
+  return res.json();
+}
+
+export async function triggerExecutiveSummary(): Promise<{ task_id: string; status: string }> {
+  const res = await fetch(`${apiBase}/api/v1/admin/revenue/summaries/generate`, {
+    method: "POST",
+    credentials: "include",
+  });
+  if (!res.ok) throw new Error(`API ${res.status}`);
+  return res.json();
+}
+
+// ---------------------------------------------------------------------------
+// Account / Bookmarks / Alerts / Profile (Step 33)
+// ---------------------------------------------------------------------------
+
+export interface BookmarkResponse {
+  id: string;
+  user_id: string;
+  cms_page_id: string;
+  created_at: string;
+  slug: string | null;
+  title: string | null;
+  page_type: string | null;
+  hero_image_url: string | null;
+}
+
+export interface DownloadResponse {
+  id: string;
+  user_id: string;
+  product_id: string | null;
+  filename: string;
+  downloaded_at: string;
+}
+
+export interface TrekAlertResponse {
+  id: string;
+  user_id: string;
+  trek_slug: string;
+  alert_type: string;
+  active: boolean;
+  created_at: string;
+}
+
+export interface UserProfileResponse {
+  id: string;
+  user_id: string;
+  fitness_level: string | null;
+  trek_experience: string | null;
+  preferred_regions: string[] | null;
+  budget_range: string | null;
+  submitted_at: string | null;
+  updated_at: string;
+}
+
+export interface UserProfileUpdate {
+  fitness_level?: string;
+  trek_experience?: string;
+  preferred_regions?: string[];
+  budget_range?: string;
+}
+
+export async function fetchBookmarks(): Promise<BookmarkResponse[]> {
+  const res = await fetch(`${apiBase}/api/v1/account/bookmarks`, { credentials: "include" });
+  if (!res.ok) throw new Error(`API ${res.status}`);
+  return res.json();
+}
+
+export async function addBookmark(cms_page_id: string): Promise<BookmarkResponse> {
+  const res = await fetch(`${apiBase}/api/v1/account/bookmarks`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    credentials: "include",
+    body: JSON.stringify({ cms_page_id }),
+  });
+  if (!res.ok) throw new Error(`API ${res.status}`);
+  return res.json();
+}
+
+export async function removeBookmark(cms_page_id: string): Promise<void> {
+  const res = await fetch(`${apiBase}/api/v1/account/bookmarks/${cms_page_id}`, {
+    method: "DELETE",
+    credentials: "include",
+  });
+  if (!res.ok) throw new Error(`API ${res.status}`);
+}
+
+export async function fetchDownloads(): Promise<DownloadResponse[]> {
+  const res = await fetch(`${apiBase}/api/v1/account/downloads`, { credentials: "include" });
+  if (!res.ok) throw new Error(`API ${res.status}`);
+  return res.json();
+}
+
+export async function fetchAlerts(): Promise<TrekAlertResponse[]> {
+  const res = await fetch(`${apiBase}/api/v1/account/alerts`, { credentials: "include" });
+  if (!res.ok) throw new Error(`API ${res.status}`);
+  return res.json();
+}
+
+export async function addAlert(trek_slug: string, alert_type = "any"): Promise<TrekAlertResponse> {
+  const res = await fetch(`${apiBase}/api/v1/account/alerts`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    credentials: "include",
+    body: JSON.stringify({ trek_slug, alert_type }),
+  });
+  if (!res.ok) throw new Error(`API ${res.status}`);
+  return res.json();
+}
+
+export async function removeAlert(trek_slug: string, alert_type = "any"): Promise<void> {
+  const res = await fetch(`${apiBase}/api/v1/account/alerts/${encodeURIComponent(trek_slug)}?alert_type=${alert_type}`, {
+    method: "DELETE",
+    credentials: "include",
+  });
+  if (!res.ok) throw new Error(`API ${res.status}`);
+}
+
+export async function fetchUserProfile(): Promise<UserProfileResponse> {
+  const res = await fetch(`${apiBase}/api/v1/account/profile`, { credentials: "include" });
+  if (!res.ok) throw new Error(`API ${res.status}`);
+  return res.json();
+}
+
+export async function upsertUserProfile(data: UserProfileUpdate): Promise<UserProfileResponse> {
+  const res = await fetch(`${apiBase}/api/v1/account/profile`, {
+    method: "PATCH",
+    headers: { "Content-Type": "application/json" },
+    credentials: "include",
+    body: JSON.stringify(data),
+  });
+  if (!res.ok) throw new Error(`API ${res.status}`);
+  return res.json();
+}

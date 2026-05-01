@@ -28,8 +28,7 @@ Build cluster-level and page-type-level revenue attribution dashboards. Show aff
 - Also stored in `executive_summaries` table and visible in admin
 
 ### Admin UI
-- `/admin/revenue` (new page): cluster revenue table, page-type EPC cards, decaying pages list
-- `/admin/revenue/summary` (sub-route): executive summary history
+- `/admin/revenue` (new page): cluster revenue table, page-type EPC cards, decaying pages list, config editor, executive summary history
 
 ### Backend
 - Alembic migration: `revenue_attributions`, `revenue_config`, `executive_summaries` tables
@@ -47,11 +46,12 @@ Build cluster-level and page-type-level revenue attribution dashboards. Show aff
 - `app/modules/content/models.py` — KeywordCluster (read-only)
 
 ## Planned Files to Create
-- `services/api/alembic/versions/YYYYMMDD_0021_revenue_attributions.py`
+- `services/api/alembic/versions/20260430_0021_revenue_attributions.py`
 - `services/api/app/modules/revenue/__init__.py`
 - `services/api/app/modules/revenue/models.py`
 - `services/api/app/modules/revenue/service.py`
 - `services/api/app/modules/revenue/tasks.py`
+- `services/api/app/modules/agents/executive_summary/__init__.py`
 - `services/api/app/modules/agents/executive_summary/agent.py`
 - `services/api/app/api/routes/revenue.py`
 - `services/api/app/schemas/revenue.py`
@@ -62,13 +62,35 @@ Build cluster-level and page-type-level revenue attribution dashboards. Show aff
 - `services/api/app/worker/celery_app.py` — daily + weekly beat tasks
 - `services/api/app/db/base.py`
 - `services/api/app/api/router.py`
-- `apps/web-next/app/(admin)/admin/layout.tsx` — Revenue nav item
+- `apps/web-next/app/(admin)/admin/layout.tsx` — Revenue nav item (TrendingUp icon)
 - `apps/web-next/lib/api.ts`
 
 ## Status
-pending
+Done
+
+## Files Created
+- `services/api/alembic/versions/20260430_0021_revenue_attributions.py` — revenue_config + revenue_attributions + executive_summaries tables; applied with `alembic upgrade head`
+- `services/api/app/modules/revenue/__init__.py`
+- `services/api/app/modules/revenue/models.py` — RevenueConfig, RevenueAttribution, ExecutiveSummary ORM models
+- `services/api/app/modules/revenue/service.py` — _ensure_config (seed defaults), aggregate_revenue, revenue_by_cluster, revenue_by_page_type, decaying_pages, upsert_executive_summary, list_executive_summaries, get/update config
+- `services/api/app/modules/revenue/tasks.py` — aggregate_revenue_task (daily), generate_executive_summary_task (weekly)
+- `services/api/app/modules/agents/executive_summary/__init__.py`
+- `services/api/app/modules/agents/executive_summary/agent.py` — ExecutiveSummaryAgent (3-node LangGraph: gather_data → generate_summary → store_summary); 300-word digest from cluster/type/decay data
+- `services/api/app/api/routes/revenue.py` — GET by-cluster, by-page-type, decaying-pages; POST aggregate; GET/PATCH config/{key}; GET summaries; POST summaries/generate
+- `services/api/app/schemas/revenue.py` — ClusterRevenueRow, PageTypeRevenueRow, DecayingPageRow, RevenueConfigResponse/Update, AggregateRevenueResponse, ExecutiveSummaryResponse
+- `services/api/tests/test_revenue.py` — 18 tests (TC-B01 through TC-B18)
+- `apps/web-next/app/(admin)/admin/revenue/page.tsx` — KPI strip, cluster table, page-type table, decaying pages, inline config editor, executive summary history with expand/collapse
+
+## Files Modified
+- `services/api/app/worker/celery_app.py` — revenue.tasks in include; daily-aggregate-revenue + weekly-executive-summary beat entries
+- `services/api/app/db/base.py` — RevenueAttribution, RevenueConfig, ExecutiveSummary registered
+- `services/api/app/api/router.py` — revenue_router registered
+- `apps/web-next/app/(admin)/admin/layout.tsx` — TrendingUp icon imported; "Revenue" nav item added to Growth group before Monetization
+- `apps/web-next/lib/api.ts` — ClusterRevenueRow, PageTypeRevenueRow, DecayingPageRow, RevenueConfig, ExecutiveSummaryResponse interfaces + fetch/aggregate/patch helpers
 
 ## Notes
-- Revenue estimates in V2 are proxy-based (click counts × config constants) — not real payment receipts. Present them clearly as "estimated" in the UI.
-- `revenue_config` table: editable by admin — avg_cpc_inr (default: 3), lead_value_inr (default: 500). These drive all RPM/EPC calculations.
-- ExecutiveSummaryAgent uses the same send infrastructure as Step 31 (SMTP + template). No new send path needed.
+- Revenue estimates are proxy-based (click counts × config constants from revenue_config). UI labels all values as "estimated".
+- Default config: avg_cpc_inr=3.0, lead_value_inr=500.0 — seeded lazily on first API call via _ensure_config().
+- ExecutiveSummaryAgent uses get_anthropic_client() (same as all other agents) + stores result in executive_summaries table.
+- Daily beat aggregates last 1 day; manual trigger supports configurable `days` param (default 7).
+- 363 backend tests pass (18 new for this step); next build clean (137 static pages); GitNexus: 7,396 nodes | 12,613 edges | 266 clusters | 199 flows

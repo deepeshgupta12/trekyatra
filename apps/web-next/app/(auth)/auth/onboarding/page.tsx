@@ -1,9 +1,11 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import { Logo } from "@/components/brand/Logo";
 import { Button } from "@/components/ui/button";
 import { ArrowRight, Check } from "lucide-react";
+import { upsertUserProfile } from "@/lib/api";
 
 const EXPERIENCE_LEVELS = [
   { id: "beginner", label: "Just starting out", sub: "Never done a trek before" },
@@ -18,13 +20,30 @@ const INTERESTS = [
 ];
 
 export default function Onboarding() {
+  const router = useRouter();
   const [step, setStep] = useState(1);
   const [experience, setExperience] = useState("");
   const [interests, setInterests] = useState<string[]>([]);
   const [name, setName] = useState("");
+  const [submitting, setSubmitting] = useState(false);
 
   const toggleInterest = (i: string) =>
     setInterests(prev => prev.includes(i) ? prev.filter(x => x !== i) : [...prev, i]);
+
+  async function handleFinish() {
+    setSubmitting(true);
+    try {
+      await upsertUserProfile({
+        trek_experience: experience || undefined,
+        preferred_regions: interests.length > 0 ? interests : undefined,
+      });
+    } catch {
+      // Profile save is best-effort — don't block navigation
+    } finally {
+      setSubmitting(false);
+      router.push("/explore");
+    }
+  }
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-paper-grain p-6">
@@ -99,8 +118,8 @@ export default function Onboarding() {
                 </button>
               ))}
             </div>
-            <Button variant="hero" size="lg" className="w-full" onClick={() => {}}>
-              Start exploring <ArrowRight className="h-4 w-4" />
+            <Button variant="hero" size="lg" className="w-full" onClick={handleFinish} disabled={submitting}>
+              {submitting ? "Saving…" : "Start exploring"} <ArrowRight className="h-4 w-4" />
             </Button>
           </div>
         )}

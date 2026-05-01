@@ -59,7 +59,57 @@ All V0 foundations are shipped. The stack is live locally with:
 | 29 | Operator listing + lead marketplace basics | done |
 | 30 | Dynamic destination hubs | done |
 | 31 | Email automation and audience workflows | done |
-| 32 | Deeper dashboards and revenue attribution | pending |
+| 32 | Deeper dashboards and revenue attribution | done |
+
+## V3 Status — In Progress
+| Step | Title | Status |
+|------|-------|--------|
+| 33 | Premium user accounts + bookmarks | done |
+| 34 | Digital product checkout and file delivery | pending |
+| 35 | Advanced recommendation engine | pending |
+| 36 | User-intent aware monetization | pending |
+| 37 | Multilingual content workflows | pending |
+
+### Step 33 — Premium User Accounts + Bookmarks
+Status: done
+What is done:
+- Migration `20260430_0022_user_accounts.py` — user_bookmarks (user_id FK→users CASCADE, cms_page_id FK→cms_pages CASCADE, unique(user_id,cms_page_id)); user_downloads (user_id FK→users CASCADE, product_id nullable, filename, downloaded_at); trek_alerts (user_id FK→users CASCADE, trek_slug, alert_type, active bool, unique(user_id,trek_slug,alert_type)); user_profiles (user_id FK→users UNIQUE, fitness_level, trek_experience, preferred_regions JSON, budget_range, submitted_at); applied with `alembic upgrade head`
+- `modules/account/__init__.py`, `models.py` — UserBookmark, UserDownload, TrekAlert, UserProfile ORM models; all registered in db/base.py
+- `modules/account/service.py` — add/remove/list_bookmarks (enriched with CMSPage slug/title/hero_image_url), record/list_downloads, add/remove/list_alerts (idempotent), get/upsert_profile
+- `api/routes/account.py` — POST/DELETE/GET /account/bookmarks; GET /account/downloads; POST/DELETE/GET /account/alerts; GET/PATCH /account/profile; all require get_current_user
+- `schemas/account.py` — BookmarkCreate/Response, DownloadResponse, TrekAlertCreate/Response, UserProfileUpdate/Response
+- `api/router.py` — account_router registered
+- `tests/test_account.py` — 20 tests (TC-B01 through TC-B20): service CRUD, idempotency, 404 handling, API auth-gated 401, API happy path for bookmarks/profile/alerts
+- `app/(public)/account/saved/page.tsx` — rewritten as client component; fetchBookmarks() on mount; card grid with hero image, page type badge, view + remove actions; loading/empty states
+- `app/(public)/account/downloads/page.tsx` — rewritten as client component; fetchDownloads() on mount; filename + downloaded_at rendered; empty state
+- `components/account/BookmarkButton.tsx` — client component; toggle add/remove bookmark; optimistic state; filled icon when bookmarked; graceful no-op on auth error
+- `app/(auth)/auth/onboarding/page.tsx` — step 3 submit now calls upsertUserProfile(trek_experience, preferred_regions) then router.push("/explore"); graceful on auth failure
+- `lib/api.ts` — BookmarkResponse, DownloadResponse, TrekAlertResponse, UserProfileResponse/Update interfaces; fetchBookmarks, addBookmark, removeBookmark, fetchDownloads, fetchAlerts, addAlert, removeAlert, fetchUserProfile, upsertUserProfile helpers
+- 363/363 backend tests pass (20 new); next build clean (137 static pages); GitNexus: 7,396 nodes | 12,613 edges | 266 clusters | 199 flows
+What remains:
+- BookmarkButton must be placed on trek/guide pages by whoever adds it to those templates (no trek template changes in scope for Step 33)
+- Trek alert delivery task not implemented (flagged as out of scope — Step 33 stores subscriptions; delivery fire in a future beat task)
+
+### Step 32 — Deeper Dashboards and Revenue Attribution
+Status: done
+What is done:
+- Migration `20260430_0021_revenue_attributions.py` — revenue_config (key unique, value_float); revenue_attributions (page_id FK→pages CASCADE, date, affiliate_clicks, lead_conversions, estimated_revenue_inr, page_type, cluster_id FK→keyword_clusters SET NULL, unique(page_id,date)); executive_summaries (week_label unique, content_md, sent_at); applied with `alembic upgrade head`
+- `modules/revenue/__init__.py`, `models.py` — RevenueConfig, RevenueAttribution, ExecutiveSummary ORM models; registered in db/base.py
+- `modules/revenue/service.py` — _ensure_config (seeds avg_cpc_inr=3.0, lead_value_inr=500.0 on first call); aggregate_revenue (iterates pages × date range, reads AffiliateClick + LeadSubmission counts, upserts rows); revenue_by_cluster, revenue_by_page_type, decaying_pages (7-day vs prev-7-day click comparison); upsert_executive_summary, list_executive_summaries; get/update config
+- `modules/revenue/tasks.py` — aggregate_revenue_task (daily, aggregates last 1 day); generate_executive_summary_task (weekly, fires ExecutiveSummaryAgent)
+- `modules/agents/executive_summary/__init__.py`, `agent.py` — ExecutiveSummaryAgent (LangGraph 3-node: gather_data → generate_summary → store_summary); builds prompt from top-5 cluster/page-type rows + top-3 decaying pages; 300-word markdown digest; upserts to executive_summaries table
+- `api/routes/revenue.py` — GET /admin/revenue/by-cluster, /by-page-type, /decaying-pages; POST /admin/revenue/aggregate?days=N; GET/PATCH /admin/revenue/config/{key}; GET /admin/revenue/summaries; POST /admin/revenue/summaries/generate; all require get_current_admin
+- `schemas/revenue.py` — ClusterRevenueRow, PageTypeRevenueRow, DecayingPageRow, RevenueConfigResponse/Update, AggregateRevenueResponse, ExecutiveSummaryResponse
+- `api/router.py` — revenue_router registered
+- `worker/celery_app.py` — app.modules.revenue.tasks in include; daily-aggregate-revenue + weekly-executive-summary beat entries
+- `tests/test_revenue.py` — 18 tests (TC-B01 through TC-B18): config seed/CRUD, upsert summary, revenue_by_cluster/page_type, all API endpoints including 404 + patched task mock
+- `app/(admin)/admin/revenue/page.tsx` — KPI strip (total revenue, clicks, leads); cluster revenue table; page-type table; decaying pages list (amber badges); inline config editor; executive summary history with expand/collapse; "Aggregate (7d)" + "Generate Summary" action buttons
+- `app/(admin)/admin/layout.tsx` — TrendingUp icon; "Revenue" nav item added to Growth group before Monetization
+- `lib/api.ts` — ClusterRevenueRow, PageTypeRevenueRow, DecayingPageRow, RevenueConfig, ExecutiveSummaryResponse interfaces; fetchRevenueByCluster/ByPageType, fetchDecayingPages, aggregateRevenue, fetchRevenueConfig, patchRevenueConfig, fetchExecutiveSummaries, triggerExecutiveSummary helpers
+- 363/363 backend tests pass (18 new); next build clean (137 static pages); GitNexus: 7,396 nodes | 12,613 edges | 266 clusters | 199 flows
+What remains:
+- ANTHROPIC_API_KEY required for ExecutiveSummaryAgent to generate summaries
+- Revenue estimates are proxy-based on click counts × config constants — not real payment receipts
 
 ### Step 31 — Email Automation and Audience Workflows
 Status: done

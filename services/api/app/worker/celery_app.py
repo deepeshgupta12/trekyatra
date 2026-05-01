@@ -16,6 +16,7 @@ celery_app = Celery(
         "app.modules.refresh.tasks",
         "app.modules.hubs.tasks",
         "app.modules.email_sequences.tasks",
+        "app.modules.revenue.tasks",
     ],
 )
 
@@ -56,6 +57,14 @@ celery_app.conf.update(
         "daily-nurture-sequences": {
             "task": "email_sequences.process_nurture_sequences",
             "schedule": 86400,  # 24 hours
+        },
+        "daily-aggregate-revenue": {
+            "task": "revenue.aggregate_revenue_task",
+            "schedule": 86400,
+        },
+        "weekly-executive-summary": {
+            "task": "revenue.generate_executive_summary_task",
+            "schedule": 604800,
         },
     },
 )

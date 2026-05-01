@@ -604,3 +604,40 @@ Before editing any backend file:
 - `apps/web-next/app/(admin)/admin/email-sequences/page.tsx` — NEW: admin email sequences list page; blast radius: LOW (leaf admin page)
 - `apps/web-next/app/(admin)/admin/layout.tsx` — UPDATED: Email Sequences nav item (Workflow icon) added to Growth group; blast radius: MEDIUM (admin nav, affects sidebar for all admin pages)
 - GitNexus re-indexed: 6,857 nodes | 11,664 edges | 236 clusters | 185 flows
+
+### Step 32 — Revenue Attribution Dashboards blast radius
+- `services/api/alembic/versions/20260430_0021_revenue_attributions.py` — NEW: revenue_config + revenue_attributions + executive_summaries tables; blast radius: LOW (new tables)
+- `services/api/app/modules/revenue/__init__.py` — NEW: package init; blast radius: LOW
+- `services/api/app/modules/revenue/models.py:RevenueConfig` — NEW: ORM for revenue config constants; blast radius: LOW (only imported by revenue service/routes)
+- `services/api/app/modules/revenue/models.py:RevenueAttribution` — NEW: ORM for daily revenue rows; FK→pages (linking module), FK→keyword_clusters; blast radius: LOW
+- `services/api/app/modules/revenue/models.py:ExecutiveSummary` — NEW: ORM for weekly digest storage; blast radius: LOW
+- `services/api/app/modules/revenue/service.py` — NEW: _ensure_config (lazy default seed), aggregate_revenue, revenue_by_cluster, revenue_by_page_type, decaying_pages, upsert_executive_summary; blast radius: LOW (called only by revenue routes + tasks)
+- `services/api/app/modules/revenue/tasks.py` — NEW: aggregate_revenue_task (daily), generate_executive_summary_task (weekly); blast radius: LOW (new Celery tasks)
+- `services/api/app/modules/agents/executive_summary/__init__.py` — NEW; blast radius: LOW
+- `services/api/app/modules/agents/executive_summary/agent.py:ExecutiveSummaryAgent` — NEW: 3-node LangGraph; gather_data → generate_summary → store_summary; uses get_anthropic_client(); blast radius: LOW (new module, called only by generate_executive_summary_task)
+- `services/api/app/api/routes/revenue.py` — NEW: 8 endpoints under /admin/revenue; requires get_current_admin; blast radius: LOW (new routes)
+- `services/api/app/schemas/revenue.py` — NEW: 7 response/request schemas; blast radius: LOW
+- `services/api/app/db/base.py` — UPDATED: RevenueConfig, RevenueAttribution, ExecutiveSummary registered; blast radius: LOW (additive)
+- `services/api/app/api/router.py` — UPDATED: revenue_router registered; blast radius: LOW (additive)
+- `services/api/app/worker/celery_app.py` — UPDATED: revenue.tasks in include; daily-aggregate-revenue + weekly-executive-summary beat entries; blast radius: LOW (additive)
+- `services/api/tests/test_revenue.py` — NEW: 18 tests; blast radius: LOW (test file)
+- `apps/web-next/app/(admin)/admin/revenue/page.tsx` — NEW: cluster table, page-type table, decay list, config editor, summaries panel; blast radius: LOW (leaf admin page)
+- `apps/web-next/app/(admin)/admin/layout.tsx` — UPDATED: Revenue nav item (TrendingUp icon) added before Monetization; blast radius: MEDIUM (admin nav)
+- `apps/web-next/lib/api.ts` — UPDATED: 7 revenue types + 7 fetch/patch helpers; blast radius: LOW (additive)
+
+### Step 33 — Premium User Accounts + Bookmarks blast radius
+- `services/api/alembic/versions/20260430_0022_user_accounts.py` — NEW: user_bookmarks + user_downloads + trek_alerts + user_profiles tables; blast radius: LOW (new tables)
+- `services/api/app/modules/account/__init__.py` — NEW; blast radius: LOW
+- `services/api/app/modules/account/models.py` — NEW: UserBookmark (FK→users CASCADE, FK→cms_pages CASCADE), UserDownload (FK→users CASCADE), TrekAlert (FK→users CASCADE), UserProfile (FK→users CASCADE UNIQUE); blast radius: LOW (new models)
+- `services/api/app/modules/account/service.py` — NEW: add/remove/list_bookmarks (enriched with CMSPage), record/list_downloads, add/remove/list_alerts, get/upsert_profile; blast radius: LOW (called only by account routes)
+- `services/api/app/api/routes/account.py` — NEW: 9 endpoints under /account; all require get_current_user; blast radius: LOW (new routes)
+- `services/api/app/schemas/account.py` — NEW: 6 response/request schemas; blast radius: LOW
+- `services/api/app/db/base.py` — UPDATED: UserBookmark, UserDownload, TrekAlert, UserProfile registered; blast radius: LOW (additive)
+- `services/api/app/api/router.py` — UPDATED: account_router registered; blast radius: LOW (additive)
+- `services/api/tests/test_account.py` — NEW: 20 tests; blast radius: LOW (test file)
+- `apps/web-next/app/(public)/account/saved/page.tsx` — REWRITTEN: client component; real bookmarks API; blast radius: LOW (leaf account page)
+- `apps/web-next/app/(public)/account/downloads/page.tsx` — REWRITTEN: client component; real downloads API; blast radius: LOW (leaf account page)
+- `apps/web-next/components/account/BookmarkButton.tsx` — NEW: client toggle component; blast radius: LOW (not yet imported by any trek page)
+- `apps/web-next/app/(auth)/auth/onboarding/page.tsx` — UPDATED: step 3 submit wired to upsertUserProfile + router.push("/explore"); blast radius: LOW (leaf auth page)
+- `apps/web-next/lib/api.ts` — UPDATED: 5 account types + 9 account helpers; blast radius: LOW (additive)
+- GitNexus re-indexed: 7,396 nodes | 12,613 edges | 266 clusters | 199 flows

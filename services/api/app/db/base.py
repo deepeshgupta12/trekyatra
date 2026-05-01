@@ -19,6 +19,8 @@ from app.modules.email_sequences.models import (
     SubscriberSequenceEnrollment,
     SubscriberTag,
 )
+from app.modules.revenue.models import RevenueAttribution, RevenueConfig, ExecutiveSummary
+from app.modules.account.models import UserBookmark, UserDownload, TrekAlert, UserProfile
 
 __all__ = [
     "Operator",
@@ -54,4 +56,11 @@ __all__ = [
     "EmailSequenceStep",
     "SubscriberSequenceEnrollment",
     "SubscriberTag",
+    "RevenueAttribution",
+    "RevenueConfig",
+    "ExecutiveSummary",
+    "UserBookmark",
+    "UserDownload",
+    "TrekAlert",
+    "UserProfile",
 ]
