@@ -1,5 +1,18 @@
 import Link from "next/link";
 import { fetchSimilarPages, RecommendationItem } from "@/lib/api";
+import { treks } from "@/data/treks";
+
+function trekToItem(trek: (typeof treks)[0]): RecommendationItem {
+  return {
+    id: trek.slug,
+    slug: trek.slug,
+    title: trek.name,
+    page_type: "trek_guide",
+    hero_image_url: null,
+    seo_description: trek.description,
+    published_at: null,
+  };
+}
 
 function RecommendCard({ item }: { item: RecommendationItem }) {
   const href = `/${item.page_type === "trek_guide" ? "trek" : "guides"}/${item.slug}`;
@@ -40,7 +53,15 @@ export default async function RecommendedContent({ slug, limit = 3 }: { slug: st
     const data = await fetchSimilarPages(slug, limit);
     items = data.items;
   } catch {
-    return null;
+    // API unavailable — fall through to static fallback below
+  }
+
+  // Static fallback: show other treks from the local dataset when API returns nothing
+  if (items.length === 0) {
+    items = treks
+      .filter((t) => t.slug !== slug)
+      .slice(0, limit)
+      .map(trekToItem);
   }
 
   if (items.length === 0) return null;

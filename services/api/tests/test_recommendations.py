@@ -160,11 +160,14 @@ def test_api_similar_pages(published_page):
     assert isinstance(data["items"], list)
 
 
-# --- TC-B10: GET /pages/{slug}/similar — unknown slug returns 404 ---
+# --- TC-B10: GET /pages/{slug}/similar — unknown slug returns 200 with fallback items ---
 def test_api_similar_pages_not_found():
-    """Verifies: GET /pages/nonexistent/similar returns 404."""
+    """Verifies: GET /pages/nonexistent/similar returns 200 with anonymous fallback (not 404)."""
     res = client.get("/api/v1/pages/nonexistent-slug-xyz-abc/similar")
-    assert res.status_code == 404
+    assert res.status_code == 200
+    body = res.json()
+    assert body["page_slug"] == "nonexistent-slug-xyz-abc"
+    assert isinstance(body["items"], list)
 
 
 # --- TC-B11: GET /recommendations — public fallback ---

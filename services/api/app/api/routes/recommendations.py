@@ -24,7 +24,9 @@ router = APIRouter(tags=["recommendations"])
 def similar_pages(slug: str, limit: int = 5, db: Session = Depends(get_db)):
     page = db.scalar(select(CMSPage).where(CMSPage.slug == slug, CMSPage.status == "published"))
     if page is None:
-        raise HTTPException(status_code=404, detail="Page not found")
+        # No CMS page for this slug yet — return popular pages as graceful fallback
+        items = get_anonymous_recommendations(db, limit=min(limit, 10))
+        return SimilarPagesResponse(page_slug=slug, items=[RecommendationItem(**i) for i in items])
     items = find_similar_pages(db, page.id, limit=min(limit, 10))
     return SimilarPagesResponse(page_slug=slug, items=[RecommendationItem(**i) for i in items])
 
