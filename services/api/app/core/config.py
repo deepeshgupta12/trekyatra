@@ -53,6 +53,17 @@ class Settings(BaseSettings):
     newsletter_platform_api_key: str | None = None
     newsletter_list_id: str | None = None
 
+    # Payment — Razorpay (India-first). Leave unset to run in test mode (skip real payment).
+    razorpay_key_id: str | None = None
+    razorpay_key_secret: str | None = None
+
+    # Stripe (international fallback; reserved for future use)
+    stripe_secret_key: str | None = None
+
+    # Digital product file storage — local path, relative to services/api/
+    product_files_dir: str = "data/products"
+    product_download_base_url: str = "http://localhost:3000"
+
     model_config = SettingsConfigDict(
         env_file=".env",
         env_file_encoding="utf-8",

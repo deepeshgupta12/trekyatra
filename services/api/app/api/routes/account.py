@@ -9,6 +9,9 @@ from app.db.session import get_db
 from app.modules.account import service as account_service
 from app.modules.auth.dependencies import get_current_user
 from app.modules.auth.models import User
+from app.modules.products.service import build_download_url
+from app.modules.products.models import UserOrder
+from sqlalchemy import select as sa_select
 from app.schemas.account import (
     BookmarkBySlugCreate,
     BookmarkCheckResponse,
@@ -93,6 +96,20 @@ def list_downloads(
     db: Session = Depends(get_db),
 ):
     return account_service.list_downloads(db, current_user.id)
+
+
+@router.post("/downloads/{order_id}/url")
+def get_download_url(
+    order_id: UUID,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    order = db.scalar(
+        sa_select(UserOrder).where(UserOrder.id == order_id, UserOrder.user_id == current_user.id, UserOrder.status == "paid")
+    )
+    if not order:
+        raise HTTPException(status_code=404, detail="Paid order not found")
+    return {"download_url": build_download_url(str(order_id))}
 
 
 # --- Alerts ---

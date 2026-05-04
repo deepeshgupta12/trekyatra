@@ -37,7 +37,9 @@ class DownloadResponse(BaseModel):
     id: UUID
     user_id: UUID
     product_id: str | None
+    order_id: UUID | None = None
     filename: str
+    download_url: str | None = None
     downloaded_at: datetime
 
     model_config = {"from_attributes": True}

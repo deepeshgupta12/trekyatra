@@ -67,9 +67,40 @@ Build a digital product catalog, payment integration (Stripe or Razorpay), and p
 - `apps/web-next/lib/api.ts`
 
 ## Status
-pending
+Done
+
+## Files Created
+- `services/api/alembic/versions/20260501_0024_digital_products.py`
+- `services/api/app/modules/products/__init__.py`
+- `services/api/app/modules/products/models.py`
+- `services/api/app/modules/products/service.py`
+- `services/api/app/api/routes/products.py`
+- `services/api/app/api/routes/checkout.py`
+- `services/api/app/schemas/products.py`
+- `services/api/tests/test_products.py`
+- `apps/web-next/app/(admin)/admin/products/page.tsx`
+- `apps/web-next/app/(admin)/admin/orders/page.tsx`
+
+## Files Modified
+- `services/api/app/modules/account/models.py` — UserBookmark slug columns; UserDownload order_id + download_url
+- `services/api/app/schemas/account.py` — BookmarkBySlugCreate, BookmarkCheckResponse, DownloadResponse (order_id, download_url)
+- `services/api/app/modules/account/service.py` — add/remove/check bookmark by slug; record_download with order_id/download_url
+- `services/api/app/api/routes/account.py` — slug bookmark routes + /account/downloads/{order_id}/url
+- `services/api/app/db/base.py` — DigitalProduct, UserOrder registered
+- `services/api/app/api/router.py` — products + checkout routers
+- `services/api/app/core/config.py` — Razorpay + Stripe + product file settings
+- `services/api/pyproject.toml` — razorpay dependency
+- `services/api/.env.example` — payment + product env vars
+- `apps/web-next/app/(public)/products/page.tsx` — real API wired
+- `apps/web-next/app/(public)/products/[slug]/page.tsx` — product detail + Razorpay embed
+- `apps/web-next/app/(public)/success/checkout/page.tsx` — real download link
+- `apps/web-next/app/(public)/account/downloads/page.tsx` — DownloadButton with signed URL
+- `apps/web-next/app/(admin)/admin/layout.tsx` — Products + Orders nav items
+- `apps/web-next/lib/api.ts` — product/order types + helpers; DownloadResponse updated
+- `apps/web-next/.env.local.example` — NEXT_PUBLIC_RAZORPAY_KEY_ID
 
 ## Notes
-- File storage in V3: local filesystem path (in `/data/products/`) with a signed HMAC token for download URL — no S3 required initially.
-- Razorpay webhook signature verification uses HMAC-SHA256 of `razorpay_order_id|razorpay_payment_id` — store signature in user_orders for audit.
-- Never commit real payment credentials. Use test-mode keys in development.
+- File storage in V3: local filesystem path (in `data/products/`) with a signed HMAC token for download URL — no S3 required initially.
+- Razorpay webhook signature verification uses HMAC-SHA256 of `razorpay_order_id|razorpay_payment_id` — stored in user_orders for audit.
+- Test mode activates automatically when RAZORPAY_KEY_ID is not set — payments simulate without any real transaction.
+- 383/383 backend tests pass (20 new); next build clean (139 pages).

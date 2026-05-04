@@ -184,8 +184,21 @@ def list_downloads(db: Session, user_id: UUID) -> list[UserDownload]:
     ).all())
 
 
-def record_download(db: Session, user_id: UUID, filename: str, product_id: str | None = None) -> UserDownload:
-    dl = UserDownload(user_id=user_id, filename=filename, product_id=product_id)
+def record_download(
+    db: Session,
+    user_id: UUID,
+    filename: str,
+    product_id: str | None = None,
+    download_url: str | None = None,
+    order_id: UUID | None = None,
+) -> UserDownload:
+    dl = UserDownload(
+        user_id=user_id,
+        filename=filename,
+        product_id=product_id,
+        download_url=download_url,
+        order_id=order_id,
+    )
     db.add(dl)
     db.commit()
     db.refresh(dl)

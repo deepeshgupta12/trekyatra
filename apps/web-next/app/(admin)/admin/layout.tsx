@@ -8,6 +8,7 @@ import {
   LayoutDashboard, Search, Layers, FileText, CheckSquare, Link2,
   DollarSign, BarChart2, Terminal, Settings, ChevronRight, Menu, X,
   GitBranch, Bot, GitMerge, Database, LogOut, Users, RefreshCw, Swords, Mail, Building2, Globe, Workflow, TrendingUp,
+  Package, ShoppingBag,
 } from "lucide-react";
 import { adminLogout } from "@/lib/admin-auth-api";
 
@@ -37,6 +38,8 @@ const NAV_GROUPS = [
       { href: "/admin/refresh", label: "Content Refresh", icon: RefreshCw },
       { href: "/admin/revenue", label: "Revenue", icon: TrendingUp },
       { href: "/admin/monetization", label: "Monetization", icon: DollarSign },
+      { href: "/admin/products", label: "Products", icon: Package },
+      { href: "/admin/orders", label: "Orders", icon: ShoppingBag },
       { href: "/admin/analytics", label: "Analytics", icon: BarChart2 },
     ],
   },

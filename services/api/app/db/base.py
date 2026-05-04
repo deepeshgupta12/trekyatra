@@ -21,6 +21,7 @@ from app.modules.email_sequences.models import (
 )
 from app.modules.revenue.models import RevenueAttribution, RevenueConfig, ExecutiveSummary
 from app.modules.account.models import UserBookmark, UserDownload, TrekAlert, UserProfile
+from app.modules.products.models import DigitalProduct, UserOrder
 
 __all__ = [
     "Operator",
@@ -63,4 +64,6 @@ __all__ = [
     "UserDownload",
     "TrekAlert",
     "UserProfile",
+    "DigitalProduct",
+    "UserOrder",
 ]

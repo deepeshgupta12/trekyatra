@@ -5,6 +5,8 @@ import { Download, FileText, Map } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { DownloadResponse, fetchDownloads } from "@/lib/api";
 
+const API = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000";
+
 function formatDate(iso: string) {
   return new Date(iso).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" });
 }
@@ -14,6 +16,48 @@ function guessIcon(filename: string) {
     return <Map className="h-5 w-5 text-accent" />;
   }
   return <FileText className="h-5 w-5 text-accent" />;
+}
+
+function DownloadButton({ item }: { item: DownloadResponse }) {
+  const [url, setUrl] = useState<string | null>(item.download_url ?? null);
+  const [loading, setLoading] = useState(false);
+
+  async function fetchUrl() {
+    if (!item.order_id) return;
+    setLoading(true);
+    try {
+      const res = await fetch(`${API}/api/v1/account/downloads/${item.order_id}/url`, {
+        method: "POST",
+        credentials: "include",
+      });
+      if (res.ok) {
+        const data = await res.json();
+        setUrl(data.download_url);
+      }
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  if (url) {
+    return (
+      <a href={url} target="_blank" rel="noopener noreferrer">
+        <Button variant="outline" size="sm">
+          <Download className="h-3.5 w-3.5 mr-1" /> Download
+        </Button>
+      </a>
+    );
+  }
+
+  if (item.order_id) {
+    return (
+      <Button variant="outline" size="sm" onClick={fetchUrl} disabled={loading}>
+        {loading ? "…" : <><Download className="h-3.5 w-3.5 mr-1" /> Get link</>}
+      </Button>
+    );
+  }
+
+  return null;
 }
 
 export default function Downloads() {
@@ -53,14 +97,9 @@ export default function Downloads() {
               </div>
               <div className="flex-1 min-w-0">
                 <p className="font-medium truncate">{item.filename}</p>
-                <p className="text-xs text-muted-foreground">
-                  {item.product_id && `${item.product_id} · `}Downloaded {formatDate(item.downloaded_at)}
-                </p>
+                <p className="text-xs text-muted-foreground">Downloaded {formatDate(item.downloaded_at)}</p>
               </div>
-              <Button variant="outline" size="sm">
-                <Download className="h-3.5 w-3.5" />
-                Download
-              </Button>
+              <DownloadButton item={item} />
             </div>
           ))}
         </div>

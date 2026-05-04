@@ -645,3 +645,26 @@ Before editing any backend file:
 ### Step 33 Bug Fixes blast radius
 - `apps/web-next/components/trek/TrekCard.tsx` — UPDATED: bookmark button now calls fetchCMSPage(slug) → addBookmark/removeBookmark; local bookmarked state with optimistic toggle; graceful silent fail on 401/404; blast radius: MEDIUM (used on explore page, homepage, account dashboard, trek rails — all get working bookmark toggle)
 - `apps/web-next/app/(public)/account/page.tsx` — REWRITTEN: converted from server component with hardcoded stats to client component; fetches fetchBookmarks + fetchDownloads + fetchAlerts; real counts in stat cards; Recently Saved shows real bookmarked CMS pages; blast radius: LOW (leaf account page)
+
+### Step 34 — Digital Product Checkout and File Delivery blast radius
+- `services/api/alembic/versions/20260501_0024_digital_products.py` — NEW: digital_products + user_orders tables; ALTERs user_downloads (order_id FK + download_url); blast radius: LOW (new tables, one non-breaking ALTER)
+- `services/api/app/modules/products/__init__.py` — NEW; blast radius: LOW
+- `services/api/app/modules/products/models.py` — NEW: DigitalProduct + UserOrder ORM models; blast radius: LOW (new models, only imported by products service/routes)
+- `services/api/app/modules/products/service.py` — NEW: HMAC token helpers, product CRUD, create_checkout_order (Razorpay/test), verify_checkout_payment, serve_download_file, list_orders; blast radius: LOW (called only by products/checkout routes)
+- `services/api/app/api/routes/products.py` — NEW: 7 public + admin endpoints; blast radius: LOW (new routes)
+- `services/api/app/api/routes/checkout.py` — NEW: POST /checkout/create-order, POST /checkout/verify, GET /account/downloads/file; blast radius: LOW (new routes)
+- `services/api/app/schemas/products.py` — NEW: ProductResponse, ProductCreate, ProductPatch, OrderResponse, Checkout* schemas; blast radius: LOW
+- `services/api/app/modules/account/models.py` — UPDATED: UserBookmark cms_page_id nullable + trek_slug/bookmark_title/bookmark_image_url; UserDownload order_id FK + download_url; blast radius: MEDIUM (UserDownload used by account service/routes — schema-additive, non-breaking)
+- `services/api/app/db/base.py` — UPDATED: DigitalProduct, UserOrder registered; blast radius: LOW (additive)
+- `services/api/app/api/router.py` — UPDATED: products_public_router, products_admin_router, checkout_router registered; blast radius: LOW (additive)
+- `services/api/pyproject.toml` — UPDATED: razorpay>=1.4.1,<2.0.0; blast radius: LOW (new dep)
+- `services/api/tests/test_products.py` — NEW: 20 tests; blast radius: LOW (test file)
+- `apps/web-next/app/(public)/products/page.tsx` — REWRITTEN: real API; blast radius: LOW (leaf public page)
+- `apps/web-next/app/(public)/products/[slug]/page.tsx` — REWRITTEN: real product detail + Razorpay embed; blast radius: LOW (leaf dynamic page)
+- `apps/web-next/app/(public)/success/checkout/page.tsx` — REWRITTEN: reads order_id query param, fetches real download URL; blast radius: LOW (leaf page)
+- `apps/web-next/app/(public)/account/downloads/page.tsx` — UPDATED: DownloadButton with real signed URL fetch; blast radius: LOW (leaf account page)
+- `apps/web-next/app/(admin)/admin/products/page.tsx` — NEW: admin product CRUD page; blast radius: LOW (leaf admin page)
+- `apps/web-next/app/(admin)/admin/orders/page.tsx` — NEW: admin orders list; blast radius: LOW (leaf admin page)
+- `apps/web-next/app/(admin)/admin/layout.tsx` — UPDATED: Products (Package) + Orders (ShoppingBag) nav items added; blast radius: MEDIUM (admin nav)
+- `apps/web-next/lib/api.ts` — UPDATED: DigitalProduct/UserOrder types + 9 product/checkout helpers; DownloadResponse: order_id + download_url added; blast radius: LOW (additive)
+- GitNexus: pending re-index

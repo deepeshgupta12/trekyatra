@@ -65,10 +65,40 @@ All V0 foundations are shipped. The stack is live locally with:
 | Step | Title | Status |
 |------|-------|--------|
 | 33 | Premium user accounts + bookmarks | done |
-| 34 | Digital product checkout and file delivery | pending |
+| 34 | Digital product checkout and file delivery | done |
 | 35 | Advanced recommendation engine | pending |
 | 36 | User-intent aware monetization | pending |
 | 37 | Multilingual content workflows | pending |
+
+### Step 34 — Digital Product Checkout and File Delivery
+Status: done
+What is done:
+- Migration `20260501_0024_digital_products.py` — `digital_products` (id UUID PK, slug unique, title, description, price_inr, file_path, preview_image_url, active bool default true, created_at, updated_at); `user_orders` (id UUID PK, user_id FK→users CASCADE, product_id FK→digital_products CASCADE, provider_order_id, amount_inr, status default 'pending', razorpay_signature, test_mode bool, paid_at, created_at); ALTERs `user_downloads`: adds order_id FK→user_orders SET NULL + download_url TEXT; applied with `alembic upgrade head`
+- `modules/products/__init__.py`, `models.py` — DigitalProduct, UserOrder ORM models; registered in db/base.py
+- `modules/products/service.py` — generate_download_token/verify_download_token (HMAC-SHA256 base64 signed, 24h TTL); list_active_products/admin_list_products/_enrich (with sales_count); get_product_by_slug/by_id; create/update/delete_product; create_checkout_order (Razorpay real mode when key set, test mode otherwise); verify_checkout_payment (verifies HMAC sig, marks paid, records download, sends email); serve_download_file (validates token, checks paid order, returns path+filename); list_orders
+- `api/routes/products.py` — public_router: GET /products, GET /products/{slug}; admin_router: GET/POST /admin/products, PATCH/DELETE /admin/products/{id}, GET /admin/orders
+- `api/routes/checkout.py` — POST /checkout/create-order (auth required), POST /checkout/verify (auth required), GET /account/downloads/file?token=… (FileResponse, HMAC token auth)
+- `schemas/products.py` — ProductResponse (with sales_count), ProductCreate, ProductPatch, OrderResponse, CheckoutCreateRequest/Response, CheckoutVerifyRequest/Response
+- `api/router.py` — products_public_router, products_admin_router, checkout_router registered
+- `pyproject.toml` — razorpay>=1.4.1,<2.0.0 added
+- `.env.example` — RAZORPAY_KEY_ID, RAZORPAY_KEY_SECRET, STRIPE_SECRET_KEY, PRODUCT_FILES_DIR, PRODUCT_DOWNLOAD_BASE_URL added
+- `core/config.py` — razorpay_key_id, razorpay_key_secret, stripe_secret_key, product_files_dir, product_download_base_url settings added
+- `tests/test_products.py` — 20 tests (TC-B01 through TC-B20): token round-trip/expired/tampered, product service CRUD, list active/inactive, public API endpoints, checkout create/verify (test mode), already-paid idempotency, 404 on missing product, auth requirements, admin CRUD + order list
+- `modules/account/models.py` — UserBookmark: cms_page_id nullable, trek_slug/bookmark_title/bookmark_image_url added; UserDownload: order_id + download_url added
+- `app/(public)/products/page.tsx` — rewritten as client component; fetchProducts() on mount; skeleton loading, empty state, ProductCard grid linking to /products/{slug}
+- `app/(public)/products/[slug]/page.tsx` — client component; fetchProduct(slug); Razorpay.js loaded dynamically; test mode: auto-verifies payment → redirect; real mode: opens Razorpay modal → verify → redirect to /success/checkout?order_id=...
+- `app/(public)/success/checkout/page.tsx` — reads order_id from query param; POSTs to /account/downloads/{order_id}/url; shows real download button with product title; Suspense boundary for useSearchParams
+- `app/(public)/account/downloads/page.tsx` — DownloadButton sub-component; if download_url present shows link; if order_id present fetches fresh URL on demand; graceful null handling
+- `app/(admin)/admin/products/page.tsx` — product CRUD table (slug, title, price, sales count, active badge); inline add/edit form with all fields; delete with confirm
+- `app/(admin)/admin/orders/page.tsx` — order list table with status filter tabs (all/paid/pending/refunded); test/live mode badge; count per status
+- `app/(admin)/admin/layout.tsx` — Products (Package icon) + Orders (ShoppingBag icon) nav items added to Growth group
+- `lib/api.ts` — DigitalProduct, ProductCreate, ProductPatch, UserOrder, CheckoutCreateResponse, CheckoutVerifyResponse interfaces; DownloadResponse: order_id + download_url added; fetchProducts, fetchProduct, createCheckoutOrder, verifyPayment, fetchAdminProducts, createAdminProduct, updateAdminProduct, deleteAdminProduct, fetchAdminOrders helpers
+- `.env.local.example` — NEXT_PUBLIC_RAZORPAY_KEY_ID added
+- 383/383 backend tests pass (20 new); next build clean (139 static pages); GitNexus: 7,796 nodes | 13,331 edges | 283 clusters | 206 flows
+What remains:
+- Real Razorpay keys required for live payment flow (test mode works without keys)
+- Trek alert delivery task deferred to future step
+- File serving requires placing actual files in services/api/data/products/
 
 ### Step 33 — Premium User Accounts + Bookmarks
 Status: done

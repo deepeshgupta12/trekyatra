@@ -1074,6 +1074,8 @@ export interface DownloadResponse {
   product_id: string | null;
   filename: string;
   downloaded_at: string;
+  order_id: string | null;
+  download_url: string | null;
 }
 
 export interface TrekAlertResponse {
@@ -1193,6 +1195,165 @@ export async function removeAlert(trek_slug: string, alert_type = "any"): Promis
 
 export async function fetchUserProfile(): Promise<UserProfileResponse> {
   const res = await fetch(`${apiBase}/api/v1/account/profile`, { credentials: "include" });
+  if (!res.ok) throw new Error(`API ${res.status}`);
+  return res.json();
+}
+
+// ---------------------------------------------------------------------------
+// Digital Products + Checkout (Step 34)
+// ---------------------------------------------------------------------------
+
+export interface DigitalProduct {
+  id: string;
+  slug: string;
+  title: string;
+  description: string | null;
+  price_inr: number;
+  file_path: string | null;
+  preview_image_url: string | null;
+  active: boolean;
+  created_at: string;
+  updated_at: string;
+  sales_count: number;
+}
+
+export interface ProductCreate {
+  slug: string;
+  title: string;
+  description?: string;
+  price_inr: number;
+  file_path?: string;
+  preview_image_url?: string;
+  active?: boolean;
+}
+
+export interface ProductPatch {
+  title?: string;
+  description?: string;
+  price_inr?: number;
+  file_path?: string;
+  preview_image_url?: string;
+  active?: boolean;
+}
+
+export interface UserOrder {
+  id: string;
+  user_id: string;
+  product_id: string;
+  provider_order_id: string;
+  amount_inr: number;
+  status: string;
+  test_mode: boolean;
+  paid_at: string | null;
+  created_at: string;
+}
+
+export interface CheckoutCreateResponse {
+  order_id: string;
+  provider_order_id: string;
+  amount_inr: number;
+  product_title: string;
+  key_id: string | null;
+  test_mode: boolean;
+}
+
+export interface CheckoutVerifyResponse {
+  order_id: string;
+  product_title: string;
+  download_url: string;
+  already_paid: boolean;
+}
+
+export async function fetchProducts(): Promise<DigitalProduct[]> {
+  return apiFetch<DigitalProduct[]>("/products");
+}
+
+export async function fetchProduct(slug: string): Promise<DigitalProduct> {
+  return apiFetch<DigitalProduct>(`/products/${slug}`);
+}
+
+export async function createCheckoutOrder(product_slug: string): Promise<CheckoutCreateResponse> {
+  const res = await fetch(`${apiBase}/api/v1/checkout/create-order`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    credentials: "include",
+    body: JSON.stringify({ product_slug }),
+  });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error((err as { detail?: string }).detail ?? `Checkout failed (${res.status})`);
+  }
+  return res.json();
+}
+
+export async function verifyPayment(payload: {
+  order_id: string;
+  razorpay_payment_id?: string;
+  razorpay_order_id?: string;
+  razorpay_signature?: string;
+}): Promise<CheckoutVerifyResponse> {
+  const res = await fetch(`${apiBase}/api/v1/checkout/verify`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    credentials: "include",
+    body: JSON.stringify(payload),
+  });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error((err as { detail?: string }).detail ?? `Verify failed (${res.status})`);
+  }
+  return res.json();
+}
+
+export async function fetchAdminProducts(): Promise<DigitalProduct[]> {
+  const res = await fetch(`${apiBase}/api/v1/admin/products`, { credentials: "include" });
+  if (!res.ok) throw new Error(`API ${res.status}`);
+  return res.json();
+}
+
+export async function createAdminProduct(data: ProductCreate): Promise<DigitalProduct> {
+  const res = await fetch(`${apiBase}/api/v1/admin/products`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    credentials: "include",
+    body: JSON.stringify(data),
+  });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error((err as { detail?: string }).detail ?? `Create failed (${res.status})`);
+  }
+  return res.json();
+}
+
+export async function updateAdminProduct(id: string, data: ProductPatch): Promise<DigitalProduct> {
+  const res = await fetch(`${apiBase}/api/v1/admin/products/${id}`, {
+    method: "PATCH",
+    headers: { "Content-Type": "application/json" },
+    credentials: "include",
+    body: JSON.stringify(data),
+  });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error((err as { detail?: string }).detail ?? `Update failed (${res.status})`);
+  }
+  return res.json();
+}
+
+export async function deleteAdminProduct(id: string): Promise<void> {
+  const res = await fetch(`${apiBase}/api/v1/admin/products/${id}`, {
+    method: "DELETE",
+    credentials: "include",
+  });
+  if (!res.ok) throw new Error(`Delete failed (${res.status})`);
+}
+
+export async function fetchAdminOrders(params?: { status?: string; limit?: number }): Promise<UserOrder[]> {
+  const q = params
+    ? "?" + new URLSearchParams(
+        Object.entries(params).filter(([, v]) => v !== undefined).map(([k, v]) => [k, String(v)])
+      )
+    : "";
+  const res = await fetch(`${apiBase}/api/v1/admin/orders${q}`, { credentials: "include" });
   if (!res.ok) throw new Error(`API ${res.status}`);
   return res.json();
 }

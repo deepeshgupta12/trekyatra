@@ -243,11 +243,12 @@
 - account/saved + account/downloads pages rewritten to call real API
 - Onboarding form wired to PATCH /account/profile (trek_experience, preferred_regions)
 
-### Step 34 — Digital product checkout and file delivery
+### Step 34 — Digital product checkout and file delivery [DONE]
 - Digital product catalog (planners, checklists, guides)
-- Payment integration (Stripe / Razorpay)
-- File delivery flow post-purchase
+- Payment integration (Razorpay; test mode when keys unset)
+- File delivery flow post-purchase (HMAC-signed download token, 24h TTL)
 - Download dashboard on user account
+- Admin: product CRUD + orders list with status filter
 
 ### Step 35 — Advanced recommendation engine
 - pgvector content embeddings
