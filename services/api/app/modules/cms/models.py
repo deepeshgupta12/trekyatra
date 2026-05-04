@@ -5,6 +5,7 @@ from datetime import datetime
 
 from sqlalchemy import DateTime, ForeignKey, JSON, String, Text, Uuid
 from sqlalchemy.orm import Mapped, mapped_column, relationship
+from pgvector.sqlalchemy import Vector
 
 from app.db.base_class import Base, TimestampMixin, UUIDPrimaryKeyMixin
 
@@ -23,6 +24,8 @@ class CMSPage(UUIDPrimaryKeyMixin, TimestampMixin, Base):
     seo_meta: Mapped[dict | None] = mapped_column(JSON, nullable=True)
     hero_image_url: Mapped[str | None] = mapped_column(String(512), nullable=True)
     published_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+
+    embedding: Mapped[list[float] | None] = mapped_column(Vector(1536), nullable=True)
 
     brief_id: Mapped[uuid.UUID | None] = mapped_column(
         ForeignKey("content_briefs.id", ondelete="SET NULL"),

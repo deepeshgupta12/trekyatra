@@ -1,0 +1,81 @@
+"use client";
+
+import { useEffect, useState } from "react";
+import Link from "next/link";
+import { useAuth } from "@/lib/auth-context";
+import {
+  RecommendationItem,
+  fetchPersonalisedRecommendations,
+  fetchAnonymousRecommendations,
+} from "@/lib/api";
+
+function FeedCard({ item }: { item: RecommendationItem }) {
+  const href = `/${item.page_type === "trek_guide" ? "trek" : "guides"}/${item.slug}`;
+  return (
+    <Link
+      href={href}
+      className="group flex items-center gap-3 p-3 rounded-2xl border border-border bg-card hover:border-accent/40 transition-colors"
+    >
+      {item.hero_image_url ? (
+        <img
+          src={item.hero_image_url}
+          alt={item.title}
+          className="w-14 h-14 rounded-xl object-cover flex-shrink-0"
+        />
+      ) : (
+        <div className="w-14 h-14 rounded-xl bg-accent/5 flex items-center justify-center flex-shrink-0 text-lg">
+          ⛰
+        </div>
+      )}
+      <div className="flex-1 min-w-0">
+        <p className="text-[10px] uppercase tracking-widest text-accent font-medium mb-0.5">
+          {item.page_type?.replace("_", " ")}
+        </p>
+        <p className="font-semibold text-sm leading-snug line-clamp-2 group-hover:text-accent transition-colors">
+          {item.title}
+        </p>
+      </div>
+    </Link>
+  );
+}
+
+export default function PersonalisedFeed({ limit = 6 }: { limit?: number }) {
+  const { user, isLoading: authLoading } = useAuth();
+  const [items, setItems] = useState<RecommendationItem[]>([]);
+  const [personalised, setPersonalised] = useState(false);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    if (authLoading) return;
+    const fetcher = user ? fetchPersonalisedRecommendations : fetchAnonymousRecommendations;
+    fetcher(limit)
+      .then((data) => {
+        setItems(data.items);
+        setPersonalised(data.personalised);
+      })
+      .catch(() => setItems([]))
+      .finally(() => setLoading(false));
+  }, [user, authLoading, limit]);
+
+  if (loading || items.length === 0) return null;
+
+  return (
+    <div>
+      <div className="flex items-center justify-between mb-4">
+        <div>
+          <div className="text-xs uppercase tracking-widest text-accent font-medium mb-1">
+            {personalised ? "For you" : "Popular now"}
+          </div>
+          <h2 className="font-display text-xl font-semibold">
+            {personalised ? "Based on your interests" : "Trending treks"}
+          </h2>
+        </div>
+      </div>
+      <div className="grid sm:grid-cols-2 gap-3">
+        {items.slice(0, limit).map((item) => (
+          <FeedCard key={item.id} item={item} />
+        ))}
+      </div>
+    </div>
+  );
+}

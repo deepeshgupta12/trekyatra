@@ -109,11 +109,18 @@ def refresh_task(self, page_id: str, log_id: str, triggered_by: str = "manual") 
 
         # No flags — re-publish to CMS
         try:
-            upsert_page_from_draft(db, draft=draft)
+            refreshed_page = upsert_page_from_draft(db, draft=draft)
         except Exception as exc:
             update_refresh_log(db, log_id=log_uuid, result="failed", notes=f"CMS upsert failed: {exc}")
             db.commit()
             return {"result": "failed", "reason": str(exc)}
+
+        # Refresh embedding after content update (graceful no-op if OPENAI_API_KEY unset)
+        try:
+            from app.modules.agents.embedding.agent import embed_page
+            embed_page(db, refreshed_page.id)
+        except Exception:
+            pass
 
         page.last_refreshed_at = datetime.now(timezone.utc)
         db.flush()

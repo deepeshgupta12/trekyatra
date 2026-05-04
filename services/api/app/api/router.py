@@ -37,6 +37,7 @@ from app.api.routes.worker import router as worker_router
 from app.api.routes.products import public_router as products_public_router
 from app.api.routes.products import admin_router as products_admin_router
 from app.api.routes.checkout import router as checkout_router
+from app.api.routes.recommendations import router as recommendations_router
 
 api_router = APIRouter()
 api_router.include_router(health_router, tags=["health"])
@@ -76,3 +77,4 @@ api_router.include_router(account_router)
 api_router.include_router(products_public_router)
 api_router.include_router(products_admin_router)
 api_router.include_router(checkout_router)
+api_router.include_router(recommendations_router)

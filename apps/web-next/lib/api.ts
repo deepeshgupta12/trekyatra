@@ -1347,6 +1347,40 @@ export async function deleteAdminProduct(id: string): Promise<void> {
   if (!res.ok) throw new Error(`Delete failed (${res.status})`);
 }
 
+// --- Recommendations (Step 35) ---
+
+export interface RecommendationItem {
+  id: string;
+  slug: string;
+  title: string;
+  page_type: string;
+  hero_image_url: string | null;
+  seo_description: string | null;
+  published_at: string | null;
+}
+
+export interface SimilarPagesResponse {
+  page_slug: string;
+  items: RecommendationItem[];
+}
+
+export interface RecommendationsResponse {
+  personalised: boolean;
+  items: RecommendationItem[];
+}
+
+export async function fetchSimilarPages(slug: string, limit = 5): Promise<SimilarPagesResponse> {
+  return apiFetch<SimilarPagesResponse>(`/pages/${slug}/similar?limit=${limit}`);
+}
+
+export async function fetchPersonalisedRecommendations(limit = 6): Promise<RecommendationsResponse> {
+  return apiFetch<RecommendationsResponse>(`/account/recommendations?limit=${limit}`);
+}
+
+export async function fetchAnonymousRecommendations(limit = 6): Promise<RecommendationsResponse> {
+  return apiFetch<RecommendationsResponse>(`/recommendations?limit=${limit}`);
+}
+
 export async function fetchAdminOrders(params?: { status?: string; limit?: number }): Promise<UserOrder[]> {
   const q = params
     ? "?" + new URLSearchParams(

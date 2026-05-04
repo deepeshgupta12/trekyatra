@@ -66,7 +66,7 @@ All V0 foundations are shipped. The stack is live locally with:
 |------|-------|--------|
 | 33 | Premium user accounts + bookmarks | done |
 | 34 | Digital product checkout and file delivery | done |
-| 35 | Advanced recommendation engine | pending |
+| 35 | Advanced recommendation engine | done |
 | 36 | User-intent aware monetization | pending |
 | 37 | Multilingual content workflows | pending |
 
@@ -99,6 +99,34 @@ What remains:
 - Real Razorpay keys required for live payment flow (test mode works without keys)
 - Trek alert delivery task deferred to future step
 - File serving requires placing actual files in services/api/data/products/
+
+### Step 35 — Advanced Recommendation Engine
+Status: done
+What is done:
+- Docker image switched `postgres:16-alpine` → `pgvector/pgvector:pg16` to enable vector extension (data volume preserved)
+- Migration `20260504_0025_pgvector_embeddings.py` — `CREATE EXTENSION IF NOT EXISTS vector`; `ALTER TABLE cms_pages ADD COLUMN IF NOT EXISTS embedding vector(1536)`; applied with `alembic upgrade head`
+- `modules/cms/models.py` — `embedding: Mapped[list[float] | None] = mapped_column(Vector(1536), nullable=True)` added; `from pgvector.sqlalchemy import Vector` import added
+- `modules/agents/embedding/__init__.py`, `agent.py` — `generate_embedding(text)`: calls OpenAI `text-embedding-3-small` (1536-dim), returns None gracefully when `OPENAI_API_KEY` unset; `embed_page(db, page_id)`: builds embed text (title + page_type + hero + description + body snippet), stores on CMSPage; all exceptions swallowed (non-critical)
+- `modules/recommendations/service.py` — `find_similar_pages(db, page_id, limit)`: cosine vector search (`embedding <=> CAST(:emb AS vector(1536))`) falling back to cluster/page_type filter; `find_similar_to_query(db, query_embedding, limit)`: direct vector search; `get_recommendations_for_user(db, user_id, limit)`: centroid of bookmarked page embeddings → vector search excluding already-bookmarked; `get_anonymous_recommendations(db, limit)`: DISTINCT ON cluster_id, freshness-ordered; `_compute_centroid`, `_vec_str`, `_row_to_dict` helpers
+- `schemas/recommendations.py` — `RecommendationItem`, `SimilarPagesResponse`, `RecommendationsResponse` Pydantic schemas
+- `api/routes/recommendations.py` — `GET /pages/{slug}/similar` (public, 404 if not found); `GET /account/recommendations` (auth-gated, personalised=True); `GET /recommendations` (public, personalised=False); `GET /search?q=` (semantic for >3-word queries, ILIKE fallback)
+- `api/router.py` — `recommendations_router` registered
+- `modules/publish/service.py` — `embed_page(db, cms_page.id)` triggered after every CMS publish (try/except, never blocks)
+- `modules/refresh/tasks.py` — `embed_page` triggered after every content refresh
+- `core/config.py` — `openai_api_key: str | None = None` added
+- `pyproject.toml` — `openai>=1.51.0,<2.0.0` and `pgvector>=0.3.0,<1.0.0` added
+- `.env.example` — `OPENAI_API_KEY=` documented with graceful-degradation note
+- `tests/test_recommendations.py` — 15 tests (TC-B01 through TC-B15): generate_embedding no-op without key, OpenAI mock, embed_page missing page/stores vector, similar pages fallback/exclusion, anonymous recs, personalised recs, all 4 API endpoints, exception swallowing, bookmarked exclusion
+- `lib/api.ts` — `RecommendationItem`, `SimilarPagesResponse`, `RecommendationsResponse` TS interfaces; `fetchSimilarPages`, `fetchPersonalisedRecommendations`, `fetchAnonymousRecommendations` helpers
+- `components/content/RecommendedContent.tsx` — server component; fetches similar pages server-side; renders RecommendCard with hero image, page_type badge, title, description; returns null if no items
+- `components/content/PersonalisedFeed.tsx` — client component; uses `useAuth()`; fetches personalised (logged-in) or anonymous (guest) recs; "For you / Based on your interests" vs "Popular now / Trending treks" labels
+- `app/(public)/trek/[slug]/page.tsx` — replaced static related treks section with `<RecommendedContent slug={params.slug} limit={3} />`
+- `app/(public)/explore/page.tsx` — added `<PersonalisedFeed limit={6} />` section below main trek grid
+- `app/(public)/search/page.tsx` — semantic search: useEffect triggers when query >3 words, calls `GET /api/v1/search?q=…`, renders "Semantic matches" section with Sparkles icon; AbortController for cleanup
+- 398/398 backend tests pass (15 new); next build clean; GitNexus re-indexed
+What remains:
+- Real OPENAI_API_KEY required to generate live embeddings (all fallbacks work without it)
+- Bulk backfill job for existing published pages (future step)
 
 ### Step 33 — Premium User Accounts + Bookmarks
 Status: done

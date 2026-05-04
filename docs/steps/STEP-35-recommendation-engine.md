@@ -67,10 +67,40 @@ Build a pgvector-backed content embedding system for personalised "next best rea
 - `services/api/.env.example` — OPENAI_API_KEY
 - `apps/web-next/lib/api.ts`
 
+## Files Created
+- `services/api/alembic/versions/20260504_0025_pgvector_embeddings.py`
+- `services/api/app/modules/agents/embedding/__init__.py`
+- `services/api/app/modules/agents/embedding/agent.py`
+- `services/api/app/modules/recommendations/__init__.py`
+- `services/api/app/modules/recommendations/service.py`
+- `services/api/app/schemas/recommendations.py`
+- `services/api/app/api/routes/recommendations.py`
+- `services/api/tests/test_recommendations.py`
+- `apps/web-next/components/content/RecommendedContent.tsx`
+- `apps/web-next/components/content/PersonalisedFeed.tsx`
+
+## Files Modified
+- `docker-compose.yml` — image: postgres:16-alpine → pgvector/pgvector:pg16
+- `services/api/app/modules/cms/models.py` — embedding Vector(1536) column + pgvector.sqlalchemy import
+- `services/api/app/modules/publish/service.py` — embed_page triggered post-publish
+- `services/api/app/modules/refresh/tasks.py` — embed_page triggered post-refresh
+- `services/api/app/api/router.py` — recommendations_router registered
+- `services/api/app/core/config.py` — openai_api_key setting
+- `services/api/pyproject.toml` — openai + pgvector deps
+- `services/api/.env.example` — OPENAI_API_KEY documented
+- `apps/web-next/lib/api.ts` — RecommendationItem/Response types + 3 fetch helpers
+- `apps/web-next/app/(public)/trek/[slug]/page.tsx` — RecommendedContent replaces static section
+- `apps/web-next/app/(public)/explore/page.tsx` — PersonalisedFeed section added
+- `apps/web-next/app/(public)/search/page.tsx` — semantic search useEffect + Sparkles results
+
 ## Status
-pending
+Done
 
 ## Notes
 - `text-embedding-3-small` produces 1536-dim vectors; `text-embedding-3-large` is 3072-dim. Use small for V3 (cost and speed); upgrade to large when semantic quality needs improvement.
 - pgvector's `ivfflat` index on `embedding`: `CREATE INDEX ON cms_pages USING ivfflat (embedding vector_cosine_ops) WITH (lists = 100)` — run after initial bulk embed is complete.
 - Anonymous user fallback is critical: never show empty "For You" section; always fall back to freshness-sorted popular pages.
+- Critical SQL pattern: `CAST(:emb AS vector(1536))` — NOT `:emb::vector`. psycopg3 + SQLAlchemy text() cannot parse `::type` immediately after a named param.
+- Module-level `import openai as _openai` is required for unittest.mock.patch to work — local function imports cannot be patched by name.
+- Docker image switch: pgvector/pgvector:pg16 is a drop-in for postgres:16-alpine; same PG16 data format means postgres-data volume carries over without any dump/restore.
+- 398/398 backend tests pass (15 new); next build clean; GitNexus re-indexed.

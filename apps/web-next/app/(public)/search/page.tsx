@@ -4,7 +4,10 @@ import { useState, useMemo, useEffect, useRef } from "react";
 import Link from "next/link";
 import { TrekCard } from "@/components/trek/TrekCard";
 import { treks } from "@/data/treks";
-import { Search, X, TrendingUp, Clock, ArrowRight, Mountain, MapPin, Calendar, GitCompare, Backpack, FileCheck } from "lucide-react";
+import { Search, X, TrendingUp, Clock, ArrowRight, Mountain, MapPin, Calendar, GitCompare, Backpack, FileCheck, Sparkles } from "lucide-react";
+import { RecommendationItem } from "@/lib/api";
+
+const API = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000";
 
 const trending = ["Hampta Pass", "Winter treks December", "Kedarkantha vs Brahmatal", "Monsoon Sahyadri", "Valley of Flowers permit"];
 const recent = ["Kashmir Great Lakes", "Beginner Himachal"];
@@ -23,9 +26,24 @@ const tabs = ["All", "Treks", "Guides", "Comparisons", "Packing", "Permits", "Co
 export default function SearchResults() {
   const [q, setQ] = useState("hampta");
   const [tab, setTab] = useState("All");
+  const [semanticResults, setSemanticResults] = useState<RecommendationItem[]>([]);
   const inputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => { inputRef.current?.focus(); }, []);
+
+  useEffect(() => {
+    const words = q.trim().split(/\s+/);
+    if (words.length <= 3) {
+      setSemanticResults([]);
+      return;
+    }
+    const controller = new AbortController();
+    fetch(`${API}/api/v1/search?q=${encodeURIComponent(q)}&limit=6`, { signal: controller.signal })
+      .then(r => r.json())
+      .then(data => setSemanticResults(data.items ?? []))
+      .catch(() => {});
+    return () => controller.abort();
+  }, [q]);
 
   const matchingTreks = useMemo(() => {
     if (!q.trim()) return [];
@@ -135,6 +153,33 @@ export default function SearchResults() {
                         <ArrowRight className="h-4 w-4 text-muted-foreground group-hover:text-accent" />
                       </Link>
                     ))}
+                  </div>
+                </div>
+              )}
+              {semanticResults.length > 0 && (
+                <div>
+                  <h2 className="font-display text-2xl font-semibold mb-1 flex items-center gap-2">
+                    <Sparkles className="h-5 w-5 text-accent" /> Semantic matches
+                  </h2>
+                  <p className="text-sm text-muted-foreground mb-4">AI-powered results for &quot;{q}&quot;</p>
+                  <div className="space-y-2">
+                    {semanticResults.map(item => {
+                      const href = `/${item.page_type === "trek_guide" ? "trek" : "guides"}/${item.slug}`;
+                      return (
+                        <Link key={item.id} href={href} className="flex items-center gap-4 p-4 bg-card border border-border rounded-xl hover:border-accent transition-colors group">
+                          {item.hero_image_url ? (
+                            <img src={item.hero_image_url} alt={item.title} className="h-10 w-10 rounded-lg object-cover flex-shrink-0" />
+                          ) : (
+                            <div className="h-10 w-10 rounded-lg bg-accent/10 flex items-center justify-center flex-shrink-0 text-lg">⛰</div>
+                          )}
+                          <div className="flex-1 min-w-0">
+                            <div className="font-medium line-clamp-1">{item.title}</div>
+                            {item.seo_description && <div className="text-xs text-muted-foreground mt-0.5 line-clamp-1">{item.seo_description}</div>}
+                          </div>
+                          <ArrowRight className="h-4 w-4 text-muted-foreground group-hover:text-accent flex-shrink-0" />
+                        </Link>
+                      );
+                    })}
                   </div>
                 </div>
               )}

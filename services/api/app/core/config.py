@@ -64,6 +64,9 @@ class Settings(BaseSettings):
     product_files_dir: str = "data/products"
     product_download_base_url: str = "http://localhost:3000"
 
+    # OpenAI — required for embedding generation (Step 35+). Leave unset to skip embeddings.
+    openai_api_key: str | None = None
+
     model_config = SettingsConfigDict(
         env_file=".env",
         env_file_encoding="utf-8",

@@ -646,6 +646,30 @@ Before editing any backend file:
 - `apps/web-next/components/trek/TrekCard.tsx` — UPDATED: bookmark button now calls fetchCMSPage(slug) → addBookmark/removeBookmark; local bookmarked state with optimistic toggle; graceful silent fail on 401/404; blast radius: MEDIUM (used on explore page, homepage, account dashboard, trek rails — all get working bookmark toggle)
 - `apps/web-next/app/(public)/account/page.tsx` — REWRITTEN: converted from server component with hardcoded stats to client component; fetches fetchBookmarks + fetchDownloads + fetchAlerts; real counts in stat cards; Recently Saved shows real bookmarked CMS pages; blast radius: LOW (leaf account page)
 
+### Step 35 — Advanced Recommendation Engine blast radius
+- `docker-compose.yml` — UPDATED: postgres image → `pgvector/pgvector:pg16`; blast radius: LOW (data volume preserved, same PG16 data format)
+- `services/api/alembic/versions/20260504_0025_pgvector_embeddings.py` — NEW: CREATE EXTENSION vector; ADD COLUMN embedding vector(1536) to cms_pages; blast radius: LOW (additive column, nullable)
+- `services/api/app/modules/cms/models.py` — UPDATED: `embedding` Vector(1536) column added; blast radius: MEDIUM (CMSPage model used by all CMS routes — column is nullable, non-breaking reads)
+- `services/api/app/modules/agents/embedding/__init__.py` — NEW; blast radius: LOW
+- `services/api/app/modules/agents/embedding/agent.py` — NEW: `generate_embedding`, `embed_page`; blast radius: LOW (called by publish service + refresh tasks, all wrapped in try/except)
+- `services/api/app/modules/recommendations/__init__.py` — NEW; blast radius: LOW
+- `services/api/app/modules/recommendations/service.py` — NEW: `find_similar_pages`, `find_similar_to_query`, `get_recommendations_for_user`, `get_anonymous_recommendations`, helpers; blast radius: LOW (new module, called only by recommendations routes)
+- `services/api/app/schemas/recommendations.py` — NEW: `RecommendationItem`, `SimilarPagesResponse`, `RecommendationsResponse`; blast radius: LOW
+- `services/api/app/api/routes/recommendations.py` — NEW: 4 endpoints (`/pages/{slug}/similar`, `/account/recommendations`, `/recommendations`, `/search`); blast radius: LOW (new routes)
+- `services/api/app/api/router.py` — UPDATED: `recommendations_router` registered; blast radius: LOW (additive)
+- `services/api/app/modules/publish/service.py` — UPDATED: `embed_page` triggered post-publish; blast radius: LOW (wrapped try/except, never blocks publish)
+- `services/api/app/modules/refresh/tasks.py` — UPDATED: `embed_page` triggered post-refresh; blast radius: LOW (same try/except pattern)
+- `services/api/app/core/config.py` — UPDATED: `openai_api_key` setting added; blast radius: LOW (optional, defaults None)
+- `services/api/pyproject.toml` — UPDATED: openai + pgvector deps; blast radius: LOW (new deps)
+- `services/api/tests/test_recommendations.py` — NEW: 15 tests; blast radius: LOW (test file)
+- `apps/web-next/lib/api.ts` — UPDATED: `RecommendationItem`, `SimilarPagesResponse`, `RecommendationsResponse` types + 3 fetch helpers; blast radius: LOW (additive)
+- `apps/web-next/components/content/RecommendedContent.tsx` — NEW: server component for similar pages on trek detail; blast radius: LOW (leaf component)
+- `apps/web-next/components/content/PersonalisedFeed.tsx` — NEW: client component for personalised/anonymous feed on explore; blast radius: LOW (leaf component)
+- `apps/web-next/app/(public)/trek/[slug]/page.tsx` — UPDATED: `<RecommendedContent>` replaces static related section; blast radius: LOW (leaf page, content-only change)
+- `apps/web-next/app/(public)/explore/page.tsx` — UPDATED: `<PersonalisedFeed>` section added below trek grid; blast radius: LOW (additive UI section)
+- `apps/web-next/app/(public)/search/page.tsx` — UPDATED: semantic search useEffect + Sparkles results section for >3-word queries; blast radius: LOW (additive UI section)
+- GitNexus: 7,443 symbols | 12,689 relationships | 196 flows (pending re-index after commit)
+
 ### Step 34 — Digital Product Checkout and File Delivery blast radius
 - `services/api/alembic/versions/20260501_0024_digital_products.py` — NEW: digital_products + user_orders tables; ALTERs user_downloads (order_id FK + download_url); blast radius: LOW (new tables, one non-breaking ALTER)
 - `services/api/app/modules/products/__init__.py` — NEW; blast radius: LOW

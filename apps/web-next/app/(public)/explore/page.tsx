@@ -6,6 +6,7 @@ import { treks as staticTreks } from "@/data/treks";
 import { Button } from "@/components/ui/button";
 import { Search, SlidersHorizontal, X } from "lucide-react";
 import { fetchTreks } from "@/lib/trekApi";
+import PersonalisedFeed from "@/components/content/PersonalisedFeed";
 
 const filterGroups = [
   { name: "State", options: ["Uttarakhand", "Himachal Pradesh", "Jammu & Kashmir", "Ladakh", "Maharashtra", "West Bengal / Sikkim"] },
@@ -123,6 +124,13 @@ export default function Explore() {
               ))}
             </div>
           </div>
+        </div>
+      </section>
+
+      {/* Personalised / trending section below main grid */}
+      <section className="py-12 bg-muted/30 border-t border-border">
+        <div className="container-wide max-w-4xl">
+          <PersonalisedFeed limit={6} />
         </div>
       </section>
 

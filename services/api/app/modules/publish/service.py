@@ -88,6 +88,13 @@ def publish_to_cms(db: Session, *, draft_id: uuid.UUID) -> DraftPublishResponse:
     # daily Celery beat.
     sync_pages_from_cms(db)
 
+    # Generate embedding for the newly published page (graceful no-op if OPENAI_API_KEY unset)
+    try:
+        from app.modules.agents.embedding.agent import embed_page
+        embed_page(db, cms_page.id)
+    except Exception:
+        pass  # embedding is non-critical; never block publish
+
     return DraftPublishResponse(
         draft_id=draft.id,
         status="succeeded",

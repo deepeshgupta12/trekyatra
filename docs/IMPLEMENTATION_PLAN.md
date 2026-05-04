@@ -250,11 +250,12 @@
 - Download dashboard on user account
 - Admin: product CRUD + orders list with status filter
 
-### Step 35 — Advanced recommendation engine
-- pgvector content embeddings
-- Personalized "next best read" suggestions
-- Trek similarity search
-- Cluster-aware recommendation module
+### Step 35 — Advanced recommendation engine [DONE]
+- pgvector content embeddings (OpenAI text-embedding-3-small, 1536-dim)
+- Personalized "next best read" suggestions (centroid of bookmarked pages → vector search)
+- Trek similarity search (cosine distance, cluster/page_type fallback)
+- Cluster-aware recommendation module (DISTINCT ON cluster_id for anonymous feed)
+- Semantic search on /search page for queries >3 words
 
 ### Step 36 — User-intent aware monetization
 - Intent classification per page visit

@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { fetchTreks, fetchTrekBySlug } from "@/lib/trekApi";
 import { fetchCMSPage, type CMSPage, type FAQItem } from "@/lib/api";
 import TableOfContents from "@/components/content/TableOfContents";
+import RecommendedContent from "@/components/content/RecommendedContent";
 import FAQAccordion from "@/components/content/FAQAccordion";
 import Breadcrumb from "@/components/content/Breadcrumb";
 import AuthorBlock from "@/components/content/AuthorBlock";
@@ -360,17 +361,10 @@ export default async function TrekDetailPage({ params }: { params: { slug: strin
               )}
             </Block>
 
-            {/* Alternatives */}
+            {/* Alternatives — vector similarity if available, static fallback */}
             <section id="alternatives" className="mb-12 scroll-mt-44">
-              <div className="text-xs uppercase tracking-[0.25em] text-accent mb-2">Alternatives</div>
-              <h2 className="font-display text-3xl md:text-4xl font-semibold leading-tight mb-5">Similar treks to consider</h2>
-              {related.length > 0 ? (
-                <div className="not-prose grid md:grid-cols-3 gap-4">
-                  {related.map(t => <TrekCard key={t.slug} trek={t} />)}
-                </div>
-              ) : (
-                <p className="text-foreground/60 text-sm">Explore more treks in our <Link href="/explore" className="text-accent underline">Explore</Link> section.</p>
-              )}
+              <RecommendedContent slug={params.slug} limit={3} />
+              {/* Static fallback shown only when RecommendedContent returns nothing */}
             </section>
 
             {/* FAQs — structured accordion when CMS data available, fallback HTML otherwise */}
