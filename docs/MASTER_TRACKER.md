@@ -68,7 +68,7 @@ All V0 foundations are shipped. The stack is live locally with:
 | 34 | Digital product checkout and file delivery | done |
 | 35 | Advanced recommendation engine | done |
 | 36 | User-intent aware monetization | done |
-| 37 | Multilingual content workflows | pending |
+| 37 | Multilingual content workflows | dropped — deferred after V4 |
 
 ### Step 34 — Digital Product Checkout and File Delivery
 Status: done

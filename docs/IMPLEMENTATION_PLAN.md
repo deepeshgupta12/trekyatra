@@ -262,41 +262,44 @@
 - Dynamic monetization module selection
 - Personalized affiliate recommendations
 
-### Step 37 — Multilingual content workflows
-- Language model selection per content piece
-- Alternate language draft generation pipeline
-- hreflang setup in SEO layer
-- Language fields on cms_pages (no WordPress dependency)
+### Step 37 — Multilingual content workflows [DROPPED]
+- Deferred indefinitely. Will be revisited after V4 steps are assessed.
+- Original scope: language model selection, alternate language draft pipeline, hreflang SEO layer, language fields on cms_pages.
 
 ---
 
 ## V4 — Ecosystem Scale (Steps 38–41)
 
-### Step 38 — Operator marketplace layer
-- Operator listing and comparison pages
-- Booking inquiry flow direct to operators
-- Operator ratings and reviews (basic)
-- Revenue share / lead fee structure
+### Step 38 — Operator marketplace layer [pending]
+- Public operator listing + detail pages (`/operators`, `/operators/[slug]`)
+- Booking inquiry flow direct to operators (operator_id on lead_submissions)
+- `operator_reviews` table; ratings + moderation
+- `operator_agreements` table; revenue share / lead-fee tracking
+- Step doc: `docs/steps/STEP-38-operator-marketplace.md`
 
-### Step 39 — Trip planning assistant
-- Conversational trek planning interface
-- Itinerary builder from content graph
-- Custom route suggestion engine
-- AI-backed "which trek for me" wizard
+### Step 39 — Trip planning assistant [pending]
+- TripPlannerAgent (LangGraph 4-node): constraints → trek selection → itinerary → package
+- `trip_plans` table; `POST /plan/generate`, `GET /plan/{id}`, `POST /plan/{id}/email`
+- `/plan` page rewritten as multi-step "which trek for me" wizard
+- Day-by-day itinerary builder; print-to-PDF; operator lead capture
+- Step doc: `docs/steps/STEP-39-trip-planning-assistant.md`
 
-### Step 40 — Premium subscription layer
-- Premium content gating
-- Subscription tiers and billing
-- Premium user dashboard
-- Exclusive content types (detailed route compendiums, expert guides)
+### Step 40 — Premium subscription layer [pending]
+- `subscriptions` table; Stripe recurring billing (monthly + annual)
+- `is_premium` column on `cms_pages`; server-side content gating
+- `GatedContent` component; `/premium` marketing page; `/account/premium` dashboard
+- `premium_compendium` + `expert_guide` page types
+- Step doc: `docs/steps/STEP-40-premium-subscription.md`
 
-### Step 41 — B2B content / API extensions
-- API access layer for partner integrations
-- White-label content feeds
-- Travel industry data products
+### Step 41 — B2B content / API extensions [pending]
+- `partners` + `api_keys` + `api_usage_logs` tables
+- Partner API: `GET /api/partner/v1/pages`, `/treks`, `/clusters`, `/feed`; key-scoped access
+- Lead write API (`POST /api/partner/v1/leads`); rate limiting via Redis
+- Admin partner + key management; usage analytics
+- Step doc: `docs/steps/STEP-41-b2b-api-extensions.md`
 
 ---
 
 ## Execution Rule
 Do not start the next step without user confirmation.
-Current next step: **Step 14 — Content Brief Agent + brief approval workflow**
+Current next step: **Step 38 — Operator Marketplace Layer**
