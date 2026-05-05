@@ -67,7 +67,7 @@ All V0 foundations are shipped. The stack is live locally with:
 | 33 | Premium user accounts + bookmarks | done |
 | 34 | Digital product checkout and file delivery | done |
 | 35 | Advanced recommendation engine | done |
-| 36 | User-intent aware monetization | pending |
+| 36 | User-intent aware monetization | done |
 | 37 | Multilingual content workflows | pending |
 
 ### Step 34 — Digital Product Checkout and File Delivery
@@ -99,6 +99,28 @@ What remains:
 - Real Razorpay keys required for live payment flow (test mode works without keys)
 - Trek alert delivery task deferred to future step
 - File serving requires placing actual files in services/api/data/products/
+
+### Step 36 — User-Intent Aware Monetization
+Status: done
+What is done:
+- Migration `20260505_0026_intent_monetization.py` — `affiliate_products` (id UUID PK, title, description, affiliate_url, affiliate_program, category JSON, price_range, active, created_at, updated_at); `page_intent_sessions` (id UUID PK, session_id, user_id FK→users SET NULL, page_slug, intent, confidence, module_shown, converted, ab_variant, created_at); two indexes on page_slug and session_id; applied with `alembic upgrade head`
+- `modules/monetization/__init__.py`, `models.py` — AffiliateProduct, PageIntentSession ORM models; registered in db/base.py
+- `modules/agents/intent/__init__.py`, `agent.py` — `classify_intent(page_type, page_slug, has_bookmarks, has_purchases)`: Anthropic claude-haiku-4-5 with ephemeral prompt caching; rule-based fallback when key unset (buyer > booking_ready > research > inspiration); JSON parse with markdown fence strip; all exceptions swallowed
+- `modules/auth/dependencies.py` — `get_optional_user` dependency added (returns User | None, never raises)
+- `modules/monetization/service.py` — `classify_and_record` (classifies intent + persists session with A/B variant), `mark_converted`, `list/create/update/delete_affiliate_product`, `get_monetization_stats` (intent distribution, conversion_by_module, top pages)
+- `schemas/monetization.py` — IntentClassification, IntentResponse, AffiliateProductCreate/Patch/Response, MonetizationStatsResponse
+- `api/routes/monetization.py` — `GET /intent/{slug}` (public + optional auth), `POST /intent/{slug}/convert`, `GET /affiliate-products` (public), `GET/POST /admin/affiliate-products`, `PATCH/DELETE /admin/affiliate-products/{id}`, `GET /admin/monetization/stats`
+- `api/router.py` — monetization_router registered
+- `tests/test_intent.py` — 15 tests TC-B01–TC-B15: rule-based fallback, buyer/booking_ready signals, mocked LLM, exception swallowing, classify_and_record, mark_converted, affiliate product CRUD, all API endpoints, stats shape
+- `lib/api.ts` — IntentResponse, AffiliateProduct, MonetizationStats TS interfaces; fetchIntent, trackConversion, fetchPublicAffiliateProducts, fetchMonetizationStats, fetchAdminAffiliateProducts, createAdminAffiliateProduct, updateAdminAffiliateProduct, deleteAdminAffiliateProduct helpers
+- `components/monetization/MonetizationSlot.tsx` — server component: calls fetchIntent → selects AffiliateRail/LeadForm/NewsletterCapture by recommended_module; newsletter default on API failure
+- `app/(admin)/admin/monetization/page.tsx` — rewritten with real API: KPI cards (sessions/conversions/intent types/modules), intent distribution bar chart, conversion rate by module, top pages table, affiliate catalog CRUD table + add product form
+- 413/413 backend tests pass (15 new); next build clean (139 static pages); GitNexus re-indexed
+What remains:
+- Wire MonetizationSlot into trek detail page CTA slot (currently uses static LeadForm)
+- Real ANTHROPIC_API_KEY required for LLM classification (rule-based works without it)
+- Affiliate catalog initially empty — admin must populate via /admin/monetization
+- A/B test enabled by setting MONETIZATION_AB_TEST=true in .env
 
 ### Step 35 — Advanced Recommendation Engine
 Status: done

@@ -257,7 +257,7 @@
 - Cluster-aware recommendation module (DISTINCT ON cluster_id for anonymous feed)
 - Semantic search on /search page for queries >3 words
 
-### Step 36 — User-intent aware monetization
+### Step 36 — User-intent aware monetization [DONE]
 - Intent classification per page visit
 - Dynamic monetization module selection
 - Personalized affiliate recommendations

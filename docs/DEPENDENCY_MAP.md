@@ -646,6 +646,24 @@ Before editing any backend file:
 - `apps/web-next/components/trek/TrekCard.tsx` — UPDATED: bookmark button now calls fetchCMSPage(slug) → addBookmark/removeBookmark; local bookmarked state with optimistic toggle; graceful silent fail on 401/404; blast radius: MEDIUM (used on explore page, homepage, account dashboard, trek rails — all get working bookmark toggle)
 - `apps/web-next/app/(public)/account/page.tsx` — REWRITTEN: converted from server component with hardcoded stats to client component; fetches fetchBookmarks + fetchDownloads + fetchAlerts; real counts in stat cards; Recently Saved shows real bookmarked CMS pages; blast radius: LOW (leaf account page)
 
+### Step 36 — User-Intent Aware Monetization blast radius
+- `services/api/alembic/versions/20260505_0026_intent_monetization.py` — NEW: affiliate_products + page_intent_sessions; blast radius: LOW (new tables)
+- `services/api/app/modules/monetization/__init__.py` — NEW; blast radius: LOW
+- `services/api/app/modules/monetization/models.py` — NEW: AffiliateProduct + PageIntentSession ORM; blast radius: LOW (new models, only imported by monetization service/routes)
+- `services/api/app/modules/agents/intent/__init__.py` — NEW; blast radius: LOW
+- `services/api/app/modules/agents/intent/agent.py` — NEW: `classify_intent` with Anthropic SDK + rule-based fallback; blast radius: LOW (called only by monetization service)
+- `services/api/app/modules/monetization/service.py` — NEW: intent classification, affiliate CRUD, stats; blast radius: LOW (called only by monetization routes)
+- `services/api/app/schemas/monetization.py` — NEW: monetization schemas; blast radius: LOW
+- `services/api/app/api/routes/monetization.py` — NEW: 7 endpoints; blast radius: LOW (new routes)
+- `services/api/app/modules/auth/dependencies.py` — UPDATED: `get_optional_user` added (additive, does not change existing `get_current_user`); blast radius: LOW
+- `services/api/app/db/base.py` — UPDATED: AffiliateProduct + PageIntentSession registered; blast radius: LOW (additive)
+- `services/api/app/api/router.py` — UPDATED: monetization_router registered; blast radius: LOW (additive)
+- `services/api/tests/test_intent.py` — NEW: 15 tests; blast radius: LOW (test file)
+- `apps/web-next/lib/api.ts` — UPDATED: Intent/Affiliate/MonetizationStats types + 8 fetch helpers; blast radius: LOW (additive)
+- `apps/web-next/components/monetization/MonetizationSlot.tsx` — NEW: server component for dynamic CTA; blast radius: LOW (leaf component)
+- `apps/web-next/app/(admin)/admin/monetization/page.tsx` — REWRITTEN: real API data; blast radius: LOW (leaf admin page)
+- GitNexus: pending re-index after commit
+
 ### Step 35 — Advanced Recommendation Engine blast radius
 - `docker-compose.yml` — UPDATED: postgres image → `pgvector/pgvector:pg16`; blast radius: LOW (data volume preserved, same PG16 data format)
 - `services/api/alembic/versions/20260504_0025_pgvector_embeddings.py` — NEW: CREATE EXTENSION vector; ADD COLUMN embedding vector(1536) to cms_pages; blast radius: LOW (additive column, nullable)

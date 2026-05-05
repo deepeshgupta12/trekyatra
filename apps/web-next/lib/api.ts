@@ -1402,3 +1402,99 @@ export async function upsertUserProfile(data: UserProfileUpdate): Promise<UserPr
   if (!res.ok) throw new Error(`API ${res.status}`);
   return res.json();
 }
+
+// ---------------------------------------------------------------------------
+// Step 36 — Intent & Monetization
+// ---------------------------------------------------------------------------
+
+export interface IntentResponse {
+  session_id: string;
+  intent: "research" | "booking_ready" | "inspiration" | "buyer";
+  confidence: number;
+  recommended_module: "affiliate" | "lead" | "newsletter" | "product";
+  ab_variant?: string | null;
+}
+
+export interface AffiliateProduct {
+  id: string;
+  title: string;
+  description: string | null;
+  affiliate_url: string;
+  affiliate_program: string | null;
+  category: string[];
+  price_range: string | null;
+  active: boolean;
+  created_at: string | null;
+}
+
+export interface MonetizationStats {
+  intent_distribution: Record<string, number>;
+  conversion_by_module: Record<string, number>;
+  top_converting_pages: Array<{ page_slug: string; sessions: number }>;
+  total_sessions: number;
+  total_conversions: number;
+}
+
+export async function fetchIntent(slug: string, sessionId?: string): Promise<IntentResponse> {
+  const params = sessionId ? `?session_id=${encodeURIComponent(sessionId)}` : "";
+  return apiFetch<IntentResponse>(`/intent/${slug}${params}`);
+}
+
+export async function trackConversion(slug: string, sessionId: string): Promise<void> {
+  await fetch(`${apiBase}/api/v1/intent/${slug}/convert?session_id=${encodeURIComponent(sessionId)}`, {
+    method: "POST",
+    signal: AbortSignal.timeout(3000),
+  });
+}
+
+export async function fetchPublicAffiliateProducts(limit = 10): Promise<AffiliateProduct[]> {
+  return apiFetch<AffiliateProduct[]>(`/affiliate-products?limit=${limit}`);
+}
+
+export async function fetchMonetizationStats(): Promise<MonetizationStats> {
+  const res = await fetch(`${apiBase}/api/v1/admin/monetization/stats`, {
+    credentials: "include",
+    signal: AbortSignal.timeout(5000),
+  });
+  if (!res.ok) throw new Error(`API ${res.status}`);
+  return res.json();
+}
+
+export async function fetchAdminAffiliateProducts(): Promise<AffiliateProduct[]> {
+  const res = await fetch(`${apiBase}/api/v1/admin/affiliate-products`, {
+    credentials: "include",
+    signal: AbortSignal.timeout(5000),
+  });
+  if (!res.ok) throw new Error(`API ${res.status}`);
+  return res.json();
+}
+
+export async function createAdminAffiliateProduct(data: Partial<AffiliateProduct>): Promise<AffiliateProduct> {
+  const res = await fetch(`${apiBase}/api/v1/admin/affiliate-products`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    credentials: "include",
+    body: JSON.stringify(data),
+  });
+  if (!res.ok) throw new Error(`API ${res.status}`);
+  return res.json();
+}
+
+export async function updateAdminAffiliateProduct(id: string, data: Partial<AffiliateProduct>): Promise<AffiliateProduct> {
+  const res = await fetch(`${apiBase}/api/v1/admin/affiliate-products/${id}`, {
+    method: "PATCH",
+    headers: { "Content-Type": "application/json" },
+    credentials: "include",
+    body: JSON.stringify(data),
+  });
+  if (!res.ok) throw new Error(`API ${res.status}`);
+  return res.json();
+}
+
+export async function deleteAdminAffiliateProduct(id: string): Promise<void> {
+  const res = await fetch(`${apiBase}/api/v1/admin/affiliate-products/${id}`, {
+    method: "DELETE",
+    credentials: "include",
+  });
+  if (!res.ok && res.status !== 204) throw new Error(`API ${res.status}`);
+}

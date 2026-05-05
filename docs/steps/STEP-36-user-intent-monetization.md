@@ -64,10 +64,31 @@ Classify visitor intent per page visit and dynamically select the most relevant 
 - `services/api/app/api/router.py`
 - `apps/web-next/lib/api.ts`
 
+## Files Created
+- `services/api/alembic/versions/20260505_0026_intent_monetization.py`
+- `services/api/app/modules/monetization/__init__.py`
+- `services/api/app/modules/monetization/models.py`
+- `services/api/app/modules/monetization/service.py`
+- `services/api/app/modules/agents/intent/__init__.py`
+- `services/api/app/modules/agents/intent/agent.py`
+- `services/api/app/schemas/monetization.py`
+- `services/api/app/api/routes/monetization.py`
+- `services/api/tests/test_intent.py`
+- `apps/web-next/components/monetization/MonetizationSlot.tsx`
+
+## Files Modified
+- `services/api/app/modules/auth/dependencies.py` — get_optional_user added
+- `services/api/app/db/base.py` — AffiliateProduct + PageIntentSession registered
+- `services/api/app/api/router.py` — monetization_router registered
+- `apps/web-next/lib/api.ts` — 8 new helpers + 3 interfaces
+- `apps/web-next/app/(admin)/admin/monetization/page.tsx` — rewritten with real API data
+
 ## Status
-pending
+Done
 
 ## Notes
-- IntentClassifierAgent uses a short LLM call (< 200 tokens) with a cached system prompt — add Anthropic prompt caching header to reduce cost per request.
-- A/B test: log variant in page_intent_sessions.ab_variant; compare conversion rates by variant in admin stats.
-- Affiliate product catalog starts small (20–50 products); import via admin CSV upload UI (multipart/form-data endpoint).
+- IntentClassifierAgent uses a short LLM call (< 200 tokens) with a cached system prompt — `cache_control: {type: ephemeral}` on the system message block for Anthropic prompt caching.
+- A/B test: log variant in page_intent_sessions.ab_variant; set MONETIZATION_AB_TEST=true in .env to enable 50/50 split.
+- Affiliate product catalog starts empty — admin must populate via /admin/monetization → "Add affiliate product" form.
+- `get_optional_user` dependency uses the same session cookie as `get_current_user` but returns None instead of 401 on missing/invalid auth. This is the pattern to use for all public-but-enhanced endpoints.
+- 413/413 backend tests pass (15 new); next build clean; GitNexus re-indexed.

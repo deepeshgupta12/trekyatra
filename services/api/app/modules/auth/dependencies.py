@@ -97,6 +97,28 @@ def get_current_user(
     return user
 
 
+def get_optional_user(
+    request: Request,
+    db: Session = Depends(get_db),
+) -> User | None:
+    """Returns the authenticated user if a valid session cookie is present, else None."""
+    try:
+        token = request.cookies.get(settings.auth_cookie_name)
+        if not token:
+            return None
+        payload = parse_access_token(token)
+        if not payload or payload.get("typ") != "access":
+            return None
+        raw_user_id = payload.get("sub")
+        if not raw_user_id:
+            return None
+        user_id = uuid.UUID(str(raw_user_id))
+        user = db.scalar(select(User).where(User.id == user_id, User.is_active == True))  # noqa: E712
+        return user
+    except Exception:
+        return None
+
+
 # ──────────────────────────────────────────────────────────────────────────────
 # Role-based access control
 # ──────────────────────────────────────────────────────────────────────────────
