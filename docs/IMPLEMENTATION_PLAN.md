@@ -275,7 +275,7 @@
 
 ## V4 — Ecosystem Scale (Steps 38–41)
 
-### Step 38 — Operator marketplace layer [pending]
+### Step 38 — Operator marketplace layer [DONE]
 - Public operator listing + detail pages (`/operators`, `/operators/[slug]`)
 - Booking inquiry flow direct to operators (operator_id on lead_submissions)
 - `operator_reviews` table; ratings + moderation

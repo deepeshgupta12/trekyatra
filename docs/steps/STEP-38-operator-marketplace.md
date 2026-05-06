@@ -77,13 +77,37 @@ Build a public-facing operator marketplace: operator listing and comparison page
 - `apps/web-next/app/(public)/layout.tsx` — add Operators to main nav if appropriate
 
 ## Files Created
-(to be filled when step is executed)
+- `services/api/alembic/versions/20260506_0028_operator_marketplace.py`
+- `services/api/app/modules/operators/review_service.py`
+- `services/api/app/modules/operators/agreement_service.py`
+- `services/api/app/api/routes/operators_public.py`
+- `services/api/tests/test_operators_marketplace.py`
+- `apps/web-next/app/(public)/operators/page.tsx`
+- `apps/web-next/app/(public)/operators/[slug]/page.tsx`
+- `apps/web-next/components/operators/OperatorCard.tsx`
+- `apps/web-next/components/operators/OperatorGrid.tsx`
+- `apps/web-next/components/operators/OperatorReviewList.tsx`
+- `apps/web-next/components/operators/OperatorInquiryForm.tsx`
 
 ## Files Modified
-(to be filled when step is executed)
+- `services/api/app/modules/operators/models.py` — logo_url, description_long, rating_avg, review_count on Operator; OperatorReview + OperatorAgreement models added
+- `services/api/app/schemas/operators.py` — OperatorPublicResponse, OperatorReviewCreate/Response, OperatorAgreementCreate/Patch/Response, InquiryCreate/Response; OperatorCreate/Patch + OperatorResponse extended
+- `services/api/app/api/routes/operators.py` — reviews_router added (admin review list/delete + agreement GET/POST/PATCH)
+- `services/api/app/api/router.py` — operators_public_router, inquiry_router, operators_reviews_router registered
+- `services/api/app/db/base.py` — OperatorReview, OperatorAgreement registered
+- `apps/web-next/lib/api.ts` — Operator extended; OperatorPublic, OperatorReview, OperatorAgreement, InquiryPayload interfaces; public operator + review + inquiry helpers
+- `apps/web-next/app/(admin)/admin/operators/page.tsx` — not modified this step (agreement tab + review moderation deferred, noted in What remains)
 
 ## Status
-pending
+Done
+
+## Notes
+- Rating average is denormalised on Operator for read performance; _update_rating_avg recomputes on every review insert/delete via flush before commit
+- UNIQUE constraint (operator_id, user_id) on operator_reviews enforces one review per user per operator; duplicate returns HTTP 409
+- POST /inquiries sets assigned_operator_id from operator_slug lookup (graceful if slug not found — lead saved as-is)
+- SMTP emails (confirmation + operator notification) wrap in try/except and log WARNING on failure — never block the HTTP response
+- OperatorPublicResponse omits contact_email to avoid exposing operator contact details publicly
+- Admin operators page agreement tab/review moderation UI not added this step — existing page unchanged; admin can manage via API
 
 ## Notes
 - Operator slugs: auto-generated from operator name (slugify); must be unique; stored on the operators table

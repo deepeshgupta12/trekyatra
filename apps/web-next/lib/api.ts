@@ -445,9 +445,59 @@ export interface Operator {
   contact_email: string;
   phone: string | null;
   website_url: string | null;
+  logo_url: string | null;
+  description_long: string | null;
+  rating_avg: number;
+  review_count: number;
   active: boolean;
   created_at: string;
   specializations: OperatorSpecialization[];
+}
+
+// Public view — no contact_email
+export interface OperatorPublic {
+  id: string;
+  name: string;
+  slug: string;
+  region: string[] | null;
+  trek_types: string[] | null;
+  phone: string | null;
+  website_url: string | null;
+  logo_url: string | null;
+  description_long: string | null;
+  rating_avg: number;
+  review_count: number;
+  active: boolean;
+  created_at: string;
+  specializations: OperatorSpecialization[];
+}
+
+export interface OperatorReview {
+  id: string;
+  operator_id: string;
+  user_id: string | null;
+  rating: number;
+  body: string | null;
+  created_at: string;
+}
+
+export interface OperatorAgreement {
+  id: string;
+  operator_id: string;
+  lead_fee_inr: number;
+  revenue_share_pct: number | null;
+  active: boolean;
+  notes: string | null;
+  created_at: string;
+}
+
+export interface InquiryPayload {
+  name: string;
+  email: string;
+  phone?: string;
+  trek_interest: string;
+  message?: string;
+  operator_slug?: string;
 }
 
 export interface OperatorCreate {
@@ -458,6 +508,8 @@ export interface OperatorCreate {
   trek_types?: string[];
   phone?: string;
   website_url?: string;
+  logo_url?: string;
+  description_long?: string;
   active?: boolean;
 }
 
@@ -507,6 +559,52 @@ export async function assignLeadOperator(leadId: string, operatorId: string): Pr
     const err = await res.json().catch(() => ({}));
     throw new Error((err as { detail?: string }).detail ?? `Assign operator failed (${res.status})`);
   }
+  return res.json();
+}
+
+// ---------------------------------------------------------------------------
+// Public operator marketplace helpers (Step 38)
+// ---------------------------------------------------------------------------
+
+export async function fetchPublicOperators(region?: string): Promise<OperatorPublic[]> {
+  const q = region ? `?region=${encodeURIComponent(region)}` : "";
+  const url = `${apiBase}/api/v1/operators${q}`;
+  const res = await fetch(url, { signal: AbortSignal.timeout(5000), cache: "no-store" });
+  if (!res.ok) throw new Error(`Operators ${res.status}`);
+  return res.json();
+}
+
+export async function fetchPublicOperator(slug: string): Promise<OperatorPublic> {
+  const url = `${apiBase}/api/v1/operators/${slug}`;
+  const res = await fetch(url, { signal: AbortSignal.timeout(5000), cache: "no-store" });
+  if (!res.ok) throw new Error(`Operator ${res.status}: ${slug}`);
+  return res.json();
+}
+
+export async function fetchOperatorReviews(slug: string): Promise<OperatorReview[]> {
+  const url = `${apiBase}/api/v1/operators/${slug}/reviews`;
+  const res = await fetch(url, { signal: AbortSignal.timeout(5000), cache: "no-store" });
+  if (!res.ok) throw new Error(`Reviews ${res.status}`);
+  return res.json();
+}
+
+export async function submitReview(slug: string, payload: { rating: number; body?: string }): Promise<OperatorReview> {
+  const res = await fetch(`/api/v1/operators/${slug}/reviews`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(payload),
+  });
+  if (!res.ok) throw new Error(`Submit review failed (${res.status})`);
+  return res.json();
+}
+
+export async function submitInquiry(payload: InquiryPayload): Promise<{ id: string; status: string }> {
+  const res = await fetch(`/api/v1/inquiries`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(payload),
+  });
+  if (!res.ok) throw new Error(`Inquiry failed (${res.status})`);
   return res.json();
 }
 

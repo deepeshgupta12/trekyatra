@@ -25,6 +25,9 @@ from app.api.routes.compliance import router as compliance_router
 from app.api.routes.compliance import rules_router as compliance_rules_router
 from app.api.routes.operators import router as operators_router
 from app.api.routes.operators import leads_router as operators_leads_router
+from app.api.routes.operators import reviews_router as operators_reviews_router
+from app.api.routes.operators_public import router as operators_public_router
+from app.api.routes.operators_public import inquiry_router as inquiry_router
 from app.api.routes.fact_validation import router as fact_validation_router
 from app.api.routes.refresh import router as refresh_router
 from app.api.routes.hubs import router as hubs_router
@@ -71,6 +74,9 @@ api_router.include_router(refresh_router)
 api_router.include_router(users_router)
 api_router.include_router(operators_router)
 api_router.include_router(operators_leads_router)
+api_router.include_router(operators_reviews_router)
+api_router.include_router(operators_public_router)
+api_router.include_router(inquiry_router)
 api_router.include_router(hubs_router)
 api_router.include_router(email_sequences_admin_router)
 api_router.include_router(email_sequences_public_router)

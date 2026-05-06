@@ -10,12 +10,18 @@ from app.db.session import get_db
 from app.modules.auth.dependencies import get_current_admin
 from app.modules.leads.service import assign_operator_to_lead
 from app.modules.operators import service as operator_service
+from app.modules.operators.review_service import delete_review, list_reviews
+from app.modules.operators.agreement_service import get_agreement, upsert_agreement, patch_agreement
 from app.schemas.leads import LeadResponse
 from app.schemas.operators import (
     AssignOperatorRequest,
+    OperatorAgreementCreate,
+    OperatorAgreementPatch,
+    OperatorAgreementResponse,
     OperatorCreate,
     OperatorPatch,
     OperatorResponse,
+    OperatorReviewResponse,
 )
 
 router = APIRouter(
@@ -93,3 +99,67 @@ def assign_lead_operator(
 ) -> LeadResponse:
     lead = assign_operator_to_lead(db, lead_id, payload.operator_id)
     return LeadResponse.model_validate(lead)
+
+
+# ---------------------------------------------------------------------------
+# Admin review moderation
+# ---------------------------------------------------------------------------
+
+reviews_router = APIRouter(
+    prefix="/admin/operators",
+    tags=["operators"],
+    dependencies=[Depends(get_current_admin)],
+)
+
+
+@reviews_router.get("/{operator_id}/reviews", response_model=list[OperatorReviewResponse])
+def admin_list_reviews(
+    operator_id: uuid.UUID,
+    db: Session = Depends(get_db),
+) -> list[OperatorReviewResponse]:
+    reviews = list_reviews(db, operator_id, limit=100)
+    return [OperatorReviewResponse.model_validate(r) for r in reviews]
+
+
+@reviews_router.delete("/reviews/{review_id}", status_code=204)
+def admin_delete_review(review_id: uuid.UUID, db: Session = Depends(get_db)) -> None:
+    deleted = delete_review(db, review_id)
+    if not deleted:
+        raise HTTPException(status_code=404, detail="Review not found.")
+
+
+# ---------------------------------------------------------------------------
+# Admin agreement management
+# ---------------------------------------------------------------------------
+
+@reviews_router.get("/{operator_id}/agreement", response_model=OperatorAgreementResponse)
+def admin_get_agreement(operator_id: uuid.UUID, db: Session = Depends(get_db)) -> OperatorAgreementResponse:
+    agreement = get_agreement(db, operator_id)
+    if agreement is None:
+        raise HTTPException(status_code=404, detail="No agreement found for this operator.")
+    return OperatorAgreementResponse.model_validate(agreement)
+
+
+@reviews_router.post("/{operator_id}/agreement", response_model=OperatorAgreementResponse, status_code=201)
+def admin_upsert_agreement(
+    operator_id: uuid.UUID,
+    payload: OperatorAgreementCreate,
+    db: Session = Depends(get_db),
+) -> OperatorAgreementResponse:
+    op = operator_service.get_operator(db, operator_id)
+    if op is None:
+        raise HTTPException(status_code=404, detail="Operator not found.")
+    agreement = upsert_agreement(db, operator_id, payload)
+    return OperatorAgreementResponse.model_validate(agreement)
+
+
+@reviews_router.patch("/{operator_id}/agreement", response_model=OperatorAgreementResponse)
+def admin_patch_agreement(
+    operator_id: uuid.UUID,
+    payload: OperatorAgreementPatch,
+    db: Session = Depends(get_db),
+) -> OperatorAgreementResponse:
+    agreement = patch_agreement(db, operator_id, payload)
+    if agreement is None:
+        raise HTTPException(status_code=404, detail="No agreement found for this operator.")
+    return OperatorAgreementResponse.model_validate(agreement)

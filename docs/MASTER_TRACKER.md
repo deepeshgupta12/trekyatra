@@ -61,7 +61,7 @@ All V0 foundations are shipped. The stack is live locally with:
 | 31 | Email automation and audience workflows | done |
 | 32 | Deeper dashboards and revenue attribution | done |
 
-## V3 Status — In Progress
+## V3 Status — Complete ✓
 | Step | Title | Status |
 |------|-------|--------|
 | 33 | Premium user accounts + bookmarks | done |
@@ -69,6 +69,40 @@ All V0 foundations are shipped. The stack is live locally with:
 | 35 | Advanced recommendation engine | done |
 | 36 | User-intent aware monetization | done |
 | 37 | Multilingual content workflows | done |
+
+## V4 Status — In Progress
+| Step | Title | Status |
+|------|-------|--------|
+| 38 | Operator marketplace layer | done |
+| 39 | Trip planning assistant | pending |
+| 40 | Premium subscription layer | pending |
+| 41 | B2B content / API extensions | pending |
+
+### Step 38 — Operator Marketplace Layer
+Status: done
+What is done:
+- Migration `20260506_0028_operator_marketplace.py` — ALTER operators: logo_url VARCHAR(512), description_long TEXT, rating_avg FLOAT default 0.0, review_count INT default 0; CREATE operator_reviews (id UUID PK, operator_id FK→operators CASCADE, user_id FK→users SET NULL, rating INT, body TEXT, created_at, UNIQUE(operator_id, user_id)); CREATE operator_agreements (id UUID PK, operator_id FK→operators CASCADE, lead_fee_inr FLOAT, revenue_share_pct FLOAT nullable, active bool, notes TEXT, created_at, UNIQUE(operator_id)); applied with `alembic upgrade head`
+- `modules/operators/models.py` — Operator: logo_url, description_long, rating_avg, review_count, reviews + agreement relationships added; OperatorReview + OperatorAgreement ORM models added
+- `modules/operators/review_service.py` — list_reviews, create_review, delete_review, _update_rating_avg (recomputes denormalised rating_avg + review_count on every write)
+- `modules/operators/agreement_service.py` — get_agreement, upsert_agreement, patch_agreement
+- `schemas/operators.py` — OperatorCreate/Patch: logo_url + description_long added; OperatorResponse: new fields; OperatorPublicResponse (no contact_email); OperatorReviewCreate/Response; OperatorAgreementCreate/Patch/Response; InquiryCreate/Response
+- `api/routes/operators_public.py` — GET /operators (list active, region filter), GET /operators/{slug} (public detail), GET /operators/{slug}/reviews (paginated), POST /operators/{slug}/reviews (user auth, 409 on duplicate), POST /inquiries (public, optional auth; SMTP confirmation + operator notification graceful)
+- `api/routes/operators.py` — admin: GET/DELETE /admin/operators/reviews/{id}; GET /admin/operators/{id}/reviews; GET/POST/PATCH /admin/operators/{id}/agreement
+- `api/router.py` — operators_public_router, inquiry_router, operators_reviews_router registered
+- `db/base.py` — OperatorReview + OperatorAgreement registered
+- `tests/test_operators_marketplace.py` — 17 tests TC-B01–TC-B17: public list/detail/404, region filter, review CRUD + rating avg, duplicate review 409, auth enforcement, agreement upsert/idempotency, admin agreement 404, inquiry with/without operator, admin delete review, model field presence
+- `lib/api.ts` — Operator: logo_url/description_long/rating_avg/review_count added; OperatorPublic interface (no contact_email); OperatorReview, OperatorAgreement, InquiryPayload interfaces; fetchPublicOperators, fetchPublicOperator, fetchOperatorReviews, submitReview, submitInquiry helpers
+- `components/operators/OperatorCard.tsx` — logo/name/rating stars/region/trek types/description/CTA; uses OperatorPublic
+- `components/operators/OperatorGrid.tsx` — responsive card grid + empty state
+- `components/operators/OperatorReviewList.tsx` — star display + review cards; empty state
+- `components/operators/OperatorInquiryForm.tsx` — client form; pre-fills operator context; submits to POST /inquiries; success state
+- `app/(public)/operators/page.tsx` — SSR operator listing; KPI strip (count, regions, trek types); OperatorGrid
+- `app/(public)/operators/[slug]/page.tsx` — SSR operator detail; header card; star rating; region/website/phone; trek type badges; description; 2-col layout: reviews (OperatorReviewList) + sticky inquiry form (OperatorInquiryForm)
+- 444/444 backend tests pass (17 new); next build clean (176 static pages); GitNexus re-indexed
+What remains:
+- `/admin/operators` page: agreement tab + review moderation panel not yet added (existing admin page shows operator CRUD only)
+- Real SMTP required for inquiry confirmation + operator notification emails
+- Operator profiles currently created via admin API only (no self-serve signup flow)
 
 ### Step 34 — Digital Product Checkout and File Delivery
 Status: done

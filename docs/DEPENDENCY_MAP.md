@@ -91,6 +91,14 @@ This file tracks structural dependencies, source-of-truth modules, and Nexus/Git
 - `services/api/app/modules/cms/models.py` -> CMSPage ORM model + hero_image_url (String 512, nullable) + language/translations/source_page_id (Step 37, additive); blast radius: HIGH structurally (38 importers) but additive-only — no existing callers break
 - `services/api/app/schemas/cms.py` -> CMSPageCreate/Patch/Response: language, translations, source_page_id added (Step 37, backward-compatible with defaults); blast radius: MEDIUM (all CMS API consumers)
 - `services/api/app/data/glossary_hi.json` -> proper nouns preserved during translation; blast radius: LOW (only read by TranslationAgent)
+- `services/api/app/modules/operators/models.py` -> Operator: logo_url, description_long, rating_avg, review_count added (additive, Step 38); OperatorReview + OperatorAgreement models added; blast radius: MEDIUM (additive — no existing callers break)
+- `services/api/app/modules/operators/review_service.py` -> list_reviews, create_review, delete_review, _update_rating_avg; blast radius: LOW (only called by operators_public + operators admin routes)
+- `services/api/app/modules/operators/agreement_service.py` -> get_agreement, upsert_agreement, patch_agreement; blast radius: LOW (only called by operators admin routes)
+- `services/api/app/schemas/operators.py` -> OperatorPublicResponse, OperatorReviewCreate/Response, OperatorAgreementCreate/Patch/Response, InquiryCreate/Response added; OperatorCreate/Patch/Response extended (Step 38, additive); blast radius: LOW (new schemas are additive)
+- `services/api/app/api/routes/operators_public.py` -> GET /operators, GET /operators/{slug}, GET/POST /operators/{slug}/reviews, POST /inquiries; blast radius: LOW (new public routes)
+- `apps/web-next/components/operators/` -> OperatorCard, OperatorGrid, OperatorReviewList, OperatorInquiryForm; blast radius: LOW (leaf components, imported only by /operators pages)
+- `apps/web-next/app/(public)/operators/page.tsx` -> public operator listing; blast radius: LOW (new page)
+- `apps/web-next/app/(public)/operators/[slug]/page.tsx` -> public operator detail + inquiry form; blast radius: LOW (new page)
 - `services/api/app/modules/agents/translation/agent.py` -> TranslationAgent: translate_page(title, content_html, target_language); Anthropic claude-haiku with ephemeral caching; rule-based fallback; blast radius: LOW (only called by translation route)
 - `services/api/app/schemas/translation.py` -> TranslateRequest, TranslateResponse; blast radius: LOW
 - `services/api/app/api/routes/translation.py` -> POST /admin/cms/{slug}/translate; blast radius: LOW (new endpoint)

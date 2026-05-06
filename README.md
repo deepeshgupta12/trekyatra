@@ -165,6 +165,27 @@ trekyatra/
 | A/B test (intent-based vs static) | Done |
 | Personalised affiliate recommendations | Done |
 
+### Operator Marketplace
+| Feature | Status |
+|---------|--------|
+| Public operator listing (`/operators`) | Done |
+| Public operator detail + reviews (`/operators/[slug]`) | Done |
+| Booking inquiry form (POST /inquiries) | Done |
+| Operator ratings and reviews (1-review-per-user, denormalised avg) | Done |
+| Operator agreements / lead-fee tracking | Done |
+| SMTP inquiry confirmation + operator notification (graceful) | Done |
+
+### Multilingual Content
+| Feature | Status |
+|---------|--------|
+| language / translations / source_page_id on cms_pages | Done |
+| TranslationAgent (Claude Haiku, proper nouns glossary, rule-based fallback) | Done |
+| POST /admin/cms/{slug}/translate | Done |
+| GET /cms/pages/{slug}?lang=hi (fallback to English) | Done |
+| Hindi public routes (/hi/trek, /hi/guides, /hi/packing) | Done |
+| hreflang alternates on trek + guides pages | Done |
+| Admin CMS language badge + translate button | Done |
+
 ### Admin CMS
 | Feature | Status |
 |---------|--------|
@@ -178,7 +199,7 @@ trekyatra/
 | Internal linking + orphan detector | Done |
 | Lead management (status workflow) | Done |
 | Newsletter + email sequences admin | Done |
-| Operator management | Done |
+| Operator management (CRUD + agreement + review moderation via API) | Done |
 | Digital products + orders | Done |
 | Revenue attribution dashboard | Done |
 | Monetisation stats + affiliate catalog | Done |
@@ -304,6 +325,8 @@ cd apps/web-next && npm run build
 | Intent & monetisation | `/api/v1/intent/*`, `/api/v1/affiliate-products` | Public + optional user auth |
 | User account | `/api/v1/account/*` | User auth required |
 | Products & checkout | `/api/v1/products/*`, `/api/v1/checkout/*` | Public (read), User (purchase) |
+| Operators (public) | `/api/v1/operators/*`, `/api/v1/inquiries` | Public + optional user auth (reviews require user auth) |
+| Translation | `/api/v1/admin/cms/{slug}/translate` | Admin auth required |
 | Admin pipeline | `/api/v1/admin/pipeline/*` | Admin auth required |
 | Admin agents | `/api/v1/admin/agent-runs` | Admin auth required |
 | Admin content | `/api/v1/admin/topics`, `/briefs`, `/drafts`, `/clusters` | Admin auth required |
@@ -330,7 +353,7 @@ Full API docs available at http://localhost:8000/docs when the backend is runnin
 | Monetisation | `affiliate_products`, `page_intent_sessions`, `lead_submissions`, `affiliate_clicks` |
 | Revenue | `revenue_attributions`, `revenue_config`, `executive_summaries` |
 | Email | `newsletter_subscribers`, `subscriber_tags`, `email_sequences`, `email_sequence_steps`, `subscriber_sequence_enrollments` |
-| Operators | `operators`, `operator_leads` |
+| Operators | `operators` (+ logo_url, description_long, rating_avg, review_count), `operator_specializations`, `operator_reviews`, `operator_agreements`, `operator_leads` |
 | Content QA | `cannibalization_issues`, `compliance_issues`, `refresh_logs` |
 
 ---
@@ -342,10 +365,8 @@ Full API docs available at http://localhost:8000/docs when the backend is runnin
 | V0 — Foundations | Steps 00–10 | Complete |
 | V1 — Launchable Product | Steps 11–24 | Complete |
 | V2 — Smarter Automation | Steps 25–32 | Complete |
-| V3 — Platform Expansion | Steps 33–36 | Complete |
-| V4 — Ecosystem Scale | Steps 38–41 | Planned |
-
-Step 37 (Multilingual content workflows) deferred — will be revisited after V4 prioritisation.
+| V3 — Platform Expansion | Steps 33–37 | Complete |
+| V4 — Ecosystem Scale | Steps 38–41 | In Progress (Step 38 done) |
 
 ---
 
