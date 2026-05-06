@@ -77,13 +77,37 @@ Build an AI-backed conversational trip planning interface: wire the `/plan` page
 - `apps/web-next/lib/api.ts` — TripPlan interface + generatePlan, fetchPlan, emailPlan helpers
 
 ## Files Created
-(to be filled when step is executed)
+- `services/api/alembic/versions/20260506_0029_trip_plans.py` (note: 0029, not 0028 — 0028 used by operator_marketplace)
+- `services/api/app/modules/plan/__init__.py`
+- `services/api/app/modules/plan/models.py`
+- `services/api/app/modules/plan/service.py`
+- `services/api/app/modules/agents/trip_planner/__init__.py`
+- `services/api/app/modules/agents/trip_planner/agent.py`
+- `services/api/app/schemas/plan.py`
+- `services/api/app/api/routes/plan.py`
+- `services/api/tests/test_plan.py`
+- `apps/web-next/components/plan/WizardStep.tsx`
+- `apps/web-next/components/plan/TrekPlanCard.tsx`
+- `apps/web-next/components/plan/ItineraryDay.tsx`
 
 ## Files Modified
-(to be filled when step is executed)
+- `services/api/app/db/base.py` — TripPlan registered
+- `services/api/app/api/router.py` — plan_router registered
+- `apps/web-next/app/(public)/plan/page.tsx` — full rewrite from static stub to 4-step wizard + TrekPlanCard result
+- `apps/web-next/lib/api.ts` — ItineraryDay, TripPlanOutput, TripPlan, PlanGeneratePayload interfaces; generatePlan, fetchPlan, emailPlan helpers
 
 ## Status
-pending
+Done
+
+## Notes
+- Migration is 0029 (not 0028 as originally planned — 0028 was used by operator_marketplace in Step 38)
+- TripPlannerAgent passes DB session through LangGraph state for CMS page queries in `select_treks` node
+- Trek scoring: region match in slug (+3) or title (+2); difficulty match (+2); season/month match (+1–2); top-5 candidates kept; highest scorer selected
+- LLM max_tokens=3000 to avoid itinerary truncation; markdown fence stripping applied before JSON parse
+- Gear list parsed from CMS packing section bullet points (lines starting with -, •, *); falls back to 5 hardcoded essentials
+- Lead capture (cta_type=trip_planner) fires only when email is provided — creates LeadSubmission directly without triggering auto-routing or email tagging side effects
+- PDF download: window.print() with `print:hidden` Tailwind class on non-print elements
+- Pre-existing test failure: test_stale_pages_includes_past_interval in test_refresh.py — unrelated to this step; to be fixed in separate commit
 
 ## Notes
 - TripPlannerAgent max_tokens: 3000 — itinerary output can be long; set high enough to avoid truncation

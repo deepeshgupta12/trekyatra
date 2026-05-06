@@ -79,6 +79,74 @@ export async function fetchCMSPage(slug: string, lang?: string): Promise<CMSPage
   return res.json() as Promise<CMSPage>;
 }
 
+// ---------------------------------------------------------------------------
+// Trip planning (Step 39)
+// ---------------------------------------------------------------------------
+
+export interface ItineraryDay {
+  day: number;
+  title: string;
+  activities: string[];
+  notes?: string | null;
+}
+
+export interface TripPlanOutput {
+  trek_slug: string | null;
+  trek_title: string;
+  itinerary: ItineraryDay[];
+  cost_estimate: string | null;
+  gear_essentials: string[];
+  permit_note: string | null;
+  operator_suggestion: string | null;
+  best_month: string | null;
+  difficulty: string | null;
+}
+
+export interface TripPlan {
+  id: string;
+  session_id: string;
+  user_id: string | null;
+  inputs: Record<string, unknown>;
+  output: TripPlanOutput | null;
+  trek_slug: string | null;
+  fallback_used: boolean;
+  created_at: string;
+}
+
+export interface PlanGeneratePayload {
+  session_id: string;
+  region?: string | null;
+  duration_days?: number | null;
+  experience?: string | null;
+  month?: string | null;
+  budget_inr?: number | null;
+  group_size?: string | null;
+  email?: string | null;
+}
+
+export async function generatePlan(payload: PlanGeneratePayload): Promise<TripPlan> {
+  const res = await fetch(`/api/v1/plan/generate`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(payload),
+  });
+  if (!res.ok) throw new Error(`Plan generation failed (${res.status})`);
+  return res.json();
+}
+
+export async function fetchPlan(planId: string): Promise<TripPlan> {
+  return apiFetch<TripPlan>(`/plan/${planId}`);
+}
+
+export async function emailPlan(planId: string, email: string): Promise<void> {
+  const res = await fetch(`/api/v1/plan/${planId}/email`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ email }),
+  });
+  if (!res.ok) throw new Error(`Email plan failed (${res.status})`);
+}
+
 export interface TranslateResult {
   source_slug: string;
   target_language: string;

@@ -99,6 +99,12 @@ This file tracks structural dependencies, source-of-truth modules, and Nexus/Git
 - `apps/web-next/components/operators/` -> OperatorCard, OperatorGrid, OperatorReviewList, OperatorInquiryForm; blast radius: LOW (leaf components, imported only by /operators pages)
 - `apps/web-next/app/(public)/operators/page.tsx` -> public operator listing; blast radius: LOW (new page)
 - `apps/web-next/app/(public)/operators/[slug]/page.tsx` -> public operator detail + inquiry form; blast radius: LOW (new page)
+- `services/api/app/modules/plan/models.py` -> TripPlan ORM (trip_plans table); blast radius: LOW (new table, no prior callers)
+- `services/api/app/modules/agents/trip_planner/agent.py` -> TripPlannerAgent 4-node LangGraph: gather_constraints, select_treks, build_itinerary, package_response; blast radius: LOW (called only by plan service)
+- `services/api/app/modules/plan/service.py` -> generate_plan, get_plan, email_plan; blast radius: LOW (called only by plan routes)
+- `services/api/app/api/routes/plan.py` -> POST /plan/generate, GET /plan/{id}, POST /plan/{id}/email; blast radius: LOW (new endpoints)
+- `apps/web-next/components/plan/` -> WizardStep, TrekPlanCard, ItineraryDay; blast radius: LOW (used only by /plan page)
+- `apps/web-next/app/(public)/plan/page.tsx` -> full rewrite: 4-step wizard + TrekPlanCard result; blast radius: LOW (leaf page)
 - `services/api/app/modules/agents/translation/agent.py` -> TranslationAgent: translate_page(title, content_html, target_language); Anthropic claude-haiku with ephemeral caching; rule-based fallback; blast radius: LOW (only called by translation route)
 - `services/api/app/schemas/translation.py` -> TranslateRequest, TranslateResponse; blast radius: LOW
 - `services/api/app/api/routes/translation.py` -> POST /admin/cms/{slug}/translate; blast radius: LOW (new endpoint)

@@ -175,6 +175,18 @@ trekyatra/
 | Operator agreements / lead-fee tracking | Done |
 | SMTP inquiry confirmation + operator notification (graceful) | Done |
 
+### Trip Planning Assistant
+| Feature | Status |
+|---------|--------|
+| TripPlannerAgent (LangGraph 4-node, CMS-powered trek selection) | Done |
+| 4-step "which trek for me" wizard (`/plan`) | Done |
+| Day-by-day AI itinerary builder (claude-haiku, fallback without key) | Done |
+| Gear essentials parsed from CMS packing section | Done |
+| Lead capture on plan generation | Done |
+| Email plan (SMTP, graceful) | Done |
+| Print-to-PDF via window.print() | Done |
+| Operator inquiry CTA on plan result | Done |
+
 ### Multilingual Content
 | Feature | Status |
 |---------|--------|
@@ -326,6 +338,7 @@ cd apps/web-next && npm run build
 | User account | `/api/v1/account/*` | User auth required |
 | Products & checkout | `/api/v1/products/*`, `/api/v1/checkout/*` | Public (read), User (purchase) |
 | Operators (public) | `/api/v1/operators/*`, `/api/v1/inquiries` | Public + optional user auth (reviews require user auth) |
+| Trip planning | `/api/v1/plan/generate`, `/api/v1/plan/{id}`, `/api/v1/plan/{id}/email` | Public + optional user auth |
 | Translation | `/api/v1/admin/cms/{slug}/translate` | Admin auth required |
 | Admin pipeline | `/api/v1/admin/pipeline/*` | Admin auth required |
 | Admin agents | `/api/v1/admin/agent-runs` | Admin auth required |
@@ -354,6 +367,7 @@ Full API docs available at http://localhost:8000/docs when the backend is runnin
 | Revenue | `revenue_attributions`, `revenue_config`, `executive_summaries` |
 | Email | `newsletter_subscribers`, `subscriber_tags`, `email_sequences`, `email_sequence_steps`, `subscriber_sequence_enrollments` |
 | Operators | `operators` (+ logo_url, description_long, rating_avg, review_count), `operator_specializations`, `operator_reviews`, `operator_agreements`, `operator_leads` |
+| Trip planning | `trip_plans` |
 | Content QA | `cannibalization_issues`, `compliance_issues`, `refresh_logs` |
 
 ---
@@ -366,7 +380,7 @@ Full API docs available at http://localhost:8000/docs when the backend is runnin
 | V1 — Launchable Product | Steps 11–24 | Complete |
 | V2 — Smarter Automation | Steps 25–32 | Complete |
 | V3 — Platform Expansion | Steps 33–37 | Complete |
-| V4 — Ecosystem Scale | Steps 38–41 | In Progress (Step 38 done) |
+| V4 — Ecosystem Scale | Steps 38–41 | In Progress (Steps 38–39 done) |
 
 ---
 

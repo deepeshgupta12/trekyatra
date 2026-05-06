@@ -23,6 +23,7 @@ from app.modules.revenue.models import RevenueAttribution, RevenueConfig, Execut
 from app.modules.account.models import UserBookmark, UserDownload, TrekAlert, UserProfile
 from app.modules.products.models import DigitalProduct, UserOrder
 from app.modules.monetization.models import AffiliateProduct, PageIntentSession
+from app.modules.plan.models import TripPlan
 
 __all__ = [
     "Operator",
@@ -71,4 +72,5 @@ __all__ = [
     "UserOrder",
     "AffiliateProduct",
     "PageIntentSession",
+    "TripPlan",
 ]

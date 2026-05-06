@@ -1,59 +1,237 @@
 "use client";
 
+import { useState } from "react";
+import { Sparkles, Check, ArrowRight, ArrowLeft } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Sparkles, Check, ArrowRight } from "lucide-react";
+import WizardStep from "@/components/plan/WizardStep";
+import TrekPlanCard from "@/components/plan/TrekPlanCard";
+import { generatePlan, emailPlan, type TripPlan, type TripPlanOutput } from "@/lib/api";
 
-export default function Plan() {
+// Stable session ID for anonymous users (persists in component lifetime)
+function makeSessionId() {
+  return `web-${Date.now()}-${Math.random().toString(36).slice(2, 10)}`;
+}
+
+const REGIONS = ["Open to suggestions", "Uttarakhand", "Himachal Pradesh", "Kashmir / Ladakh", "Sikkim / North East", "Sahyadris (Maharashtra)"];
+const EXPERIENCE_LEVELS = ["Beginner — first trek", "Intermediate — a few treks done", "Advanced — experienced trekker"];
+const DURATIONS = [3, 4, 5, 6, 7, 8, 10];
+const MONTHS = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
+const GROUP_TYPES = ["Solo", "Couple", "Small group (3–6)", "Large group (7+)"];
+
+const selectCls = "w-full px-4 py-2.5 rounded-xl border border-border bg-background text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-accent/40";
+const inputCls = "w-full px-4 py-2.5 rounded-xl border border-border bg-background text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-accent/40";
+
+export default function PlanPage() {
+  const [sessionId] = useState(makeSessionId);
+  const [step, setStep] = useState(1);
+  const [form, setForm] = useState({
+    region: "",
+    duration_days: 5,
+    experience: "",
+    month: "",
+    budget_inr: "",
+    group_size: "",
+    email: "",
+  });
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
+  const [plan, setPlan] = useState<TripPlan | null>(null);
+
+  const TOTAL_STEPS = 4;
+
+  function setField(key: keyof typeof form, value: string | number) {
+    setForm((f) => ({ ...f, [key]: value }));
+  }
+
+  async function handleSubmit() {
+    setLoading(true);
+    setError("");
+    try {
+      const result = await generatePlan({
+        session_id: sessionId,
+        region: form.region || null,
+        duration_days: form.duration_days || null,
+        experience: form.experience || null,
+        month: form.month || null,
+        budget_inr: form.budget_inr ? parseInt(form.budget_inr) : null,
+        group_size: form.group_size || null,
+        email: form.email || null,
+      });
+      setPlan(result);
+    } catch {
+      setError("Could not generate your plan. Please try again.");
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  async function handleEmailPlan(email: string) {
+    if (!plan) return;
+    await emailPlan(plan.id, email);
+  }
+
+  if (plan?.output) {
+    return (
+      <div className="container-wide py-12 max-w-3xl mx-auto">
+        <div className="mb-6 flex items-center gap-3">
+          <Button variant="outline" size="sm" onClick={() => { setPlan(null); setStep(1); }} className="gap-1.5">
+            <ArrowLeft className="h-3.5 w-3.5" /> New plan
+          </Button>
+          <span className="text-muted-foreground text-sm">Your personalised trek plan is ready</span>
+        </div>
+        <TrekPlanCard
+          plan={plan.output as TripPlanOutput}
+          planId={plan.id}
+          onEmailPlan={handleEmailPlan}
+        />
+      </div>
+    );
+  }
+
   return (
-    <section className="bg-gradient-twilight text-surface py-16 md:py-24 relative overflow-hidden">
-      <div className="container-wide grid lg:grid-cols-2 gap-12 items-center">
-        <div>
-          <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full glass-dark text-xs uppercase tracking-widest mb-5">
-            <Sparkles className="h-3 w-3 text-accent-glow" /> Plan My Trek
+    <div className="min-h-screen">
+      {/* Hero */}
+      <section className="bg-gradient-twilight text-surface py-12 md:py-16">
+        <div className="container-wide max-w-xl mx-auto text-center">
+          <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full glass-dark text-xs uppercase tracking-widest mb-4">
+            <Sparkles className="h-3 w-3 text-accent-glow" /> AI Trek Planner
           </div>
-          <h1 className="font-display text-5xl md:text-6xl font-semibold leading-[0.95] mb-5">
-            Tell us where you want to go. We&apos;ll handle the rest.
+          <h1 className="font-display text-4xl md:text-5xl font-semibold leading-tight mb-4">
+            Find your perfect trek
           </h1>
-          <p className="text-surface/80 text-lg max-w-xl mb-6">Free planning help in 48 hours. Vetted operators, honest pricing, real human guidance.</p>
-          <div className="flex flex-wrap items-center gap-3 sm:gap-5 text-sm text-surface/70">
-            <span className="flex items-center gap-1.5"><Check className="h-4 w-4 text-success" /> No spam</span>
-            <span className="flex items-center gap-1.5"><Check className="h-4 w-4 text-success" /> No pressure</span>
-            <span className="flex items-center gap-1.5"><Check className="h-4 w-4 text-success" /> Vetted operators only</span>
+          <p className="text-surface/80 text-lg mb-4">
+            Answer 4 quick questions. Get a personalised day-by-day itinerary in seconds.
+          </p>
+          <div className="flex flex-wrap items-center justify-center gap-4 text-sm text-surface/70">
+            <span className="flex items-center gap-1.5"><Check className="h-4 w-4 text-success" /> Free</span>
+            <span className="flex items-center gap-1.5"><Check className="h-4 w-4 text-success" /> No signup needed</span>
+            <span className="flex items-center gap-1.5"><Check className="h-4 w-4 text-success" /> AI-powered</span>
           </div>
         </div>
-        <form className="bg-card text-foreground rounded-2xl p-7 stack-shadow space-y-4" onSubmit={(e) => e.preventDefault()}>
-          <div className="text-xs uppercase tracking-widest text-accent mb-2">Step 1 of 3 · Your trek</div>
-          <div>
-            <label className="text-xs font-medium uppercase tracking-wider text-muted-foreground">Where would you like to trek?</label>
-            <select className="w-full h-12 px-4 rounded-xl border border-border bg-surface mt-1.5">
-              <option>Open to suggestions</option>
-              <option>Himachal Pradesh</option>
-              <option>Uttarakhand</option>
-              <option>Kashmir / Ladakh</option>
-              <option>Sahyadris</option>
-            </select>
+      </section>
+
+      {/* Wizard card */}
+      <div className="container-wide py-10 max-w-lg mx-auto">
+        <div className="bg-card rounded-2xl border border-border p-6 md:p-8 shadow-sm">
+          {step === 1 && (
+            <WizardStep step={1} totalSteps={TOTAL_STEPS} title="Where would you like to trek?">
+              <div className="space-y-4">
+                <select value={form.region} onChange={(e) => setField("region", e.target.value)} className={selectCls}>
+                  {REGIONS.map((r) => <option key={r} value={r === "Open to suggestions" ? "" : r}>{r}</option>)}
+                </select>
+                <div>
+                  <label className="text-xs text-muted-foreground font-medium block mb-1.5">Preferred month</label>
+                  <select value={form.month} onChange={(e) => setField("month", e.target.value)} className={selectCls}>
+                    <option value="">Any time</option>
+                    {MONTHS.map((m) => <option key={m} value={m.toLowerCase()}>{m}</option>)}
+                  </select>
+                </div>
+              </div>
+            </WizardStep>
+          )}
+
+          {step === 2 && (
+            <WizardStep step={2} totalSteps={TOTAL_STEPS} title="Your experience and fitness">
+              <div className="space-y-3">
+                {EXPERIENCE_LEVELS.map((level) => {
+                  const val = level.split(" — ")[0].toLowerCase();
+                  return (
+                    <label key={level} className={`flex items-center gap-3 p-3.5 rounded-xl border cursor-pointer transition-colors ${form.experience === val ? "border-accent bg-accent/5" : "border-border hover:border-accent/40"}`}>
+                      <input type="radio" name="experience" value={val} checked={form.experience === val} onChange={() => setField("experience", val)} className="accent-accent" />
+                      <span className="text-sm text-foreground">{level}</span>
+                    </label>
+                  );
+                })}
+              </div>
+            </WizardStep>
+          )}
+
+          {step === 3 && (
+            <WizardStep step={3} totalSteps={TOTAL_STEPS} title="Trip length and budget">
+              <div className="space-y-4">
+                <div>
+                  <label className="text-xs text-muted-foreground font-medium block mb-1.5">
+                    Duration: <span className="text-foreground font-semibold">{form.duration_days} days</span>
+                  </label>
+                  <input
+                    type="range"
+                    min={3} max={14} step={1}
+                    value={form.duration_days}
+                    onChange={(e) => setField("duration_days", parseInt(e.target.value))}
+                    className="w-full accent-accent"
+                  />
+                  <div className="flex justify-between text-xs text-muted-foreground mt-1">
+                    <span>3 days</span><span>14 days</span>
+                  </div>
+                </div>
+                <div>
+                  <label className="text-xs text-muted-foreground font-medium block mb-1.5">Budget (optional, ₹ per person)</label>
+                  <input
+                    type="number"
+                    value={form.budget_inr}
+                    onChange={(e) => setField("budget_inr", e.target.value)}
+                    placeholder="e.g. 15000"
+                    className={inputCls}
+                  />
+                </div>
+              </div>
+            </WizardStep>
+          )}
+
+          {step === 4 && (
+            <WizardStep step={4} totalSteps={TOTAL_STEPS} title="Group type and your email">
+              <div className="space-y-4">
+                <select value={form.group_size} onChange={(e) => setField("group_size", e.target.value)} className={selectCls}>
+                  <option value="">Select group type</option>
+                  {GROUP_TYPES.map((g) => <option key={g} value={g}>{g}</option>)}
+                </select>
+                <div>
+                  <label className="text-xs text-muted-foreground font-medium block mb-1.5">Email — get plan in your inbox (optional)</label>
+                  <input
+                    type="email"
+                    value={form.email}
+                    onChange={(e) => setField("email", e.target.value)}
+                    placeholder="you@trail.in"
+                    className={inputCls}
+                  />
+                </div>
+                {error && <p className="text-sm text-destructive">{error}</p>}
+              </div>
+            </WizardStep>
+          )}
+
+          {/* Navigation */}
+          <div className="flex gap-3 mt-6">
+            {step > 1 && (
+              <Button variant="outline" onClick={() => setStep((s) => s - 1)} className="gap-1.5 flex-1 sm:flex-none">
+                <ArrowLeft className="h-3.5 w-3.5" /> Back
+              </Button>
+            )}
+            {step < TOTAL_STEPS ? (
+              <Button
+                variant="hero"
+                onClick={() => setStep((s) => s + 1)}
+                className={`gap-1.5 ${step === 1 ? "w-full" : "flex-1"}`}
+              >
+                Continue <ArrowRight className="h-3.5 w-3.5" />
+              </Button>
+            ) : (
+              <Button
+                variant="hero"
+                onClick={handleSubmit}
+                disabled={loading}
+                className="flex-1 gap-1.5"
+              >
+                {loading ? (
+                  <><Sparkles className="h-3.5 w-3.5 animate-spin" /> Generating your plan…</>
+                ) : (
+                  <><Sparkles className="h-3.5 w-3.5" /> Generate my trek plan</>
+                )}
+              </Button>
+            )}
           </div>
-          <div className="grid grid-cols-2 gap-3">
-            <div>
-              <label className="text-xs font-medium uppercase tracking-wider text-muted-foreground">Fitness level</label>
-              <select className="w-full h-12 px-4 rounded-xl border border-border bg-surface mt-1.5">
-                <option>Beginner</option><option>Intermediate</option><option>Advanced</option>
-              </select>
-            </div>
-            <div>
-              <label className="text-xs font-medium uppercase tracking-wider text-muted-foreground">Trip length</label>
-              <select className="w-full h-12 px-4 rounded-xl border border-border bg-surface mt-1.5">
-                <option>3-5 days</option><option>6-8 days</option><option>9+ days</option>
-              </select>
-            </div>
-          </div>
-          <div>
-            <label className="text-xs font-medium uppercase tracking-wider text-muted-foreground">Email</label>
-            <input type="email" placeholder="you@trail.in" className="w-full h-12 px-4 rounded-xl border border-border bg-surface mt-1.5" />
-          </div>
-          <Button variant="hero" size="lg" className="w-full">Continue <ArrowRight className="h-4 w-4" /></Button>
-        </form>
+        </div>
       </div>
-    </section>
+    </div>
   );
 }

@@ -282,7 +282,7 @@
 - `operator_agreements` table; revenue share / lead-fee tracking
 - Step doc: `docs/steps/STEP-38-operator-marketplace.md`
 
-### Step 39 — Trip planning assistant [pending]
+### Step 39 — Trip planning assistant [DONE]
 - TripPlannerAgent (LangGraph 4-node): constraints → trek selection → itinerary → package
 - `trip_plans` table; `POST /plan/generate`, `GET /plan/{id}`, `POST /plan/{id}/email`
 - `/plan` page rewritten as multi-step "which trek for me" wizard

@@ -74,9 +74,32 @@ All V0 foundations are shipped. The stack is live locally with:
 | Step | Title | Status |
 |------|-------|--------|
 | 38 | Operator marketplace layer | done |
-| 39 | Trip planning assistant | pending |
+| 39 | Trip planning assistant | done |
 | 40 | Premium subscription layer | pending |
 | 41 | B2B content / API extensions | pending |
+
+### Step 39 — Trip Planning Assistant
+Status: done
+What is done:
+- Migration `20260506_0029_trip_plans.py` — `trip_plans` (id UUID PK, session_id String 128, user_id FK→users SET NULL, inputs JSON, output JSON, trek_slug String 255, fallback_used bool, created_at); applied with `alembic upgrade head`
+- `modules/plan/__init__.py`, `models.py` — TripPlan ORM model; registered in db/base.py
+- `modules/agents/trip_planner/__init__.py`, `agent.py` — TripPlannerAgent (LangGraph 4-node): gather_constraints → select_treks → build_itinerary → package_response; selects treks from CMS by page_type=trek_guide + region/experience/month scoring; LLM call (claude-haiku, max_tokens=3000, ephemeral caching) for day-by-day itinerary; fallback itinerary when no API key or LLM fails; gear parsed from CMS packing section; all exceptions swallowed
+- `modules/plan/service.py` — generate_plan (runs agent, stores TripPlan, optionally captures LeadSubmission with cta_type=trip_planner); get_plan; email_plan (SMTP graceful)
+- `schemas/plan.py` — PlanGenerateRequest, ItineraryDay, TripPlanOutput, TripPlanResponse, PlanEmailRequest
+- `api/routes/plan.py` — POST /plan/generate (optional auth), GET /plan/{id}, POST /plan/{id}/email
+- `api/router.py` — plan_router registered
+- `db/base.py` — TripPlan registered
+- `tests/test_plan.py` — 13 tests TC-B01–TC-B13: fallback itinerary day count, region scoring, no-key fallback, mocked LLM, exception swallowing, plan stored in DB, lead captured, API generate/get/get-404/email-404/email-no-smtp, gear parsed from CMS
+- `lib/api.ts` — ItineraryDay, TripPlanOutput, TripPlan, PlanGeneratePayload interfaces; generatePlan, fetchPlan, emailPlan helpers
+- `components/plan/WizardStep.tsx` — progress bar + step title wrapper
+- `components/plan/ItineraryDay.tsx` — expandable day card (client, first day open by default)
+- `components/plan/TrekPlanCard.tsx` — full plan result: header, difficulty badge, meta chips, itinerary accordion, gear list, email-plan inline form, operator inquiry CTA
+- `app/(public)/plan/page.tsx` — full rewrite: 4-step "which trek for me" wizard (region/month → experience → duration+budget → group+email); POST /plan/generate on submit; TrekPlanCard on result; "New plan" back button; loading state with spinner
+- 457/444 backend tests pass (13 new, 1 pre-existing failure in test_refresh.py unrelated to this step); next build clean (176 static pages)
+What remains:
+- Pre-existing test `test_stale_pages_includes_past_interval` in test_refresh.py failing — test isolation issue from a previous step; will fix in separate commit
+- Real ANTHROPIC_API_KEY required for LLM itinerary generation (fallback always works)
+- Saved plans not yet surfaced in user account dashboard (/account)
 
 ### Step 38 — Operator Marketplace Layer
 Status: done
