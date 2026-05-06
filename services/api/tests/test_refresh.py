@@ -88,6 +88,8 @@ def test_stale_pages_includes_null_last_refreshed():
 
 def test_stale_pages_includes_past_interval():
     """A page whose last_refreshed_at + interval < now is stale."""
+    from app.modules.refresh.service import get_stale_pages
+
     slug = f"stale-past-{_uid()}"
     old_date = datetime.now(timezone.utc) - timedelta(days=200)
     with SessionLocal() as db:
@@ -95,9 +97,13 @@ def test_stale_pages_includes_past_interval():
         _create_page(db, slug, cms, last_refreshed_at=old_date, freshness_interval_days=90)
         db.commit()
 
-    resp = client.get("/api/v1/admin/refresh/stale?limit=500")
-    assert resp.status_code == 200
-    slugs = [p["slug"] for p in resp.json()]
+    # Use service layer directly to avoid HTTP pagination limits —
+    # many other tests create NULL-last_refreshed_at Page records which
+    # appear first in the NULLSFIRST ordering and can push this page
+    # beyond the HTTP endpoint's default limit.
+    with SessionLocal() as db:
+        stale = get_stale_pages(db, limit=100_000)
+        slugs = [p.slug for p in stale]
     assert slug in slugs
 
 
