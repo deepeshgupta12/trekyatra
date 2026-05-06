@@ -49,6 +49,7 @@
 | `docs/DEPENDENCY_MAP.md` | New files, modules, blast radius notes |
 | `docs/steps/STEP-XX-*.md` | Files created/modified, Status → Done, Notes |
 | `docs/IMPLEMENTATION_PLAN.md` | Step marked `[DONE]` |
+| `README.md` | Feature Matrix (mark new features Done), Roadmap Status, Database Overview (new tables), Key API Surfaces (new endpoints) |
 
 ---
 

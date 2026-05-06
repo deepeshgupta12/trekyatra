@@ -1,7 +1,7 @@
 <!-- gitnexus:start -->
 # GitNexus — Code Intelligence
 
-This project is indexed by GitNexus as **trekyatra** (8517 symbols, 14537 relationships, 218 execution flows). Use the GitNexus MCP tools to understand code, assess impact, and navigate safely.
+This project is indexed by GitNexus as **trekyatra** (8513 symbols, 14537 relationships, 218 execution flows). Use the GitNexus MCP tools to understand code, assess impact, and navigate safely.
 
 > If any GitNexus tool warns the index is stale, run `npx gitnexus analyze` in terminal first.
 
@@ -141,12 +141,12 @@ Every step **must** update all of the following before being marked done. No exc
 | `docs/DEPENDENCY_MAP.md` | Add new files, modules, and blast radius notes for this step |
 | `docs/steps/STEP-XX-*.md` | Update "Files Created", "Files Modified", set Status to `Done`, add Notes |
 | `docs/IMPLEMENTATION_PLAN.md` | Mark step as `[DONE]` in the version table |
+| `README.md` | Update Feature Matrix (mark new features Done), update Roadmap Status table, update Database Overview if new tables added, update Key API Surfaces if new public/admin endpoints added |
 
 Also update if applicable:
-- `docs/LOCAL_WORDPRESS_SETUP.md` — if WP config or services changed
 - `docs/FRONTEND_WIRING_BLUEPRINT.md` — if new frontend API surfaces were wired
 
-Do not mark a step as `Done` in the step file until all four core MD files are updated.
+Do not mark a step as `Done` in the step file until all five core files are updated.
 
 ---
 
@@ -275,6 +275,7 @@ A step is **not done** until every item in this checklist is confirmed:
 - [ ] `docs/DEPENDENCY_MAP.md` updated with new files and blast radius notes
 - [ ] Active step doc status set to `Done` with notes
 - [ ] `docs/IMPLEMENTATION_PLAN.md` step marked `[DONE]`
+- [ ] `README.md` updated — Feature Matrix, Roadmap Status, Database Overview, Key API Surfaces
 - [ ] All new env vars documented in `.env.example`
 - [ ] Git commit created with correct format
 - [ ] Git push executed (after all above pass)
