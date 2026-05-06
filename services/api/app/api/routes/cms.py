@@ -2,12 +2,15 @@ from __future__ import annotations
 
 import uuid
 
+import uuid as _uuid
+
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy.orm import Session
 
 from app.db.session import get_db
 from app.modules.auth.dependencies import get_current_admin
 from app.modules.cms import service as cms_service
+from app.modules.cms.models import CMSPage
 from app.schemas.cms import (
     CMSCacheInvalidateRequest,
     CMSCacheInvalidateResponse,
@@ -47,10 +50,24 @@ def create_cms_page(body: CMSPageCreate, db: Session = Depends(get_db)) -> CMSPa
 
 
 @router.get("/pages/{slug}", response_model=CMSPageResponse)
-def get_cms_page(slug: str, db: Session = Depends(get_db)) -> CMSPageResponse:
+def get_cms_page(
+    slug: str,
+    lang: str | None = Query(default=None, description="Language code (e.g. 'hi'). Falls back to 'en' if translation not found."),
+    db: Session = Depends(get_db),
+) -> CMSPageResponse:
     page = cms_service.get_page_by_slug(db, slug)
     if not page:
         raise HTTPException(status_code=404, detail=f"CMS page '{slug}' not found.")
+
+    # If a specific language is requested and the page has a translation, serve it
+    if lang and lang != "en" and page.translations:
+        translated_id = page.translations.get(lang)
+        if translated_id:
+            translated = db.get(CMSPage, _uuid.UUID(translated_id))
+            if translated and translated.status == "published":
+                return CMSPageResponse.model_validate(translated)
+        # Fall through: serve original English page
+
     return CMSPageResponse.model_validate(page)
 
 

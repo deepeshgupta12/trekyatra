@@ -20,6 +20,9 @@ class CMSPageCreate(BaseModel):
     hero_image_url: str | None = None
     brief_id: uuid.UUID | None = None
     cluster_id: uuid.UUID | None = None
+    language: str = "en"
+    translations: dict[str, Any] | None = None
+    source_page_id: uuid.UUID | None = None
 
 
 class CMSPagePatch(BaseModel):
@@ -31,6 +34,8 @@ class CMSPagePatch(BaseModel):
     seo_description: str | None = None
     seo_meta: dict[str, Any] | None = None
     hero_image_url: str | None = None
+    language: str | None = None
+    translations: dict[str, Any] | None = None
 
 
 class CMSPageResponse(BaseModel):
@@ -50,6 +55,9 @@ class CMSPageResponse(BaseModel):
     published_at: datetime | None = None
     created_at: datetime
     updated_at: datetime
+    language: str = "en"
+    translations: dict[str, Any] | None = None
+    source_page_id: uuid.UUID | None = None
 
     model_config = {"from_attributes": True}
 

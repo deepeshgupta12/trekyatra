@@ -27,10 +27,18 @@ export async function generateMetadata({ params }: { params: { slug: string } })
     : `Guide — ${params.slug.replace(/-/g, " ")} | TrekYatra`;
   const description = cmsPage?.seo_description ?? "A curated beginner-friendly trekking guide.";
   const canonical = `${siteUrl}/guides/${params.slug}`;
+  const hasHiTranslation = !!(cmsPage?.translations?.hi);
+
   return {
     title,
     description,
-    alternates: { canonical },
+    alternates: {
+      canonical,
+      languages: {
+        "en": canonical,
+        ...(hasHiTranslation ? { "hi": `${siteUrl}/hi/guides/${params.slug}` } : {}),
+      },
+    },
     openGraph: { title, description, url: canonical, type: "article" },
     twitter: { card: "summary_large_image", title, description },
   };

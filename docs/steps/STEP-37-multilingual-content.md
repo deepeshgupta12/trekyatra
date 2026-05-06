@@ -63,10 +63,35 @@ Build the pipeline for alternate-language draft generation (Hindi first), hrefla
 - `apps/web-next/app/(admin)/admin/cms/page.tsx` — language badge + translate button
 - `apps/web-next/lib/api.ts`
 
+## Files Created
+- `services/api/alembic/versions/20260506_0027_cms_language.py`
+- `services/api/app/data/glossary_hi.json`
+- `services/api/app/modules/agents/translation/__init__.py`
+- `services/api/app/modules/agents/translation/agent.py`
+- `services/api/app/schemas/translation.py`
+- `services/api/app/api/routes/translation.py`
+- `services/api/tests/test_translation.py`
+- `apps/web-next/app/(public)/hi/trek/[slug]/page.tsx`
+- `apps/web-next/app/(public)/hi/guides/[slug]/page.tsx`
+- `apps/web-next/app/(public)/hi/packing/[slug]/page.tsx`
+
+## Files Modified
+- `services/api/app/modules/cms/models.py` — language, translations, source_page_id fields added
+- `services/api/app/schemas/cms.py` — language/translations/source_page_id in Create, Patch, Response
+- `services/api/app/api/routes/cms.py` — lang query param on GET /cms/pages/{slug}; CMSPage import added
+- `services/api/app/api/router.py` — translation_router registered
+- `apps/web-next/lib/api.ts` — CMSPage multilingual fields; fetchCMSPage lang param; TranslateResult; triggerTranslation
+- `apps/web-next/app/(public)/trek/[slug]/page.tsx` — hreflang alternates in generateMetadata
+- `apps/web-next/app/(public)/guides/[slug]/page.tsx` — hreflang alternates in generateMetadata
+- `apps/web-next/app/(admin)/admin/cms/page.tsx` — language badge, HI ✓ indicator, translate button wired
+
 ## Status
-pending
+Done
 
 ## Notes
 - Hindi translation quality gate: TranslationAgent output goes through the same compliance check (Step 28) before admin approval — risky wording rules apply in Hindi too.
 - Proper nouns list: stored in a `translation_glossary` JSON file (`services/api/app/data/glossary_hi.json`) — names like "Kedarkantha", "Uttarakhand", "Roopkund" must not be translated.
-- V3 completion: after Step 37, V3 is done. Next phase: V4 (Steps 38–41 — Operator marketplace, Trip planning assistant, Premium subscription, B2B API).
+- V3 completion: Step 37 done — V3 complete. Next phase: V4 (Steps 38–41 — Operator marketplace, Trip planning assistant, Premium subscription, B2B API).
+- Marathi (mr) is supported by the backend (agent + route) but frontend `/mr/` routes are not yet created — Hindi-first per scope. Add `/mr/trek/[slug]` etc. as a follow-up.
+- `TranslationAgent` creates a CMSPage draft directly (not via ContentDraft + pipeline) to avoid adding a `language` field to `content_drafts`. The admin reviews and publishes the translated CMSPage via `/admin/cms`.
+- Middleware-based `Accept-Language: hi` banner (auto-suggest Hindi version) was descoped — the static language switcher banner on hi/ pages fulfils the intent.

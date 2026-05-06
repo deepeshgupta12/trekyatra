@@ -68,7 +68,7 @@ All V0 foundations are shipped. The stack is live locally with:
 | 34 | Digital product checkout and file delivery | done |
 | 35 | Advanced recommendation engine | done |
 | 36 | User-intent aware monetization | done |
-| 37 | Multilingual content workflows | dropped — deferred after V4 |
+| 37 | Multilingual content workflows | done |
 
 ### Step 34 — Digital Product Checkout and File Delivery
 Status: done
@@ -99,6 +99,32 @@ What remains:
 - Real Razorpay keys required for live payment flow (test mode works without keys)
 - Trek alert delivery task deferred to future step
 - File serving requires placing actual files in services/api/data/products/
+
+### Step 37 — Multilingual Content Workflows
+Status: done
+What is done:
+- Migration `20260506_0027_cms_language.py` — adds `language` String(10) default='en', `translations` JSON nullable, `source_page_id` UUID nullable FK→cms_pages self-reference to `cms_pages`; index on language; applied with `alembic upgrade head`
+- `modules/cms/models.py` — CMSPage: `language`, `translations`, `source_page_id` fields added
+- `schemas/cms.py` — `language`, `translations`, `source_page_id` added to CMSPageCreate, CMSPagePatch, CMSPageResponse
+- `app/data/glossary_hi.json` — proper nouns list (trek names, regions, brands) preserved during translation
+- `modules/agents/translation/__init__.py`, `agent.py` — `translate_page(title, content_html, target_language)`: Anthropic claude-haiku-4-5 with ephemeral prompt caching; returns `{title, content_html, fallback}`; rule-based fallback when ANTHROPIC_API_KEY unset; all exceptions swallowed
+- `schemas/translation.py` — TranslateRequest, TranslateResponse Pydantic schemas
+- `api/routes/translation.py` — `POST /admin/cms/{slug}/translate` (admin auth): validates target_language, returns existing if already translated, runs TranslationAgent, creates CMSPage draft with `language=hi/mr` + `source_page_id`, updates source page `translations` JSON; 422 for unsupported lang, 404 for unknown slug
+- `api/routes/cms.py` — `GET /cms/pages/{slug}?lang=hi`: if lang requested and published translation exists, serves translated page; falls back to English source
+- `api/router.py` — translation_router registered
+- `lib/api.ts` — `language`, `translations`, `source_page_id` added to CMSPage interface; `fetchCMSPage` accepts optional `lang` param; `TranslateResult` interface; `triggerTranslation` helper
+- `app/(public)/hi/trek/[slug]/page.tsx` — Hindi trek detail route; serves published Hindi CMS page; language switcher banner; hreflang alternates in generateMetadata
+- `app/(public)/hi/guides/[slug]/page.tsx` — Hindi guide route (same pattern)
+- `app/(public)/hi/packing/[slug]/page.tsx` — Hindi packing list route (same pattern)
+- `app/(public)/trek/[slug]/page.tsx` — hreflang alternates added to generateMetadata (en + hi when translation exists)
+- `app/(public)/guides/[slug]/page.tsx` — hreflang alternates added
+- `app/(admin)/admin/cms/page.tsx` — language badge (EN/HI/MR) + HI ✓ indicator per row; Languages icon button triggers Hindi translation; translatePage() function wired to `triggerTranslation`
+- `tests/test_translation.py` — 14 tests TC-B01–TC-B14: glossary load, supported languages, no-api-key fallback, mocked LLM call, exception swallowing, 404/422 endpoint validation, draft creation, translations JSON update, idempotency, auth enforcement, lang query param with published/draft translation, CMSPageResponse language fields
+- 427/427 backend tests pass (14 new); next build clean (175 static pages); GitNexus re-indexed
+What remains:
+- Real ANTHROPIC_API_KEY required for LLM translation (rule-based fallback without it)
+- Marathi (mr) translation supported by the agent and route but no `/mr/trek/[slug]` frontend routes yet (Hindi-first per step scope)
+- Middleware language-detection banner (Accept-Language: hi → suggest Hindi version) not implemented — out of scope for this step
 
 ### Step 36 — User-Intent Aware Monetization
 Status: done

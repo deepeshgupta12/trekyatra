@@ -25,6 +25,14 @@ class CMSPage(UUIDPrimaryKeyMixin, TimestampMixin, Base):
     hero_image_url: Mapped[str | None] = mapped_column(String(512), nullable=True)
     published_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
 
+    # Multilingual fields (Step 37)
+    language: Mapped[str] = mapped_column(String(10), nullable=False, default="en", index=True)
+    translations: Mapped[dict | None] = mapped_column(JSON, nullable=True)
+    source_page_id: Mapped[uuid.UUID | None] = mapped_column(
+        ForeignKey("cms_pages.id", ondelete="SET NULL"),
+        nullable=True,
+    )
+
     embedding: Mapped[list[float] | None] = mapped_column(Vector(1536), nullable=True)
 
     brief_id: Mapped[uuid.UUID | None] = mapped_column(

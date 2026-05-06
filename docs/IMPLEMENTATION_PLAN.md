@@ -262,9 +262,14 @@
 - Dynamic monetization module selection
 - Personalized affiliate recommendations
 
-### Step 37 — Multilingual content workflows [DROPPED]
-- Deferred indefinitely. Will be revisited after V4 steps are assessed.
-- Original scope: language model selection, alternate language draft pipeline, hreflang SEO layer, language fields on cms_pages.
+### Step 37 — Multilingual content workflows [DONE]
+- language/translations/source_page_id fields on cms_pages (migration 20260506_0027)
+- TranslationAgent (claude-haiku, ephemeral caching, rule-based fallback, proper nouns glossary)
+- POST /admin/cms/{slug}/translate — creates translated CMSPage draft
+- GET /cms/pages/{slug}?lang=hi — serves translated page with English fallback
+- /hi/trek/[slug], /hi/guides/[slug], /hi/packing/[slug] public routes
+- hreflang alternates on trek and guides generateMetadata
+- Admin CMS page: language badge (EN/HI), HI ✓ indicator, translate button
 
 ---
 

@@ -48,10 +48,18 @@ export async function generateMetadata({ params }: { params: { slug: string } })
   const canonicalUrl = `${siteUrl}/treks/${params.slug}`;
   const ogImage = cmsPage?.hero_image_url ?? trekRaw?.image ?? null;
 
+  const hasHiTranslation = !!(cmsPage?.translations?.hi);
+
   return {
     title,
     description,
-    alternates: { canonical: canonicalUrl },
+    alternates: {
+      canonical: canonicalUrl,
+      languages: {
+        "en": canonicalUrl,
+        ...(hasHiTranslation ? { "hi": `${siteUrl}/hi/trek/${params.slug}` } : {}),
+      },
+    },
     openGraph: {
       title,
       description,

@@ -62,16 +62,40 @@ export interface CMSPage {
   published_at: string | null;
   created_at: string;
   updated_at: string;
+  // Multilingual fields (Step 37)
+  language: string;
+  translations: Record<string, string> | null;
+  source_page_id: string | null;
 }
 
-export async function fetchCMSPage(slug: string): Promise<CMSPage> {
-  const url = `${apiBase}/api/v1/cms/pages/${slug}`;
+export async function fetchCMSPage(slug: string, lang?: string): Promise<CMSPage> {
+  const params = lang && lang !== "en" ? `?lang=${lang}` : "";
+  const url = `${apiBase}/api/v1/cms/pages/${slug}${params}`;
   const res = await fetch(url, {
     signal: AbortSignal.timeout(3000),
     cache: "no-store",
   });
   if (!res.ok) throw new Error(`CMS ${res.status}: /cms/pages/${slug}`);
   return res.json() as Promise<CMSPage>;
+}
+
+export interface TranslateResult {
+  source_slug: string;
+  target_language: string;
+  page_id: string | null;
+  page_slug: string | null;
+  message: string;
+  fallback: boolean;
+}
+
+export async function triggerTranslation(slug: string, target_language: string): Promise<TranslateResult> {
+  const res = await fetch(`/api/v1/admin/cms/${slug}/translate`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ target_language }),
+  });
+  if (!res.ok) throw new Error(`Translation failed: ${res.status}`);
+  return res.json() as Promise<TranslateResult>;
 }
 
 // ---------------------------------------------------------------------------

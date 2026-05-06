@@ -88,7 +88,15 @@ This file tracks structural dependencies, source-of-truth modules, and Nexus/Git
 - `services/api/app/modules/auth/service.py` -> email + Google auth business logic; session creation; login_or_register_google_user
 - `services/api/app/modules/auth/dependencies.py` -> current user/current session dependencies; get_current_admin (validates trekyatra_admin_token, returns JWT payload dict); RequireRole class (retained but no longer applied to routes); blast radius: MEDIUM (10 route files import from here)
 - `services/api/app/api/routes/admin_auth.py` -> CMS admin auth: POST /admin/auth/login (issues trekyatra_admin_token cookie), POST /admin/auth/logout, GET /admin/auth/me; credential-based, no DB; blast radius: LOW
-- `services/api/app/modules/cms/models.py` -> CMSPage ORM model + hero_image_url (String 512, nullable); blast radius: LOW (new table, no prior callers)
+- `services/api/app/modules/cms/models.py` -> CMSPage ORM model + hero_image_url (String 512, nullable) + language/translations/source_page_id (Step 37, additive); blast radius: HIGH structurally (38 importers) but additive-only — no existing callers break
+- `services/api/app/schemas/cms.py` -> CMSPageCreate/Patch/Response: language, translations, source_page_id added (Step 37, backward-compatible with defaults); blast radius: MEDIUM (all CMS API consumers)
+- `services/api/app/data/glossary_hi.json` -> proper nouns preserved during translation; blast radius: LOW (only read by TranslationAgent)
+- `services/api/app/modules/agents/translation/agent.py` -> TranslationAgent: translate_page(title, content_html, target_language); Anthropic claude-haiku with ephemeral caching; rule-based fallback; blast radius: LOW (only called by translation route)
+- `services/api/app/schemas/translation.py` -> TranslateRequest, TranslateResponse; blast radius: LOW
+- `services/api/app/api/routes/translation.py` -> POST /admin/cms/{slug}/translate; blast radius: LOW (new endpoint)
+- `apps/web-next/app/(public)/hi/trek/[slug]/page.tsx` -> Hindi trek detail route; blast radius: LOW (new page)
+- `apps/web-next/app/(public)/hi/guides/[slug]/page.tsx` -> Hindi guide route; blast radius: LOW (new page)
+- `apps/web-next/app/(public)/hi/packing/[slug]/page.tsx` -> Hindi packing list route; blast radius: LOW (new page)
 - `services/api/app/modules/cms/service.py` -> CMS CRUD helpers; _md_to_html (markdown→HTML at storage); _parse_sections_from_markdown (agent output → content_json.sections); _process_content_json (section markdown→HTML for manual saves); upsert_page_from_draft (publish bridge, now also populates content_json.sections); cache_invalidate/cache_invalidate_all (Redis DB 2, 5-min TTL); blast radius: MEDIUM (called by publish service + CMS create/update routes)
 - `services/api/app/modules/content/models.py` -> topic, cluster, brief (+ structured_brief, word_count_target, versions rel), draft (+ optimized_content, claims rel, cms_page_id), publish_log (+ cms_page_id, published_url), BriefVersion, DraftClaim ORM models; blast radius: MEDIUM
 - `services/api/app/modules/publish/service.py` -> VALID_TRANSITIONS state machine, update_draft_status, publish_to_cms (calls upsert_page_from_draft), get_publish_logs

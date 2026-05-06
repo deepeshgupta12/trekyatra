@@ -2,8 +2,9 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { Globe, RefreshCw, Trash2, Pencil, Plus } from "lucide-react";
+import { Globe, RefreshCw, Trash2, Pencil, Plus, Languages } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { triggerTranslation } from "@/lib/api";
 
 interface CMSPage {
   id: string;
@@ -13,6 +14,8 @@ interface CMSPage {
   status: string;
   published_at: string | null;
   updated_at: string;
+  language: string;
+  translations: Record<string, string> | null;
 }
 
 const statusStyle: Record<string, string> = {
@@ -45,7 +48,7 @@ export default function CMSAdminPage() {
     setFeedback(null);
     try {
       const body = scope === "all" ? { scope: "all" } : { slug };
-      const [apiRes, feRes] = await Promise.all([
+      const [apiRes] = await Promise.all([
         fetch("/api/v1/cms/cache/invalidate", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -71,6 +74,19 @@ export default function CMSAdminPage() {
   async function deletePage(slug: string) {
     await fetch(`/api/v1/cms/pages/${slug}`, { method: "DELETE" });
     setPages((prev) => prev.filter((p) => p.slug !== slug));
+  }
+
+  async function translatePage(slug: string) {
+    setFeedback(null);
+    try {
+      const result = await triggerTranslation(slug, "hi");
+      setFeedback(result.message);
+      await loadPages();
+    } catch {
+      setFeedback("Translation request failed.");
+    } finally {
+      setTimeout(() => setFeedback(null), 5000);
+    }
   }
 
   return (
@@ -164,7 +180,15 @@ export default function CMSAdminPage() {
                   >
                     <td className="px-4 py-3.5">
                       <div className="font-medium text-white/90 text-sm">{page.title}</div>
-                      <div className="text-white/40 text-xs mt-0.5 font-mono">/{page.slug}</div>
+                      <div className="flex items-center gap-2 mt-0.5">
+                        <span className="text-white/40 text-xs font-mono">/{page.slug}</span>
+                        <span className={`text-xs font-medium px-1.5 py-0.5 rounded ${page.language === "en" ? "text-blue-400 bg-blue-400/10" : "text-amber-400 bg-amber-400/10"}`}>
+                          {(page.language ?? "en").toUpperCase()}
+                        </span>
+                        {page.translations?.hi && (
+                          <span className="text-xs text-pine bg-pine/10 px-1.5 py-0.5 rounded">HI ✓</span>
+                        )}
+                      </div>
                     </td>
                     <td className="px-4 py-3.5 text-white/50 text-xs hidden sm:table-cell">
                       {page.page_type.replace(/_/g, " ")}
@@ -193,6 +217,16 @@ export default function CMSAdminPage() {
                         >
                           <RefreshCw className="h-3.5 w-3.5" />
                         </button>
+                        {/* Only show translate button for English source pages */}
+                        {(page.language === "en" || !page.language) && (
+                          <button
+                            onClick={() => translatePage(page.slug)}
+                            className="text-white/40 hover:text-amber-400 transition-colors"
+                            title="Generate Hindi translation"
+                          >
+                            <Languages className="h-3.5 w-3.5" />
+                          </button>
+                        )}
                         <a
                           href={`/trek/${page.slug}`}
                           target="_blank"
