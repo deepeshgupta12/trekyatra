@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
+import { CheckCircle } from "lucide-react";
 import { submitInquiry } from "@/lib/api";
 
 interface Props {
@@ -9,6 +10,9 @@ interface Props {
   operatorName?: string;
   defaultTrekInterest?: string;
 }
+
+const inputCls =
+  "w-full px-4 py-2.5 rounded-xl border border-border bg-background text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-accent/40";
 
 export default function OperatorInquiryForm({ operatorSlug, operatorName, defaultTrekInterest }: Props) {
   const [form, setForm] = useState({
@@ -38,9 +42,10 @@ export default function OperatorInquiryForm({ operatorSlug, operatorName, defaul
 
   if (success) {
     return (
-      <div className="bg-pine/10 border border-pine/20 rounded-2xl p-6 text-center">
-        <p className="text-pine font-semibold mb-1">Inquiry sent!</p>
-        <p className="text-white/60 text-sm">
+      <div className="flex flex-col items-center gap-3 py-8 text-center">
+        <CheckCircle className="h-10 w-10 text-success" />
+        <p className="font-semibold text-foreground">Inquiry sent!</p>
+        <p className="text-sm text-muted-foreground">
           {operatorName ? `${operatorName} will` : "A vetted operator will"} get back to you within 48 hours.
         </p>
       </div>
@@ -50,68 +55,69 @@ export default function OperatorInquiryForm({ operatorSlug, operatorName, defaul
   return (
     <form onSubmit={handleSubmit} className="space-y-4" id="inquiry">
       {operatorName && (
-        <p className="text-sm text-white/50">
-          Sending inquiry to <span className="text-white font-medium">{operatorName}</span>
+        <p className="text-sm text-muted-foreground">
+          Sending inquiry to <span className="text-foreground font-medium">{operatorName}</span>
         </p>
       )}
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <div>
-          <label className="text-xs text-white/50 font-medium block mb-1">Full name *</label>
+          <label className="text-xs text-muted-foreground font-medium block mb-1">Full name *</label>
           <input
             required
             value={form.name}
             onChange={(e) => setForm((f) => ({ ...f, name: e.target.value }))}
-            className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-2.5 text-sm text-white placeholder:text-white/30 focus:outline-none focus:border-accent/50"
+            className={inputCls}
             placeholder="Your name"
           />
         </div>
         <div>
-          <label className="text-xs text-white/50 font-medium block mb-1">Email *</label>
+          <label className="text-xs text-muted-foreground font-medium block mb-1">Email *</label>
           <input
             required
             type="email"
             value={form.email}
             onChange={(e) => setForm((f) => ({ ...f, email: e.target.value }))}
-            className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-2.5 text-sm text-white placeholder:text-white/30 focus:outline-none focus:border-accent/50"
+            className={inputCls}
             placeholder="you@email.com"
           />
         </div>
       </div>
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <div>
-          <label className="text-xs text-white/50 font-medium block mb-1">Phone</label>
+          <label className="text-xs text-muted-foreground font-medium block mb-1">Phone</label>
           <input
             value={form.phone}
             onChange={(e) => setForm((f) => ({ ...f, phone: e.target.value }))}
-            className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-2.5 text-sm text-white placeholder:text-white/30 focus:outline-none focus:border-accent/50"
+            className={inputCls}
             placeholder="+91 9876543210"
           />
         </div>
         <div>
-          <label className="text-xs text-white/50 font-medium block mb-1">Trek interest *</label>
+          <label className="text-xs text-muted-foreground font-medium block mb-1">Trek interest *</label>
           <input
             required
             value={form.trek_interest}
             onChange={(e) => setForm((f) => ({ ...f, trek_interest: e.target.value }))}
-            className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-2.5 text-sm text-white placeholder:text-white/30 focus:outline-none focus:border-accent/50"
+            className={inputCls}
             placeholder="e.g. Kedarkantha, Roopkund"
           />
         </div>
       </div>
       <div>
-        <label className="text-xs text-white/50 font-medium block mb-1">Message</label>
+        <label className="text-xs text-muted-foreground font-medium block mb-1">Message</label>
         <textarea
           rows={3}
           value={form.message}
           onChange={(e) => setForm((f) => ({ ...f, message: e.target.value }))}
-          className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-2.5 text-sm text-white placeholder:text-white/30 focus:outline-none focus:border-accent/50 resize-none"
+          className={`${inputCls} resize-none`}
           placeholder="Any specific questions or dates in mind?"
         />
       </div>
-      {error && <p className="text-red-400 text-sm">{error}</p>}
+      {error && <p className="text-sm text-destructive">{error}</p>}
       <Button type="submit" variant="hero" className="w-full" disabled={submitting}>
         {submitting ? "Sending…" : "Send inquiry"}
       </Button>
+      <p className="text-[10px] text-muted-foreground text-center">No spam. We respond within 48 hours.</p>
     </form>
   );
 }

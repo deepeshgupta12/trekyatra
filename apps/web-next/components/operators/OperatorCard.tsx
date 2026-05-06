@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { MapPin, Star, Phone, Globe } from "lucide-react";
+import { MapPin, Star } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import type { OperatorPublic } from "@/lib/api";
 
@@ -40,7 +40,7 @@ export default function OperatorCard({ operator }: Props) {
           {operator.review_count > 0 ? (
             <StarRating rating={operator.rating_avg} />
           ) : (
-            <span className="text-xs text-white/30">No reviews yet</span>
+            <span className="text-xs text-muted-foreground">No reviews yet</span>
           )}
         </div>
       </div>

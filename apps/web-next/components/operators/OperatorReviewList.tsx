@@ -13,7 +13,7 @@ function StarDisplay({ rating }: { rating: number }) {
       {[1, 2, 3, 4, 5].map((n) => (
         <Star
           key={n}
-          className={`h-3.5 w-3.5 ${n <= rating ? "text-amber-400 fill-amber-400" : "text-white/20"}`}
+          className={`h-3.5 w-3.5 ${n <= rating ? "text-amber-400 fill-amber-400" : "text-muted-foreground/30"}`}
         />
       ))}
     </div>
@@ -23,20 +23,22 @@ function StarDisplay({ rating }: { rating: number }) {
 export default function OperatorReviewList({ reviews }: Props) {
   if (reviews.length === 0) {
     return (
-      <p className="text-white/40 text-sm py-4">No reviews yet. Be the first to review.</p>
+      <p className="text-muted-foreground text-sm py-4">
+        No reviews yet. Be the first to review.
+      </p>
     );
   }
   return (
     <div className="space-y-4">
       {reviews.map((r) => (
-        <div key={r.id} className="bg-[#14161f] rounded-xl border border-white/10 p-4">
+        <div key={r.id} className="bg-card rounded-xl border border-border p-4">
           <div className="flex items-center justify-between mb-2">
             <StarDisplay rating={r.rating} />
-            <span className="text-xs text-white/30">
+            <span className="text-xs text-muted-foreground">
               {new Date(r.created_at).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" })}
             </span>
           </div>
-          {r.body && <p className="text-sm text-white/70">{r.body}</p>}
+          {r.body && <p className="text-sm text-foreground/80">{r.body}</p>}
         </div>
       ))}
     </div>
