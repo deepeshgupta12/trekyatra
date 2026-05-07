@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { Logo } from "@/components/brand/Logo";
-import { Mail, Instagram, Youtube, ArrowRight, MapPin, Phone } from "lucide-react";
+import { Mail, Instagram, Youtube, ArrowRight, MapPin, Phone, Heart } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 const cols = [
@@ -55,8 +55,8 @@ export const Footer = () => (
       <path d="M0,80 L0,50 L120,28 L240,46 L360,18 L480,40 L600,12 L720,38 L840,22 L960,44 L1080,20 L1200,42 L1200,80 Z" fill="hsl(var(--background))" />
     </svg>
 
-    <div className="container-wide pt-32 pb-24 lg:pb-12 relative">
-      <div className="rounded-2xl bg-surface/5 border border-surface/10 backdrop-blur-sm p-8 md:p-10 mb-16 grid md:grid-cols-2 gap-8 items-center">
+    <div className="container-wide pt-28 pb-24 lg:pb-12 relative">
+      <div className="rounded-2xl bg-foreground/40 border border-surface/15 p-8 md:p-10 mb-16 grid md:grid-cols-2 gap-8 items-center">
         <div>
           <div className="text-xs uppercase tracking-[0.25em] text-accent-glow mb-3">The Trail Letter</div>
           <h3 className="font-display text-3xl md:text-4xl text-surface leading-tight mb-3">
@@ -106,10 +106,12 @@ export const Footer = () => (
 
       <div className="border-t border-surface/10 pt-8 flex flex-col md:flex-row justify-between items-start md:items-center gap-4 text-xs text-surface/50">
         <div className="flex items-center gap-4">
-          <span>© {new Date().getFullYear()} TrekYatra. Made with care in India.</span>
+          <span className="flex items-center gap-1.5">
+            © {new Date().getFullYear()} TrekYatra. Made with <Heart className="h-3 w-3 text-accent fill-accent" /> in India.
+          </span>
         </div>
         <div className="flex items-center gap-4">
-          <span className="flex items-center gap-1.5"><MapPin className="h-3 w-3" /> Bengaluru · India</span>
+          <span className="flex items-center gap-1.5"><MapPin className="h-3 w-3" /> Gurgaon · India</span>
           <span className="flex items-center gap-1.5"><Phone className="h-3 w-3" /> hello@trekyatra.in</span>
         </div>
       </div>

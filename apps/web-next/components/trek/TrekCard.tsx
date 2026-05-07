@@ -20,10 +20,10 @@ export type Trek = {
 };
 
 const diffColors = {
-  Easy: "bg-success/15 text-success",
-  Moderate: "bg-warning/15 text-warning",
-  Difficult: "bg-accent/15 text-accent",
-  Challenging: "bg-destructive/15 text-destructive",
+  Easy: "bg-emerald-600 text-white shadow",
+  Moderate: "bg-amber-500 text-white shadow",
+  Difficult: "bg-orange-600 text-white shadow",
+  Challenging: "bg-red-600 text-white shadow",
 };
 
 export const TrekCard = ({ trek, featured = false, initialBookmarked = false }: { trek: Trek; featured?: boolean; initialBookmarked?: boolean }) => {
@@ -81,11 +81,11 @@ export const TrekCard = ({ trek, featured = false, initialBookmarked = false }: 
         <div className="absolute top-4 left-4 right-4 flex justify-between">
           <div className="flex gap-1.5">
             {trek.beginner && (
-              <span className="text-[10px] font-semibold uppercase tracking-wider px-2.5 py-1 rounded-full bg-accent text-accent-foreground">
+              <span className="text-[10px] font-semibold uppercase tracking-wider px-2.5 py-1 rounded-full bg-blue-600 text-white shadow">
                 Beginner
               </span>
             )}
-            <span className={`text-[10px] font-semibold uppercase tracking-wider px-2.5 py-1 rounded-full backdrop-blur ${diffColors[trek.difficulty]}`}>
+            <span className={`text-[10px] font-semibold uppercase tracking-wider px-2.5 py-1 rounded-full ${diffColors[trek.difficulty]}`}>
               {trek.difficulty}
             </span>
           </div>

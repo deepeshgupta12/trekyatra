@@ -33,24 +33,24 @@ export default async function Home() {
     <>
       <SchemaInjector schemas={[buildWebSiteSchema()]} />
       {/* HERO */}
-      <section className="relative min-h-[88vh] flex items-end overflow-hidden">
-        <div className="absolute inset-0">
+      <section className="relative min-h-[92vh] flex items-end">
+        <div className="absolute inset-0 overflow-hidden">
           <img src="/images/hero-himalaya-dawn.jpg" alt="Himalayan dawn ridge" width={1920} height={1280} className="w-full h-full object-cover" />
-          <div className="absolute inset-0 bg-gradient-to-t from-foreground via-foreground/30 to-foreground/40" />
-          <div className="absolute inset-0 bg-gradient-to-r from-foreground/60 via-transparent to-transparent" />
+          <div className="absolute inset-0 bg-gradient-to-t from-foreground via-foreground/35 to-foreground/15" />
+          <div className="absolute inset-0 bg-gradient-to-r from-foreground/55 via-foreground/10 to-transparent" />
         </div>
 
-        <div className="container-wide relative z-10 pb-16 pt-32 text-surface">
+        <div className="container-wide relative z-10 pb-20 pt-24 text-surface">
           <div className="max-w-3xl animate-fade-up">
-            <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full glass-dark text-xs uppercase tracking-widest mb-6">
+            <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full glass-dark text-[11px] uppercase tracking-widest mb-5">
               <Sparkles className="h-3 w-3 text-accent-glow" />
-              India&apos;s editorial trekking companion
+              Explore · Experience · Escape
             </div>
-            <h1 className="font-display text-5xl md:text-7xl lg:text-[88px] font-semibold leading-[0.95] tracking-tight mb-6">
+            <h1 className="font-display text-4xl sm:text-5xl md:text-6xl lg:text-[72px] font-semibold leading-[0.95] tracking-tight mb-5">
               Find the right trail.<br />
               <span className="text-gradient-saffron">Walk it with confidence.</span>
             </h1>
-            <p className="text-lg md:text-xl text-surface/85 max-w-2xl leading-relaxed mb-10">
+            <p className="text-base md:text-lg text-surface/80 max-w-2xl leading-relaxed mb-8">
               Discover, compare and plan India&apos;s best treks — from the Sahyadri&apos;s monsoon ridges to high Himalayan snow passes. Trail-tested guides, real permit updates, honest cost notes.
             </p>
           </div>
@@ -208,17 +208,24 @@ export default async function Home() {
       <Section eyebrow="Free downloads" title="Planning resources, made by trekkers">
         <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
           {[
-            { title: "The complete Himalayan packing checklist", type: "PDF · 24 pages", color: "bg-gradient-saffron" },
-            { title: "First-trek prep — 4 week training plan", type: "PDF · 12 pages", color: "bg-gradient-pine" },
-            { title: "India trekking cost calculator (Notion)", type: "Notion template", color: "bg-gradient-dawn" },
+            { title: "The complete Himalayan packing checklist", type: "PDF · 24 pages", image: "/images/region-uttarakhand-snow.jpg" },
+            { title: "First-trek prep — 4 week training plan", type: "PDF · 12 pages", image: "/images/trek-summit.jpg" },
+            { title: "India trekking cost calculator (Notion)", type: "Notion template", image: "/images/region-himachal-camp.jpg" },
           ].map((r) => (
-            <div key={r.title} className="group p-6 bg-card border border-border rounded-2xl lift">
-              <div className={`h-32 rounded-xl ${r.color} mb-5 relative overflow-hidden`} />
-              <div className="text-xs uppercase tracking-widest text-muted-foreground mb-2">{r.type}</div>
-              <h3 className="font-display text-xl font-semibold leading-snug mb-4">{r.title}</h3>
-              <Link href="/products" className="w-full">
-                <Button variant="outline" size="sm" className="w-full">Download free</Button>
-              </Link>
+            <div key={r.title} className="group bg-card border border-border rounded-2xl lift overflow-hidden">
+              <div className="relative h-44 overflow-hidden">
+                <img src={r.image} alt={r.title} className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105" />
+                <div className="absolute inset-0 bg-gradient-to-t from-foreground/60 to-transparent" />
+                <div className="absolute bottom-3 left-4">
+                  <span className="text-[10px] uppercase tracking-widest text-surface/80 font-semibold bg-black/30 backdrop-blur-sm px-2.5 py-1 rounded-full">{r.type}</span>
+                </div>
+              </div>
+              <div className="p-5">
+                <h3 className="font-display text-lg font-semibold leading-snug mb-4">{r.title}</h3>
+                <Link href="/products" className="w-full">
+                  <Button variant="outline" size="sm" className="w-full">Download free</Button>
+                </Link>
+              </div>
             </div>
           ))}
         </div>
