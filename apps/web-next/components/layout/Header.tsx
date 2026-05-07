@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { Search, Bookmark, User, Menu, X, ChevronDown, Mountain, Compass, Calendar, GitCompare, Backpack, FileCheck, Wallet, ShoppingBag, MapPin, Sparkles, LogOut, LayoutDashboard } from "lucide-react";
@@ -81,6 +81,18 @@ export const Header = () => {
   const { user, logout } = useAuth();
   const router = useRouter();
 
+  // ⌘K / Ctrl+K → navigate to /search
+  useEffect(() => {
+    function handleKey(e: KeyboardEvent) {
+      if ((e.metaKey || e.ctrlKey) && e.key === "k") {
+        e.preventDefault();
+        router.push("/search");
+      }
+    }
+    window.addEventListener("keydown", handleKey);
+    return () => window.removeEventListener("keydown", handleKey);
+  }, [router]);
+
   async function handleLogout() {
     await logout();
     router.push("/");
@@ -91,10 +103,11 @@ export const Header = () => {
     <>
       <header className="sticky top-0 z-50 w-full">
         <div className="glass border-b border-border/60">
-          <div className="container-wide flex h-16 items-center gap-6">
-            <Logo />
+          <div className="container-wide flex h-16 items-center gap-4">
+            {/* compact=true hides the tagline so the logo doesn't crowd the nav */}
+            <Logo compact />
 
-            <nav className="hidden lg:flex items-center gap-1 ml-2">
+            <nav className="hidden lg:flex items-center gap-0.5">
               {primaryLinks.map((link) => (
                 <div
                   key={link.to}
@@ -103,10 +116,10 @@ export const Header = () => {
                 >
                   <Link
                     href={link.to}
-                    className={`px-3 py-2 text-sm font-medium rounded-full transition-all flex items-center gap-1 ${
+                    className={`px-2.5 py-2 text-sm font-medium rounded-full transition-all flex items-center gap-1 whitespace-nowrap ${
                       pathname === link.to || pathname.startsWith(link.to + "/")
-                        ? "text-accent"
-                        : "text-foreground/80 hover:text-foreground hover:bg-muted"
+                        ? "text-accent bg-accent/8"
+                        : "text-foreground/75 hover:text-foreground hover:bg-muted"
                     }`}
                   >
                     {link.label}
@@ -118,10 +131,14 @@ export const Header = () => {
 
             <div className="flex-1" />
 
-            <button className="hidden md:flex items-center gap-2 px-4 h-10 rounded-full border border-border bg-surface/60 text-sm text-muted-foreground hover:border-foreground/30 transition-all min-w-[200px]">
-              <Search className="h-4 w-4" />
-              <span>Search treks, regions…</span>
-              <kbd className="ml-auto text-[10px] font-mono bg-muted px-1.5 py-0.5 rounded border border-border">⌘K</kbd>
+            {/* Functional search button — navigates to /search */}
+            <button
+              onClick={() => router.push("/search")}
+              className="hidden md:flex items-center gap-2 px-3.5 h-9 rounded-full border border-border bg-surface/60 text-sm text-muted-foreground hover:border-accent/40 hover:text-foreground transition-all min-w-[160px]"
+            >
+              <Search className="h-3.5 w-3.5 flex-shrink-0" />
+              <span className="truncate">Search treks, regions…</span>
+              <kbd className="ml-auto text-[10px] font-mono bg-muted px-1.5 py-0.5 rounded border border-border flex-shrink-0">⌘K</kbd>
             </button>
 
             <div className="flex items-center gap-1">
@@ -231,7 +248,10 @@ export const Header = () => {
               </button>
             </div>
             <div className="p-5">
-              <button className="w-full flex items-center gap-2 px-4 h-12 rounded-full border border-border bg-surface text-sm text-muted-foreground">
+              <button
+                onClick={() => { setMobileOpen(false); router.push("/search"); }}
+                className="w-full flex items-center gap-2 px-4 h-12 rounded-full border border-border bg-surface text-sm text-muted-foreground hover:border-accent/40 transition-colors"
+              >
                 <Search className="h-4 w-4" />
                 <span>Search treks, regions…</span>
               </button>

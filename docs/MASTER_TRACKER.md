@@ -100,6 +100,16 @@ All V0 foundations are shipped. The stack is live locally with:
 | Footer newsletter — bg-foreground/40 (invisible) → bg-white/[0.07] border-white/20; pt-36 separates from mountain SVG | done |
 | Search — Fuse.js fuzzy matching (threshold 0.35) + autocomplete dropdown suggestions + no-results improvement | done |
 | PRELAUNCH_CHECKLIST.md — comprehensive audit: 8 sections, 80+ items across BE/FE/Admin/Gaps/Production/Integrations/Testing | done |
+| Header nav — compact Logo (tagline hidden); search bar functional (onClick + ⌘K → /search); px-2.5 nav items; gap-4 | done |
+| Compare section — responsive: heading text-2xl sm:text-3xl; card p-3 md:p-4; text-sm md:text-base; no mobile overflow | done |
+
+### Pre-Launch Sprint — Nav + Compare responsive (current commit)
+Status: done
+What is done:
+- `components/brand/Logo.tsx` — added `compact` prop; when compact=true, tagline div is not rendered (used in Header to prevent nav crowding)
+- `components/layout/Header.tsx` — Logo now receives `compact` prop; search button: `onClick={() => router.push("/search")}` — fully functional; ⌘K/Ctrl+K keyboard shortcut via `useEffect` → `router.push("/search")`; mobile drawer search button also navigates on click; nav item padding `px-3`→`px-2.5`, gap `gap-6`→`gap-4`; search bar `min-w-[200px]`→`min-w-[160px]`, h-10→h-9; `useEffect` import added
+- `app/(public)/page.tsx` — compare section: heading `text-4xl md:text-5xl`→`text-2xl sm:text-3xl md:text-4xl` (no overflow on narrow mobile); "Kedarkantha or Brahmatal? Hampta or Bhrigu?" rewritten as `Kedarkantha vs Brahmatal?<br/>Hampta vs Bhrigu?` (natural line break); buttons sm size; card padding `p-5`→`p-3 md:p-4`; card font `text-lg`→`text-sm md:text-base`; card gap `gap-3`→`gap-2 md:gap-3`; `a` and `b` rendered as separate divs (no br overflow)
+- 178/178 static pages; build clean
 
 ### Pre-Launch Sprint — Logo + Search + Hero Height + Audit (current commit)
 Status: done

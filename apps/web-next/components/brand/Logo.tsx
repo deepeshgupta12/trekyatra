@@ -3,6 +3,8 @@ import Link from "next/link";
 interface LogoProps {
   variant?: "dark" | "light";
   className?: string;
+  /** Pass compact to hide the tagline — use in space-constrained headers */
+  compact?: boolean;
 }
 
 // PNG logo is at /public/images/Logo_Trekyatra.png — used directly below.
@@ -60,7 +62,7 @@ function LogoMark({ size = 42 }: { size?: number }) {
   );
 }
 
-export const Logo = ({ variant = "dark", className = "" }: LogoProps) => {
+export const Logo = ({ variant = "dark", className = "", compact = false }: LogoProps) => {
   const isLight = variant === "light";
   return (
     <Link href="/" className={`flex items-center gap-2 group ${className}`}>
@@ -83,13 +85,15 @@ export const Logo = ({ variant = "dark", className = "" }: LogoProps) => {
         >
           Trek<span className="text-orange-500">yatra</span>
         </div>
-        <div
-          className={`text-[8px] uppercase tracking-[0.22em] font-semibold mt-0.5 hidden sm:block ${
-            isLight ? "text-white/50" : "text-[#166534]/80"
-          }`}
-        >
-          Explore. Dream. Discover.
-        </div>
+        {!compact && (
+          <div
+            className={`text-[8px] uppercase tracking-[0.22em] font-semibold mt-0.5 hidden sm:block ${
+              isLight ? "text-white/50" : "text-[#166534]/80"
+            }`}
+          >
+            Explore. Dream. Discover.
+          </div>
+        )}
       </div>
     </Link>
   );

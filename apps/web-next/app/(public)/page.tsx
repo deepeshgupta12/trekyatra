@@ -184,28 +184,50 @@ export default async function Home() {
       </Section>
 
       {/* COMPARISON CTA */}
-      <section className="py-16 md:py-24 bg-gradient-pine text-surface relative overflow-hidden">
+      <section className="py-12 md:py-20 bg-gradient-pine text-surface relative overflow-hidden">
         <div className="absolute inset-0 opacity-10">
           <svg width="100%" height="100%" viewBox="0 0 1200 600" preserveAspectRatio="none">
             <path d="M0,400 L120,340 L240,360 L360,300 L480,340 L600,260 L720,310 L840,250 L960,320 L1080,260 L1200,310 L1200,600 L0,600 Z" fill="hsl(var(--accent))" />
           </svg>
         </div>
-        <div className="container-wide relative grid lg:grid-cols-2 gap-12 items-center">
+        <div className="container-wide relative grid lg:grid-cols-2 gap-8 lg:gap-12 items-center">
           <div>
-            <div className="text-xs uppercase tracking-[0.25em] text-accent-glow mb-4">Decision-grade comparisons</div>
-            <h2 className="font-display text-4xl md:text-5xl font-semibold leading-tight mb-6">Kedarkantha or Brahmatal? Hampta or Bhrigu?</h2>
-            <p className="text-surface/80 text-lg leading-relaxed mb-8 max-w-xl">Our side-by-side comparisons score difficulty, scenery, snow probability, beginner-fit, cost, and logistics.</p>
-            <div className="flex gap-3">
-              <Link href="/compare"><Button variant="hero" size="lg">Browse comparisons</Button></Link>
-              <Link href="/explore"><Button variant="glass" size="lg">Explore all treks</Button></Link>
+            <div className="text-xs uppercase tracking-[0.25em] text-accent-glow mb-3">Decision-grade comparisons</div>
+            {/* Constrained heading — no overflow on any viewport */}
+            <h2 className="font-display text-2xl sm:text-3xl md:text-4xl font-semibold leading-tight mb-4">
+              Kedarkantha vs Brahmatal?<br className="hidden sm:block" /> Hampta vs Bhrigu?
+            </h2>
+            <p className="text-surface/80 text-base leading-relaxed mb-6 max-w-xl">
+              Side-by-side comparisons scoring difficulty, scenery, snow probability, beginner-fit, cost, and logistics.
+            </p>
+            <div className="flex flex-wrap gap-3">
+              <Link href="/compare"><Button variant="hero" size="sm">Browse comparisons</Button></Link>
+              <Link href="/explore"><Button variant="glass" size="sm">Explore all treks</Button></Link>
             </div>
           </div>
-          <div className="grid grid-cols-2 gap-3">
-            {[["Kedarkantha", "Brahmatal"], ["Hampta Pass", "Bhrigu Lake"], ["Valley of Flowers", "Hampta Pass"], ["Kashmir Lakes", "Sandakphu"]].map(([a, b]) => (
-              <Link key={a + b} href="/compare" className="glass-dark rounded-2xl p-5 hover:bg-surface/10 transition-colors">
-                <div className="text-xs uppercase tracking-widest text-accent-glow mb-2">vs</div>
-                <div className="font-display text-lg font-semibold leading-tight">{a}<br /><span className="text-surface/60 text-sm font-normal font-sans">vs</span><br />{b}</div>
-                <ChevronRight className="h-4 w-4 mt-3 text-accent" />
+
+          {/* Comparison cards — 2 cols on all sizes, smaller text + padding on mobile */}
+          <div className="grid grid-cols-2 gap-2 md:gap-3 mt-6 lg:mt-0">
+            {[
+              ["Kedarkantha", "Brahmatal"],
+              ["Hampta Pass", "Bhrigu Lake"],
+              ["Valley of Flowers", "Hampta Pass"],
+              ["Kashmir Lakes", "Sandakphu"],
+            ].map(([a, b]) => (
+              <Link
+                key={a + b}
+                href="/compare"
+                className="glass-dark rounded-xl p-3 md:p-4 hover:bg-surface/10 transition-colors"
+              >
+                <div className="text-[10px] uppercase tracking-widest text-accent-glow mb-1.5">vs</div>
+                <div className="font-display text-sm md:text-base font-semibold leading-snug">
+                  {a}
+                </div>
+                <div className="text-surface/55 text-xs font-normal font-sans my-1">vs</div>
+                <div className="font-display text-sm md:text-base font-semibold leading-snug">
+                  {b}
+                </div>
+                <ChevronRight className="h-3.5 w-3.5 mt-2 text-accent" />
               </Link>
             ))}
           </div>

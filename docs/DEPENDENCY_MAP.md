@@ -793,3 +793,8 @@ Before editing any backend file:
 - `apps/web-next/app/(public)/search/page.tsx` — REWRITTEN: Fuse.js fuzzy search (trekFuse/guideFuse/suggestionFuse instances); autocomplete dropdown; outside-click/Escape dismiss; no-results quick suggestions; blast radius: LOW (leaf page)
 - `apps/web-next/package.json` — UPDATED: fuse.js@^7.3.0 added; blast radius: LOW (new dep, build-time only)
 - `docs/PRELAUNCH_CHECKLIST.md` — REWRITTEN: comprehensive 8-section audit (80+ items); blast radius: LOW (documentation)
+
+### Header Nav + Compare Responsive blast radius
+- `apps/web-next/components/brand/Logo.tsx` — UPDATED: compact prop added (hides tagline); blast radius: LOW (additive prop, default false preserves existing behaviour)
+- `apps/web-next/components/layout/Header.tsx` — UPDATED: Logo compact, search functional (onClick+⌘K→/search), mobile search functional, nav px-2.5, useEffect import; blast radius: MEDIUM (header on every public page — visual + functional fix only)
+- `apps/web-next/app/(public)/page.tsx` — UPDATED: compare section fully responsive (heading text-2xl→sm:text-3xl→md:text-4xl, card p-3 md:p-4, text-sm md:text-base, no overflow); blast radius: LOW (leaf homepage)

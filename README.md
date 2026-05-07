@@ -234,6 +234,8 @@ trekyatra/
 | Footer newsletter card — visible `bg-white/[0.07]`; `pt-36` separates from mountain SVG | Done |
 | Search — Fuse.js 7.3.0 fuzzy matching + autocomplete dropdown + semantic AI for long queries | Done |
 | Comprehensive pre-launch audit — 80+ item checklist across BE/FE/Admin/Gaps/Prod/Integrations | Done |
+| Header nav — compact Logo (no tagline in header), functional search bar (click + ⌘K), tighter nav | Done |
+| Compare section — fully responsive (text-2xl→md:text-4xl heading, p-3 cards, text-sm md:text-base) | Done |
 
 ### Admin CMS
 | Feature | Status |
