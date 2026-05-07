@@ -1,10 +1,12 @@
 import Link from "next/link";
-import { Search, MapPin, Calendar, Mountain, Sparkles, ArrowRight, Star, Shield, FileCheck, Backpack, Wallet, Compass, ChevronRight, Clock } from "lucide-react";
+import { Mountain, Sparkles, ArrowRight, Star, Shield, FileCheck, Backpack, Wallet, Compass, ChevronRight, Clock } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { TrekCard } from "@/components/trek/TrekCard";
 import { fetchTreks } from "@/lib/trekApi";
 import SchemaInjector from "@/components/seo/SchemaInjector";
 import { buildWebSiteSchema } from "@/lib/schema";
+import HomeSearchBar from "@/components/home/HomeSearchBar";
+import PersonalisedFeed from "@/components/content/PersonalisedFeed";
 
 const regions = [
   { name: "Himachal Pradesh", count: "48 treks", image: "/images/region-himachal-camp.jpg", slug: "himachal" },
@@ -53,43 +55,7 @@ export default async function Home() {
             </p>
           </div>
 
-          <div className="relative max-w-4xl animate-fade-up" style={{ animationDelay: "0.15s" }}>
-            <div className="absolute -inset-2 bg-accent/20 blur-2xl rounded-3xl" />
-            <div className="relative glass rounded-2xl p-3 md:p-4 shadow-elevated">
-              <div className="grid grid-cols-1 md:grid-cols-[1fr_auto_1fr_auto_1fr_auto] gap-1 items-center">
-                <div className="flex items-center gap-3 px-4 py-2.5">
-                  <Search className="h-4 w-4 text-muted-foreground" />
-                  <input placeholder="Trek name or keyword" className="bg-transparent outline-none w-full text-sm placeholder:text-muted-foreground" />
-                </div>
-                <div className="hidden md:block w-px h-8 bg-border" />
-                <div className="flex items-center gap-3 px-4 py-2.5">
-                  <MapPin className="h-4 w-4 text-muted-foreground" />
-                  <select className="bg-transparent outline-none w-full text-sm appearance-none">
-                    <option>Any region</option>
-                    <option>Himachal</option><option>Uttarakhand</option><option>Kashmir</option><option>Sahyadris</option>
-                  </select>
-                </div>
-                <div className="hidden md:block w-px h-8 bg-border" />
-                <div className="flex items-center gap-3 px-4 py-2.5">
-                  <Calendar className="h-4 w-4 text-muted-foreground" />
-                  <select className="bg-transparent outline-none w-full text-sm appearance-none">
-                    <option>Any season</option>
-                    <option>Winter (Dec–Feb)</option><option>Monsoon (Jun–Sep)</option><option>Summer (Mar–Jun)</option>
-                  </select>
-                </div>
-                <Button variant="hero" size="lg" className="md:ml-2">
-                  <Search className="h-4 w-4" /> Discover
-                </Button>
-              </div>
-            </div>
-            <div className="flex flex-wrap gap-2 mt-5">
-              {["Beginner snow treks", "Weekend treks near Mumbai", "December in Uttarakhand", "Monsoon Sahyadri", "First Himalayan trek"].map((q) => (
-                <button key={q} className="text-xs px-3.5 py-1.5 rounded-full glass-dark text-surface/90 hover:bg-accent hover:text-accent-foreground transition-all">
-                  {q}
-                </button>
-              ))}
-            </div>
-          </div>
+          <HomeSearchBar />
         </div>
 
         <div className="absolute bottom-0 left-0 right-0">
@@ -189,7 +155,9 @@ export default async function Home() {
                 <span className="flex items-center gap-1.5"><Clock className="h-3.5 w-3.5" /> 12 min read</span>
                 <span className="flex items-center gap-1.5"><Star className="h-3.5 w-3.5 text-accent fill-accent" /> Updated last week</span>
               </div>
-              <Button variant="default" size="lg">Read the guide <ArrowRight className="h-4 w-4" /></Button>
+              <Link href="/trek/kedarkantha">
+                <Button variant="default" size="lg">Read the guide <ArrowRight className="h-4 w-4" /></Button>
+              </Link>
             </div>
           </div>
         </div>
@@ -200,6 +168,11 @@ export default async function Home() {
         <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
           {monsoon.slice(0, 3).map(t => <TrekCard key={t.slug} trek={t} />)}
         </div>
+      </Section>
+
+      {/* PERSONALISED FEED */}
+      <Section eyebrow="For you" title="Treks matched to your interests">
+        <PersonalisedFeed limit={6} />
       </Section>
 
       {/* COMPARISON CTA */}
@@ -243,11 +216,23 @@ export default async function Home() {
               <div className={`h-32 rounded-xl ${r.color} mb-5 relative overflow-hidden`} />
               <div className="text-xs uppercase tracking-widest text-muted-foreground mb-2">{r.type}</div>
               <h3 className="font-display text-xl font-semibold leading-snug mb-4">{r.title}</h3>
-              <Button variant="outline" size="sm" className="w-full">Download free</Button>
+              <Link href="/products" className="w-full">
+                <Button variant="outline" size="sm" className="w-full">Download free</Button>
+              </Link>
             </div>
           ))}
         </div>
       </Section>
+
+      {/* OPERATORS */}
+      <section className="py-16 md:py-20 bg-surface-muted">
+        <div className="container-wide text-center">
+          <div className="text-xs uppercase tracking-[0.25em] text-accent mb-3">Vetted operators</div>
+          <h2 className="font-display text-3xl md:text-4xl font-semibold leading-tight mb-4">Find your guide. Trek with confidence.</h2>
+          <p className="text-muted-foreground text-lg max-w-xl mx-auto mb-8">Browse rated operators across Uttarakhand, Himachal, and beyond. Send a free inquiry — response within 48 hours.</p>
+          <Link href="/operators"><Button variant="hero" size="lg">Browse operators <ArrowRight className="h-4 w-4" /></Button></Link>
+        </div>
+      </section>
 
       {/* FINAL CTA */}
       <section className="py-20">
