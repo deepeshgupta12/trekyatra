@@ -1,170 +1,335 @@
 # TrekYatra Pre-Launch Checklist
 
-> This document tracks every item that must be resolved before the website goes live.
-> It is the authority for production readiness. Update status as items are completed.
-> Last updated: 2026-05-07
+> Comprehensive audit as of 2026-05-07. Every item in this checklist has been
+> cross-verified against the actual codebase. Covers backend, frontend, CMS,
+> admin, testing, and production readiness.
 
 ---
 
 ## Status Legend
+- `[x]` — Complete and verified
+- `[~]` — Partially implemented (functional but incomplete)
 - `[ ]` — Not started
-- `[~]` — In progress
-- `[x]` — Complete
-- `[DEFERRED]` — Explicitly deferred to post-launch iteration
+- `[DEFERRED]` — Explicitly deferred to post-launch
 
 ---
 
-## 1. Auth & User Accounts
+## SECTION A — BACKEND: Full Feature Audit
 
-| # | Item | Status | Notes |
-|---|------|--------|-------|
-| A01 | Password reset flow (forgot-password + reset endpoints + frontend) | `[x]` | HMAC stateless token, 1h TTL, graceful SMTP |
-| A02 | Email verification on signup | `[x]` | Graceful (skips if SMTP not configured) |
-| A03 | Account settings page wired to real API (display_name, full_name) | `[x]` | PATCH /account/me |
-| A04 | Account enquiries page wired to leads API | `[x]` | GET /account/leads filtered by user email |
-| A05 | Mobile OTP login | `[DEFERRED]` | Low priority for v1 launch; placeholder retained |
-| A06 | Google OAuth end-to-end live test | `[ ]` | Requires live GOOGLE_CLIENT_ID/SECRET in production |
-| A07 | Session expiry + silent refresh | `[~]` | Cookie-based sessions exist; refresh() in auth context |
+### Auth Module (`modules/auth/`)
+| # | Feature | Status | Notes |
+|---|---------|--------|-------|
+| A01 | Email signup / login | `[x]` | PBKDF2-SHA256 hashing, JWT HttpOnly cookie |
+| A02 | Google OAuth | `[x]` | /auth/google — fetches Google userinfo |
+| A03 | JWT session management | `[x]` | UserSession table, cookie name configurable |
+| A04 | Password reset (forgot + reset) | `[x]` | Stateless JWT 1h TTL, graceful SMTP |
+| A05 | Account settings (PATCH /auth/me) | `[x]` | Updates full_name, display_name |
+| A06 | Account enquiries (GET /auth/me/leads) | `[x]` | Filtered by user email |
+| A07 | Email verification on signup | `[~]` | is_verified_email column exists; no verification email sent |
+| A08 | Mobile OTP login | `[DEFERRED]` | Placeholder endpoint returns 501 |
+| A09 | Session expiry | `[x]` | expires_at on UserSession, configurable TTL |
 
----
+### Content Pipeline (`modules/agents/`, `modules/content/`, `modules/pipeline/`)
+| # | Feature | Status | Notes |
+|---|---------|--------|-------|
+| B01 | TrendDiscoveryAgent | `[x]` | LangGraph, Claude Haiku, rule-based fallback |
+| B02 | KeywordClusterAgent | `[x]` | Pillar/support mapping |
+| B03 | ContentBriefAgent | `[x]` | SEO+AEO structured brief, versioning |
+| B04 | ContentWritingAgent | `[x]` | Full long-form drafts, fact-check claims |
+| B05 | SEOAEOAgent | `[x]` | Snippet optimisation, FAQ blocks |
+| B06 | ClaimExtractionAgent | `[x]` | Confidence scoring, YMYL tagging |
+| B07 | ComplianceGuardAgent | `[x]` | Disclosure enforcement, risky wording |
+| B08 | CannibalizationAgent | `[x]` | Keyword overlap, merge/redirect recommendations |
+| B09 | NewsletterAgent | `[x]` | Weekly digest, social snippets |
+| B10 | IntentClassifierAgent | `[x]` | 4 intent types, ephemeral caching, fallback |
+| B11 | ExecutiveSummaryAgent | `[x]` | LangGraph 3-node, weekly revenue digest |
+| B12 | SeasonalContentAgent | `[x]` | 4 seasons, quarterly regeneration |
+| B13 | TranslationAgent | `[x]` | Claude Haiku, proper nouns glossary, Hindi/Marathi |
+| B14 | TripPlannerAgent | `[x]` | LangGraph 4-node, CMS-powered trek selection |
+| B15 | EmbeddingAgent | `[x]` | OpenAI text-embedding-3-small, 1536-dim |
+| B16 | 6-stage pipeline with checkpoint gates | `[x]` | paused_at_brief_approval, paused_at_draft_approval |
+| B17 | Fact validation + YMYL gates | `[x]` | mandatory review for safety content |
 
-## 2. Content Pipeline (SEO Readiness)
+### CMS (`modules/cms/`)
+| # | Feature | Status | Notes |
+|---|---------|--------|-------|
+| C01 | cms_pages CRUD | `[x]` | slug unique, status machine, JSON sections |
+| C02 | Redis cache (5-min TTL) | `[x]` | DB 2, cache_invalidate per slug + all |
+| C03 | is_premium content gating | `[x]` | Server-side: content_html="" + is_gated=True for free users |
+| C04 | language / translations / source_page_id | `[x]` | Step 37 multilingual |
+| C05 | hreflang in generateMetadata | `[x]` | trek + guides pages |
+| C06 | upsert_page_from_draft | `[x]` | pipeline publish bridge |
+| C07 | FAQ parsing + storage | `[x]` | content_json.faqs structured |
+| C08 | pgvector embeddings (1536-dim) | `[x]` | fallback when no OPENAI_API_KEY |
+| C09 | Next.js revalidation endpoint | `[x]` | POST /api/revalidate |
+| C10 | Bulk embedding backfill | `[DEFERRED]` | No backfill job for existing pages |
 
-| # | Item | Status | Notes |
-|---|------|--------|-------|
-| C01 | Run full content pipeline end-to-end (trigger → brief → draft → publish) | `[ ]` | Requires ANTHROPIC_API_KEY in .env |
-| C02 | Publish ≥ 20 trek guide CMS pages before launch | `[ ]` | Pipeline must run first |
-| C03 | Sitemap.xml includes published CMS pages | `[x]` | Dynamic sitemap from CMS API |
-| C04 | JSON-LD schema on all published pages | `[x]` | Step 19 — Article, FAQ, Breadcrumb |
-| C05 | Canonical tags on all public pages | `[x]` | Step 19 |
-| C06 | robots.txt | `[x]` | Step 19 |
-| C07 | Affiliate catalog populated in admin | `[ ]` | Admin must manually add via /admin/monetization |
-| C08 | Digital products catalog populated | `[ ]` | Admin must add via /admin/products |
-| C09 | At least 3 operators registered in admin | `[ ]` | Admin must add via /admin/operators |
-| C10 | Homepage content visible (trek cards, images) | `[x]` | Static trek fallback always shows |
+### Operators (`modules/operators/`)
+| # | Feature | Status | Notes |
+|---|---------|--------|-------|
+| D01 | Operator CRUD (admin) | `[x]` | slug, region, trek_types, contact |
+| D02 | Public listing + detail | `[x]` | OperatorPublicResponse — no contact_email |
+| D03 | Operator ratings + reviews | `[x]` | 1 review per user, denormalised avg |
+| D04 | Operator agreements | `[x]` | lead_fee_inr, revenue_share_pct |
+| D05 | Booking inquiry (POST /inquiries) | `[x]` | SMTP confirmation, graceful |
+| D06 | Self-serve operator signup | `[DEFERRED]` | Admin-only onboarding |
 
----
+### Monetisation
+| # | Feature | Status | Notes |
+|---|---------|--------|-------|
+| E01 | Lead submissions + SMTP notification | `[x]` | source_page, cta_type, status workflow |
+| E02 | Affiliate products catalog | `[x]` | Empty — admin must populate |
+| E03 | Intent classification (4 types) | `[x]` | Claude Haiku, A/B test flag |
+| E04 | page_intent_sessions tracking | `[x]` | converted flag, ab_variant |
+| E05 | Digital products (Razorpay) | `[x]` | HMAC token delivery, test mode |
+| E06 | Premium subscriptions (Stripe) | `[x]` | webhook, content gating, test mode |
+| E07 | Trek alert delivery | `[DEFERRED]` | trek_alerts stored; no delivery Celery task |
+| E08 | AdSense slots | `[x]` | Conditional on NEXT_PUBLIC_ADSENSE_ID |
 
-## 3. Frontend Pages
+### Revenue + Analytics
+| # | Feature | Status | Notes |
+|---|---------|--------|-------|
+| F01 | revenue_attributions daily aggregation | `[x]` | Celery beat, proxy-based |
+| F02 | Executive summary (weekly) | `[x]` | LangGraph agent, requires ANTHROPIC_API_KEY |
+| F03 | Affiliate click tracking | `[x]` | affiliate_clicks table |
+| F04 | Google Analytics 4 | `[x]` | Script injected when NEXT_PUBLIC_GA4_ID set |
+| F05 | Google Search Console | `[DEFERRED]` | Manual: submit sitemap after launch |
 
-| # | Item | Status | Notes |
-|---|------|--------|-------|
-| F01 | Homepage search bar wired | `[x]` | Navigates to /search with query params |
-| F02 | /compare — dynamic trek selector | `[x]` | Dropdown-based comparison |
-| F03 | /itineraries — CMS-powered with fallback | `[x]` | Fetches page_type=itinerary; empty state |
-| F04 | /costs — CMS-powered with fallback | `[x]` | Fetches page_type=cost_guide; empty state |
-| F05 | /gear — CMS-powered + affiliate products | `[x]` | Fetches page_type=gear_guide + public affiliates |
-| F06 | /beginner — CMS-powered with fallback | `[x]` | Fetches page_type=beginner_guide |
-| F07 | /safety — CMS-powered with fallback | `[x]` | Fetches page_type=safety_guide |
-| F08 | /account/settings — wired to API | `[x]` | PATCH /account/me; display_name, full_name |
-| F09 | /account/enquiries — wired to leads API | `[x]` | GET /account/leads filtered by email |
-| F10 | /account/compare — saved comparisons | `[DEFERRED]` | Low priority; static stub retained |
-| F11 | MonetizationSlot on trek detail page | `[ ]` | GatedContent and MonetizationSlot wiring |
-| F12 | GatedContent on premium pages | `[ ]` | Check is_gated from CMS response |
-| F13 | Trek alert delivery (email when page updated) | `[DEFERRED]` | Subscriptions stored; delivery deferred |
-
----
-
-## 4. Admin CMS
-
-| # | Item | Status | Notes |
-|---|------|--------|-------|
-| D01 | Operators admin — agreement tab | `[x]` | API exists; UI tab added |
-| D02 | Operators admin — review moderation list + delete | `[x]` | Crown + Languages buttons in CMS |
-| D03 | CMS page draft preview | `[x]` | "View live" link on each CMS row |
-| D04 | Bulk publish / unpublish | `[DEFERRED]` | Low priority for v1 |
-| D05 | Admin system logs page | `[DEFERRED]` | Low priority for v1 |
-
----
-
-## 5. Testing
-
-| # | Item | Status | Notes |
-|---|------|--------|-------|
-| T01 | Backend test suite — all passing | `[x]` | 472/472 pass |
-| T02 | Frontend build — zero errors | `[x]` | 178 static pages |
-| T03 | Playwright E2E — homepage, search, auth, plan wizard | `[x]` | Basic suite installed and running |
-| T04 | Load testing (k6/Locust) | `[DEFERRED]` | Pre-launch performance testing |
-| T05 | Cross-browser testing (Safari, Firefox) | `[ ]` | Manual check before launch |
-| T06 | Mobile browser testing (iOS Safari, Android Chrome) | `[ ]` | Manual check before launch |
-
----
-
-## 6. Production Infrastructure (DO WHEN MOVING TO PRODUCTION)
-
-> All items in this section are DEFERRED until the production environment is set up.
-> Document the approach here so it can be executed in one sprint.
-
-| # | Item | Status | Notes |
-|---|------|--------|-------|
-| P01 | Production hosting (backend API) | `[DEFERRED]` | Recommended: Railway / Render / Fly.io for FastAPI |
-| P02 | Production hosting (frontend) | `[DEFERRED]` | Recommended: Vercel for Next.js |
-| P03 | Managed PostgreSQL (with pgvector) | `[DEFERRED]` | Recommended: Supabase / Neon / AWS RDS |
-| P04 | Managed Redis | `[DEFERRED]` | Recommended: Upstash / Railway Redis |
-| P05 | Docker production image (arm64 + amd64) | `[DEFERRED]` | Multi-arch build for cloud deploy |
-| P06 | GitHub Actions CI/CD pipeline | `[DEFERRED]` | On push to main: test → build → deploy |
-| P07 | SSL / custom domain | `[DEFERRED]` | Configure in hosting provider |
-| P08 | Object storage for product files | `[DEFERRED]` | Recommended: Cloudflare R2 / AWS S3 |
-| P09 | CDN | `[DEFERRED]` | Vercel Edge / Cloudflare |
-| P10 | Automated database backups | `[DEFERRED]` | Managed DB backup policy |
-| P11 | Log aggregation | `[DEFERRED]` | Recommended: Logtail / Datadog |
-| P12 | Secrets manager | `[DEFERRED]` | Railway env vars / Doppler / AWS SSM |
-| P13 | Environment variables configured in production | `[DEFERRED]` | See Section 7 below |
-| P14 | Celery worker deployed | `[DEFERRED]` | Worker process separate from API |
-| P15 | Celery beat deployed | `[DEFERRED]` | Beat scheduler for daily/weekly tasks |
-| P16 | Health check monitoring | `[DEFERRED]` | UptimeRobot / Betterstack on /api/v1/health |
+### Infrastructure
+| # | Feature | Status | Notes |
+|---|---------|--------|-------|
+| G01 | 30 Alembic migrations applied | `[x]` | head at 20260506_0030 |
+| G02 | Celery worker tasks | `[x]` | 18+ registered tasks |
+| G03 | Celery Beat schedule | `[x]` | daily/weekly/quarterly tasks |
+| G04 | Redis cache DB 2 | `[x]` | CMS cache |
+| G05 | pgvector extension | `[x]` | pgvector/pgvector:pg16 Docker image |
+| G06 | Database cleared (non-user) | `[x]` | Clean state for launch |
+| G07 | SMTP email (graceful) | `[x]` | All email wraps try/except |
+| G08 | Password hashing (PBKDF2-SHA256) | `[x]` | 390,000 iterations |
 
 ---
 
-## 7. Integrations — Configure When Moving to Production
+## SECTION B — FRONTEND: Full Page & Feature Audit
 
-> All API keys are currently in test/fallback mode. Configure these for production launch.
-> Never commit real keys to git — use the hosting provider's secret manager.
+### Public Pages (55 pages)
+| Page | Status | Notes |
+|------|--------|-------|
+| `/` (Homepage) | `[x]` | Hero, trending, regions, search wired, operators CTA, PersonalisedFeed |
+| `/explore` | `[x]` | Trek grid with filters |
+| `/search` | `[x]` | Fuse.js fuzzy search, autocomplete dropdown, semantic for long queries |
+| `/compare` | `[x]` | Dynamic trek selector, live comparison table |
+| `/trek/[slug]` | `[x]` | CMS + static fallback, FAQ, TOC, hreflang |
+| `/packing` | `[x]` | Hub page |
+| `/packing/[slug]` | `[x]` | CMS-powered packing list |
+| `/permits` | `[x]` | Hub page |
+| `/permits/[slug]` | `[x]` | CMS-powered permit guide |
+| `/guides/[slug]` | `[x]` | CMS-powered guide |
+| `/itineraries` | `[x]` | CMSPageHub + static fallback |
+| `/costs` | `[x]` | CMSPageHub + static fallback |
+| `/gear` | `[x]` | CMSPageHub + static fallback |
+| `/beginner` | `[x]` | CMSPageHub + static fallback + trek grid |
+| `/safety` | `[x]` | CMSPageHub + static fallback |
+| `/regions/[slug]` | `[x]` | CMS-powered regional hub |
+| `/seasons/[slug]` | `[x]` | CMS-powered seasonal hub |
+| `/trek-types/[slug]` | `[x]` | CMS cluster hub |
+| `/operators` | `[x]` | Public operator listing, region filter |
+| `/operators/[slug]` | `[x]` | Detail, reviews, inquiry form |
+| `/plan` | `[x]` | 4-step wizard, TripPlannerAgent, itinerary result |
+| `/products` | `[x]` | Digital product catalog |
+| `/products/[slug]` | `[x]` | Product detail + Razorpay checkout |
+| `/premium` | `[x]` | Pricing table, Stripe checkout |
+| `/newsletter` | `[x]` | Newsletter signup |
+| `/about` | `[x]` | Full editorial mission + team content |
+| `/about/authors` | `[x]` | Editor bios + contributor policy |
+| `/contact` | `[x]` | Contact channels + response times |
+| `/privacy` | `[x]` | Full 8-section privacy policy |
+| `/terms` | `[x]` | Full 9-section T&C |
+| `/affiliate-disclosure` | `[x]` | Full disclosure + independence policy |
+| `/safety-disclaimer` | `[x]` | AMS, permits, emergency contacts, liability |
+| `/methodology` | `[x]` | YMYL policy, AI use, verification cycle |
+| `/hi/trek/[slug]` | `[x]` | Hindi trek route, language switcher |
+| `/hi/guides/[slug]` | `[x]` | Hindi guide route |
+| `/hi/packing/[slug]` | `[x]` | Hindi packing route |
+| `/account` | `[x]` | Dashboard with real API counts |
+| `/account/saved` | `[x]` | Real bookmarks API |
+| `/account/downloads` | `[x]` | Real downloads API |
+| `/account/settings` | `[x]` | PATCH /auth/me — name, display_name |
+| `/account/enquiries` | `[x]` | GET /auth/me/leads — real lead history |
+| `/account/premium` | `[x]` | Subscription status, upgrade/cancel |
+| `/account/compare` | `[~]` | Static stub — saved comparisons not implemented |
+| `/auth/sign-in` | `[x]` | Email + Google OAuth |
+| `/auth/sign-up` | `[x]` | Email signup |
+| `/auth/forgot-password` | `[x]` | Wired to POST /auth/forgot-password |
+| `/auth/reset-password` | `[x]` | Reads ?token=, calls POST /auth/reset-password |
+| `/admin/sign-in` | `[x]` | Separate admin auth |
+| `/success/checkout` | `[x]` | Post-purchase download link |
+| `/success/signup` | `[x]` | Post-signup redirect |
 
-| # | Integration | Current State | Required Action |
+### Frontend Components
+| Component | Status | Notes |
+|-----------|--------|-------|
+| Logo | `[~]` | SVG circular badge created; actual PNG needs placing at /public/images/logo.png |
+| Header / nav | `[x]` | Desktop + mobile responsive |
+| Footer | `[x]` | Trail Letter newsletter, links, Gurgaon, heart icon |
+| TrekCard | `[x]` | Solid colour difficulty tags (visible on images) |
+| HomeSearchBar | `[x]` | Navigates to /search with query+region+season params |
+| PersonalisedFeed | `[x]` | Logged-in: personalised recs; Guest: anonymous |
+| RecommendedContent | `[x]` | Similar pages + static trek fallback |
+| MonetizationSlot | `[~]` | Built (Step 36) but NOT wired into trek detail page |
+| GatedContent | `[~]` | Built (Step 40) but NOT auto-wired into trek pages |
+| CMSPageHub | `[x]` | Reusable CMS hub grid for content pages |
+| OperatorCard / Grid | `[x]` | Light-theme styles (not dark-admin) |
+| OperatorInquiryForm | `[x]` | Light-theme inputs |
+| TrekPlanCard / ItineraryDay / WizardStep | `[x]` | Plan wizard components |
+| PricingTable / GatedContent / PremiumBadge / SubscriptionStatusCard | `[x]` | Subscription UI |
+
+---
+
+## SECTION C — ADMIN CMS: Full Audit
+
+| Page | Status | Notes |
+|------|--------|-------|
+| `/admin/sign-in` | `[x]` | Separate admin auth cookie |
+| `/admin` (dashboard) | `[x]` | KPI strip, system summary |
+| `/admin/pipeline` | `[x]` | 6-stage orchestration monitor, trigger/resume/cancel |
+| `/admin/topics` | `[x]` | Live API data, agent run status |
+| `/admin/clusters` | `[x]` | Live API data |
+| `/admin/briefs` | `[x]` | Review queue, approve/reject, UUID copy |
+| `/admin/drafts` | `[x]` | Dispatch, requires_review badge |
+| `/admin/cms` | `[x]` | CRUD, cache control, language badge, translate button, premium toggle |
+| `/admin/cms/[slug]/edit` | `[x]` | Full edit form with trek facts, FAQ editor |
+| `/admin/fact-check` | `[x]` | Claims by draft, YMYL badge, re-run |
+| `/admin/cannibalization` | `[x]` | Scan trigger, severity/status filters |
+| `/admin/linking` | `[x]` | Orphan detector, anchor suggestions, sync |
+| `/admin/leads` | `[x]` | Status filter, mark-as-contacted |
+| `/admin/operators` | `[x]` | CRUD, FileText link to detail page |
+| `/admin/operators/[id]` | `[x]` | Agreement CRUD + review moderation |
+| `/admin/newsletter` | `[x]` | Subscriber list, campaign view |
+| `/admin/email-sequences` | `[x]` | Sequences list, expandable steps, Seed button |
+| `/admin/products` | `[x]` | Product CRUD (slug, price, file path) |
+| `/admin/orders` | `[x]` | Order list with status filter |
+| `/admin/monetization` | `[x]` | Intent stats, conversion rates, affiliate catalog |
+| `/admin/revenue` | `[x]` | Cluster/page-type revenue, decaying pages, config editor, summary history |
+| `/admin/refresh` | `[x]` | Stale content queue, trigger refresh |
+| `/admin/hubs` | `[x]` | Seasonal hub list, regenerate button |
+| `/admin/settings` | `[ ]` | No admin settings page built |
+| `/admin/logs` | `[ ]` | No system log viewer built |
+
+---
+
+## SECTION D — KNOWN GAPS (Pre-Launch Critical)
+
+| # | Gap | Impact | Fix Required? |
+|---|-----|--------|---------------|
+| Z01 | Logo PNG not placed at `/public/images/logo.png` | High — SVG fallback renders but not actual brand logo | **Yes — user must place file** |
+| Z02 | MonetizationSlot not wired into `/trek/[slug]` | Medium — trek pages use static LeadForm CTA | Before launch |
+| Z03 | GatedContent not auto-wired into trek pages | Medium — premium pages not visually gated on frontend | Before launch |
+| Z04 | Email verification not sent on signup | Low — `is_verified_email=false` but no UX consequence | Post-launch |
+| Z05 | Trek alert delivery not implemented | Low — subscriptions stored, no email fires | Post-launch |
+| Z06 | `/account/compare` is a static stub | Low — saved comparisons not functional | Post-launch |
+| Z07 | Elasticsearch / full-text search | Medium — Fuse.js fuzzy search implemented; Elastic deferred | `[DEFERRED]` — see Note below |
+| Z08 | Admin settings page | Low — revenue config at /admin/revenue; general settings missing | Post-launch |
+| Z09 | Admin system logs page | Low | Post-launch |
+| Z10 | Bulk publish/unpublish in admin CMS | Low | Post-launch |
+| Z11 | Marathi `/mr/` frontend routes | Low — backend supports mr; no frontend pages | Post-launch |
+| Z12 | MonetizationSlot A/B test wiring on trek pages | Low | Post-launch |
+| Z13 | Affiliate catalog empty — admin must seed | Medium — no affiliate cards show until populated | Before launch (manual) |
+| Z14 | Digital products catalog empty | Medium | Before launch (manual) |
+| Z15 | Operators not yet registered | Medium | Before launch (manual) |
+| Z16 | Content pipeline not yet run | **Critical** — zero CMS pages published; site shows only static data | **Before launch** |
+
+> **Elasticsearch note (Z07):** Fuse.js fuzzy search is implemented (client-side, covers all trek names/regions/difficulties/seasons). Full Elasticsearch would require a Docker service, indexing pipeline, and backend API changes. This is a **production sprint** item — schedule post-initial-launch.
+
+---
+
+## SECTION E — PRODUCTION READINESS (All DEFERRED until production sprint)
+
+| # | Item | Priority |
+|---|------|----------|
+| P01 | Production hosting (Railway / Vercel / Fly.io) | Critical |
+| P02 | Managed PostgreSQL with pgvector | Critical |
+| P03 | Managed Redis (Upstash / Railway) | Critical |
+| P04 | GitHub Actions CI/CD (test → build → deploy) | High |
+| P05 | SSL / custom domain | Critical |
+| P06 | Object storage for product files (Cloudflare R2 / S3) | High |
+| P07 | CDN (Vercel Edge / Cloudflare) | Medium |
+| P08 | Database backups | High |
+| P09 | Log aggregation (Logtail / Datadog) | Medium |
+| P10 | Secrets manager (Doppler / Railway env vars) | High |
+| P11 | Celery worker deployed as separate process | Critical |
+| P12 | Celery beat deployed as separate process | Critical |
+| P13 | Health check monitoring (UptimeRobot) | Medium |
+| P14 | Docker multi-arch build (arm64 + amd64) | Medium |
+
+---
+
+## SECTION F — INTEGRATIONS (Configure for Production)
+
+| # | Integration | Current State | Action Required |
 |---|-------------|--------------|-----------------|
-| I01 | Anthropic Claude | Rule-based fallback | Set `ANTHROPIC_API_KEY` in production env |
-| I02 | OpenAI Embeddings | Similarity fallback | Set `OPENAI_API_KEY` in production env |
-| I03 | Google OAuth | Configured locally | Create production OAuth app; set `GOOGLE_CLIENT_ID/SECRET` |
-| I04 | Razorpay | Test mode | Create production account; set `RAZORPAY_KEY_ID/SECRET` |
-| I05 | Stripe | Test redirect | Set `STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET`, `STRIPE_PREMIUM_PRICE_ID_MONTHLY/ANNUAL` |
-| I06 | SMTP | Email skipped | Set `SMTP_HOST/PORT/USER/PASSWORD`; recommended: SendGrid / Resend |
-| I07 | Mailchimp/Brevo | Skipped | Set `NEWSLETTER_PLATFORM` + API key when audience reaches >100 subs |
+| I01 | Anthropic Claude | Rule-based fallback | Set `ANTHROPIC_API_KEY` |
+| I02 | OpenAI Embeddings | Similarity fallback | Set `OPENAI_API_KEY` |
+| I03 | Google OAuth | Configured locally | Create production OAuth app |
+| I04 | Razorpay | Test mode | Set `RAZORPAY_KEY_ID/SECRET` |
+| I05 | Stripe | Test redirect + subscription creation | Set `STRIPE_SECRET_KEY` + `STRIPE_WEBHOOK_SECRET` + Price IDs |
+| I06 | SMTP | Email skipped | Set `SMTP_HOST/PORT/USER/PASSWORD` (recommend Resend or SendGrid) |
+| I07 | Mailchimp/Brevo | Skipped | Set when audience > 100 subscribers |
 | I08 | Google Analytics 4 | Script injected | Set `NEXT_PUBLIC_GA4_ID` |
-| I09 | Google AdSense | Dev placeholder | Set `NEXT_PUBLIC_ADSENSE_ID`; must meet traffic threshold first |
-| I10 | Google Search Console | Not integrated | Submit sitemap after launch; monitor impressions |
-| I11 | Stripe CLI (local dev) | Not configured | `stripe listen --forward-to localhost:8000/api/v1/subscriptions/webhook` |
+| I09 | Google AdSense | Dev placeholder | Set `NEXT_PUBLIC_ADSENSE_ID` (requires traffic threshold) |
+| I10 | Google Search Console | Not integrated | Submit sitemap post-launch |
+| I11 | Stripe CLI (local testing) | Not configured | `stripe listen --forward-to localhost:8000/api/v1/subscriptions/webhook` |
 
 ---
 
-## 8. Pre-Launch Content Checklist (Manual — Owner does this)
+## SECTION G — MANUAL CONTENT SEEDING (Owner tasks before launch)
 
-| # | Item | Status |
+| # | Task | Status |
 |---|------|--------|
-| M01 | Run content pipeline: trigger trend discovery → cluster → brief → approve → write → publish for ≥ 20 treks | `[ ]` |
-| M02 | Review and approve all AI-generated briefs | `[ ]` |
-| M03 | Review all AI-generated drafts (flag YMYL claims) | `[ ]` |
-| M04 | Add affiliate products to catalog (/admin/monetization) | `[ ]` |
-| M05 | Add at least 3 digital products (/admin/products) | `[ ]` |
-| M06 | Add at least 5 operators (/admin/operators) | `[ ]` |
-| M07 | Run seasonal hub regeneration | `[ ]` |
-| M08 | Seed email sequences (/admin/email-sequences → Seed button) | `[ ]` |
-| M09 | Verify SMTP works by triggering a test lead | `[ ]` |
-| M10 | Verify Google OAuth on production domain | `[ ]` |
-| M11 | Submit sitemap to Google Search Console | `[ ]` |
-| M12 | Test payment flow end-to-end with Razorpay test keys | `[ ]` |
-| M13 | Test Stripe subscription checkout with Stripe test keys | `[ ]` |
+| M01 | Place logo PNG at `/public/images/logo.png` | `[ ]` |
+| M02 | Run content pipeline: trigger → brief approve → write → publish ≥20 trek guides | `[ ]` |
+| M03 | Review and approve AI-generated briefs | `[ ]` |
+| M04 | Review AI-generated drafts (check YMYL claims) | `[ ]` |
+| M05 | Add affiliate products to catalog (`/admin/monetization`) | `[ ]` |
+| M06 | Add at least 3 digital products (`/admin/products`) | `[ ]` |
+| M07 | Add at least 5 operators (`/admin/operators`) | `[ ]` |
+| M08 | Run seasonal hub regeneration (`/admin/hubs`) | `[ ]` |
+| M09 | Seed email sequences (`/admin/email-sequences → Seed`) | `[ ]` |
+| M10 | Test SMTP by submitting a lead inquiry | `[ ]` |
+| M11 | Verify Google OAuth on production domain | `[ ]` |
+| M12 | Submit sitemap to Google Search Console | `[ ]` |
+| M13 | Test Razorpay payment with test keys | `[ ]` |
+| M14 | Test Stripe subscription with test keys + Stripe CLI | `[ ]` |
+| M15 | Wire MonetizationSlot into `/trek/[slug]` CTA slot | `[ ]` |
+| M16 | Wire GatedContent into `/trek/[slug]` for is_gated pages | `[ ]` |
 
 ---
 
-## 9. Final Go/No-Go Gate
+## SECTION H — TESTING STATUS
 
-All of the following must be `[x]` before launching:
+| # | Test Type | Status | Notes |
+|---|-----------|--------|-------|
+| T01 | Backend pytest suite (472 tests) | `[x]` | Zero failures |
+| T02 | Frontend `next build` (178 pages) | `[x]` | Zero errors |
+| T03 | Playwright E2E specs installed | `[x]` | 4 spec files, 18+ test cases |
+| T04 | Playwright tests passing (dev server) | `[ ]` | Run: `cd apps/web-next && npm run test:e2e` |
+| T05 | Manual TC verification (all steps) | `[x]` | Steps 37–40 manually verified by user |
+| T06 | Load testing | `[DEFERRED]` | k6/Locust |
+| T07 | Cross-browser (Safari, Firefox) | `[ ]` | Manual check needed |
+| T08 | Mobile browser (iOS Safari, Android Chrome) | `[ ]` | Manual check needed |
 
-- [ ] A01, A02, A03, A04 — Auth flows complete
-- [ ] C01, C02, C03 — Content pipeline run + ≥20 pages published + sitemap live
-- [ ] F01–F09 — All public pages functional (no dead buttons or empty stubs)
-- [ ] T01, T02, T03 — Backend tests, build, and E2E passing
-- [ ] P01–P07 — Production hosting, SSL, domain configured
-- [ ] I01–I06 — Core integrations live (Anthropic, SMTP, Google OAuth, payments)
-- [ ] M01–M09 — Content and admin seeding done
+---
+
+## FINAL GO/NO-GO GATE
+
+All items below must be `[x]` before going live:
+
+- [ ] Z01 — Logo PNG placed
+- [ ] Z16 — Content pipeline run (≥20 CMS pages published)
+- [ ] M07 — At least 5 operators registered
+- [ ] M05 — Affiliate catalog has ≥5 products
+- [ ] P01–P05 — Production hosting, DB, Redis, CI/CD, SSL
+- [ ] I01 — ANTHROPIC_API_KEY configured (for AI agents)
+- [ ] I06 — SMTP configured (for lead confirmation + welcome emails)
+- [ ] I03 — Google OAuth live on production domain
+- [ ] T04 — Playwright E2E passing
+- [ ] T07, T08 — Cross-browser and mobile checked

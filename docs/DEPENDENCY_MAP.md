@@ -786,3 +786,10 @@ Before editing any backend file:
 - `apps/web-next/components/brand/Logo.tsx` — REWRITTEN: SVG LogoMark circular badge (orange/green gradient, mountain silhouette, trekker) replaces lucide Mountain icon; tagline "Explore · Experience · Escape"; blast radius: MEDIUM (Logo used in Header, Footer, auth pages — visual change only)
 - `apps/web-next/app/(public)/page.tsx` — UPDATED: hero layout `flex items-end` removed → `flex flex-col` with content in `flex-1 justify-center`; trust stats use `mt-auto`; heading now visible on page load; blast radius: LOW (leaf homepage)
 - `apps/web-next/components/layout/Footer.tsx` — UPDATED: newsletter card bg-foreground/40 (invisible dark-on-dark) → bg-white/[0.07] border border-white/20; pt-28 → pt-36 to clear mountain SVG; blast radius: MEDIUM (footer on every public page — visual fix only)
+
+### Logo Redesign + Fuse.js Search + Hero Height blast radius
+- `apps/web-next/components/brand/Logo.tsx` — REWRITTEN (v3): navy outer ring, orange-amber sky gradient, corrected tagline "Explore. Dream. Discover."; blast radius: MEDIUM (Header, Footer, auth pages — visual only)
+- `apps/web-next/app/(public)/page.tsx` — UPDATED: min-h-screen → min-h-[85vh] md:min-h-[78vh]; pt-20 pb-16; font 64px; pill "Explore. Dream. Discover."; blast radius: LOW (leaf page)
+- `apps/web-next/app/(public)/search/page.tsx` — REWRITTEN: Fuse.js fuzzy search (trekFuse/guideFuse/suggestionFuse instances); autocomplete dropdown; outside-click/Escape dismiss; no-results quick suggestions; blast radius: LOW (leaf page)
+- `apps/web-next/package.json` — UPDATED: fuse.js@^7.3.0 added; blast radius: LOW (new dep, build-time only)
+- `docs/PRELAUNCH_CHECKLIST.md` — REWRITTEN: comprehensive 8-section audit (80+ items); blast radius: LOW (documentation)

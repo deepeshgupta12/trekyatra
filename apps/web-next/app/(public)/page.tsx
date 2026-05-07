@@ -32,8 +32,8 @@ export default async function Home() {
   return (
     <>
       <SchemaInjector schemas={[buildWebSiteSchema()]} />
-      {/* HERO */}
-      <section className="relative min-h-screen flex flex-col">
+      {/* HERO — 78vh on desktop, 85vh on mobile so content+search are always above fold */}
+      <section className="relative min-h-[85vh] md:min-h-[78vh] flex flex-col">
         {/* Background image + gradients */}
         <div className="absolute inset-0 overflow-hidden">
           <img
@@ -48,13 +48,13 @@ export default async function Home() {
         </div>
 
         {/* Main content — vertically centred in the available space */}
-        <div className="container-wide relative z-10 flex-1 flex flex-col justify-center pt-28 pb-24 text-surface">
+        <div className="container-wide relative z-10 flex-1 flex flex-col justify-center pt-20 pb-16 text-surface">
           <div className="max-w-3xl">
             <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full glass-dark text-[11px] uppercase tracking-widest mb-5">
               <Sparkles className="h-3 w-3 text-accent-glow" />
-              Explore · Experience · Escape
+              Explore. Dream. Discover.
             </div>
-            <h1 className="font-display text-4xl sm:text-5xl md:text-6xl lg:text-[68px] font-semibold leading-[0.95] tracking-tight mb-5">
+            <h1 className="font-display text-4xl sm:text-5xl md:text-6xl lg:text-[64px] font-semibold leading-[0.95] tracking-tight mb-5">
               Find the right trail.<br />
               <span className="text-gradient-saffron">Walk it with confidence.</span>
             </h1>

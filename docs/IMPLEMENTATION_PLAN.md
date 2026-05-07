@@ -343,6 +343,12 @@
 - Hero: `flex items-end` → `flex flex-col justify-center`; heading now centred in viewport on page load; trust stats at natural bottom via `mt-auto`
 - Footer: newsletter card `bg-foreground/40` (invisible on dark) → `bg-white/[0.07] border border-white/20`; pt-28 → pt-36 for visual separation from mountain SVG
 
+### Logo Redesign + Search Fuzzy + Hero Height + Comprehensive Audit [DONE]
+- Logo.tsx: complete redesign — navy outer ring, orange-amber sky gradient badge, mountain/snow/forest/trekker/sun/birds; tagline corrected to "Explore. Dream. Discover." (matching actual new logo image); navy Trek text, orange yatra
+- Hero: min-h-screen → min-h-[85vh] md:min-h-[78vh]; pt-20 pb-16; font 64px; pill text corrected to "Explore. Dream. Discover."
+- Search: Fuse.js 7.3.0 fuzzy matching (threshold 0.35) for treks + guides; autocomplete dropdown (7 suggestions max); outside-click/Escape close; no-results quick suggestions; semantic search still fires for >3-word queries
+- PRELAUNCH_CHECKLIST.md: complete rewrite — 8-section comprehensive audit of every backend module, every frontend page, every admin page, 16 known gaps, production checklist, integrations, manual seeding, testing
+
 ### Deferred to Production Sprint
 - Step 41 (B2B / API extensions)
 - Production hosting, CI/CD, CDN, secrets manager

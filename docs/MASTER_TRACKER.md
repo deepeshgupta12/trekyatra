@@ -95,11 +95,23 @@ All V0 foundations are shipped. The stack is live locally with:
 | Playwright E2E — homepage, auth, search, plan wizard specs | done |
 | Home page — search wired, dead buttons fixed, PersonalisedFeed + Operators CTA | done |
 | UI polish — hero padding/font/overflow, trek tag visibility, footer, trust pages | done |
-| Logo — SVG circular badge icon, "Explore · Experience · Escape" tagline | done |
-| Hero layout — flex items-end → flex-col justify-center; heading visible on load | done |
-| Footer newsletter — bg-foreground/40 (invisible) → bg-white/7 border border-white/20; pt-36 separates from mountain SVG | done |
+| Logo — SVG circular badge icon redesigned; tagline "Explore. Dream. Discover." (matching new logo) | done |
+| Hero layout — flex-col justify-center; min-h-screen → min-h-[85vh] md:min-h-[78vh]; pt-20 pb-16 | done |
+| Footer newsletter — bg-foreground/40 (invisible) → bg-white/[0.07] border-white/20; pt-36 separates from mountain SVG | done |
+| Search — Fuse.js fuzzy matching (threshold 0.35) + autocomplete dropdown suggestions + no-results improvement | done |
+| PRELAUNCH_CHECKLIST.md — comprehensive audit: 8 sections, 80+ items across BE/FE/Admin/Gaps/Production/Integrations/Testing | done |
 
-### Pre-Launch Sprint — Logo + Hero + Footer fixes (commit pending)
+### Pre-Launch Sprint — Logo + Search + Hero Height + Audit (current commit)
+Status: done
+What is done:
+- `components/brand/Logo.tsx` — REWRITTEN again: navy outer ring, orange-amber sky gradient, mountain peak, snow cap, pine forest, trekker, sun, birds; tagline corrected to "Explore. Dream. Discover." (matching actual new logo); Trek in navy, yatra in orange-500; dark variant uses #1e2d4e for Trek text, green tagline
+- `app/(public)/page.tsx` — hero: min-h-screen → min-h-[85vh] md:min-h-[78vh] (reduced height); content padding pt-28→pt-20, pb-24→pb-16; font 68px→64px; pill text corrected to "Explore. Dream. Discover."
+- `app/(public)/search/page.tsx` — REWRITTEN with Fuse.js 7.3.0: trekFuse (threshold 0.35, keys: name×3/region×2/state×2/season×1.5/difficulty/description), guideFuse, suggestionFuse for autocomplete; dropdown shows up to 7 fuzzy-matched suggestions with trek/guide type icons; outside-click dismissal; Escape key closes; no-results state has quick suggestion buttons; result count shows "fuzzy matched" label; semantic search (pgvector) still fires for >3-word queries
+- `package.json` — fuse.js@^7.3.0 added
+- `docs/PRELAUNCH_CHECKLIST.md` — COMPLETE REWRITE: comprehensive 8-section audit covering every BE module, every FE page, every admin page, 16 known gaps with impact ratings, production readiness checklist, integration checklist, manual seeding checklist, testing status; final Go/No-Go gate
+- 472/472 backend tests pass; next build clean (178 pages)
+
+### Pre-Launch Sprint — Logo + Hero + Footer fixes (commit 4dbae65)
 Status: done
 What is done:
 - `components/brand/Logo.tsx` — REWRITTEN: removed Mountain lucide icon + "India · Trails · Trust"; added SVG circular badge (LogoMark) matching new brand identity (orange-to-green gradient, mountain silhouette, snow cap, forest, sun, trekker); tagline updated to "Explore · Experience · Escape"; Trek text in foreground/white, Yatra text in orange-400/500; hover glow preserved

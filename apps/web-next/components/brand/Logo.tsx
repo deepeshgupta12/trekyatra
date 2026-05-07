@@ -5,48 +5,57 @@ interface LogoProps {
   className?: string;
 }
 
-// Circular mountain-badge icon matching new TrekYatra brand identity
-// To use the actual logo PNG: place it at /public/images/logo.png
-// and replace <LogoMark /> with <Image src="/images/logo.png" ... />
-function LogoMark({ size = 38 }: { size?: number }) {
+// PNG logo is at /public/images/Logo_Trekyatra.png — used directly below.
+// SVG fallback retained for use in non-image contexts if needed.
+function LogoMark({ size = 42 }: { size?: number }) {
   return (
     <svg
       width={size}
       height={size}
-      viewBox="0 0 40 40"
+      viewBox="0 0 44 44"
       fill="none"
       xmlns="http://www.w3.org/2000/svg"
       aria-hidden="true"
     >
       <defs>
-        <linearGradient id="skyGrad" x1="0" y1="0" x2="0" y2="1">
+        <linearGradient id="sky" x1="0" y1="0" x2="0" y2="1">
           <stop offset="0%" stopColor="#f97316" />
-          <stop offset="50%" stopColor="#f59e0b" />
-          <stop offset="100%" stopColor="#16a34a" />
+          <stop offset="50%" stopColor="#fb923c" />
+          <stop offset="100%" stopColor="#fbbf24" />
         </linearGradient>
-        <clipPath id="circ">
-          <circle cx="20" cy="20" r="19" />
+        <clipPath id="badge">
+          <circle cx="22" cy="22" r="20" />
         </clipPath>
       </defs>
-      {/* Circular background */}
-      <circle cx="20" cy="20" r="19" fill="url(#skyGrad)" />
-      <g clipPath="url(#circ)">
-        {/* Far mountain */}
-        <polygon points="4,33 13,15 22,33" fill="rgba(255,255,255,0.25)" />
-        {/* Near mountain */}
-        <polygon points="12,33 22,11 32,33" fill="white" />
-        {/* Snow cap */}
-        <polygon points="19,18 22,11 25,18" fill="rgba(255,255,255,0.65)" />
-        {/* Forest base */}
-        <rect x="0" y="28" width="40" height="12" fill="#15803d" />
-        {/* Sun glow */}
-        <circle cx="30" cy="12" r="3.5" fill="rgba(255,255,255,0.85)" />
-        {/* Trekker silhouette */}
-        <rect x="17" y="24" width="1.5" height="5" fill="rgba(0,0,0,0.45)" rx="0.5" />
-        <circle cx="17.75" cy="23" r="1.2" fill="rgba(0,0,0,0.45)" />
+      {/* Navy outer ring */}
+      <circle cx="22" cy="22" r="21.5" fill="#1e2d4e" />
+      {/* Sky */}
+      <circle cx="22" cy="22" r="20" fill="url(#sky)" />
+      <g clipPath="url(#badge)">
+        {/* Back mountains */}
+        <polygon points="4,38 14,18 24,38" fill="#5b7fa6" opacity="0.65" />
+        <polygon points="20,38 30,14 40,38" fill="#3d5a7a" opacity="0.75" />
+        {/* Main peak */}
+        <polygon points="10,38 22,10 34,38" fill="#4a6fa0" />
+        {/* Snow */}
+        <polygon points="19,17 22,10 25,17" fill="white" opacity="0.9" />
+        {/* Forest */}
+        <rect x="0" y="29" width="44" height="15" fill="#15803d" />
+        {/* Pine trees */}
+        <polygon points="4,29 7.5,19 11,29" fill="#166534" />
+        <polygon points="33,29 36.5,19 40,29" fill="#166534" />
+        {/* Sun */}
+        <circle cx="34" cy="11" r="4.5" fill="#fde68a" opacity="0.95" />
+        {/* Birds */}
+        <path d="M28 8 Q29 7 30 8" stroke="#1e2d4e" strokeWidth="0.7" fill="none" />
+        <path d="M31 6.5 Q32 5.5 33 6.5" stroke="#1e2d4e" strokeWidth="0.7" fill="none" />
+        {/* Trekker */}
+        <circle cx="18.5" cy="26.5" r="1.6" fill="#1e2d4e" />
+        <rect x="17.7" y="28" width="1.6" height="4.5" fill="#1e2d4e" rx="0.5" />
+        <line x1="19.5" y1="29" x2="21.5" y2="33.5" stroke="#1e2d4e" strokeWidth="0.9" />
       </g>
-      {/* Ring border */}
-      <circle cx="20" cy="20" r="19" stroke="rgba(255,255,255,0.25)" strokeWidth="1" fill="none" />
+      {/* Inner border ring */}
+      <circle cx="22" cy="22" r="20" stroke="#1e2d4e" strokeWidth="1.5" fill="none" />
     </svg>
   );
 }
@@ -54,28 +63,32 @@ function LogoMark({ size = 38 }: { size?: number }) {
 export const Logo = ({ variant = "dark", className = "" }: LogoProps) => {
   const isLight = variant === "light";
   return (
-    <Link href="/" className={`flex items-center gap-2.5 group ${className}`}>
+    <Link href="/" className={`flex items-center gap-2 group ${className}`}>
+      {/* Actual brand logo PNG */}
       <div className="relative flex-shrink-0">
-        <div className="absolute inset-0 bg-orange-500/20 blur-lg rounded-full opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
-        <LogoMark size={38} />
+        <div className="absolute inset-0 bg-orange-400/20 blur-lg rounded-full opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+        <img
+          src="/images/Logo_Trekyatra.png"
+          alt="TrekYatra logo"
+          width={44}
+          height={44}
+          className="w-11 h-11 object-contain relative"
+        />
       </div>
       <div className="leading-none whitespace-nowrap">
         <div
           className={`font-display text-[20px] font-bold tracking-tight leading-none ${
-            isLight ? "text-white" : "text-foreground"
+            isLight ? "text-white" : "text-[#1e2d4e]"
           }`}
         >
-          Trek
-          <span className={isLight ? "text-orange-400" : "text-orange-500"}>
-            Yatra
-          </span>
+          Trek<span className="text-orange-500">yatra</span>
         </div>
         <div
-          className={`text-[9px] uppercase tracking-[0.22em] font-medium mt-0.5 hidden sm:block ${
-            isLight ? "text-white/55" : "text-muted-foreground/70"
+          className={`text-[8px] uppercase tracking-[0.22em] font-semibold mt-0.5 hidden sm:block ${
+            isLight ? "text-white/50" : "text-[#166534]/80"
           }`}
         >
-          Explore · Experience · Escape
+          Explore. Dream. Discover.
         </div>
       </div>
     </Link>
