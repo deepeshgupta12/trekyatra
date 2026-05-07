@@ -130,7 +130,7 @@ trekyatra/
 ### Frontend
 | Feature | Status |
 |---------|--------|
-| Next.js 14 App Router (139 static pages) | Done |
+| Next.js 14 App Router (178 static pages) | Done |
 | Trek guide pages (CMS-powered + static fallback) | Done |
 | Packing, permits, guides page templates | Done |
 | Seasonal hub landing pages | Done |
@@ -150,6 +150,9 @@ trekyatra/
 | Trek alerts (subscription) | Done |
 | User onboarding / profile | Done |
 | Download dashboard | Done |
+| Password reset (forgot-password + reset-password, HMAC JWT, graceful SMTP) | Done |
+| Account settings page (update full_name, display_name via PATCH /auth/me) | Done |
+| Account enquiries page (user leads history via GET /auth/me/leads) | Done |
 
 ### Monetisation
 | Feature | Status |
@@ -212,6 +215,20 @@ trekyatra/
 | Hindi public routes (/hi/trek, /hi/guides, /hi/packing) | Done |
 | hreflang alternates on trek + guides pages | Done |
 | Admin CMS language badge + translate button | Done |
+
+### Pre-Launch Polish
+| Feature | Status |
+|---------|--------|
+| Dynamic trek comparison (`/compare` — any two treks, live table) | Done |
+| `/itineraries`, `/costs`, `/gear`, `/beginner`, `/safety` — CMS hub + static fallback | Done |
+| CMSPageHub reusable component for content hub pages | Done |
+| Playwright E2E setup (homepage, auth, search, plan wizard — 18 specs) | Done |
+| Admin operators detail page (`/admin/operators/[id]` — agreement + review moderation) | Done |
+| Hero section — brand slogan pill, reduced padding, `overflow-hidden` fix | Done |
+| TrekCard difficulty tags — solid coloured backgrounds (visible on all images) | Done |
+| Footer — newsletter card backdrop fix, Gurgaon location, heart icon | Done |
+| Trust pages — full proper content: /about, /about/authors, /contact, /privacy, /terms, /affiliate-disclosure, /safety-disclaimer, /methodology | Done |
+| DB cleared (non-user tables — clean state for content pipeline run) | Done |
 
 ### Admin CMS
 | Feature | Status |
@@ -352,6 +369,7 @@ cd apps/web-next && npm run build
 | Intent & monetisation | `/api/v1/intent/*`, `/api/v1/affiliate-products` | Public + optional user auth |
 | User account | `/api/v1/account/*` | User auth required |
 | Products & checkout | `/api/v1/products/*`, `/api/v1/checkout/*` | Public (read), User (purchase) |
+| Auth (extended) | `POST /auth/forgot-password`, `POST /auth/reset-password`, `PATCH /auth/me`, `GET /auth/me/leads` | Public (reset), User auth (settings/leads) |
 | Operators (public) | `/api/v1/operators/*`, `/api/v1/inquiries` | Public + optional user auth (reviews require user auth) |
 | Trip planning | `/api/v1/plan/generate`, `/api/v1/plan/{id}`, `/api/v1/plan/{id}/email` | Public + optional user auth |
 | Subscriptions | `/api/v1/subscriptions/create-checkout`, `/status`, `/cancel`, `/webhook` | User auth (webhook: no auth) |
@@ -369,7 +387,7 @@ Full API docs available at http://localhost:8000/docs when the backend is runnin
 
 ## Database Overview
 
-**26 Alembic migrations applied.** Key table groups:
+**30 Alembic migrations applied.** Key table groups:
 
 | Domain | Tables |
 |--------|--------|
@@ -398,7 +416,7 @@ Full API docs available at http://localhost:8000/docs when the backend is runnin
 | V2 — Smarter Automation | Steps 25–32 | Complete |
 | V3 — Platform Expansion | Steps 33–37 | Complete |
 | V4 — Ecosystem Scale | Steps 38–41 | In Progress (Steps 38–40 done; Step 41 pending) |
-| Pre-Launch Sprint | Auth, frontend stubs, E2E | In Progress |
+| Pre-Launch Sprint | Auth, stubs, E2E, UI polish | Complete — see PRELAUNCH_CHECKLIST.md for remaining manual items |
 
 ---
 

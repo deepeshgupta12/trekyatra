@@ -331,6 +331,13 @@
 - Playwright E2E setup — homepage, auth, search, plan wizard specs
 - `docs/PRELAUNCH_CHECKLIST.md` created — comprehensive go-live checklist
 
+### UI Polish + Trust Pages [DONE]
+- Hero section: "Explore · Experience · Escape" brand slogan pill; overflow:hidden moved to image container; pt-32→pt-24; font 88px→72px
+- TrekCard difficulty tags: solid backgrounds (emerald/amber/orange/red + white text + shadow) replacing invisible 15% opacity versions
+- Footer: newsletter card backdrop-blur-sm removed (was bleeding through mountain SVG); "Bengaluru" → "Gurgaon"; heart icon in copyright
+- Planning resources: real trek images + PDF-type badge overlays replace plain gradient divs
+- Trust pages — full content written: /about, /about/authors, /contact, /privacy, /terms, /affiliate-disclosure, /safety-disclaimer, /methodology
+
 ### Deferred to Production Sprint
 - Step 41 (B2B / API extensions)
 - Production hosting, CI/CD, CDN, secrets manager

@@ -94,6 +94,46 @@ All V0 foundations are shipped. The stack is live locally with:
 | Admin operators — detail page with agreement + review moderation | done |
 | Playwright E2E — homepage, auth, search, plan wizard specs | done |
 | Home page — search wired, dead buttons fixed, PersonalisedFeed + Operators CTA | done |
+| UI polish — hero padding/font/overflow, trek tag visibility, footer, trust pages | done |
+
+### Pre-Launch Sprint — Auth Gaps (commit f389dc7)
+Status: done
+What is done:
+- `security.py` — create_reset_token (1h JWT, typ=password_reset), parse_reset_token
+- `schemas/auth.py` — ForgotPasswordRequest, ResetPasswordRequest, AccountSettingsUpdate, LeadResponse; UserResponse.subscription_plan: str = "free"
+- `api/routes/auth.py` — POST /auth/forgot-password (graceful SMTP), POST /auth/reset-password (verify JWT + hash_password), PATCH /auth/me (update full_name/display_name), GET /auth/me/leads (enquiries by user email); /auth/me now returns subscription_plan
+- `auth/forgot-password/page.tsx` — wired to POST /forgot-password; sent confirmation state
+- `auth/reset-password/page.tsx` — reads ?token=, calls POST /reset-password, success redirect to sign-in; Suspense boundary
+- `/compare` — full rewrite: dynamic dropdowns from static data, live comparison table, full guide links
+- `/account/settings` — wired to PATCH /auth/me; profile save with feedback; password via "Send reset link" flow
+- `/account/enquiries` — wired to GET /auth/me/leads; status badges; empty state; new enquiry CTA
+- `/itineraries`, `/costs`, `/gear`, `/beginner`, `/safety` — CMSPageHub (fetchCMSHubPages by page_type, 1h revalidate) + ContentPage static fallback
+- `CMSPageHub` component — reusable CMS page grid; fetchCMSHubPages server helper
+- `/admin/operators/[id]` — agreement GET/POST/PATCH form + review list with delete
+- `/admin/operators/page.tsx` — FileText icon linking to detail page
+- Playwright installed; playwright.config.ts; e2e/ directory with 4 spec files (homepage 6 tests, auth 5 tests, search 2 tests, plan 4 tests)
+- `package.json` — test:e2e + test:e2e:ui scripts
+- `docs/PRELAUNCH_CHECKLIST.md` — comprehensive 60+ item go-live checklist (9 sections)
+- `sitemap.ts` — expanded page_type map (trek_guide, itinerary, cost_guide, gear_guide, safety_guide, expert_guide, premium_compendium, seasonal_hub, cluster_hub, regional_hub)
+- `app/(public)/page.tsx` — HomeSearchBar wired, dead buttons fixed (/products), operators CTA + PersonalisedFeed sections added
+- 472/472 backend tests pass; next build clean (178 static pages)
+
+### Pre-Launch Sprint — UI Polish (commit 6382484)
+Status: done
+What is done:
+- `app/(public)/page.tsx` — hero: overflow:hidden moved to image container (search bar blur no longer clips); pt-32→pt-24; font lg:text-[88px]→lg:text-[72px]; pill updated to "Explore · Experience · Escape" (brand slogan from new logo); planning resources section replaced plain gradient divs with real trek images + PDF-type badge overlays
+- `components/trek/TrekCard.tsx` — diffColors: bg-success/15 (invisible on photos) → solid bg-emerald-600/bg-amber-500/bg-orange-600/bg-red-600 with text-white + shadow; backdrop-blur removed from difficulty badge; Beginner badge → bg-blue-600
+- `components/layout/Footer.tsx` — newsletter card backdrop-blur-sm removed (was bleeding through mountain SVG) → bg-foreground/40; "Bengaluru" → "Gurgaon"; Heart icon added to "Made with care in India" copyright; pt-32→pt-28
+- Trust pages — full proper content for all 7:
+  - `/about` — mission, story, editorial promises, team, contact
+  - `/about/authors` — editor bios, contributor policy, join team
+  - `/contact` — channels, response times, FAQs
+  - `/privacy` — full 8-section privacy policy
+  - `/terms` — full 9-section terms & conditions with liability + governing law
+  - `/affiliate-disclosure` — disclosure statement, independence policy
+  - `/safety-disclaimer` — AMS, permit accuracy, emergency contacts, liability limitation
+  - `/methodology` — verification cycle, YMYL policy, AI use, error correction
+- 472/472 backend tests pass; next build clean (178 static pages)
 
 ### Step 40 — Premium Subscription Layer
 Status: done

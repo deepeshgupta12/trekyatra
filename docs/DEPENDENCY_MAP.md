@@ -740,4 +740,44 @@ Before editing any backend file:
 - `apps/web-next/app/(admin)/admin/orders/page.tsx` — NEW: admin orders list; blast radius: LOW (leaf admin page)
 - `apps/web-next/app/(admin)/admin/layout.tsx` — UPDATED: Products (Package) + Orders (ShoppingBag) nav items added; blast radius: MEDIUM (admin nav)
 - `apps/web-next/lib/api.ts` — UPDATED: DigitalProduct/UserOrder types + 9 product/checkout helpers; DownloadResponse: order_id + download_url added; blast radius: LOW (additive)
-- GitNexus: pending re-index
+
+### Pre-Launch Sprint — Auth gaps blast radius
+- `services/api/app/core/security.py` — UPDATED: create_reset_token (1h JWT with typ=password_reset), parse_reset_token; blast radius: LOW (new helpers, not called by existing code)
+- `services/api/app/schemas/auth.py` — UPDATED: ForgotPasswordRequest, ResetPasswordRequest, AccountSettingsUpdate, LeadResponse added; UserResponse.subscription_plan: str = "free" added; blast radius: LOW (additive schemas)
+- `services/api/app/api/routes/auth.py` — UPDATED: POST /auth/forgot-password (HMAC JWT, graceful SMTP), POST /auth/reset-password (verify + set password_hash), PATCH /auth/me (update full_name/display_name), GET /auth/me/leads (enquiries by user email); blast radius: MEDIUM (auth route touched, additive endpoints)
+- `apps/web-next/app/(auth)/auth/forgot-password/page.tsx` — REWRITTEN: wired to POST /auth/forgot-password; success state with "Check your inbox"; blast radius: LOW (leaf auth page)
+- `apps/web-next/app/(auth)/auth/reset-password/page.tsx` — REWRITTEN: reads ?token= from URL, calls POST /auth/reset-password, success redirect; Suspense boundary for useSearchParams; blast radius: LOW (leaf auth page)
+
+### Pre-Launch Sprint — Frontend stubs blast radius
+- `apps/web-next/components/content/CMSPageHub.tsx` — NEW: reusable CMS page grid for hub pages; fetchCMSHubPages helper (server-side, 1h revalidate); blast radius: LOW (imported by content hub pages only)
+- `apps/web-next/app/(public)/compare/page.tsx` — REWRITTEN: dynamic trek selector (two dropdowns from static data, live comparison table, full guide links); client component; blast radius: LOW (leaf page)
+- `apps/web-next/app/(public)/account/settings/page.tsx` — REWRITTEN: wired to PATCH /auth/me for profile update; password change via forgot-password flow; blast radius: LOW (leaf account page)
+- `apps/web-next/app/(public)/account/enquiries/page.tsx` — REWRITTEN: wired to GET /auth/me/leads; status badges, empty state, new enquiry CTA; blast radius: LOW (leaf account page)
+- `apps/web-next/app/(public)/itineraries/page.tsx` — UPDATED: CMSPageHub (page_type=itinerary) + ContentPage static fallback; blast radius: LOW
+- `apps/web-next/app/(public)/costs/page.tsx` — UPDATED: CMSPageHub (page_type=cost_guide) + static fallback; blast radius: LOW
+- `apps/web-next/app/(public)/gear/page.tsx` — UPDATED: CMSPageHub (page_type=gear_guide) + static fallback; blast radius: LOW
+- `apps/web-next/app/(public)/beginner/page.tsx` — UPDATED: CMSPageHub (page_type=beginner_guide) + beginner trek grid + static fallback; blast radius: LOW
+- `apps/web-next/app/(public)/safety/page.tsx` — UPDATED: CMSPageHub (page_type=safety_guide) + static fallback; blast radius: LOW
+
+### Pre-Launch Sprint — Admin + Testing blast radius
+- `apps/web-next/app/(admin)/admin/operators/[id]/page.tsx` — NEW: operator detail page; agreement GET/POST/PATCH form; review list with delete; blast radius: LOW (new admin page)
+- `apps/web-next/app/(admin)/admin/operators/page.tsx` — UPDATED: FileText icon linking to detail page per operator row; blast radius: LOW (additive icon)
+- `apps/web-next/playwright.config.ts` — NEW: Playwright config (chromium, baseURL=localhost:3000, webServer auto-start); blast radius: LOW (test infrastructure only)
+- `apps/web-next/e2e/homepage.spec.ts` — NEW: 6 E2E tests (hero, search, pills, operators CTA, plan CTA, mobile); blast radius: LOW (test file)
+- `apps/web-next/e2e/auth.spec.ts` — NEW: 5 E2E tests (sign-up, sign-in, wrong creds, forgot-password page, account redirect); blast radius: LOW
+- `apps/web-next/e2e/search.spec.ts` — NEW: 2 E2E tests (search loads, query returns results); blast radius: LOW
+- `apps/web-next/e2e/plan.spec.ts` — NEW: 4 E2E tests (wizard loads, 4-step navigation, generate button); blast radius: LOW
+- `docs/PRELAUNCH_CHECKLIST.md` — NEW: comprehensive 60+ item go-live checklist across 9 sections; blast radius: LOW (documentation only)
+
+### Pre-Launch Sprint — UI polish blast radius
+- `apps/web-next/app/(public)/page.tsx` — UPDATED: hero overflow:hidden moved to image container (fixes search bar clip); pt-32→pt-24; font 88px→72px; pill text "Explore · Experience · Escape"; planning resources section uses real trek images; operators CTA section added; blast radius: MEDIUM (homepage — visible to all users)
+- `apps/web-next/components/trek/TrekCard.tsx` — UPDATED: diffColors replaced from bg-*/15 (15% opacity, invisible on photos) to solid bg-emerald-600/bg-amber-500/bg-orange-600/bg-red-600 with white text + shadow; backdrop-blur removed from difficulty tag; Beginner tag → bg-blue-600; blast radius: HIGH structurally (TrekCard used on homepage, explore, search, beginner pages — visual fix only, no behaviour change)
+- `apps/web-next/components/layout/Footer.tsx` — UPDATED: newsletter card backdrop-blur-sm removed (was bleeding through mountain SVG boundary) → solid bg-foreground/40; "Bengaluru" → "Gurgaon"; Heart icon added to copyright; pt-32→pt-28; blast radius: MEDIUM (footer on every public page — visual fix only)
+- `apps/web-next/app/(public)/about/page.tsx` — REWRITTEN: full editorial mission, story, promises, team, contact content; blast radius: LOW (leaf trust page)
+- `apps/web-next/app/(public)/about/authors/page.tsx` — REWRITTEN: editor bios, contributor policy, join team; blast radius: LOW
+- `apps/web-next/app/(public)/contact/page.tsx` — REWRITTEN: contact channels, response times, FAQs; blast radius: LOW
+- `apps/web-next/app/(public)/privacy/page.tsx` — REWRITTEN: full 8-section privacy policy; blast radius: LOW
+- `apps/web-next/app/(public)/terms/page.tsx` — REWRITTEN: full 9-section T&C with liability and governing law; blast radius: LOW
+- `apps/web-next/app/(public)/affiliate-disclosure/page.tsx` — REWRITTEN: affiliate programme disclosure, independence policy; blast radius: LOW
+- `apps/web-next/app/(public)/safety-disclaimer/page.tsx` — REWRITTEN: AMS, permit accuracy, emergency contacts, liability; blast radius: LOW
+- `apps/web-next/app/(public)/methodology/page.tsx` — REWRITTEN: verification cycle, YMYL policy, AI use disclosure, error correction; blast radius: LOW
