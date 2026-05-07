@@ -23,6 +23,7 @@ class CMSPageCreate(BaseModel):
     language: str = "en"
     translations: dict[str, Any] | None = None
     source_page_id: uuid.UUID | None = None
+    is_premium: bool = False
 
 
 class CMSPagePatch(BaseModel):
@@ -36,6 +37,7 @@ class CMSPagePatch(BaseModel):
     hero_image_url: str | None = None
     language: str | None = None
     translations: dict[str, Any] | None = None
+    is_premium: bool | None = None
 
 
 class CMSPageResponse(BaseModel):
@@ -58,6 +60,8 @@ class CMSPageResponse(BaseModel):
     language: str = "en"
     translations: dict[str, Any] | None = None
     source_page_id: uuid.UUID | None = None
+    is_premium: bool = False
+    is_gated: bool = False  # set True at route level for premium pages when user is free
 
     model_config = {"from_attributes": True}
 

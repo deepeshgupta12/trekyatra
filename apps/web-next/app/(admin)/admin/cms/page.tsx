@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { Globe, RefreshCw, Trash2, Pencil, Plus, Languages } from "lucide-react";
+import { Globe, RefreshCw, Trash2, Pencil, Plus, Languages, Crown } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { triggerTranslation } from "@/lib/api";
 
@@ -16,6 +16,7 @@ interface CMSPage {
   updated_at: string;
   language: string;
   translations: Record<string, string> | null;
+  is_premium: boolean;
 }
 
 const statusStyle: Record<string, string> = {
@@ -74,6 +75,25 @@ export default function CMSAdminPage() {
   async function deletePage(slug: string) {
     await fetch(`/api/v1/cms/pages/${slug}`, { method: "DELETE" });
     setPages((prev) => prev.filter((p) => p.slug !== slug));
+  }
+
+  async function togglePremium(slug: string, currentValue: boolean) {
+    setFeedback(null);
+    try {
+      const res = await fetch(`/api/v1/cms/pages/${slug}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ is_premium: !currentValue }),
+      });
+      if (res.ok) {
+        setPages((prev) => prev.map((p) => p.slug === slug ? { ...p, is_premium: !currentValue } : p));
+        setFeedback(`${slug}: premium ${!currentValue ? "enabled" : "disabled"}.`);
+      }
+    } catch {
+      setFeedback("Toggle failed.");
+    } finally {
+      setTimeout(() => setFeedback(null), 3000);
+    }
   }
 
   async function translatePage(slug: string) {
@@ -216,6 +236,14 @@ export default function CMSAdminPage() {
                           title="Clear cache"
                         >
                           <RefreshCw className="h-3.5 w-3.5" />
+                        </button>
+                        {/* Premium toggle */}
+                        <button
+                          onClick={() => togglePremium(page.slug, page.is_premium)}
+                          className={`transition-colors ${page.is_premium ? "text-amber-400 hover:text-white/40" : "text-white/40 hover:text-amber-400"}`}
+                          title={page.is_premium ? "Unset premium" : "Mark as premium"}
+                        >
+                          <Crown className="h-3.5 w-3.5" />
                         </button>
                         {/* Only show translate button for English source pages */}
                         {(page.language === "en" || !page.language) && (

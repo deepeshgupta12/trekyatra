@@ -75,8 +75,42 @@ All V0 foundations are shipped. The stack is live locally with:
 |------|-------|--------|
 | 38 | Operator marketplace layer | done |
 | 39 | Trip planning assistant | done |
-| 40 | Premium subscription layer | pending |
+| 40 | Premium subscription layer | done |
 | 41 | B2B content / API extensions | pending |
+
+### Step 40 — Premium Subscription Layer
+Status: done
+What is done:
+- `stripe>=8.0.0,<9.0.0` added to pyproject.toml; installed in venv
+- Migration `20260506_0030_subscriptions.py` — ALTER users ADD subscription_plan String(20) default='free'; CREATE subscriptions (unique user_id, stripe_customer_id, stripe_subscription_id unique, plan, status, current_period_end, timestamps); ALTER cms_pages ADD is_premium bool default=false; applied with `alembic upgrade head`
+- `modules/auth/models.py` — User.subscription_plan String(20) default='free' added
+- `modules/cms/models.py` — CMSPage.is_premium bool default=False added; Boolean imported
+- `modules/subscriptions/__init__.py`, `models.py` — Subscription ORM model; registered in db/base.py
+- `modules/subscriptions/service.py` — get_subscription, get_subscription_status, create_checkout_session (real Stripe when key set, test-mode redirect when unset), cancel_subscription (Stripe cancel_at_period_end + local status=cancelled), handle_webhook (customer.subscription.created/updated → sync plan; deleted → downgrade; invoice.payment_failed → past_due; no-secret = raw JSON accepted for dev), upsert_subscription_for_user
+- `schemas/subscriptions.py` — SubscriptionCheckoutRequest/Response, SubscriptionStatusResponse, CancelResponse, StripeWebhookResponse
+- `schemas/auth.py` — UserResponse.subscription_plan: str = "free" added
+- `schemas/cms.py` — is_premium in Create/Patch/Response; is_gated in Response (set at route level)
+- `api/routes/subscriptions.py` — POST /subscriptions/create-checkout, GET /subscriptions/status, POST /subscriptions/cancel (all require auth), POST /subscriptions/webhook (raw body, no auth)
+- `api/routes/cms.py` — GET /cms/pages/{slug}: optional auth via get_optional_user; if is_premium and user plan != premium → content_html="", is_gated=True
+- `api/router.py` — subscriptions_router registered
+- `core/config.py` — stripe_webhook_secret, stripe_premium_price_id_monthly, stripe_premium_price_id_annual settings added
+- `.env.example` — STRIPE_WEBHOOK_SECRET, STRIPE_PREMIUM_PRICE_ID_MONTHLY, STRIPE_PREMIUM_PRICE_ID_ANNUAL added
+- `tests/test_subscriptions.py` — 15 tests TC-B01–TC-B15: status free no-row, upsert creates row + updates user plan, checkout test-mode fallback, cancel no-sub graceful, cancel marks cancelled, webhook sync premium (subscription.updated), webhook downgrade (subscription.deleted), webhook past_due (payment_failed), CMS gating free/premium/anonymous/non-premium page, checkout/status require auth, /auth/me returns subscription_plan
+- `components/subscription/PremiumBadge.tsx` — Crown icon + amber badge
+- `components/subscription/GatedContent.tsx` — blurred teaser overlay with lock icon + Upgrade CTA
+- `components/subscription/SubscriptionStatusCard.tsx` — plan badge, period end, cancel/upgrade actions
+- `components/subscription/PricingTable.tsx` — monthly/annual toggle, Free vs Premium tier comparison, Stripe checkout CTA
+- `app/(public)/premium/page.tsx` — public marketing page with PricingTable
+- `app/(public)/account/premium/page.tsx` — auth-gated: fetches subscription status, SubscriptionStatusCard, upgrade/cancel actions
+- `app/(admin)/admin/cms/page.tsx` — Crown icon toggle per page to set/unset is_premium; is_premium tracked in local CMSPage interface
+- `lib/api.ts` — CMSPage.is_premium + is_gated fields; SubscriptionStatus interface; fetchSubscriptionStatus, createSubscriptionCheckout, cancelSubscription helpers
+- `lib/auth-api.ts` — UserResponse.subscription_plan: string added
+- `.env.local.example` — NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY added
+- 472/472 backend tests pass (15 new); next build clean (178 static pages)
+What remains:
+- Real STRIPE_SECRET_KEY + STRIPE_WEBHOOK_SECRET required for live billing (test-mode redirect works without keys)
+- Stripe CLI needed locally: `stripe listen --forward-to localhost:8000/api/v1/subscriptions/webhook`
+- GatedContent component not yet wired into trek detail/guide pages — requires is_premium check on CMSPage fetch (follow-up)
 
 ### Step 39 — Trip Planning Assistant
 Status: done

@@ -82,13 +82,47 @@ Add a subscription tier system: premium content gating, Stripe recurring billing
 - `apps/web-next/.env.local.example` — NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY
 
 ## Files Created
-(to be filled when step is executed)
+- `services/api/alembic/versions/20260506_0030_subscriptions.py` (note: 0030, not 0029 — 0029 used by trip_plans)
+- `services/api/app/modules/subscriptions/__init__.py`
+- `services/api/app/modules/subscriptions/models.py`
+- `services/api/app/modules/subscriptions/service.py`
+- `services/api/app/schemas/subscriptions.py`
+- `services/api/app/api/routes/subscriptions.py`
+- `services/api/tests/test_subscriptions.py`
+- `apps/web-next/app/(public)/premium/page.tsx`
+- `apps/web-next/app/(public)/account/premium/page.tsx`
+- `apps/web-next/components/subscription/GatedContent.tsx`
+- `apps/web-next/components/subscription/SubscriptionStatusCard.tsx`
+- `apps/web-next/components/subscription/PricingTable.tsx`
+- `apps/web-next/components/subscription/PremiumBadge.tsx`
 
 ## Files Modified
-(to be filled when step is executed)
+- `services/api/app/modules/auth/models.py` — User.subscription_plan added
+- `services/api/app/modules/cms/models.py` — CMSPage.is_premium added; Boolean imported
+- `services/api/app/schemas/auth.py` — UserResponse.subscription_plan: str = "free"
+- `services/api/app/schemas/cms.py` — is_premium in Create/Patch/Response; is_gated in Response
+- `services/api/app/api/routes/cms.py` — GET /cms/pages/{slug}: get_optional_user + premium gating
+- `services/api/app/api/router.py` — subscriptions_router registered
+- `services/api/app/db/base.py` — Subscription registered
+- `services/api/app/core/config.py` — stripe_webhook_secret, stripe_premium_price_id_monthly, stripe_premium_price_id_annual
+- `services/api/.env.example` — Stripe webhook secret + price IDs
+- `services/api/pyproject.toml` — stripe>=8.0.0,<9.0.0 added
+- `apps/web-next/lib/api.ts` — CMSPage.is_premium + is_gated; SubscriptionStatus; subscription helpers
+- `apps/web-next/lib/auth-api.ts` — UserResponse.subscription_plan: string
+- `apps/web-next/app/(admin)/admin/cms/page.tsx` — CMSPage interface + Crown toggle + togglePremium handler
+- `apps/web-next/.env.local.example` — NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY
 
 ## Status
-pending
+Done
+
+## Notes
+- Migration is 0030 (not 0029 as planned — 0029 was used by trip_plans in Step 39)
+- Content gating is server-side in GET /cms/pages/{slug}: content_html="" + is_gated=True when is_premium and user plan != "premium"; NOT a frontend-only trick
+- Stripe webhook secret verification: when STRIPE_WEBHOOK_SECRET is set, Stripe HMAC verified; when unset, raw JSON accepted (dev/test mode)
+- Grace period: invoice.payment_failed → status=past_due (not immediately downgraded); subscription.deleted → plan="free"
+- Test mode: when STRIPE_SECRET_KEY unset, checkout redirects to success_url?test_mode=1 without real billing
+- GatedContent component created but not yet wired into public trek/guide page templates — requires checking is_gated on the fetched CMSPage; can be added in a follow-up without a new step
+- stripe package 8.11.0 installed (8.x series); StripeClient API used (not legacy stripe.configure())
 
 ## Notes
 - Stripe webhook must be registered in Stripe Dashboard pointing to `POST /api/v1/subscriptions/webhook`

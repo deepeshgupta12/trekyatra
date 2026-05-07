@@ -3,7 +3,7 @@ from __future__ import annotations
 import uuid
 from datetime import datetime
 
-from sqlalchemy import DateTime, ForeignKey, JSON, String, Text, Uuid
+from sqlalchemy import Boolean, DateTime, ForeignKey, JSON, String, Text, Uuid
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from pgvector.sqlalchemy import Vector
 
@@ -24,6 +24,9 @@ class CMSPage(UUIDPrimaryKeyMixin, TimestampMixin, Base):
     seo_meta: Mapped[dict | None] = mapped_column(JSON, nullable=True)
     hero_image_url: Mapped[str | None] = mapped_column(String(512), nullable=True)
     published_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+
+    # Premium content gating (Step 40)
+    is_premium: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
 
     # Multilingual fields (Step 37)
     language: Mapped[str] = mapped_column(String(10), nullable=False, default="en", index=True)

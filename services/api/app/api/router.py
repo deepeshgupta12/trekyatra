@@ -44,6 +44,7 @@ from app.api.routes.recommendations import router as recommendations_router
 from app.api.routes.monetization import router as monetization_router
 from app.api.routes.translation import router as translation_router
 from app.api.routes.plan import router as plan_router
+from app.api.routes.subscriptions import router as subscriptions_router
 
 api_router = APIRouter()
 api_router.include_router(health_router, tags=["health"])
@@ -90,3 +91,4 @@ api_router.include_router(recommendations_router)
 api_router.include_router(monetization_router)
 api_router.include_router(translation_router)
 api_router.include_router(plan_router)
+api_router.include_router(subscriptions_router)

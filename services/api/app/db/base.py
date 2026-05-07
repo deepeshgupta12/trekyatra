@@ -24,6 +24,7 @@ from app.modules.account.models import UserBookmark, UserDownload, TrekAlert, Us
 from app.modules.products.models import DigitalProduct, UserOrder
 from app.modules.monetization.models import AffiliateProduct, PageIntentSession
 from app.modules.plan.models import TripPlan
+from app.modules.subscriptions.models import Subscription
 
 __all__ = [
     "Operator",
@@ -73,4 +74,5 @@ __all__ = [
     "AffiliateProduct",
     "PageIntentSession",
     "TripPlan",
+    "Subscription",
 ]

@@ -29,6 +29,7 @@ class User(UUIDPrimaryKeyMixin, TimestampMixin, Base):
 
     primary_auth_method: Mapped[str | None] = mapped_column(String(32), nullable=True)
     last_login_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    subscription_plan: Mapped[str] = mapped_column(String(20), nullable=False, default="free")
 
     identities: Mapped[list["AuthIdentity"]] = relationship(
         back_populates="user",

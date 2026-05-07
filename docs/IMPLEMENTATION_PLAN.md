@@ -289,7 +289,7 @@
 - Day-by-day itinerary builder; print-to-PDF; operator lead capture
 - Step doc: `docs/steps/STEP-39-trip-planning-assistant.md`
 
-### Step 40 — Premium subscription layer [pending]
+### Step 40 — Premium subscription layer [DONE]
 - `subscriptions` table; Stripe recurring billing (monthly + annual)
 - `is_premium` column on `cms_pages`; server-side content gating
 - `GatedContent` component; `/premium` marketing page; `/account/premium` dashboard

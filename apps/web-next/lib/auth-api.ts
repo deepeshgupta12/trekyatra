@@ -7,6 +7,7 @@ export type UserResponse = {
   is_verified_mobile: boolean;
   primary_auth_method: string | null;
   created_at: string;
+  subscription_plan: string;
 };
 
 export type AuthResponse = {

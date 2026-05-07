@@ -104,6 +104,15 @@ This file tracks structural dependencies, source-of-truth modules, and Nexus/Git
 - `services/api/app/modules/plan/service.py` -> generate_plan, get_plan, email_plan; blast radius: LOW (called only by plan routes)
 - `services/api/app/api/routes/plan.py` -> POST /plan/generate, GET /plan/{id}, POST /plan/{id}/email; blast radius: LOW (new endpoints)
 - `apps/web-next/components/plan/` -> WizardStep, TrekPlanCard, ItineraryDay; blast radius: LOW (used only by /plan page)
+- `services/api/app/modules/subscriptions/models.py` -> Subscription ORM (subscriptions table); blast radius: LOW (new table)
+- `services/api/app/modules/subscriptions/service.py` -> create_checkout_session (Stripe or test-mode), handle_webhook, cancel_subscription, get_subscription_status; blast radius: LOW (called only by subscriptions routes)
+- `services/api/app/api/routes/subscriptions.py` -> POST /subscriptions/create-checkout, GET /subscriptions/status, POST /subscriptions/cancel, POST /subscriptions/webhook; blast radius: LOW (new endpoints)
+- `services/api/app/api/routes/cms.py` -> GET /cms/pages/{slug} now includes get_optional_user + is_premium gating (content_html="" + is_gated=True for free users on premium pages); blast radius: MEDIUM (public CMS endpoint, additive optional auth)
+- `services/api/app/modules/auth/models.py` -> User.subscription_plan String(20) default='free' added (additive); blast radius: HIGH structurally but no existing callers break
+- `services/api/app/modules/cms/models.py` -> CMSPage.is_premium bool default=False added (additive); blast radius: HIGH structurally but no existing callers break
+- `apps/web-next/components/subscription/` -> PremiumBadge, GatedContent, SubscriptionStatusCard, PricingTable; blast radius: LOW (new components)
+- `apps/web-next/app/(public)/premium/page.tsx` -> public pricing/marketing page; blast radius: LOW (new page)
+- `apps/web-next/app/(public)/account/premium/page.tsx` -> auth-gated subscription dashboard; blast radius: LOW (new page)
 - `apps/web-next/app/(public)/plan/page.tsx` -> full rewrite: 4-step wizard + TrekPlanCard result; blast radius: LOW (leaf page)
 - `services/api/app/modules/agents/translation/agent.py` -> TranslationAgent: translate_page(title, content_html, target_language); Anthropic claude-haiku with ephemeral caching; rule-based fallback; blast radius: LOW (only called by translation route)
 - `services/api/app/schemas/translation.py` -> TranslateRequest, TranslateResponse; blast radius: LOW

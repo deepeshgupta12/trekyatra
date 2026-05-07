@@ -8,7 +8,8 @@ from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy.orm import Session
 
 from app.db.session import get_db
-from app.modules.auth.dependencies import get_current_admin
+from app.modules.auth.dependencies import get_current_admin, get_optional_user
+from app.modules.auth.models import User
 from app.modules.cms import service as cms_service
 from app.modules.cms.models import CMSPage
 from app.schemas.cms import (
@@ -54,6 +55,7 @@ def get_cms_page(
     slug: str,
     lang: str | None = Query(default=None, description="Language code (e.g. 'hi'). Falls back to 'en' if translation not found."),
     db: Session = Depends(get_db),
+    current_user: User | None = Depends(get_optional_user),
 ) -> CMSPageResponse:
     page = cms_service.get_page_by_slug(db, slug)
     if not page:
@@ -65,10 +67,19 @@ def get_cms_page(
         if translated_id:
             translated = db.get(CMSPage, _uuid.UUID(translated_id))
             if translated and translated.status == "published":
-                return CMSPageResponse.model_validate(translated)
-        # Fall through: serve original English page
+                page = translated
 
-    return CMSPageResponse.model_validate(page)
+    response = CMSPageResponse.model_validate(page)
+
+    # Premium content gating — enforce server-side (Step 40)
+    if page.is_premium:
+        user_plan = getattr(current_user, "subscription_plan", "free") if current_user else "free"
+        if user_plan != "premium":
+            response.content_html = ""
+            response.content_json = None
+            response.is_gated = True
+
+    return response
 
 
 @router.patch("/pages/{slug}", response_model=CMSPageResponse, dependencies=[_admin])

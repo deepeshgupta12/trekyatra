@@ -66,6 +66,47 @@ export interface CMSPage {
   language: string;
   translations: Record<string, string> | null;
   source_page_id: string | null;
+  // Premium content gating (Step 40)
+  is_premium: boolean;
+  is_gated: boolean;
+}
+
+// ---------------------------------------------------------------------------
+// Subscription helpers (Step 40)
+// ---------------------------------------------------------------------------
+
+export interface SubscriptionStatus {
+  has_subscription: boolean;
+  plan: string;
+  status: string | null;
+  current_period_end: string | null;
+  stripe_customer_id: string | null;
+}
+
+export async function fetchSubscriptionStatus(): Promise<SubscriptionStatus> {
+  return apiFetch<SubscriptionStatus>("/subscriptions/status");
+}
+
+export async function createSubscriptionCheckout(
+  interval: "monthly" | "annual"
+): Promise<{ checkout_url: string; test_mode: boolean }> {
+  const res = await fetch("/api/v1/subscriptions/create-checkout", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      interval,
+      success_url: `${window.location.origin}/account/premium?checkout=success`,
+      cancel_url: `${window.location.origin}/premium?checkout=cancelled`,
+    }),
+  });
+  if (!res.ok) throw new Error(`Checkout failed (${res.status})`);
+  return res.json();
+}
+
+export async function cancelSubscription(): Promise<{ message: string }> {
+  const res = await fetch("/api/v1/subscriptions/cancel", { method: "POST" });
+  if (!res.ok) throw new Error(`Cancel failed (${res.status})`);
+  return res.json();
 }
 
 export async function fetchCMSPage(slug: string, lang?: string): Promise<CMSPage> {

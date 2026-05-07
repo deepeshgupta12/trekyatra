@@ -55,6 +55,7 @@ class UserResponse(BaseModel):
     is_verified_mobile: bool
     primary_auth_method: str | None
     created_at: datetime
+    subscription_plan: str = "free"
 
 
 class AuthResponse(BaseModel):

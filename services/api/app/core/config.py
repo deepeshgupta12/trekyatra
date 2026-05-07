@@ -57,8 +57,11 @@ class Settings(BaseSettings):
     razorpay_key_id: str | None = None
     razorpay_key_secret: str | None = None
 
-    # Stripe (international fallback; reserved for future use)
+    # Stripe — recurring subscription billing (Step 40)
     stripe_secret_key: str | None = None
+    stripe_webhook_secret: str | None = None
+    stripe_premium_price_id_monthly: str | None = None
+    stripe_premium_price_id_annual: str | None = None
 
     # Digital product file storage — local path, relative to services/api/
     product_files_dir: str = "data/products"
