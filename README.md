@@ -229,6 +229,9 @@ trekyatra/
 | Footer — newsletter card backdrop fix, Gurgaon location, heart icon | Done |
 | Trust pages — full proper content: /about, /about/authors, /contact, /privacy, /terms, /affiliate-disclosure, /safety-disclaimer, /methodology | Done |
 | DB cleared (non-user tables — clean state for content pipeline run) | Done |
+| Logo — SVG circular badge icon matching new brand identity, tagline "Explore · Experience · Escape" | Done |
+| Hero layout — `flex items-end` removed; heading now visible centred on page load | Done |
+| Footer newsletter card — visible `bg-white/[0.07]` + `border-white/20`; `pt-36` separates from mountain SVG | Done |
 
 ### Admin CMS
 | Feature | Status |

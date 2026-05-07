@@ -55,8 +55,9 @@ export const Footer = () => (
       <path d="M0,80 L0,50 L120,28 L240,46 L360,18 L480,40 L600,12 L720,38 L840,22 L960,44 L1080,20 L1200,42 L1200,80 Z" fill="hsl(var(--background))" />
     </svg>
 
-    <div className="container-wide pt-28 pb-24 lg:pb-12 relative">
-      <div className="rounded-2xl bg-foreground/40 border border-surface/15 p-8 md:p-10 mb-16 grid md:grid-cols-2 gap-8 items-center">
+    <div className="container-wide pt-36 pb-24 lg:pb-12 relative">
+      {/* pt-36 (144px) ensures the card sits clearly BELOW the 80px mountain SVG */}
+      <div className="rounded-2xl border border-white/20 bg-white/[0.07] p-8 md:p-10 mb-16 grid md:grid-cols-2 gap-8 items-center">
         <div>
           <div className="text-xs uppercase tracking-[0.25em] text-accent-glow mb-3">The Trail Letter</div>
           <h3 className="font-display text-3xl md:text-4xl text-surface leading-tight mb-3">

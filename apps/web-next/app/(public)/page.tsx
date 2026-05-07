@@ -33,20 +33,28 @@ export default async function Home() {
     <>
       <SchemaInjector schemas={[buildWebSiteSchema()]} />
       {/* HERO */}
-      <section className="relative min-h-[92vh] flex items-end">
+      <section className="relative min-h-screen flex flex-col">
+        {/* Background image + gradients */}
         <div className="absolute inset-0 overflow-hidden">
-          <img src="/images/hero-himalaya-dawn.jpg" alt="Himalayan dawn ridge" width={1920} height={1280} className="w-full h-full object-cover" />
-          <div className="absolute inset-0 bg-gradient-to-t from-foreground via-foreground/35 to-foreground/15" />
-          <div className="absolute inset-0 bg-gradient-to-r from-foreground/55 via-foreground/10 to-transparent" />
+          <img
+            src="/images/hero-himalaya-dawn.jpg"
+            alt="Himalayan dawn ridge"
+            width={1920}
+            height={1280}
+            className="w-full h-full object-cover object-center"
+          />
+          <div className="absolute inset-0 bg-gradient-to-t from-foreground/95 via-foreground/40 to-foreground/20" />
+          <div className="absolute inset-0 bg-gradient-to-r from-foreground/50 via-transparent to-transparent" />
         </div>
 
-        <div className="container-wide relative z-10 pb-20 pt-24 text-surface">
-          <div className="max-w-3xl animate-fade-up">
+        {/* Main content — vertically centred in the available space */}
+        <div className="container-wide relative z-10 flex-1 flex flex-col justify-center pt-28 pb-24 text-surface">
+          <div className="max-w-3xl">
             <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full glass-dark text-[11px] uppercase tracking-widest mb-5">
               <Sparkles className="h-3 w-3 text-accent-glow" />
               Explore · Experience · Escape
             </div>
-            <h1 className="font-display text-4xl sm:text-5xl md:text-6xl lg:text-[72px] font-semibold leading-[0.95] tracking-tight mb-5">
+            <h1 className="font-display text-4xl sm:text-5xl md:text-6xl lg:text-[68px] font-semibold leading-[0.95] tracking-tight mb-5">
               Find the right trail.<br />
               <span className="text-gradient-saffron">Walk it with confidence.</span>
             </h1>
@@ -54,11 +62,11 @@ export default async function Home() {
               Discover, compare and plan India&apos;s best treks — from the Sahyadri&apos;s monsoon ridges to high Himalayan snow passes. Trail-tested guides, real permit updates, honest cost notes.
             </p>
           </div>
-
           <HomeSearchBar />
         </div>
 
-        <div className="absolute bottom-0 left-0 right-0">
+        {/* Trust stats — pinned to the bottom of the hero */}
+        <div className="relative z-10 mt-auto">
           <div className="container-wide">
             <div className="border-t border-surface/15 py-5 grid grid-cols-2 md:grid-cols-4 gap-6">
               {trustStats.map((s) => (

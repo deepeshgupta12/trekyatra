@@ -781,3 +781,8 @@ Before editing any backend file:
 - `apps/web-next/app/(public)/affiliate-disclosure/page.tsx` — REWRITTEN: affiliate programme disclosure, independence policy; blast radius: LOW
 - `apps/web-next/app/(public)/safety-disclaimer/page.tsx` — REWRITTEN: AMS, permit accuracy, emergency contacts, liability; blast radius: LOW
 - `apps/web-next/app/(public)/methodology/page.tsx` — REWRITTEN: verification cycle, YMYL policy, AI use disclosure, error correction; blast radius: LOW
+
+### Logo + Hero + Footer fixes blast radius
+- `apps/web-next/components/brand/Logo.tsx` — REWRITTEN: SVG LogoMark circular badge (orange/green gradient, mountain silhouette, trekker) replaces lucide Mountain icon; tagline "Explore · Experience · Escape"; blast radius: MEDIUM (Logo used in Header, Footer, auth pages — visual change only)
+- `apps/web-next/app/(public)/page.tsx` — UPDATED: hero layout `flex items-end` removed → `flex flex-col` with content in `flex-1 justify-center`; trust stats use `mt-auto`; heading now visible on page load; blast radius: LOW (leaf homepage)
+- `apps/web-next/components/layout/Footer.tsx` — UPDATED: newsletter card bg-foreground/40 (invisible dark-on-dark) → bg-white/[0.07] border border-white/20; pt-28 → pt-36 to clear mountain SVG; blast radius: MEDIUM (footer on every public page — visual fix only)

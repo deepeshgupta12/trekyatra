@@ -95,6 +95,17 @@ All V0 foundations are shipped. The stack is live locally with:
 | Playwright E2E — homepage, auth, search, plan wizard specs | done |
 | Home page — search wired, dead buttons fixed, PersonalisedFeed + Operators CTA | done |
 | UI polish — hero padding/font/overflow, trek tag visibility, footer, trust pages | done |
+| Logo — SVG circular badge icon, "Explore · Experience · Escape" tagline | done |
+| Hero layout — flex items-end → flex-col justify-center; heading visible on load | done |
+| Footer newsletter — bg-foreground/40 (invisible) → bg-white/7 border border-white/20; pt-36 separates from mountain SVG | done |
+
+### Pre-Launch Sprint — Logo + Hero + Footer fixes (commit pending)
+Status: done
+What is done:
+- `components/brand/Logo.tsx` — REWRITTEN: removed Mountain lucide icon + "India · Trails · Trust"; added SVG circular badge (LogoMark) matching new brand identity (orange-to-green gradient, mountain silhouette, snow cap, forest, sun, trekker); tagline updated to "Explore · Experience · Escape"; Trek text in foreground/white, Yatra text in orange-400/500; hover glow preserved
+- `app/(public)/page.tsx` — hero layout restructured: removed `flex items-end` (was pushing all content to the bottom, heading invisible on load); changed to `flex flex-col` with content div using `flex-1 flex flex-col justify-center pt-28 pb-24` — heading now visible centred in viewport on load; trust stats moved to `mt-auto` at natural bottom; background overlay gradients adjusted for better contrast
+- `components/layout/Footer.tsx` — newsletter card: `bg-foreground/40` (dark-on-dark, invisible) → `bg-white/[0.07] border border-white/20`; container `pt-28` → `pt-36` to place card visibly below the 80px mountain SVG boundary; comment added explaining the 144px clearance
+- 178/178 static pages; build clean
 
 ### Pre-Launch Sprint — Auth Gaps (commit f389dc7)
 Status: done

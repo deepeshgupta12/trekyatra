@@ -338,6 +338,11 @@
 - Planning resources: real trek images + PDF-type badge overlays replace plain gradient divs
 - Trust pages — full content written: /about, /about/authors, /contact, /privacy, /terms, /affiliate-disclosure, /safety-disclaimer, /methodology
 
+### Logo + Hero Layout + Footer Newsletter [DONE]
+- Logo.tsx: SVG circular badge (LogoMark) — orange/green gradient, mountain silhouette, trekker; tagline "Explore · Experience · Escape" replaces "India · Trails · Trust"
+- Hero: `flex items-end` → `flex flex-col justify-center`; heading now centred in viewport on page load; trust stats at natural bottom via `mt-auto`
+- Footer: newsletter card `bg-foreground/40` (invisible on dark) → `bg-white/[0.07] border border-white/20`; pt-28 → pt-36 for visual separation from mountain SVG
+
 ### Deferred to Production Sprint
 - Step 41 (B2B / API extensions)
 - Production hosting, CI/CD, CDN, secrets manager
