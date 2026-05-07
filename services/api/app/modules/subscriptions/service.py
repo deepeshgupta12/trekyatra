@@ -54,7 +54,8 @@ def create_checkout_session(
     """Returns {checkout_url, test_mode}. Falls back to test redirect when no Stripe key."""
     client = _stripe_client()
     if client is None:
-        # Test mode: redirect straight to success page without billing
+        # Test mode: create subscription immediately (no real billing) then redirect
+        upsert_subscription_for_user(db, user_id)
         return {
             "checkout_url": success_url + ("&" if "?" in success_url else "?") + "test_mode=1",
             "test_mode": True,
