@@ -397,7 +397,8 @@ Full API docs available at http://localhost:8000/docs when the backend is runnin
 | V1 — Launchable Product | Steps 11–24 | Complete |
 | V2 — Smarter Automation | Steps 25–32 | Complete |
 | V3 — Platform Expansion | Steps 33–37 | Complete |
-| V4 — Ecosystem Scale | Steps 38–41 | In Progress (Steps 38–40 done) |
+| V4 — Ecosystem Scale | Steps 38–41 | In Progress (Steps 38–40 done; Step 41 pending) |
+| Pre-Launch Sprint | Auth, frontend stubs, E2E | In Progress |
 
 ---
 

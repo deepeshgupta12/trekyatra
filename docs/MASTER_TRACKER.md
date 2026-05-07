@@ -78,6 +78,23 @@ All V0 foundations are shipped. The stack is live locally with:
 | 40 | Premium subscription layer | done |
 | 41 | B2B content / API extensions | pending |
 
+## Pre-Launch Sprint — In Progress
+| Item | Status |
+|------|--------|
+| PRELAUNCH_CHECKLIST.md created | done |
+| DB cleared (non-user tables) | done |
+| Auth: password reset flow (forgot + reset endpoints + frontend pages wired) | done |
+| Auth: account settings PATCH /auth/me | done |
+| Auth: account enquiries GET /auth/me/leads | done |
+| Frontend /compare — dynamic trek selector | done |
+| Frontend /account/settings — wired to PATCH /auth/me | done |
+| Frontend /account/enquiries — wired to GET /auth/me/leads | done |
+| Frontend /itineraries, /costs, /gear, /beginner, /safety — CMS hub + static fallback | done |
+| Sitemap.xml — expanded page_type map for all CMS content types | done |
+| Admin operators — detail page with agreement + review moderation | done |
+| Playwright E2E — homepage, auth, search, plan wizard specs | done |
+| Home page — search wired, dead buttons fixed, PersonalisedFeed + Operators CTA | done |
+
 ### Step 40 — Premium Subscription Layer
 Status: done
 What is done:

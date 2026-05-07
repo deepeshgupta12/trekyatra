@@ -1,31 +1,45 @@
 from __future__ import annotations
 
+import logging
+import smtplib
+import uuid
+from email.mime.text import MIMEText
+
 import httpx
 from fastapi import APIRouter, Depends, HTTPException, Request, Response, status
 from sqlalchemy.orm import Session
 
 from app.core.config import settings
+from app.core.security import create_reset_token, hash_password, parse_reset_token, validate_password_strength
 from app.db.session import get_db
 from app.modules.auth.dependencies import get_current_session, get_current_user
 from app.modules.auth.models import User, UserSession
 from app.modules.auth.service import (
     authenticate_email_user,
     create_session_for_user,
+    get_user_by_email,
     login_or_register_google_user,
+    normalize_email,
     register_email_user,
     revoke_session,
 )
 from app.schemas.auth import (
+    AccountSettingsUpdate,
     AuthResponse,
     EmailLoginRequest,
     EmailSignupRequest,
+    ForgotPasswordRequest,
     GoogleAuthRequest,
+    LeadResponse,
     MessageResponse,
     MobileOtpRequest,
     MobileOtpVerifyRequest,
     PlaceholderResponse,
+    ResetPasswordRequest,
     UserResponse,
 )
+
+logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/auth", tags=["auth"])
 
@@ -169,6 +183,7 @@ def read_current_user(user: User = Depends(get_current_user)) -> UserResponse:
             "is_verified_mobile": user.is_verified_mobile,
             "primary_auth_method": user.primary_auth_method,
             "created_at": user.created_at,
+            "subscription_plan": user.subscription_plan,
         }
     )
 
@@ -281,3 +296,116 @@ def mobile_verify_otp_placeholder(_: MobileOtpVerifyRequest) -> PlaceholderRespo
         status_code=status.HTTP_501_NOT_IMPLEMENTED,
         detail="Mobile OTP verify interface placeholder. Not implemented in Step 03.",
     )
+
+
+# ---------------------------------------------------------------------------
+# Password reset
+# ---------------------------------------------------------------------------
+
+@router.post("/forgot-password", response_model=MessageResponse)
+def forgot_password(payload: ForgotPasswordRequest, db: Session = Depends(get_db)) -> MessageResponse:
+    """Request a password reset link. Always returns 200 to prevent email enumeration."""
+    email = normalize_email(payload.email)
+    user = get_user_by_email(db, email)
+    if user:
+        token, _ = create_reset_token(user.id)
+        reset_url = f"{settings.product_download_base_url}/auth/reset-password?token={token}"
+        _send_reset_email(email, reset_url)
+    return MessageResponse(message="If an account with that email exists, a reset link has been sent.")
+
+
+@router.post("/reset-password", response_model=MessageResponse)
+def reset_password(payload: ResetPasswordRequest, db: Session = Depends(get_db)) -> MessageResponse:
+    payload_data = parse_reset_token(payload.token)
+    if not payload_data:
+        raise HTTPException(status_code=400, detail="Invalid or expired reset token.")
+    try:
+        validate_password_strength(payload.new_password)
+    except ValueError as exc:
+        raise HTTPException(status_code=422, detail=str(exc)) from exc
+    user_id = uuid.UUID(payload_data["sub"])
+    user = db.get(User, user_id)
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found.")
+    user.password_hash = hash_password(payload.new_password)
+    db.commit()
+    return MessageResponse(message="Password updated successfully. Please sign in.")
+
+
+def _send_reset_email(to_email: str, reset_url: str) -> None:
+    if not settings.smtp_host:
+        logger.info("SMTP not configured — password reset link: %s", reset_url)
+        return
+    try:
+        body = (
+            f"Hi,\n\nYou requested a password reset for your TrekYatra account.\n\n"
+            f"Click the link below to set a new password (valid for 1 hour):\n{reset_url}\n\n"
+            f"If you did not request this, ignore this email.\n\n— TrekYatra"
+        )
+        msg = MIMEText(body)
+        msg["Subject"] = "Reset your TrekYatra password"
+        msg["From"] = settings.smtp_from_email
+        msg["To"] = to_email
+        with smtplib.SMTP(settings.smtp_host, settings.smtp_port) as server:
+            if settings.smtp_user and settings.smtp_password:
+                server.starttls()
+                server.login(settings.smtp_user, settings.smtp_password)
+            server.sendmail(settings.smtp_from_email, to_email, msg.as_string())
+    except Exception:
+        logger.warning("Failed to send password reset email to %s", to_email)
+
+
+# ---------------------------------------------------------------------------
+# Account settings (update profile)
+# ---------------------------------------------------------------------------
+
+@router.patch("/me", response_model=UserResponse)
+def update_account_settings(
+    payload: AccountSettingsUpdate,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+) -> UserResponse:
+    if payload.full_name is not None:
+        current_user.full_name = payload.full_name
+    if payload.display_name is not None:
+        current_user.display_name = payload.display_name
+    db.commit()
+    db.refresh(current_user)
+    return UserResponse.model_validate({
+        "id": str(current_user.id),
+        "email": current_user.email,
+        "full_name": current_user.full_name,
+        "display_name": current_user.display_name,
+        "is_verified_email": current_user.is_verified_email,
+        "is_verified_mobile": current_user.is_verified_mobile,
+        "primary_auth_method": current_user.primary_auth_method,
+        "created_at": current_user.created_at,
+        "subscription_plan": current_user.subscription_plan,
+    })
+
+
+# ---------------------------------------------------------------------------
+# Account enquiries (leads submitted by this user's email)
+# ---------------------------------------------------------------------------
+
+@router.get("/me/leads", response_model=list[LeadResponse])
+def get_my_leads(
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+) -> list[LeadResponse]:
+    from sqlalchemy import select
+    from app.modules.leads.models import LeadSubmission
+    leads = list(db.scalars(
+        select(LeadSubmission)
+        .where(LeadSubmission.email == current_user.email)
+        .order_by(LeadSubmission.created_at.desc())
+        .limit(50)
+    ).all())
+    return [LeadResponse.model_validate({
+        "id": str(l.id),
+        "trek_interest": l.trek_interest,
+        "status": l.status,
+        "source_page": l.source_page,
+        "cta_type": l.cta_type,
+        "created_at": l.created_at,
+    }) for l in leads]

@@ -1,71 +1,109 @@
-import { MessageSquare, Clock, CheckCircle } from "lucide-react";
-import { Button } from "@/components/ui/button";
+"use client";
+
+import { useEffect, useState } from "react";
 import Link from "next/link";
+import { MessageSquare, Clock, CheckCircle, XCircle, Send } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { useAuth } from "@/lib/auth-context";
+import { useRouter } from "next/navigation";
 
-const ENQUIRIES = [
-  {
-    id: "ENQ-001",
-    trek: "Kedarkantha Winter Trek",
-    operator: "India Hikes",
-    date: "Dec 28 – Jan 5",
-    status: "replied",
-    preview: "Hi! Thanks for reaching out. We have slots available for Dec 28 departure...",
-    updated: "2 days ago",
-  },
-  {
-    id: "ENQ-002",
-    trek: "Valley of Flowers",
-    operator: "Trek the Himalayas",
-    date: "Aug 5 – Aug 12",
-    status: "pending",
-    preview: "Your enquiry has been received. We&apos;ll respond within 24 hours.",
-    updated: "5 hours ago",
-  },
-];
+interface Lead {
+  id: string;
+  trek_interest: string;
+  status: string;
+  source_page: string;
+  cta_type: string | null;
+  created_at: string;
+}
 
-const statusConfig = {
-  replied: { label: "Replied", color: "text-pine", bg: "bg-pine/10", icon: CheckCircle },
-  pending: { label: "Pending", color: "text-amber-600", bg: "bg-amber-50", icon: Clock },
+const statusIcon: Record<string, React.ReactNode> = {
+  new: <Clock className="h-3.5 w-3.5 text-amber-500" />,
+  contacted: <CheckCircle className="h-3.5 w-3.5 text-success" />,
+  converted: <CheckCircle className="h-3.5 w-3.5 text-success" />,
+  archived: <XCircle className="h-3.5 w-3.5 text-muted-foreground" />,
 };
 
-export default function Enquiries() {
+const statusStyle: Record<string, string> = {
+  new: "text-amber-500 bg-amber-400/10 border border-amber-400/20",
+  contacted: "text-success bg-success/10 border border-success/20",
+  converted: "text-success bg-success/10 border border-success/20",
+  archived: "text-muted-foreground bg-muted/20 border border-border",
+};
+
+export default function AccountEnquiries() {
+  const { user, isLoading } = useAuth();
+  const router = useRouter();
+  const [leads, setLeads] = useState<Lead[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    if (!isLoading && !user) {
+      router.push("/auth/sign-in?next=/account/enquiries");
+      return;
+    }
+    if (user) {
+      fetch("/api/v1/auth/me/leads")
+        .then((r) => r.ok ? r.json() : [])
+        .then(setLeads)
+        .catch(() => setLeads([]))
+        .finally(() => setLoading(false));
+    }
+  }, [user, isLoading, router]);
+
+  if (isLoading || loading) {
+    return (
+      <div>
+        <h1 className="font-display text-3xl font-semibold text-foreground mb-6">My Enquiries</h1>
+        <div className="space-y-3">
+          {[1, 2].map((i) => <div key={i} className="h-20 bg-muted animate-pulse rounded-xl" />)}
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div>
-      <div className="mb-8">
-        <h1 className="font-display text-3xl font-semibold mb-1">Enquiries</h1>
-        <p className="text-muted-foreground">Messages you&apos;ve sent to trek operators.</p>
+      <div className="flex items-center justify-between mb-6">
+        <div>
+          <h1 className="font-display text-3xl font-semibold text-foreground mb-1">My Enquiries</h1>
+          <p className="text-muted-foreground text-sm">Trek inquiries and lead forms you have submitted.</p>
+        </div>
+        <Link href="/operators">
+          <Button variant="hero" size="sm" className="gap-1.5">
+            <Send className="h-3.5 w-3.5" /> New enquiry
+          </Button>
+        </Link>
       </div>
 
-      {ENQUIRIES.length === 0 ? (
-        <div className="text-center py-20">
-          <MessageSquare className="h-12 w-12 text-muted-foreground/40 mx-auto mb-4" />
-          <h2 className="font-display text-xl font-semibold mb-2">No enquiries yet</h2>
-          <p className="text-muted-foreground mb-6">Use the &quot;Plan this trek&quot; form on any trek page to contact operators.</p>
-          <Link href="/explore" className="text-accent font-medium text-sm">Explore treks →</Link>
+      {leads.length === 0 ? (
+        <div className="text-center py-16 bg-card rounded-2xl border border-border">
+          <MessageSquare className="h-10 w-10 text-muted-foreground/30 mx-auto mb-3" />
+          <p className="text-muted-foreground font-medium mb-1">No enquiries yet</p>
+          <p className="text-sm text-muted-foreground mb-4">Submit an inquiry from any trek or operator page.</p>
+          <Link href="/operators">
+            <Button variant="outline" size="sm">Browse operators</Button>
+          </Link>
         </div>
       ) : (
-        <div className="space-y-4">
-          {ENQUIRIES.map(enq => {
-            const { label, color, bg, icon: Icon } = statusConfig[enq.status as keyof typeof statusConfig];
-            return (
-              <div key={enq.id} className="bg-surface rounded-2xl border border-border p-5">
-                <div className="flex items-start justify-between gap-4 mb-3">
-                  <div>
-                    <h3 className="font-medium">{enq.trek}</h3>
-                    <p className="text-sm text-muted-foreground">{enq.operator} · {enq.date}</p>
-                  </div>
-                  <span className={`flex items-center gap-1.5 text-xs font-medium px-2.5 py-1 rounded-full ${color} ${bg}`}>
-                    <Icon className="h-3 w-3" /> {label}
+        <div className="space-y-3">
+          {leads.map((lead) => (
+            <div key={lead.id} className="bg-card rounded-xl border border-border p-4 flex items-start gap-3">
+              <div className="w-9 h-9 rounded-full bg-accent/10 flex items-center justify-center flex-shrink-0">
+                <MessageSquare className="h-4 w-4 text-accent" />
+              </div>
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center gap-2 flex-wrap mb-1">
+                  <span className="font-medium text-foreground text-sm">{lead.trek_interest}</span>
+                  <span className={`text-xs px-2 py-0.5 rounded-full font-medium inline-flex items-center gap-1 ${statusStyle[lead.status] ?? statusStyle.new}`}>
+                    {statusIcon[lead.status]} {lead.status}
                   </span>
                 </div>
-                <p className="text-sm text-muted-foreground line-clamp-2 mb-4">{enq.preview}</p>
-                <div className="flex items-center justify-between">
-                  <span className="text-xs text-muted-foreground">Updated {enq.updated}</span>
-                  <Button variant="outline" size="sm">View thread</Button>
-                </div>
+                <p className="text-xs text-muted-foreground">
+                  Via {lead.cta_type?.replace("_", " ") ?? "contact form"} · {new Date(lead.created_at).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" })}
+                </p>
               </div>
-            );
-          })}
+            </div>
+          ))}
         </div>
       )}
     </div>

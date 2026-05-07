@@ -69,3 +69,28 @@ class MessageResponse(BaseModel):
 
 class PlaceholderResponse(BaseModel):
     detail: str
+
+
+class ForgotPasswordRequest(BaseModel):
+    email: str
+
+
+class ResetPasswordRequest(BaseModel):
+    token: str
+    new_password: str = Field(min_length=8, max_length=128)
+
+
+class AccountSettingsUpdate(BaseModel):
+    full_name: str | None = Field(default=None, max_length=255)
+    display_name: str | None = Field(default=None, max_length=255)
+
+
+class LeadResponse(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    id: str
+    trek_interest: str
+    status: str
+    source_page: str
+    cta_type: str | None
+    created_at: datetime

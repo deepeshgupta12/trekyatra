@@ -41,12 +41,23 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     const pages = await fetchCMSPages({ status: "published", limit: 500 });
     for (const p of pages) {
       const prefix: Record<string, string> = {
-        trek_guide: "/treks",
+        trek_guide: "/trek",
         packing_list: "/packing",
+        packing_guide: "/packing",
         permit_guide: "/permits",
+        beginner_guide: "/guides",
         beginner_roundup: "/guides",
+        cost_guide: "/guides",
+        gear_guide: "/guides",
+        safety_guide: "/guides",
+        itinerary: "/guides",
+        expert_guide: "/guides",
+        premium_compendium: "/guides",
         comparison: "/compare",
         seasonal: "/seasons",
+        seasonal_hub: "/seasons",
+        cluster_hub: "/trek-types",
+        regional_hub: "/regions",
       };
       const base = prefix[p.page_type];
       if (base) {

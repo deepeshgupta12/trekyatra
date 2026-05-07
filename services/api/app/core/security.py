@@ -120,3 +120,27 @@ def parse_access_token(token: str) -> dict | None:
 def validate_password_strength(password: str) -> None:
     if len(password) < 8:
         raise ValueError("Password must be at least 8 characters long.")
+
+
+def create_reset_token(user_id: uuid.UUID) -> tuple[str, datetime]:
+    """Issue a short-lived JWT for password reset (1 hour TTL)."""
+    expires_at = datetime.now(timezone.utc) + timedelta(hours=1)
+    payload = {
+        "sub": str(user_id),
+        "typ": "password_reset",
+        "iat": datetime.now(timezone.utc),
+        "exp": expires_at,
+    }
+    token = jwt.encode(payload, settings.auth_jwt_secret, algorithm=settings.auth_jwt_algorithm)
+    return token, expires_at
+
+
+def parse_reset_token(token: str) -> dict | None:
+    """Return the JWT payload if valid and typ=password_reset, else None."""
+    try:
+        payload = jwt.decode(token, settings.auth_jwt_secret, algorithms=[settings.auth_jwt_algorithm])
+        if payload.get("typ") != "password_reset":
+            return None
+        return payload
+    except InvalidTokenError:
+        return None

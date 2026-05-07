@@ -305,6 +305,40 @@
 
 ---
 
+---
+
+## Pre-Launch Sprint (Steps 38–40 complete; pre-launch polish)
+
+### Auth Gaps [DONE]
+- `POST /auth/forgot-password` — HMAC JWT reset token, graceful SMTP
+- `POST /auth/reset-password` — verifies token, sets new password
+- `PATCH /auth/me` — update full_name, display_name
+- `GET /auth/me/leads` — enquiries for current user's email
+- Frontend: `/auth/forgot-password` and `/auth/reset-password` wired
+- Frontend: `/account/settings` wired to PATCH /auth/me
+- Frontend: `/account/enquiries` wired to GET /auth/me/leads
+
+### Frontend Stubs Fixed [DONE]
+- `/compare` — dynamic trek selector (dropdowns, live comparison table)
+- `/itineraries`, `/costs`, `/gear`, `/beginner`, `/safety` — CMS hub + static fallback
+- `CMSPageHub` component for all content hub pages
+- Home page: search bar wired, dead buttons fixed, PersonalisedFeed + Operators CTA added
+
+### Infrastructure [DONE]
+- DB cleared (non-user tables) — fresh state for content pipeline
+- Sitemap.xml — expanded to cover all CMS page_type values
+- Admin operators detail page (`/admin/operators/[id]`) — agreement + review moderation
+- Playwright E2E setup — homepage, auth, search, plan wizard specs
+- `docs/PRELAUNCH_CHECKLIST.md` created — comprehensive go-live checklist
+
+### Deferred to Production Sprint
+- Step 41 (B2B / API extensions)
+- Production hosting, CI/CD, CDN, secrets manager
+- Real API keys (Anthropic, Stripe, Razorpay, SMTP, Google OAuth)
+- Content pipeline run + 20+ CMS pages published
+- MonetizationSlot + GatedContent wiring on trek detail pages
+- Load testing, cross-browser testing
+
 ## Execution Rule
 Do not start the next step without user confirmation.
-Current next step: **Step 38 — Operator Marketplace Layer**
+Current next step: **Step 41 — B2B Content / API Extensions**

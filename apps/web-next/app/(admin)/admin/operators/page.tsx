@@ -1,7 +1,8 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
-import { Building2, Plus, Pencil, Trash2, CheckCircle, XCircle, AlertCircle, Loader2, X } from "lucide-react";
+import Link from "next/link";
+import { Building2, Plus, Pencil, Trash2, CheckCircle, XCircle, AlertCircle, Loader2, X, FileText } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { fetchOperators, createOperator, patchOperator, deleteOperator, Operator } from "@/lib/api";
 
@@ -290,6 +291,13 @@ export default function OperatorsPage() {
                         >
                           <Pencil className="h-3.5 w-3.5" />
                         </button>
+                        <Link
+                          href={`/admin/operators/${op.id}`}
+                          className="text-white/40 hover:text-accent transition-colors"
+                          title="Agreement & reviews"
+                        >
+                          <FileText className="h-3.5 w-3.5" />
+                        </Link>
                         <button
                           onClick={() => handleDelete(op.id)}
                           disabled={deleting === op.id}
