@@ -2,6 +2,7 @@ services:
   postgres:
     image: pgvector/pgvector:pg16
     container_name: trekyatra-postgres
+    restart: unless-stopped
     environment:
       POSTGRES_DB: trekyatra
       POSTGRES_USER: trekyatra
@@ -19,6 +20,7 @@ services:
   redis:
     image: redis:7-alpine
     container_name: trekyatra-redis
+    restart: unless-stopped
     ports:
       - "6380:6379"
     volumes:
