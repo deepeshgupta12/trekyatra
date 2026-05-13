@@ -78,6 +78,26 @@ All V0 foundations are shipped. The stack is live locally with:
 | 40 | Premium subscription layer | done |
 | 41 | B2B content / API extensions | pending |
 
+## Production Deployment — In Progress (DigitalOcean BLR1)
+> Full details in `docs/PRODUCTION_SETUP.md`
+
+| Item | Status |
+|------|--------|
+| Domain purchased: trekyatra.co.in (GoDaddy) | done |
+| PostgreSQL 16 + pgvector cluster (trekyatra-db, BLR1) | done |
+| pgvector extension enabled + trekyatra_user permissions granted | done |
+| Valkey 8 Redis cluster (db-valkey-blr1-95254, BLR1) | done |
+| App Platform — `web` component configured (Next.js) | in progress |
+| App Platform — App-level env vars | in progress |
+| App Platform — `api` component (FastAPI) | pending |
+| App Platform — `celery-worker` component | pending |
+| App Platform — `celery-beat` component | pending |
+| alembic upgrade head on production | pending |
+| Domain DNS → GoDaddy | pending |
+| Stripe webhook registration | pending |
+| Google Search Console | pending |
+| 41 | B2B content / API extensions | pending |
+
 ## Pre-Launch Sprint — In Progress
 | Item | Status |
 |------|--------|

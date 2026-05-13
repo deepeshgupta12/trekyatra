@@ -424,6 +424,21 @@ Full API docs available at http://localhost:8000/docs when the backend is runnin
 | V3 — Platform Expansion | Steps 33–37 | Complete |
 | V4 — Ecosystem Scale | Steps 38–41 | In Progress (Steps 38–40 done; Step 41 pending) |
 | Pre-Launch Sprint | Auth, stubs, E2E, UI polish | Complete — see PRELAUNCH_CHECKLIST.md for remaining manual items |
+| **Production Deploy** | DigitalOcean BLR1 | In Progress — see docs/PRODUCTION_SETUP.md |
+
+## Production Infrastructure
+
+| Service | Provider | Region | Status |
+|---------|----------|--------|--------|
+| Frontend (Next.js) | DO App Platform | BLR1 Bangalore | 🔄 Configuring |
+| Backend API (FastAPI) | DO App Platform | BLR1 Bangalore | ⏳ Pending |
+| Celery Worker | DO App Platform | BLR1 Bangalore | ⏳ Pending |
+| Celery Beat | DO App Platform | BLR1 Bangalore | ⏳ Pending |
+| PostgreSQL 16 + pgvector | DO Managed DB | BLR1 Bangalore | ✅ Ready |
+| Valkey 8 (Redis) | DO Managed DB | BLR1 Bangalore | ✅ Ready |
+| Domain | GoDaddy | — | ⏳ DNS pending |
+
+Full setup log: `docs/PRODUCTION_SETUP.md`
 
 ---
 

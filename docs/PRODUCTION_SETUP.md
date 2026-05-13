@@ -1,0 +1,325 @@
+# TrekYatra Production Setup Log
+
+> This file tracks every production infrastructure decision and configuration step.
+> It is the authoritative reference for what has been set up, where, and why.
+> **DO NOT commit passwords, API keys, or secrets here.**
+> Last updated: 2026-05-13
+
+---
+
+## Infrastructure Overview
+
+| Layer | Service | Provider | Region | Status |
+|-------|---------|----------|--------|--------|
+| Frontend | App Platform — `web` | DigitalOcean | BLR1 Bangalore | 🔄 Configuring |
+| Backend API | App Platform — `api` | DigitalOcean | BLR1 Bangalore | ⏳ Pending |
+| Celery Worker | App Platform — `celery-worker` | DigitalOcean | BLR1 Bangalore | ⏳ Pending |
+| Celery Beat | App Platform — `celery-beat` | DigitalOcean | BLR1 Bangalore | ⏳ Pending |
+| Database | Managed PostgreSQL 16 + pgvector | DigitalOcean | BLR1 Bangalore | ✅ Ready |
+| Cache | Managed Valkey 8 (Redis-compatible) | DigitalOcean | BLR1 Bangalore | ✅ Ready |
+| Domain | trekyatra.co.in | GoDaddy | — | ⏳ Pending DNS |
+
+---
+
+## Domain
+
+| Item | Value |
+|------|-------|
+| **Domain** | `trekyatra.co.in` |
+| **Registrar** | GoDaddy |
+| **Frontend URL** | `https://trekyatra.co.in` |
+| **API URL** | `https://api.trekyatra.co.in` |
+
+---
+
+## Step 1 — DigitalOcean Account ✅
+
+- Created DigitalOcean account
+- Project created: **TrekYatra** (Production)
+- Signup credit: $5.00 applied
+
+---
+
+## Step 2 — PostgreSQL Database ✅
+
+**Cluster name:** `trekyatra-db`
+
+| Setting | Value |
+|---------|-------|
+| Engine | PostgreSQL 16 |
+| Plan | Basic — Shared CPU |
+| RAM | 1 GB |
+| vCPU | 1 |
+| Storage | 10 GiB SSD |
+| Region | Bangalore • Datacenter 1 • BLR1 |
+| Cost | $15.15/month ($13 compute + $2.15 storage) |
+| VPC | default-blr1 |
+| Standby | Primary only |
+
+### Database & User Created
+
+| Item | Value |
+|------|-------|
+| **Application database** | `trekyatra` |
+| **Application user** | `trekyatra_user` |
+| **System admin user** | `doadmin` |
+| **Port** | `25060` |
+| **SSL mode** | `require` |
+| **Host** | `trekyatra-db-do-user-37216682-0.m.db.ondigitalocean.com` |
+
+### pgvector Extension
+
+```sql
+-- Ran in psql as doadmin against the trekyatra database:
+CREATE EXTENSION IF NOT EXISTS vector;
+-- Confirmed: vector v0.x.x installed
+
+-- Permissions granted to trekyatra_user:
+GRANT ALL PRIVILEGES ON DATABASE trekyatra TO trekyatra_user;
+GRANT ALL ON SCHEMA public TO trekyatra_user;
+ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT ALL ON TABLES TO trekyatra_user;
+ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT ALL ON SEQUENCES TO trekyatra_user;
+```
+
+### Connection String Format (no password)
+
+```
+DATABASE_URL=postgresql+psycopg://trekyatra_user:PASSWORD@trekyatra-db-do-user-37216682-0.m.db.ondigitalocean.com:25060/trekyatra?sslmode=require
+```
+
+> Get password from: DigitalOcean → trekyatra-db → Users & Databases → trekyatra_user → show
+
+---
+
+## Step 3 — Redis / Valkey Cache ✅
+
+**Cluster name:** `db-valkey-blr1-95254`
+
+| Setting | Value |
+|---------|-------|
+| Engine | Valkey 8 (Redis-compatible) |
+| Plan | Basic |
+| RAM | 1 GB |
+| Storage | 10 GiB |
+| Region | Bangalore • BLR1 |
+| Port | `25061` |
+| SSL | Yes (use `rediss://` with double-s) |
+| Cost | $15.00/month |
+| Eviction policy | noeviction |
+
+| Item | Value |
+|------|-------|
+| **Host** | `db-valkey-blr1-95254-do-user-37216682-0.m.db.ondigitalocean.com` |
+| **Port** | `25061` |
+| **Username** | `default` |
+
+### Connection String Format (no password)
+
+```
+REDIS_URL=rediss://default:PASSWORD@db-valkey-blr1-95254-do-user-37216682-0.m.db.ondigitalocean.com:25061
+REDIS_HOST=db-valkey-blr1-95254-do-user-37216682-0.m.db.ondigitalocean.com
+REDIS_PORT=25061
+```
+
+> Get password from: DigitalOcean → db-valkey-blr1-95254 → Overview → Connection Details → show
+
+---
+
+## Step 4 — App Platform Setup 🔄
+
+**App name:** `trekyatra`
+
+### Component 1 — `web` (Next.js Frontend) 🔄
+
+| Setting | Value |
+|---------|-------|
+| Name | `web` |
+| Type | Web Service |
+| Repository | `deepeshgupta12/trekyatra` |
+| Branch | `main` |
+| Auto-deploy | Enabled |
+| Source Directory | root (DO detected Node.js automatically) |
+| Build Command | `cd apps/web-next && npm install && npm run build` |
+| Run Command | `cd apps/web-next && npm start` |
+| HTTP Port | `3000` |
+| Instance | 1 GB RAM / 1 Shared vCPU |
+| Containers | 1 |
+| Cost | $12/month |
+
+**Component-level env vars (non-secret):**
+
+| Variable | Value |
+|----------|-------|
+| `NEXT_PUBLIC_API_BASE` | `https://api.trekyatra.co.in` |
+| `NEXT_PUBLIC_SITE_URL` | `https://trekyatra.co.in` |
+| `NEXT_PUBLIC_GA4_ID` | (to be added later) |
+| `NEXT_PUBLIC_RAZORPAY_KEY_ID` | (to be added later) |
+| `NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY` | (to be added later) |
+| `NEXT_PUBLIC_GOOGLE_CLIENT_ID` | (to be added later) |
+
+---
+
+### Component 2 — `api` (FastAPI Backend) ⏳
+
+> To be added after initial app creation via Components → Create Component
+
+| Setting | Value |
+|---------|-------|
+| Name | `api` |
+| Type | Web Service |
+| Repository | `deepeshgupta12/trekyatra` |
+| Branch | `main` |
+| Source Directory | `services/api` |
+| Build Command | `pip install -e .` |
+| Run Command | `uvicorn app.main:app --host 0.0.0.0 --port $PORT` |
+| HTTP Port | `8080` |
+| Instance | 1 GB RAM / 1 Shared vCPU |
+| Containers | 1 |
+| Cost | $12/month |
+
+**Custom domain:** `api.trekyatra.co.in` (to be configured after app creation)
+
+---
+
+### Component 3 — `celery-worker` ⏳
+
+> To be added after initial app creation
+
+| Setting | Value |
+|---------|-------|
+| Name | `celery-worker` |
+| Type | Worker |
+| Source Directory | `services/api` |
+| Build Command | `pip install -e .` |
+| Run Command | `celery -A app.worker.celery_app worker --loglevel=info --concurrency=2` |
+| Instance | 1 GB RAM / 1 Shared vCPU |
+| Cost | $12/month |
+
+---
+
+### Component 4 — `celery-beat` ⏳
+
+> To be added after initial app creation
+
+| Setting | Value |
+|---------|-------|
+| Name | `celery-beat` |
+| Type | Worker |
+| Source Directory | `services/api` |
+| Build Command | `pip install -e .` |
+| Run Command | `celery -A app.worker.celery_app beat --loglevel=info` |
+| Instance | 1 GB RAM / 1 Shared vCPU |
+| Cost | $12/month |
+
+---
+
+## App-Level Environment Variables ⏳
+
+These are shared across all components. Set in App Platform → App-level environment variables:
+
+| Variable | Notes |
+|----------|-------|
+| `DATABASE_URL` | postgresql+psycopg://trekyatra_user:PASSWORD@HOST:25060/trekyatra?sslmode=require |
+| `REDIS_URL` | rediss://default:PASSWORD@HOST:25061 |
+| `REDIS_HOST` | db-valkey-blr1-95254-do-user-37216682-0.m.db.ondigitalocean.com |
+| `REDIS_PORT` | 25061 |
+| `AUTH_JWT_SECRET` | Generated with: `openssl rand -hex 64` |
+| `AUTH_COOKIE_SECURE` | true |
+| `AUTH_COOKIE_SAMESITE` | none |
+| `ADMIN_EMAIL` | guyshazam12@gmail.com |
+| `ADMIN_PASSWORD` | (secret — set in DO dashboard) |
+| `ANTHROPIC_API_KEY` | (secret — set in DO dashboard) |
+| `OPENAI_API_KEY` | (secret — set in DO dashboard) |
+| `RAZORPAY_KEY_ID` | (secret — set in DO dashboard) |
+| `RAZORPAY_KEY_SECRET` | (secret — set in DO dashboard) |
+| `STRIPE_SECRET_KEY` | (secret — set in DO dashboard) |
+| `STRIPE_WEBHOOK_SECRET` | (secret — configure after Stripe webhook registered) |
+| `STRIPE_PREMIUM_PRICE_ID_MONTHLY` | (from Stripe Dashboard → Products) |
+| `STRIPE_PREMIUM_PRICE_ID_ANNUAL` | (from Stripe Dashboard → Products) |
+| `SMTP_HOST` | smtp.resend.com (recommended) |
+| `SMTP_PORT` | 587 |
+| `SMTP_USER` | resend |
+| `SMTP_PASSWORD` | (secret — Resend API key) |
+| `SMTP_FROM_EMAIL` | hello@trekyatra.co.in |
+| `GOOGLE_CLIENT_ID` | (from Google Cloud Console) |
+| `GOOGLE_CLIENT_SECRET` | (secret — from Google Cloud Console) |
+| `APP_ENV` | production |
+| `APP_DEBUG` | false |
+| `PRODUCT_DOWNLOAD_BASE_URL` | https://trekyatra.co.in |
+
+---
+
+## Step 5 — Database Migrations ⏳
+
+> Run AFTER all App Platform components are deployed and healthy.
+
+Open Console on the `api` component:
+```bash
+alembic upgrade head
+```
+
+Expected output: `Running upgrade ... -> 20260506_0030, subscriptions`
+
+---
+
+## Step 6 — Domain DNS Configuration ⏳
+
+> Configure in GoDaddy AFTER App Platform gives you the DNS records.
+
+In GoDaddy DNS Manager for `trekyatra.co.in`:
+
+| Type | Name | Value | Purpose |
+|------|------|-------|---------|
+| A | `@` | (DO App Platform IP) | Root domain → Next.js frontend |
+| CNAME | `www` | (DO domain) | www redirect |
+| CNAME | `api` | (DO domain) | API subdomain → FastAPI |
+
+DigitalOcean auto-provisions SSL via Let's Encrypt once DNS propagates (10–30 min).
+
+---
+
+## Step 7 — Stripe Webhook ⏳
+
+After API is live at `https://api.trekyatra.co.in`:
+
+1. Stripe Dashboard → Developers → Webhooks → Add endpoint
+2. URL: `https://api.trekyatra.co.in/api/v1/subscriptions/webhook`
+3. Events: `customer.subscription.created`, `customer.subscription.updated`, `customer.subscription.deleted`, `invoice.payment_failed`
+4. Copy Signing secret → set as `STRIPE_WEBHOOK_SECRET` in DO App Platform env vars
+
+---
+
+## Step 8 — Google Search Console ⏳
+
+1. [search.google.com/search-console](https://search.google.com/search-console) → Add property
+2. Domain: `trekyatra.co.in`
+3. Verify via DNS TXT record in GoDaddy
+4. Submit sitemap: `https://trekyatra.co.in/sitemap.xml`
+
+---
+
+## Estimated Monthly Cost
+
+| Service | Cost |
+|---------|------|
+| PostgreSQL (Basic, BLR1) | $15.15/mo |
+| Valkey/Redis (Basic, BLR1) | $15.00/mo |
+| App Platform — `web` | $12.00/mo |
+| App Platform — `api` | $12.00/mo |
+| App Platform — `celery-worker` | $12.00/mo |
+| App Platform — `celery-beat` | $12.00/mo |
+| **Total** | **~$78.15/mo** |
+
+---
+
+## Post-Deploy Manual Tasks (Owner)
+
+- [ ] Run alembic migrations via Console
+- [ ] Log into admin panel at `https://trekyatra.co.in/admin/sign-in`
+- [ ] Run content pipeline (requires ANTHROPIC_API_KEY)
+- [ ] Add operators via `/admin/operators`
+- [ ] Add products via `/admin/products`
+- [ ] Seed email sequences via `/admin/email-sequences`
+- [ ] Set up Stripe webhook
+- [ ] Submit sitemap to Google Search Console
+- [ ] Set up UptimeRobot monitoring on `https://trekyatra.co.in` and `https://api.trekyatra.co.in/api/v1/health`

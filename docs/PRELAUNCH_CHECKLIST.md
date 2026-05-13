@@ -242,24 +242,26 @@
 
 ---
 
-## SECTION E — PRODUCTION READINESS (All DEFERRED until production sprint)
+## SECTION E — PRODUCTION READINESS
 
-| # | Item | Priority |
-|---|------|----------|
-| P01 | Production hosting (Railway / Vercel / Fly.io) | Critical |
-| P02 | Managed PostgreSQL with pgvector | Critical |
-| P03 | Managed Redis (Upstash / Railway) | Critical |
-| P04 | GitHub Actions CI/CD (test → build → deploy) | High |
-| P05 | SSL / custom domain | Critical |
-| P06 | Object storage for product files (Cloudflare R2 / S3) | High |
-| P07 | CDN (Vercel Edge / Cloudflare) | Medium |
-| P08 | Database backups | High |
-| P09 | Log aggregation (Logtail / Datadog) | Medium |
-| P10 | Secrets manager (Doppler / Railway env vars) | High |
-| P11 | Celery worker deployed as separate process | Critical |
-| P12 | Celery beat deployed as separate process | Critical |
-| P13 | Health check monitoring (UptimeRobot) | Medium |
-| P14 | Docker multi-arch build (arm64 + amd64) | Medium |
+> Full setup log with connection details (no passwords) is in `docs/PRODUCTION_SETUP.md`.
+
+| # | Item | Status | Notes |
+|---|------|--------|-------|
+| P01 | Production hosting — DigitalOcean App Platform | `[~]` | `web` component configured; `api`, `celery-worker`, `celery-beat` pending |
+| P02 | Managed PostgreSQL 16 + pgvector | `[x]` | `trekyatra-db` — BLR1, 1GB, pgvector enabled, trekyatra_user granted |
+| P03 | Managed Redis (Valkey 8) | `[x]` | `db-valkey-blr1-95254` — BLR1, 1GB, port 25061, SSL |
+| P04 | GitHub Actions CI/CD | `[DEFERRED]` | DO App Platform auto-deploys on push to main (no Actions needed for now) |
+| P05 | SSL / custom domain (`trekyatra.co.in`) | `[ ]` | DNS not yet configured in GoDaddy |
+| P06 | Object storage for product files | `[DEFERRED]` | Use DigitalOcean Spaces when digital products are live |
+| P07 | CDN | `[x]` | DigitalOcean App Platform serves static assets via Global CDN |
+| P08 | Database backups | `[x]` | DigitalOcean managed DB auto-backups enabled (PITR) |
+| P09 | Log aggregation | `[DEFERRED]` | DigitalOcean App logs available; forward to Logtail post-launch |
+| P10 | Secrets manager | `[x]` | Secrets stored encrypted in DigitalOcean App Platform env vars |
+| P11 | Celery worker deployed | `[ ]` | `celery-worker` component pending — add after app creation |
+| P12 | Celery beat deployed | `[ ]` | `celery-beat` component pending — add after app creation |
+| P13 | Health check monitoring (UptimeRobot) | `[ ]` | Set up after domain is live |
+| P14 | alembic upgrade head on production | `[ ]` | Run via App Platform Console after deploy |
 
 ---
 
@@ -285,7 +287,7 @@
 
 | # | Task | Status |
 |---|------|--------|
-| M01 | Place logo PNG at `/public/images/logo.png` | `[ ]` |
+| M01 | Place logo PNG at `/public/images/Logo_Trekyatra.png` | `[x]` | Done — logo active in Header and Footer |
 | M02 | Run content pipeline: trigger → brief approve → write → publish ≥20 trek guides | `[ ]` |
 | M03 | Review and approve AI-generated briefs | `[ ]` |
 | M04 | Review AI-generated drafts (check YMYL claims) | `[ ]` |
