@@ -372,41 +372,38 @@ Expected output: `Running upgrade ... -> 20260506_0030, subscriptions`
 
 ---
 
-## Step 6 — Domain DNS Configuration 🔄 (IN PROGRESS)
+## Step 6 — Domain DNS Configuration 🔄 (Root domain pending — www + api ACTIVE)
 
-### Part A — DigitalOcean Networking tab ✅ DONE (3 domains added)
+### Part A — DigitalOcean Networking tab ✅ DONE
 
-| Domain | Status | Management |
-|--------|--------|-----------|
-| `trekyatra.co.in` (PRIMARY) | Configuring ⏳ | You manage your domain |
-| `www.trekyatra.co.in` | Configuring ⏳ | You manage your domain |
-| `api.trekyatra.co.in` | Pending ⏳ | You manage your domain |
+| Domain | DO Status | Notes |
+|--------|-----------|-------|
+| `trekyatra.co.in` (PRIMARY) | Configuring ⏳ | Blocked by WebsiteBuilder A record in GoDaddy — delete it |
+| `www.trekyatra.co.in` | ✅ Active | CNAME → trekyatra-ssvha.ondigitalocean.app |
+| `api.trekyatra.co.in` | ✅ Active | CNAME → trekyatra-ssvha.ondigitalocean.app |
 
-**CNAME alias confirmed:** `trekyatra-ssvha.ondigitalocean.app`
-**A record IPs confirmed:** `162.159.140.98` and `172.66.0.96`
+### Step A5 — Routing rules ✅ DONE
 
-**Component routing rules (from Networking tab):**
-- `/` → `web` (auto-created, matches all domains) — correct ✅
-- `/trekyatra-services-api` → `api` (auto-created path-based) — internal DO routing, keep
-- **STILL NEEDED:** subdomain rule `api.trekyatra.co.in → api` component
+All 5 rules configured. See routing rules section above.
 
-**Cloudflare note:** DO shows "domain hosted on Cloudflare" tooltip.
-This is because GoDaddy uses Cloudflare's infrastructure for some `.co.in` domains.
-The DNS records must still be added in **GoDaddy's DNS Manager** — not in a separate Cloudflare account.
-If GoDaddy shows "Cloudflare" in DNS, add the records there and DO will detect them.
+### CORS ✅ DONE
 
-### Part B — GoDaddy DNS ⏳ (TO DO NOW)
+CORSMiddleware added to main.py (commit 02be391).
 
-**Add these records in GoDaddy → DNS Manager → trekyatra.co.in:**
+### Part B — GoDaddy DNS ✅ MOSTLY DONE
 
-| Type | Name | Value | TTL |
-|------|------|-------|-----|
-| A | `@` | `162.159.140.98` | 300 |
-| A | `@` | `172.66.0.96` | 300 |
-| CNAME | `www` | `trekyatra-ssvha.ondigitalocean.app` | 300 |
-| CNAME | `api` | `trekyatra-ssvha.ondigitalocean.app` | 300 |
+**Final GoDaddy DNS state (confirmed from dashboard):**
 
-> Note: GoDaddy does NOT support CNAME at root (`@`) — use the two A records instead.
+| Type | Name | Value | TTL | Status |
+|------|------|-------|-----|--------|
+| A | `@` | `162.159.140.98` | 600s | ✅ Added |
+| A | `@` | `172.66.0.96` | 600s | ✅ Added |
+| A | `@` | `WebsiteBuilder Site` | 1 Hour | ❌ DELETE THIS — blocking root domain |
+| CNAME | `www` | `trekyatra-ssvha.ondigitalocean.app` | 1/2 Hour | ✅ Updated |
+| CNAME | `api` | `trekyatra-ssvha.ondigitalocean.app` | 1 Hour | ✅ Added |
+| CNAME | `email` | `email.secureserver.net` | 1 Hour | ✅ Keep (GoDaddy email) |
+
+**One action remaining:** Delete the `A | @ | WebsiteBuilder Site` record → `trekyatra.co.in` will become Active.
 > DNS propagation: 10–30 minutes. DO auto-provisions SSL via Let's Encrypt after DNS resolves.
 
 ### Step A5 — Component Routing Rules ✅ DONE

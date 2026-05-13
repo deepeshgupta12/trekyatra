@@ -436,10 +436,13 @@ Full API docs available at http://localhost:8000/docs when the backend is runnin
 | Celery Beat — `celery-beat` | DO App Platform | BLR1 Bangalore | ✅ HEALTHY (2% CPU, 14% RAM) |
 | PostgreSQL 16 + pgvector | DO Managed DB | BLR1 Bangalore | ✅ Ready — 30 migrations applied |
 | Valkey 8 (Redis) | DO Managed DB | BLR1 Bangalore | ✅ Ready — SSL + auth configured |
-| Domain `trekyatra.co.in` | GoDaddy | — | ⏳ DNS configuration next |
+| `www.trekyatra.co.in` | GoDaddy → DO | BLR1 | ✅ Active — SSL provisioned |
+| `api.trekyatra.co.in` | GoDaddy → DO | BLR1 | ✅ Active — SSL provisioned |
+| `trekyatra.co.in` (root) | GoDaddy → DO | BLR1 | 🔄 Configuring — delete WebsiteBuilder A record |
 
-**Temporary URL:** `https://trekyatra-ssvha.ondigitalocean.app/`
-**Monthly cost:** $48/month
+**Live URL (www):** `https://www.trekyatra.co.in`
+**Live API:** `https://api.trekyatra.co.in`
+**Monthly cost:** $48/month (+ $30.15 DBs = **~$78/month total**)
 
 Full setup log: `docs/PRODUCTION_SETUP.md`
 
