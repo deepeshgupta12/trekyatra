@@ -101,7 +101,9 @@ All V0 foundations are shipped. The stack is live locally with:
 | celery-worker — ✅ HEALTHY (Redis auth fixed: REDIS_PASSWORD + REDIS_USERNAME env vars added) | done |
 | ALL 4 COMPONENTS HEALTHY — web, api, celery-worker, celery-beat | done |
 | Monthly cost confirmed: $48/month | done |
-| Domain DNS → GoDaddy (trekyatra.co.in → DO App Platform) | pending — next step |
+| Domain — DO Networking: trekyatra.co.in, www.trekyatra.co.in, api.trekyatra.co.in added (Configuring/Pending) | done |
+| Domain — GoDaddy DNS: A records + CNAME records to be added | pending — next action |
+| Domain — Component routing rule: api.trekyatra.co.in → api component | pending — after DNS |
 | App Platform — remaining env vars (ANTHROPIC_API_KEY, SMTP, Stripe, Razorpay, Google OAuth) | pending |
 | Stripe webhook registration | pending |
 | Google Search Console | pending |

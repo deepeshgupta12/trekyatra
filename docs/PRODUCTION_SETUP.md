@@ -372,17 +372,51 @@ Expected output: `Running upgrade ... -> 20260506_0030, subscriptions`
 
 ---
 
-## Step 6 — Domain DNS Configuration 🔄 (NEXT STEP)
+## Step 6 — Domain DNS Configuration 🔄 (IN PROGRESS)
 
-> Configure in GoDaddy AFTER App Platform gives you the DNS records.
+### Part A — DigitalOcean Networking tab ✅ DONE (3 domains added)
 
-In GoDaddy DNS Manager for `trekyatra.co.in`:
+| Domain | Status | Management |
+|--------|--------|-----------|
+| `trekyatra.co.in` (PRIMARY) | Configuring ⏳ | You manage your domain |
+| `www.trekyatra.co.in` | Configuring ⏳ | You manage your domain |
+| `api.trekyatra.co.in` | Pending ⏳ | You manage your domain |
 
-| Type | Name | Value | Purpose |
-|------|------|-------|---------|
-| A | `@` | (DO App Platform IP) | Root domain → Next.js frontend |
-| CNAME | `www` | (DO domain) | www redirect |
-| CNAME | `api` | (DO domain) | API subdomain → FastAPI |
+**CNAME alias confirmed:** `trekyatra-ssvha.ondigitalocean.app`
+**A record IPs confirmed:** `162.159.140.98` and `172.66.0.96`
+
+**Component routing rules (from Networking tab):**
+- `/` → `web` (auto-created, matches all domains) — correct ✅
+- `/trekyatra-services-api` → `api` (auto-created path-based) — internal DO routing, keep
+- **STILL NEEDED:** subdomain rule `api.trekyatra.co.in → api` component
+
+**Cloudflare note:** DO shows "domain hosted on Cloudflare" tooltip.
+This is because GoDaddy uses Cloudflare's infrastructure for some `.co.in` domains.
+The DNS records must still be added in **GoDaddy's DNS Manager** — not in a separate Cloudflare account.
+If GoDaddy shows "Cloudflare" in DNS, add the records there and DO will detect them.
+
+### Part B — GoDaddy DNS ⏳ (TO DO NOW)
+
+**Add these records in GoDaddy → DNS Manager → trekyatra.co.in:**
+
+| Type | Name | Value | TTL |
+|------|------|-------|-----|
+| A | `@` | `162.159.140.98` | 300 |
+| A | `@` | `172.66.0.96` | 300 |
+| CNAME | `www` | `trekyatra-ssvha.ondigitalocean.app` | 300 |
+| CNAME | `api` | `trekyatra-ssvha.ondigitalocean.app` | 300 |
+
+> Note: GoDaddy does NOT support CNAME at root (`@`) — use the two A records instead.
+> DNS propagation: 10–30 minutes. DO auto-provisions SSL via Let's Encrypt after DNS resolves.
+
+### Step A5 — Component Routing Rules ⏳ (TO DO after Part B)
+
+In Networking tab → Component routing rules → Add routing rule:
+
+| Rule | Domain | Path | Target |
+|------|--------|------|--------|
+| 1 (existing) | Match all | `/` | `web` |
+| 2 (add this) | `api.trekyatra.co.in` | `/` | `api` |
 
 DigitalOcean auto-provisions SSL via Let's Encrypt once DNS propagates (10–30 min).
 
