@@ -106,7 +106,9 @@ All V0 foundations are shipped. The stack is live locally with:
 | GoDaddy DNS — A records 162.159.140.98 + 172.66.0.96 added; CNAME www + api added | done |
 | www.trekyatra.co.in → DO Active ✅ | done |
 | api.trekyatra.co.in → DO Active ✅ | done |
-| trekyatra.co.in — still Configuring: WebsiteBuilder A record blocking → delete it | pending — 1 click |
+| trekyatra.co.in — WebsiteBuilder A record deleted ✅; DNS propagating (1hr TTL) → auto-resolves | in progress |
+| www + api domains — LIVE in browser (Cloudflare bot detection only blocks curl, not browsers) | done |
+| DO App Platform uses Cloudflare IPs (162.159.x.x, 172.66.x.x) — this is expected behaviour | confirmed |
 | App Platform — remaining env vars (ANTHROPIC_API_KEY, SMTP, Stripe, Razorpay, Google OAuth) | pending |
 | Stripe webhook registration | pending |
 | Google Search Console | pending |

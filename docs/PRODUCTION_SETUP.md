@@ -378,9 +378,13 @@ Expected output: `Running upgrade ... -> 20260506_0030, subscriptions`
 
 | Domain | DO Status | Notes |
 |--------|-----------|-------|
-| `trekyatra.co.in` (PRIMARY) | Configuring ⏳ | Blocked by WebsiteBuilder A record in GoDaddy — delete it |
+| `trekyatra.co.in` (PRIMARY) | Configuring ⏳ | DNS propagation in progress (old WebsiteBuilder 1hr TTL expiring) — auto-resolves |
 | `www.trekyatra.co.in` | ✅ Active | CNAME → trekyatra-ssvha.ondigitalocean.app |
 | `api.trekyatra.co.in` | ✅ Active | CNAME → trekyatra-ssvha.ondigitalocean.app |
+
+**Note:** DO App Platform uses Cloudflare's anycast IPs (162.159.x.x, 172.66.x.x) for infrastructure.
+The Cloudflare-related curl errors are DO's own bot protection on API/curl traffic — browser access works fine.
+No separate Cloudflare account exists; GoDaddy uses default nameservers (ns13/ns14.domaincontrol.com).
 
 ### Step A5 — Routing rules ✅ DONE
 
@@ -403,7 +407,9 @@ CORSMiddleware added to main.py (commit 02be391).
 | CNAME | `api` | `trekyatra-ssvha.ondigitalocean.app` | 1 Hour | ✅ Added |
 | CNAME | `email` | `email.secureserver.net` | 1 Hour | ✅ Keep (GoDaddy email) |
 
-**One action remaining:** Delete the `A | @ | WebsiteBuilder Site` record → `trekyatra.co.in` will become Active.
+**WebsiteBuilder A record deleted ✅.** DNS propagating (up to 60 min due to 1hr TTL).
+Run `dig trekyatra.co.in A +short` — when it shows `162.159.140.98`/`172.66.0.96` → click "Refresh status" in DO.
+**Browser test:** https://www.trekyatra.co.in and https://api.trekyatra.co.in/api/v1/health work NOW in browser.
 > DNS propagation: 10–30 minutes. DO auto-provisions SSL via Let's Encrypt after DNS resolves.
 
 ### Step A5 — Component Routing Rules ✅ DONE

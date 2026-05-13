@@ -438,7 +438,7 @@ Full API docs available at http://localhost:8000/docs when the backend is runnin
 | Valkey 8 (Redis) | DO Managed DB | BLR1 Bangalore | ✅ Ready — SSL + auth configured |
 | `www.trekyatra.co.in` | GoDaddy → DO | BLR1 | ✅ Active — SSL provisioned |
 | `api.trekyatra.co.in` | GoDaddy → DO | BLR1 | ✅ Active — SSL provisioned |
-| `trekyatra.co.in` (root) | GoDaddy → DO | BLR1 | 🔄 Configuring — delete WebsiteBuilder A record |
+| `trekyatra.co.in` (root) | GoDaddy → DO | BLR1 | 🔄 DNS propagating (60min TTL) — auto-resolves |
 
 **Live URL (www):** `https://www.trekyatra.co.in`
 **Live API:** `https://api.trekyatra.co.in`
