@@ -438,6 +438,15 @@ All 5 routing rules configured in DO Networking tab:
 - `https://trekyatra-ssvha.ondigitalocean.app` (DO temp URL)
 - `http://localhost:3000` (local dev)
 
+### Admin login Cloudflare bypass fix ✅ DONE
+
+**Root cause:** Cloudflare blocks server-to-server requests (Next.js proxy → api.trekyatra.co.in).
+Browser requests to api.trekyatra.co.in are allowed; server-to-server are challenged.
+
+- `admin_auth.py`: cookie domain set to `.trekyatra.co.in` in production (cross-subdomain cookie readable by www)
+- `lib/api.ts`: always use `NEXT_PUBLIC_API_BASE` for all calls (browser → API direct)
+- `lib/admin-auth-api.ts`: BASE uses full `NEXT_PUBLIC_API_BASE` URL (bypasses proxy entirely)
+
 DigitalOcean auto-provisions SSL via Let's Encrypt once DNS propagates (10–30 min).
 
 ---

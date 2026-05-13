@@ -46,6 +46,9 @@ def admin_login(payload: AdminLoginRequest, response: Response) -> dict:
         )
 
     token, expires_at = create_admin_token(payload.email)
+    # In production, share cookie across all subdomains of trekyatra.co.in
+    # so the admin cookie set by api.trekyatra.co.in is readable by www.trekyatra.co.in
+    cookie_domain = ".trekyatra.co.in" if settings.app_env == "production" else None
     response.set_cookie(
         key=settings.admin_cookie_name,
         value=token,
@@ -53,6 +56,7 @@ def admin_login(payload: AdminLoginRequest, response: Response) -> dict:
         secure=settings.auth_cookie_secure,
         samesite=settings.auth_cookie_samesite,
         max_age=int(settings.admin_token_expire_hours * 3600),
+        domain=cookie_domain,
     )
     return {"email": payload.email, "expires_at": expires_at.isoformat()}
 

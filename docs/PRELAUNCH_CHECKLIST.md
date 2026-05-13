@@ -252,7 +252,7 @@
 | P02 | Managed PostgreSQL 16 + pgvector | `[x]` | `trekyatra-db` — BLR1, 1GB, pgvector enabled, trekyatra_user granted |
 | P03 | Managed Redis (Valkey 8) | `[x]` | `db-valkey-blr1-95254` — BLR1, 1GB, port 25061, SSL + auth |
 | P04 | GitHub Actions CI/CD | `[DEFERRED]` | DO App Platform auto-deploys on push to main |
-| P05 | SSL / custom domain (`trekyatra.co.in`) | `[~]` | www ✅ api ✅ LIVE; root SSL error — DNS TTL propagating (~1hr); next.config.mjs proxy fixed |
+| P05 | SSL / custom domain (`trekyatra.co.in`) | `[x]` | All 3 domains ACTIVE: trekyatra.co.in ✅ www ✅ api ✅ |
 | P06 | Object storage for product files | `[DEFERRED]` | Use DigitalOcean Spaces when digital products are live |
 | P07 | CDN | `[x]` | DigitalOcean App Platform Global CDN |
 | P08 | Database backups | `[x]` | DigitalOcean managed DB auto-backups (PITR) |

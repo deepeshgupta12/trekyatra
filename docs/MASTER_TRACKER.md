@@ -111,9 +111,12 @@ All V0 foundations are shipped. The stack is live locally with:
 | api.trekyatra.co.in/api/v1/health — LIVE: {"status":"ok","service":"TrekYatra API","environment":"production"} | done |
 | next.config.mjs — CRITICAL FIX: destination hardcoded to localhost:8000 → replaced with ${NEXT_PUBLIC_API_BASE}/api/:path* | done |
 | trekyatra.co.in root DNS — propagated ✅ (dig confirms 162.159.140.98 + 172.66.0.96) | done |
-| trekyatra.co.in root in DO — click "Refresh status" to activate SSL | pending → 1 click |
-| Admin login 403 — proxy now works; password in DO env vars doesn't match typed password | pending → update ADMIN_PASSWORD in DO |
-| Hamburger menu mobile — animate-fade-up opacity:0 bug on iOS Safari → replaced with translate-x CSS transition | done |
+| trekyatra.co.in root — ✅ ACTIVE (user confirmed working) | done |
+| Hamburger menu mobile — ✅ RESOLVED (translate-x CSS transition) | done |
+| Admin login 403 — root cause: Cloudflare blocks Next.js server-to-server proxy; full 3-part fix | done |
+| Fix 1: admin_auth.py cookie domain=".trekyatra.co.in" in production (cross-subdomain auth) | done |
+| Fix 2: lib/api.ts — always use NEXT_PUBLIC_API_BASE (removed client/server split that caused proxy routing) | done |
+| Fix 3: lib/admin-auth-api.ts — BASE uses full API URL (browser calls api.trekyatra.co.in directly) | done |
 | App Platform — remaining env vars (ANTHROPIC_API_KEY, SMTP, Stripe, Razorpay, Google OAuth) | pending |
 | Stripe webhook registration | pending |
 | Google Search Console | pending |

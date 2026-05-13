@@ -1,4 +1,7 @@
-const BASE = "/api/v1/admin/auth";
+// Use full URL so browser calls go directly to api.trekyatra.co.in,
+// bypassing the Next.js proxy (which Cloudflare blocks as server-to-server).
+const _API = process.env.NEXT_PUBLIC_API_BASE ?? "";
+const BASE = `${_API}/api/v1/admin/auth`;
 
 export interface AdminLoginResponse {
   email: string;
