@@ -1,6 +1,7 @@
 from contextlib import asynccontextmanager
 
 from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy import update
 
 from app.api.router import api_router
@@ -56,6 +57,24 @@ app = FastAPI(
     title=settings.app_name,
     debug=settings.app_debug,
     lifespan=lifespan,
+)
+
+# CORS — must be added before any routes.
+# Allows the Next.js frontend (trekyatra.co.in) to call the FastAPI backend
+# (api.trekyatra.co.in) from the browser.
+_CORS_ORIGINS = [
+    "http://localhost:3000",                              # local dev
+    "https://trekyatra.co.in",                            # production root
+    "https://www.trekyatra.co.in",                        # production www
+    "https://trekyatra-ssvha.ondigitalocean.app",         # DO temporary URL
+]
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=_CORS_ORIGINS,
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
 )
 
 

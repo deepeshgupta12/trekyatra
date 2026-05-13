@@ -409,14 +409,24 @@ If GoDaddy shows "Cloudflare" in DNS, add the records there and DO will detect t
 > Note: GoDaddy does NOT support CNAME at root (`@`) — use the two A records instead.
 > DNS propagation: 10–30 minutes. DO auto-provisions SSL via Let's Encrypt after DNS resolves.
 
-### Step A5 — Component Routing Rules ⏳ (TO DO after Part B)
+### Step A5 — Component Routing Rules ✅ DONE
 
-In Networking tab → Component routing rules → Add routing rule:
+All 5 routing rules configured in DO Networking tab:
 
-| Rule | Domain | Path | Target |
-|------|--------|------|--------|
-| 1 (existing) | Match all | `/` | `web` |
-| 2 (add this) | `api.trekyatra.co.in` | `/` | `api` |
+| Route | Domain | Target |
+|-------|--------|--------|
+| `/` | Match all | `web` |
+| `/trekyatra-services-api` | Match all (DO internal) | `api` |
+| `trekyatra.co.in/` | Full path | `web` |
+| `www.trekyatra.co.in/` | Full path | `web` |
+| `api.trekyatra.co.in/` | Full path | `api` |
+
+### CORS fix ✅ DONE
+
+`main.py` had no CORS middleware — added `CORSMiddleware` with:
+- `https://trekyatra.co.in`, `https://www.trekyatra.co.in`
+- `https://trekyatra-ssvha.ondigitalocean.app` (DO temp URL)
+- `http://localhost:3000` (local dev)
 
 DigitalOcean auto-provisions SSL via Let's Encrypt once DNS propagates (10–30 min).
 
