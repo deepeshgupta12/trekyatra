@@ -21,6 +21,8 @@ class Settings(BaseSettings):
     redis_host: str = "localhost"
     redis_port: int = 6380
     redis_db: int = 0
+    redis_username: str = "default"   # DO Valkey uses "default" as username
+    redis_password: str | None = None  # Required for DO managed Valkey
 
     google_client_id: str | None = None
     google_client_secret: str | None = None
@@ -98,15 +100,23 @@ class Settings(BaseSettings):
     @computed_field  # type: ignore[prop-decorator]
     @property
     def _redis_ssl_params(self) -> str:
-        # Celery requires ssl_cert_reqs when using rediss:// — without it it crashes:
-        # ValueError: A rediss:// URL must have parameter ssl_cert_reqs
+        # Celery requires ssl_cert_reqs when using rediss://
         return "?ssl_cert_reqs=CERT_NONE" if self._redis_scheme == "rediss" else ""
+
+    @computed_field  # type: ignore[prop-decorator]
+    @property
+    def _redis_auth(self) -> str:
+        # Format: username:password@ (DO Valkey uses "default" username)
+        if self.redis_password:
+            return f"{self.redis_username}:{self.redis_password}@"
+        return ""
 
     @computed_field  # type: ignore[prop-decorator]
     @property
     def redis_url(self) -> str:
         return (
-            f"{self._redis_scheme}://{self.redis_host}:{self.redis_port}"
+            f"{self._redis_scheme}://{self._redis_auth}"
+            f"{self.redis_host}:{self.redis_port}"
             f"/{self.redis_db}{self._redis_ssl_params}"
         )
 
@@ -114,7 +124,8 @@ class Settings(BaseSettings):
     @property
     def celery_broker_url(self) -> str:
         return (
-            f"{self._redis_scheme}://{self.redis_host}:{self.redis_port}"
+            f"{self._redis_scheme}://{self._redis_auth}"
+            f"{self.redis_host}:{self.redis_port}"
             f"/1{self._redis_ssl_params}"
         )
 
@@ -122,7 +133,8 @@ class Settings(BaseSettings):
     @property
     def celery_result_backend(self) -> str:
         return (
-            f"{self._redis_scheme}://{self.redis_host}:{self.redis_port}"
+            f"{self._redis_scheme}://{self._redis_auth}"
+            f"{self.redis_host}:{self.redis_port}"
             f"/1{self._redis_ssl_params}"
         )
 

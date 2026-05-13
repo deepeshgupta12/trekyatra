@@ -206,15 +206,17 @@ No explicit SSL env var needed.
 | `APP_DEBUG` | ✅ `false` | |
 | `PRODUCT_DOWNLOAD_BASE_URL` | ✅ Set | |
 
-**Phase 2 — ADD these now (postgres config that app actually reads):**
+**Phase 2 — DONE (postgres + Redis auth fix):**
 
-| Variable | Value |
-|----------|-------|
-| `POSTGRES_SERVER` | `trekyatra-db-do-user-37216682-0.m.db.ondigitalocean.com` |
-| `POSTGRES_PORT` | `25060` (auto-enables sslmode=require) |
-| `POSTGRES_DB` | `trekyatra` |
-| `POSTGRES_USER` | `trekyatra_user` |
-| `POSTGRES_PASSWORD` | (get from DO → trekyatra-db → Users & Databases → show) |
+| Variable | Value | Status |
+|----------|-------|--------|
+| `POSTGRES_SERVER` | `trekyatra-db-do-user-37216682-0.m.db.ondigitalocean.com` | ✅ Set |
+| `POSTGRES_PORT` | `25060` | ✅ Set |
+| `POSTGRES_DB` | `trekyatra` | ✅ Set |
+| `POSTGRES_USER` | `trekyatra_user` | ✅ Set |
+| `POSTGRES_PASSWORD` | (from DO → trekyatra-db → Users & Databases → show) | ✅ Set |
+| `REDIS_USERNAME` | `default` | ⏳ Add now |
+| `REDIS_PASSWORD` | (from DO → db-valkey-blr1-95254 → Overview → Connection Details → show) | ⏳ Add now |
 
 **Phase 3 — Add when live keys available:**
 
@@ -275,7 +277,11 @@ All migrations 0001→0030 applied successfully on DO managed Postgres. All 30 t
 
 ---
 
-### Component 3 — `celery-worker` 🔄 (redeploying with SSL fix)
+### Component 3 — `celery-worker` ❌ CRASHING (Redis auth fix pending)
+
+**Root cause:** config.py built Redis URL without password.
+**Fix:** redis_password + redis_username added to config; REDIS_PASSWORD env var must be set in DO.
+**Status:** Code fix committed (auto-redeploys after REDIS_PASSWORD env var is added in DO)
 
 > To be added after initial app creation
 
@@ -291,7 +297,10 @@ All migrations 0001→0030 applied successfully on DO managed Postgres. All 30 t
 
 ---
 
-### Component 4 — `celery-beat` 🔄 (redeploying with SSL fix)
+### Component 4 — `celery-beat` ✅ HEALTHY
+
+`beat: Starting...` confirmed in logs. SSL_CERT_REQS warning is harmless (expected for CERT_NONE).
+Note: celery-beat will also benefit from REDIS_PASSWORD fix for proper scheduling.
 
 > To be added after initial app creation
 
