@@ -5,16 +5,20 @@ const nextConfig = {
     proxyTimeout: 120_000, // 2 minutes — LLM-backed endpoints can take 30-60s
   },
   async rewrites() {
-    // INTERNAL_API_URL: where Next.js server proxies /api/* requests to.
-    // Must point to the FastAPI backend directly (api.trekyatra.co.in in prod),
-    // NOT to www.trekyatra.co.in — that would create an infinite loop.
-    // NEXT_PUBLIC_API_BASE is for client-side fetch calls and must NOT be used here.
-    const internalApiBase =
-      process.env.INTERNAL_API_URL ?? "http://localhost:8000";
+    // Read the public API base. DO App Platform encrypted vars (EV[...]) are not
+    // decrypted at build time — guard against them with a startsWith check.
+    const raw = process.env.NEXT_PUBLIC_API_BASE ?? "";
+    const validBase =
+      raw.startsWith("http://") || raw.startsWith("https://")
+        ? raw
+        : "http://localhost:8000";
+    // Replace //www. with //api. so the proxy never points back to itself
+    // (www.trekyatra.co.in proxying to www.trekyatra.co.in would loop infinitely).
+    const proxyTarget = validBase.replace("//www.", "//api.");
     return [
       {
         source: "/api/:path*",
-        destination: `${internalApiBase}/api/:path*`,
+        destination: `${proxyTarget}/api/:path*`,
       },
     ];
   },
