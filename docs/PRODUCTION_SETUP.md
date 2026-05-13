@@ -125,11 +125,31 @@ REDIS_PORT=25061
 
 ---
 
-## Step 4 — App Platform Setup 🔄
+## Step 4 — App Platform Setup ✅ (App created — components pending)
 
 **App name:** `trekyatra`
+**Region:** Bangalore BLR1
 
-### Component 1 — `web` (Next.js Frontend) 🔄
+### Security note on environment variables
+
+All 12 app-level variables are **server-side only** — they are injected into
+the container at runtime and are NEVER sent to the browser, Console, or Network
+tab of end users. Only variables prefixed with `NEXT_PUBLIC_` are intentionally
+exposed to the browser; those contain only non-sensitive public values (URLs, 
+public payment keys). Sensitive vars (DATABASE_URL, AUTH_JWT_SECRET, passwords, 
+API keys) have no `NEXT_PUBLIC_` prefix and are fully protected.
+
+### Why database was NOT attached via "Attach DigitalOcean database"
+
+The database connection is configured via `DATABASE_URL` and `REDIS_URL`
+environment variables pointing to the public network endpoint with
+`sslmode=require` (SSL-encrypted). The "Attach" button auto-creates its own
+variables which would conflict with the manually set ones. Connection via
+public network + SSL is secure and is the correct approach here.
+
+---
+
+### Component 1 — `web` (Next.js Frontend) ✅
 
 | Setting | Value |
 |---------|-------|
@@ -146,16 +166,46 @@ REDIS_PORT=25061
 | Containers | 1 |
 | Cost | $12/month |
 
-**Component-level env vars (non-secret):**
+**Component-level env vars set (non-secret — safe for browser):**
 
 | Variable | Value |
 |----------|-------|
 | `NEXT_PUBLIC_API_BASE` | `https://api.trekyatra.co.in` |
 | `NEXT_PUBLIC_SITE_URL` | `https://trekyatra.co.in` |
-| `NEXT_PUBLIC_GA4_ID` | (to be added later) |
-| `NEXT_PUBLIC_RAZORPAY_KEY_ID` | (to be added later) |
-| `NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY` | (to be added later) |
-| `NEXT_PUBLIC_GOOGLE_CLIENT_ID` | (to be added later) |
+| `NEXT_PUBLIC_GA4_ID` | (to be added — get from Google Analytics) |
+| `NEXT_PUBLIC_RAZORPAY_KEY_ID` | (to be added — live key from Razorpay) |
+| `NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY` | (to be added — live key from Stripe) |
+| `NEXT_PUBLIC_GOOGLE_CLIENT_ID` | (to be added — from Google Cloud Console) |
+
+### App-level environment variables ✅ (12 of 12 set)
+
+All variables are encrypted at rest and never exposed to end users:
+
+| Variable | Status |
+|----------|--------|
+| `DATABASE_URL` | ✅ Set (encrypted) |
+| `REDIS_URL` | ✅ Set (encrypted) |
+| `REDIS_HOST` | ✅ Set (encrypted) |
+| `REDIS_PORT` | ✅ Set (encrypted) |
+| `AUTH_JWT_SECRET` | ✅ Set (encrypted) |
+| `AUTH_COOKIE_SECURE` | ✅ Set — `true` |
+| `AUTH_COOKIE_SAMESITE` | ✅ Set — `none` |
+| `ADMIN_EMAIL` | ✅ Set (encrypted) |
+| `ADMIN_PASSWORD` | ✅ Set (encrypted) |
+| `APP_ENV` | ✅ Set — `production` |
+| `APP_DEBUG` | ✅ Set — `false` (visible in DO dashboard only) |
+| `PRODUCT_DOWNLOAD_BASE_URL` | ✅ Set (encrypted) |
+
+**Still to add (when live keys are available):**
+
+| Variable | Source |
+|----------|--------|
+| `ANTHROPIC_API_KEY` | Anthropic Console |
+| `OPENAI_API_KEY` | OpenAI Console |
+| `RAZORPAY_KEY_ID` + `RAZORPAY_KEY_SECRET` | Razorpay Dashboard |
+| `STRIPE_SECRET_KEY` + `STRIPE_WEBHOOK_SECRET` + price IDs | Stripe Dashboard |
+| `SMTP_HOST/PORT/USER/PASSWORD` | Resend or SendGrid |
+| `GOOGLE_CLIENT_ID` + `GOOGLE_CLIENT_SECRET` | Google Cloud Console |
 
 ---
 
