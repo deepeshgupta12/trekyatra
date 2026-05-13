@@ -227,6 +227,16 @@ No explicit SSL env var needed.
 | `SMTP_HOST/PORT/USER/PASSWORD` | Resend or SendGrid |
 | `GOOGLE_CLIENT_ID` + `GOOGLE_CLIENT_SECRET` | Google Cloud Console |
 
+### Alembic migrations ✅ APPLIED (all 30 migrations)
+
+Run via `api` component Console:
+```
+alembic upgrade head
+```
+All migrations 0001→0030 applied successfully on DO managed Postgres. All 30 tables created.
+
+---
+
 ### Component 2 — `api` (FastAPI Backend) ✅ HEALTHY
 
 | Setting | Value |
@@ -265,7 +275,7 @@ No explicit SSL env var needed.
 
 ---
 
-### Component 3 — `celery-worker` ⏳
+### Component 3 — `celery-worker` 🔄 (redeploying with SSL fix)
 
 > To be added after initial app creation
 
@@ -281,7 +291,7 @@ No explicit SSL env var needed.
 
 ---
 
-### Component 4 — `celery-beat` ⏳
+### Component 4 — `celery-beat` 🔄 (redeploying with SSL fix)
 
 > To be added after initial app creation
 

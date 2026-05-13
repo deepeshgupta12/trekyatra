@@ -97,18 +97,34 @@ class Settings(BaseSettings):
 
     @computed_field  # type: ignore[prop-decorator]
     @property
+    def _redis_ssl_params(self) -> str:
+        # Celery requires ssl_cert_reqs when using rediss:// — without it it crashes:
+        # ValueError: A rediss:// URL must have parameter ssl_cert_reqs
+        return "?ssl_cert_reqs=CERT_NONE" if self._redis_scheme == "rediss" else ""
+
+    @computed_field  # type: ignore[prop-decorator]
+    @property
     def redis_url(self) -> str:
-        return f"{self._redis_scheme}://{self.redis_host}:{self.redis_port}/{self.redis_db}"
+        return (
+            f"{self._redis_scheme}://{self.redis_host}:{self.redis_port}"
+            f"/{self.redis_db}{self._redis_ssl_params}"
+        )
 
     @computed_field  # type: ignore[prop-decorator]
     @property
     def celery_broker_url(self) -> str:
-        return f"{self._redis_scheme}://{self.redis_host}:{self.redis_port}/1"
+        return (
+            f"{self._redis_scheme}://{self.redis_host}:{self.redis_port}"
+            f"/1{self._redis_ssl_params}"
+        )
 
     @computed_field  # type: ignore[prop-decorator]
     @property
     def celery_result_backend(self) -> str:
-        return f"{self._redis_scheme}://{self.redis_host}:{self.redis_port}/1"
+        return (
+            f"{self._redis_scheme}://{self.redis_host}:{self.redis_port}"
+            f"/1{self._redis_ssl_params}"
+        )
 
 @lru_cache(maxsize=1)
 def get_settings() -> Settings:
