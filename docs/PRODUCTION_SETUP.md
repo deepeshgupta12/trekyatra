@@ -125,7 +125,7 @@ REDIS_PORT=25061
 
 ---
 
-## Step 4 — App Platform Setup 🔄 (web HEALTHY — api/worker/beat pending)
+## Step 4 — App Platform Setup 🔄 (web ✅ HEALTHY, api ✅ HEALTHY — worker/beat pending)
 
 **App name:** `trekyatra`
 **Temporary DO URL:** `https://trekyatra-ssvha.ondigitalocean.app/`
@@ -141,13 +141,21 @@ exposed to the browser; those contain only non-sensitive public values (URLs,
 public payment keys). Sensitive vars (DATABASE_URL, AUTH_JWT_SECRET, passwords, 
 API keys) have no `NEXT_PUBLIC_` prefix and are fully protected.
 
-### Why database was NOT attached via "Attach DigitalOcean database"
+### IMPORTANT: How the app reads database config
 
-The database connection is configured via `DATABASE_URL` and `REDIS_URL`
-environment variables pointing to the public network endpoint with
-`sslmode=require` (SSL-encrypted). The "Attach" button auto-creates its own
-variables which would conflict with the manually set ones. Connection via
-public network + SSL is secure and is the correct approach here.
+The app reads INDIVIDUAL postgres settings, NOT a `DATABASE_URL` string:
+- `POSTGRES_SERVER`, `POSTGRES_PORT`, `POSTGRES_DB`, `POSTGRES_USER`, `POSTGRES_PASSWORD`
+- `REDIS_HOST`, `REDIS_PORT`
+
+The `DATABASE_URL` env var we set initially was wrong — the app ignores it.
+The correct env vars to add in DO App Platform are listed in the env vars table below.
+
+### SSL auto-detection (config.py)
+
+`config.py` auto-detects production SSL from port numbers:
+- `POSTGRES_PORT=25060` → automatically appends `?sslmode=require`
+- `REDIS_PORT=25061` → automatically uses `rediss://` (TLS) for Redis/Celery URLs
+No explicit SSL env var needed.
 
 ---
 
@@ -179,26 +187,36 @@ public network + SSL is secure and is the correct approach here.
 | `NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY` | (to be added — live key from Stripe) |
 | `NEXT_PUBLIC_GOOGLE_CLIENT_ID` | (to be added — from Google Cloud Console) |
 
-### App-level environment variables ✅ (12 of 12 set)
+### App-level environment variables — Current state + corrections
 
-All variables are encrypted at rest and never exposed to end users:
+**Phase 1 (set at app creation — 12 vars):**
 
-| Variable | Status |
-|----------|--------|
-| `DATABASE_URL` | ✅ Set (encrypted) |
-| `REDIS_URL` | ✅ Set (encrypted) |
-| `REDIS_HOST` | ✅ Set (encrypted) |
-| `REDIS_PORT` | ✅ Set (encrypted) |
-| `AUTH_JWT_SECRET` | ✅ Set (encrypted) |
-| `AUTH_COOKIE_SECURE` | ✅ Set — `true` |
-| `AUTH_COOKIE_SAMESITE` | ✅ Set — `none` |
-| `ADMIN_EMAIL` | ✅ Set (encrypted) |
-| `ADMIN_PASSWORD` | ✅ Set (encrypted) |
-| `APP_ENV` | ✅ Set — `production` |
-| `APP_DEBUG` | ✅ Set — `false` (visible in DO dashboard only) |
-| `PRODUCT_DOWNLOAD_BASE_URL` | ✅ Set (encrypted) |
+| Variable | Status | Note |
+|----------|--------|------|
+| `DATABASE_URL` | ⚠️ Remove — app doesn't read it | App uses individual POSTGRES_* vars |
+| `REDIS_URL` | ⚠️ Remove — app doesn't read it | App uses REDIS_HOST + REDIS_PORT |
+| `REDIS_HOST` | ✅ Correct | `db-valkey-blr1-95254-do-user-37216682-0.m.db.ondigitalocean.com` |
+| `REDIS_PORT` | ✅ Correct | `25061` → auto-enables rediss:// TLS |
+| `AUTH_JWT_SECRET` | ✅ Set (encrypted) | |
+| `AUTH_COOKIE_SECURE` | ✅ `true` | |
+| `AUTH_COOKIE_SAMESITE` | ✅ `none` | |
+| `ADMIN_EMAIL` | ✅ Set | |
+| `ADMIN_PASSWORD` | ✅ Set (encrypted) | |
+| `APP_ENV` | ✅ `production` | |
+| `APP_DEBUG` | ✅ `false` | |
+| `PRODUCT_DOWNLOAD_BASE_URL` | ✅ Set | |
 
-**Still to add (when live keys are available):**
+**Phase 2 — ADD these now (postgres config that app actually reads):**
+
+| Variable | Value |
+|----------|-------|
+| `POSTGRES_SERVER` | `trekyatra-db-do-user-37216682-0.m.db.ondigitalocean.com` |
+| `POSTGRES_PORT` | `25060` (auto-enables sslmode=require) |
+| `POSTGRES_DB` | `trekyatra` |
+| `POSTGRES_USER` | `trekyatra_user` |
+| `POSTGRES_PASSWORD` | (get from DO → trekyatra-db → Users & Databases → show) |
+
+**Phase 3 — Add when live keys available:**
 
 | Variable | Source |
 |----------|--------|
@@ -208,6 +226,20 @@ All variables are encrypted at rest and never exposed to end users:
 | `STRIPE_SECRET_KEY` + `STRIPE_WEBHOOK_SECRET` + price IDs | Stripe Dashboard |
 | `SMTP_HOST/PORT/USER/PASSWORD` | Resend or SendGrid |
 | `GOOGLE_CLIENT_ID` + `GOOGLE_CLIENT_SECRET` | Google Cloud Console |
+
+### Component 2 — `api` (FastAPI Backend) ✅ HEALTHY
+
+| Setting | Value |
+|---------|-------|
+| Build strategy | Dockerfile |
+| CMD in Dockerfile | `sh -c "uvicorn app.main:app --host 0.0.0.0 --port ${PORT:-8000} --log-level info"` |
+| Run command | (empty — Dockerfile CMD is used) |
+| HTTP Port | `8080` |
+| Cost | $12/month |
+
+**SSL fix applied (config.py `7e6073f`):**
+- Port 25060 → auto `sslmode=require` on postgres URI
+- Port 25061 → auto `rediss://` on all Redis/Celery URLs
 
 ---
 

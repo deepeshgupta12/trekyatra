@@ -80,25 +80,35 @@ class Settings(BaseSettings):
     @computed_field  # type: ignore[prop-decorator]
     @property
     def sqlalchemy_database_uri(self) -> str:
-        return (
+        base = (
             f"postgresql+psycopg://{self.postgres_user}:{self.postgres_password}"
             f"@{self.postgres_server}:{self.postgres_port}/{self.postgres_db}"
         )
+        # DO managed Postgres uses port 25060 and requires SSL
+        if self.postgres_port == 25060:
+            base += "?sslmode=require"
+        return base
+
+    @computed_field  # type: ignore[prop-decorator]
+    @property
+    def _redis_scheme(self) -> str:
+        # DO managed Redis/Valkey uses port 25061 and requires TLS (rediss://)
+        return "rediss" if self.redis_port == 25061 else "redis"
 
     @computed_field  # type: ignore[prop-decorator]
     @property
     def redis_url(self) -> str:
-        return f"redis://{self.redis_host}:{self.redis_port}/{self.redis_db}"
+        return f"{self._redis_scheme}://{self.redis_host}:{self.redis_port}/{self.redis_db}"
 
     @computed_field  # type: ignore[prop-decorator]
     @property
     def celery_broker_url(self) -> str:
-        return f"redis://{self.redis_host}:{self.redis_port}/1"
+        return f"{self._redis_scheme}://{self.redis_host}:{self.redis_port}/1"
 
     @computed_field  # type: ignore[prop-decorator]
     @property
     def celery_result_backend(self) -> str:
-        return f"redis://{self.redis_host}:{self.redis_port}/1"
+        return f"{self._redis_scheme}://{self.redis_host}:{self.redis_port}/1"
 
 @lru_cache(maxsize=1)
 def get_settings() -> Settings:

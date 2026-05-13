@@ -90,7 +90,9 @@ All V0 foundations are shipped. The stack is live locally with:
 | App Platform — `web` component configured (Next.js, port 3000) | done |
 | App Platform — App-level env vars (12/12 set, encrypted, server-side only) | done |
 | App Platform — `web` component DEPLOYED and HEALTHY (trekyatra-ssvha.ondigitalocean.app) | done |
-| App Platform — `api` component (FastAPI) | pending — add next |
+| App Platform — `api` component (FastAPI) DEPLOYED and HEALTHY | done |
+| config.py — SSL auto-detection: port 25060→sslmode=require; port 25061→rediss:// | done |
+| DO env vars — POSTGRES_SERVER/PORT/DB/USER/PASSWORD need to be added (DATABASE_URL was wrong approach) | pending — next |
 | App Platform — `celery-worker` component | pending |
 | App Platform — `celery-beat` component | pending |
 | App Platform — remaining env vars (ANTHROPIC_API_KEY, SMTP, Stripe, Razorpay, Google OAuth) | pending |
