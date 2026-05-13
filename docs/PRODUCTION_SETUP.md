@@ -438,14 +438,28 @@ All 5 routing rules configured in DO Networking tab:
 - `https://trekyatra-ssvha.ondigitalocean.app` (DO temp URL)
 - `http://localhost:3000` (local dev)
 
-### Admin login Cloudflare bypass fix ✅ DONE
+### Admin login — same-origin proxy fix 🔄 IN PROGRESS
 
-**Root cause:** Cloudflare blocks server-to-server requests (Next.js proxy → api.trekyatra.co.in).
-Browser requests to api.trekyatra.co.in are allowed; server-to-server are challenged.
+**Architecture:** Browser calls `/api/...` on `www.trekyatra.co.in` (same-origin, no CORS preflight). Next.js server proxies these to `api.trekyatra.co.in` at network level. Cookie is set on `www.trekyatra.co.in` and automatically sent on subsequent admin API calls.
 
-- `admin_auth.py`: cookie domain set to `.trekyatra.co.in` in production (cross-subdomain cookie readable by www)
-- `lib/api.ts`: always use `NEXT_PUBLIC_API_BASE` for all calls (browser → API direct)
-- `lib/admin-auth-api.ts`: BASE uses full `NEXT_PUBLIC_API_BASE` URL (bypasses proxy entirely)
+**Files changed (commits 3d2a686, bfa281c, ea2c038):**
+- `lib/admin-auth-api.ts`: BASE = `"/api/v1/admin/auth"` (relative URL — same-origin, no cross-origin preflight)
+- `admin_auth.py`: removed explicit `.trekyatra.co.in` cookie domain (cookie attributed to `www` via proxy)
+- `next.config.mjs`: proxy target reads `NEXT_PUBLIC_API_BASE`, substitutes `//www.` → `//api.` to prevent infinite loop; guards against DO encrypted-var placeholders (`EV[...]`) at build time
+
+**DO env vars required for `web` component (PLAINTEXT — do NOT encrypt):**
+| Variable | Value |
+|----------|-------|
+| `NEXT_PUBLIC_API_BASE` | `https://www.trekyatra.co.in` |
+
+**DO env vars to REMOVE from `web` component:**
+| Variable | Action |
+|----------|--------|
+| `INTERNAL_API_URL` | Delete — no longer needed |
+
+**DO routing rule:** NOT required. Next.js proxy handles all `/api/` forwarding.
+
+**Critical lesson — DO encrypted env vars:** If an env var is stored as "encrypted" in DO App Platform, it is passed as `EV[...]` at BUILD time (not decrypted until container startup). `NEXT_PUBLIC_*` vars must be PLAINTEXT because they are baked into the bundle at build time. If encrypted, `new URL(EV[...])` throws during Next.js static page collection → build fails.
 
 DigitalOcean auto-provisions SSL via Let's Encrypt once DNS propagates (10–30 min).
 

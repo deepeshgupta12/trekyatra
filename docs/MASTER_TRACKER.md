@@ -113,10 +113,13 @@ All V0 foundations are shipped. The stack is live locally with:
 | trekyatra.co.in root DNS — propagated ✅ (dig confirms 162.159.140.98 + 172.66.0.96) | done |
 | trekyatra.co.in root — ✅ ACTIVE (user confirmed working) | done |
 | Hamburger menu mobile — ✅ RESOLVED (translate-x CSS transition) | done |
-| Admin login 403 — root cause: Cloudflare blocks Next.js server-to-server proxy; full 3-part fix | done |
-| Fix 1: admin_auth.py cookie domain=".trekyatra.co.in" in production (cross-subdomain auth) | done |
-| Fix 2: lib/api.ts — always use NEXT_PUBLIC_API_BASE (removed client/server split that caused proxy routing) | done |
-| Fix 3: lib/admin-auth-api.ts — BASE uses full API URL (browser calls api.trekyatra.co.in directly) | done |
+| Admin login CORS fix — same-origin proxy architecture (commits 3d2a686, bfa281c, ea2c038) | in progress |
+| Fix 1: admin-auth-api.ts — BASE = relative /api/v1/admin/auth (same-origin, no CORS preflight) | done |
+| Fix 2: admin_auth.py — removed explicit .trekyatra.co.in cookie domain (attributed to www via proxy) | done |
+| Fix 3: next.config.mjs — proxy target = NEXT_PUBLIC_API_BASE with www→api substitution (no loop) | done |
+| Fix 4: next.config.mjs — EV[...] guard: encrypted DO vars at build time fall back to localhost | done |
+| Lesson: NEXT_PUBLIC_* vars must be PLAINTEXT in DO — encrypted vars not decrypted at build time | done |
+| DO action pending: remove INTERNAL_API_URL env var; confirm NEXT_PUBLIC_API_BASE is plaintext | pending |
 | App Platform — remaining env vars (ANTHROPIC_API_KEY, SMTP, Stripe, Razorpay, Google OAuth) | pending |
 | Stripe webhook registration | pending |
 | Google Search Console | pending |
