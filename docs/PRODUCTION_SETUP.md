@@ -372,15 +372,15 @@ Expected output: `Running upgrade ... -> 20260506_0030, subscriptions`
 
 ---
 
-## Step 6 — Domain DNS Configuration 🔄 (Root domain pending — www + api ACTIVE)
+## Step 6 — Domain DNS Configuration 🔄 (Root domain 1 click from Active)
 
 ### Part A — DigitalOcean Networking tab ✅ DONE
 
 | Domain | DO Status | Notes |
 |--------|-----------|-------|
-| `trekyatra.co.in` (PRIMARY) | Configuring ⏳ | DNS propagation in progress (old WebsiteBuilder 1hr TTL expiring) — auto-resolves |
-| `www.trekyatra.co.in` | ✅ Active | CNAME → trekyatra-ssvha.ondigitalocean.app |
-| `api.trekyatra.co.in` | ✅ Active | CNAME → trekyatra-ssvha.ondigitalocean.app |
+| `trekyatra.co.in` (PRIMARY) | Configuring → click Refresh | DNS propagated (dig confirmed 162.159.140.98 + 172.66.0.96) — click Refresh status in DO |
+| `www.trekyatra.co.in` | ✅ Active | Homepage live in browser ✅ |
+| `api.trekyatra.co.in` | ✅ Active | Health check confirmed `{"status":"ok","environment":"production"}` ✅ |
 
 **Note:** DO App Platform uses Cloudflare's anycast IPs (162.159.x.x, 172.66.x.x) for infrastructure.
 The Cloudflare-related curl errors are DO's own bot protection on API/curl traffic — browser access works fine.

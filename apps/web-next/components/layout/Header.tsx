@@ -240,7 +240,7 @@ export const Header = () => {
       {mobileOpen && (
         <div className="fixed inset-0 z-[60] lg:hidden">
           <div className="absolute inset-0 bg-foreground/40 backdrop-blur-sm" onClick={() => setMobileOpen(false)} />
-          <div className="absolute right-0 top-0 bottom-0 w-[90%] max-w-sm bg-background shadow-elevated overflow-y-auto animate-fade-up">
+          <div className="absolute right-0 top-0 bottom-0 w-[90%] max-w-sm bg-background shadow-elevated overflow-y-auto translate-x-0 transition-transform duration-300 ease-out">
             <div className="flex items-center justify-between p-5 border-b border-border">
               <Logo />
               <button onClick={() => setMobileOpen(false)} className="h-10 w-10 flex items-center justify-center rounded-full hover:bg-muted">
