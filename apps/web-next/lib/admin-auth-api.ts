@@ -1,7 +1,6 @@
-// Use full URL so browser calls go directly to api.trekyatra.co.in,
-// bypassing the Next.js proxy (which Cloudflare blocks as server-to-server).
-const _API = process.env.NEXT_PUBLIC_API_BASE ?? "";
-const BASE = `${_API}/api/v1/admin/auth`;
+// Relative URL — browser calls go to www.trekyatra.co.in/api/... (same-origin).
+// DO App Platform routing rule forwards /api/ to the api component at network level.
+const BASE = "/api/v1/admin/auth";
 
 export interface AdminLoginResponse {
   email: string;

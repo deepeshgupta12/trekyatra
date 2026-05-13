@@ -1,5 +1,5 @@
-// Always use the full API base URL so browser calls go directly to api.trekyatra.co.in
-// (bypasses the Next.js proxy which causes Cloudflare to block server-to-server requests)
+// NEXT_PUBLIC_API_BASE must be set to https://www.trekyatra.co.in in production.
+// All /api/ paths are routed to the api component by DO App Platform at network level.
 const apiBase = process.env.NEXT_PUBLIC_API_BASE ?? "http://localhost:8000";
 
 export async function apiFetch<T>(path: string): Promise<T> {
