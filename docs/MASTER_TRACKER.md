@@ -97,13 +97,12 @@ All V0 foundations are shipped. The stack is live locally with:
 | alembic upgrade head — ALL 30 MIGRATIONS APPLIED (0001→0030) | done |
 | App Platform — `celery-worker` component added | done |
 | App Platform — `celery-beat` component added | done |
-| celery-beat — HEALTHY (SSL warning only — harmless) | done |
-| celery-worker — CRASHING: Authentication required (Redis password missing from URL) | fixing |
-| config.py — redis_password + redis_username fields added; _redis_auth includes credentials in all Redis URLs | done |
-| DO env vars — REDIS_PASSWORD must be added (get from Valkey dashboard → show) | pending — user action |
+| celery-beat — ✅ HEALTHY | done |
+| celery-worker — ✅ HEALTHY (Redis auth fixed: REDIS_PASSWORD + REDIS_USERNAME env vars added) | done |
+| ALL 4 COMPONENTS HEALTHY — web, api, celery-worker, celery-beat | done |
+| Monthly cost confirmed: $48/month | done |
+| Domain DNS → GoDaddy (trekyatra.co.in → DO App Platform) | pending — next step |
 | App Platform — remaining env vars (ANTHROPIC_API_KEY, SMTP, Stripe, Razorpay, Google OAuth) | pending |
-| alembic upgrade head on production | pending |
-| Domain DNS → GoDaddy | pending |
 | Stripe webhook registration | pending |
 | Google Search Console | pending |
 | 41 | B2B content / API extensions | pending |

@@ -424,19 +424,22 @@ Full API docs available at http://localhost:8000/docs when the backend is runnin
 | V3 — Platform Expansion | Steps 33–37 | Complete |
 | V4 — Ecosystem Scale | Steps 38–41 | In Progress (Steps 38–40 done; Step 41 pending) |
 | Pre-Launch Sprint | Auth, stubs, E2E, UI polish | Complete — see PRELAUNCH_CHECKLIST.md for remaining manual items |
-| **Production Deploy** | DigitalOcean BLR1 | In Progress — see docs/PRODUCTION_SETUP.md |
+| **Production Deploy** | DigitalOcean BLR1 | All components HEALTHY — DNS configuration next |
 
 ## Production Infrastructure
 
 | Service | Provider | Region | Status |
 |---------|----------|--------|--------|
-| Frontend (Next.js) | DO App Platform | BLR1 Bangalore | 🔄 Configuring |
-| Backend API (FastAPI) | DO App Platform | BLR1 Bangalore | ⏳ Pending |
-| Celery Worker | DO App Platform | BLR1 Bangalore | ⏳ Pending |
-| Celery Beat | DO App Platform | BLR1 Bangalore | ⏳ Pending |
-| PostgreSQL 16 + pgvector | DO Managed DB | BLR1 Bangalore | ✅ Ready |
-| Valkey 8 (Redis) | DO Managed DB | BLR1 Bangalore | ✅ Ready |
-| Domain | GoDaddy | — | ⏳ DNS pending |
+| Frontend (Next.js) — `web` | DO App Platform | BLR1 Bangalore | ✅ HEALTHY (2% CPU, 10% RAM) |
+| Backend API (FastAPI) — `api` | DO App Platform | BLR1 Bangalore | ✅ HEALTHY (3% CPU, 20% RAM) |
+| Celery Worker — `celery-worker` | DO App Platform | BLR1 Bangalore | ✅ HEALTHY (3% CPU, 35% RAM) |
+| Celery Beat — `celery-beat` | DO App Platform | BLR1 Bangalore | ✅ HEALTHY (2% CPU, 14% RAM) |
+| PostgreSQL 16 + pgvector | DO Managed DB | BLR1 Bangalore | ✅ Ready — 30 migrations applied |
+| Valkey 8 (Redis) | DO Managed DB | BLR1 Bangalore | ✅ Ready — SSL + auth configured |
+| Domain `trekyatra.co.in` | GoDaddy | — | ⏳ DNS configuration next |
+
+**Temporary URL:** `https://trekyatra-ssvha.ondigitalocean.app/`
+**Monthly cost:** $48/month
 
 Full setup log: `docs/PRODUCTION_SETUP.md`
 

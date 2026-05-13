@@ -125,7 +125,14 @@ REDIS_PORT=25061
 
 ---
 
-## Step 4 — App Platform Setup 🔄 (web ✅ HEALTHY, api ✅ HEALTHY — worker/beat pending)
+## Step 4 — App Platform Setup ✅ ALL 4 COMPONENTS HEALTHY
+
+**Confirmed healthy — 2026-05-13:**
+- `web` — 2% CPU, 10% RAM ✅
+- `api` — 3% CPU, 20% RAM ✅
+- `celery-worker` — 3% CPU, 35% RAM ✅
+- `celery-beat` — 2% CPU, 14% RAM ✅
+- Monthly cost: **$48/month** (4 × $12 components)
 
 **App name:** `trekyatra`
 **Temporary DO URL:** `https://trekyatra-ssvha.ondigitalocean.app/`
@@ -277,11 +284,10 @@ All migrations 0001→0030 applied successfully on DO managed Postgres. All 30 t
 
 ---
 
-### Component 3 — `celery-worker` ❌ CRASHING (Redis auth fix pending)
+### Component 3 — `celery-worker` ✅ HEALTHY
 
-**Root cause:** config.py built Redis URL without password.
-**Fix:** redis_password + redis_username added to config; REDIS_PASSWORD env var must be set in DO.
-**Status:** Code fix committed (auto-redeploys after REDIS_PASSWORD env var is added in DO)
+**Fix applied:** config.py now includes `redis_password` + `redis_username` in all Redis URLs.
+**22 tasks registered** (agents, pipeline, email, hubs, newsletter, linking, refresh, revenue, smoke)
 
 > To be added after initial app creation
 
@@ -352,7 +358,7 @@ These are shared across all components. Set in App Platform → App-level enviro
 
 ---
 
-## Step 5 — Database Migrations 🔄 (READY TO RUN)
+## Step 5 — Database Migrations ✅ COMPLETE
 
 > api is connected to DO managed Postgres (confirmed: UndefinedTable = DB reached, just no tables yet).
 > Run now via api Console.
@@ -366,7 +372,7 @@ Expected output: `Running upgrade ... -> 20260506_0030, subscriptions`
 
 ---
 
-## Step 6 — Domain DNS Configuration ⏳
+## Step 6 — Domain DNS Configuration 🔄 (NEXT STEP)
 
 > Configure in GoDaddy AFTER App Platform gives you the DNS records.
 

@@ -248,20 +248,20 @@
 
 | # | Item | Status | Notes |
 |---|------|--------|-------|
-| P01 | Production hosting — DigitalOcean App Platform | `[~]` | `web` component configured; `api`, `celery-worker`, `celery-beat` pending |
+| P01 | Production hosting — DigitalOcean App Platform | `[x]` | All 4 components HEALTHY: web, api, celery-worker, celery-beat |
 | P02 | Managed PostgreSQL 16 + pgvector | `[x]` | `trekyatra-db` — BLR1, 1GB, pgvector enabled, trekyatra_user granted |
-| P03 | Managed Redis (Valkey 8) | `[x]` | `db-valkey-blr1-95254` — BLR1, 1GB, port 25061, SSL |
-| P04 | GitHub Actions CI/CD | `[DEFERRED]` | DO App Platform auto-deploys on push to main (no Actions needed for now) |
-| P05 | SSL / custom domain (`trekyatra.co.in`) | `[ ]` | DNS not yet configured in GoDaddy |
+| P03 | Managed Redis (Valkey 8) | `[x]` | `db-valkey-blr1-95254` — BLR1, 1GB, port 25061, SSL + auth |
+| P04 | GitHub Actions CI/CD | `[DEFERRED]` | DO App Platform auto-deploys on push to main |
+| P05 | SSL / custom domain (`trekyatra.co.in`) | `[ ]` | **NEXT: DNS configuration in GoDaddy** |
 | P06 | Object storage for product files | `[DEFERRED]` | Use DigitalOcean Spaces when digital products are live |
-| P07 | CDN | `[x]` | DigitalOcean App Platform serves static assets via Global CDN |
-| P08 | Database backups | `[x]` | DigitalOcean managed DB auto-backups enabled (PITR) |
+| P07 | CDN | `[x]` | DigitalOcean App Platform Global CDN |
+| P08 | Database backups | `[x]` | DigitalOcean managed DB auto-backups (PITR) |
 | P09 | Log aggregation | `[DEFERRED]` | DigitalOcean App logs available; forward to Logtail post-launch |
-| P10 | Secrets manager | `[x]` | Secrets stored encrypted in DigitalOcean App Platform env vars |
-| P11 | Celery worker deployed | `[ ]` | `celery-worker` component pending — add after app creation |
-| P12 | Celery beat deployed | `[ ]` | `celery-beat` component pending — add after app creation |
+| P10 | Secrets manager | `[x]` | Encrypted in DigitalOcean App Platform env vars |
+| P11 | Celery worker deployed | `[x]` | `celery-worker` HEALTHY — 22 tasks registered |
+| P12 | Celery beat deployed | `[x]` | `celery-beat` HEALTHY — scheduled tasks running |
 | P13 | Health check monitoring (UptimeRobot) | `[ ]` | Set up after domain is live |
-| P14 | alembic upgrade head on production | `[ ]` | Run via App Platform Console after deploy |
+| P14 | alembic upgrade head on production | `[x]` | All 30 migrations applied via api Console |
 
 ---
 
