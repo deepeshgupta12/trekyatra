@@ -113,13 +113,12 @@ All V0 foundations are shipped. The stack is live locally with:
 | trekyatra.co.in root DNS — propagated ✅ (dig confirms 162.159.140.98 + 172.66.0.96) | done |
 | trekyatra.co.in root — ✅ ACTIVE (user confirmed working) | done |
 | Hamburger menu mobile — ✅ RESOLVED (translate-x CSS transition) | done |
-| Admin login CORS fix — same-origin proxy architecture (commits 3d2a686, bfa281c, ea2c038) | in progress |
-| Fix 1: admin-auth-api.ts — BASE = relative /api/v1/admin/auth (same-origin, no CORS preflight) | done |
-| Fix 2: admin_auth.py — removed explicit .trekyatra.co.in cookie domain (attributed to www via proxy) | done |
-| Fix 3: next.config.mjs — proxy target = NEXT_PUBLIC_API_BASE with www→api substitution (no loop) | done |
-| Fix 4: next.config.mjs — EV[...] guard: encrypted DO vars at build time fall back to localhost | done |
-| Lesson: NEXT_PUBLIC_* vars must be PLAINTEXT in DO — encrypted vars not decrypted at build time | done |
-| DO action pending: remove INTERNAL_API_URL env var; confirm NEXT_PUBLIC_API_BASE is plaintext | pending |
+| Admin login root cause CONFIRMED: enhanced_threat_control_enabled=true blocks server-to-server POST | done |
+| code: admin-auth-api.ts BASE = relative /api/v1/admin/auth; admin_auth.py cookie domain removed | done |
+| code: next.config.mjs — EV[...] guard + www→api substitution to prevent proxy loop | done |
+| DO App Spec: added ingress rule www.trekyatra.co.in/api → api component (bypasses api.trekyatra.co.in Cloudflare) | pending |
+| Security: ADMIN_EMAIL + ADMIN_PASSWORD are plaintext in App Spec — must encrypt via DO dashboard | pending |
+| NEXT_PUBLIC_API_BASE + NEXT_PUBLIC_SITE_URL confirmed plaintext in web component ✅ | done |
 | App Platform — remaining env vars (ANTHROPIC_API_KEY, SMTP, Stripe, Razorpay, Google OAuth) | pending |
 | Stripe webhook registration | pending |
 | Google Search Console | pending |

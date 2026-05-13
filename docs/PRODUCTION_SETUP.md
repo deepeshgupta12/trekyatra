@@ -438,28 +438,42 @@ All 5 routing rules configured in DO Networking tab:
 - `https://trekyatra-ssvha.ondigitalocean.app` (DO temp URL)
 - `http://localhost:3000` (local dev)
 
-### Admin login — same-origin proxy fix 🔄 IN PROGRESS
+### Admin login — DO ingress routing fix 🔄 IN PROGRESS
 
-**Architecture:** Browser calls `/api/...` on `www.trekyatra.co.in` (same-origin, no CORS preflight). Next.js server proxies these to `api.trekyatra.co.in` at network level. Cookie is set on `www.trekyatra.co.in` and automatically sent on subsequent admin API calls.
+**Confirmed root cause (from App Spec):** `enhanced_threat_control_enabled: true` is set on the app. This is DO's Cloudflare-backed bot protection. When Next.js proxies a POST to `api.trekyatra.co.in`, it's a server-to-server request with no `cf_clearance` cookie → enhanced threat control challenges it → 403 with `cf-mitigated: challenge`. Browser requests are fine because the browser already has `cf_clearance` for `www.trekyatra.co.in`.
 
-**Files changed (commits 3d2a686, bfa281c, ea2c038):**
-- `lib/admin-auth-api.ts`: BASE = `"/api/v1/admin/auth"` (relative URL — same-origin, no cross-origin preflight)
-- `admin_auth.py`: removed explicit `.trekyatra.co.in` cookie domain (cookie attributed to `www` via proxy)
-- `next.config.mjs`: proxy target reads `NEXT_PUBLIC_API_BASE`, substitutes `//www.` → `//api.` to prevent infinite loop; guards against DO encrypted-var placeholders (`EV[...]`) at build time
+**Why the proxy approach failed:** All code approaches (direct browser call to api subdomain → CORS; Next.js proxy to api subdomain → enhanced threat control challenge) hit Cloudflare protection. The only bypass is routing at the DO LB level so the browser's own `cf_clearance` is used for `www.trekyatra.co.in` paths, and `api.trekyatra.co.in`'s Cloudflare edge is never involved.
 
-**DO env vars required for `web` component (PLAINTEXT — do NOT encrypt):**
+**Code changes (commits 3d2a686, ea2c038):**
+- `lib/admin-auth-api.ts`: BASE = `"/api/v1/admin/auth"` (relative URL — same-origin)
+- `admin_auth.py`: removed explicit `.trekyatra.co.in` cookie domain
+- `next.config.mjs`: guarded against DO `EV[...]` encrypted-var placeholders at build time; `www→api` substitution prevents loop
+
+**DO App Spec ingress rule added (final fix):**
+```yaml
+  - component:
+      name: api
+      preserve_path_prefix: true
+    match:
+      authority:
+        exact: www.trekyatra.co.in
+      path:
+        prefix: /api
+```
+Placed before the `www.trekyatra.co.in / → web` catch-all rule. This routes all `/api/...` paths on `www` DIRECTLY to the `api` component at the DO LB level — no `api.trekyatra.co.in` Cloudflare processing, no bot challenge.
+
+**DO env vars (web component — PLAINTEXT, do NOT encrypt):**
 | Variable | Value |
 |----------|-------|
 | `NEXT_PUBLIC_API_BASE` | `https://www.trekyatra.co.in` |
+| `NEXT_PUBLIC_SITE_URL` | `https://www.trekyatra.co.in` |
 
-**DO env vars to REMOVE from `web` component:**
-| Variable | Action |
-|----------|--------|
-| `INTERNAL_API_URL` | Delete — no longer needed |
+**Security issue found:** `ADMIN_EMAIL` and `ADMIN_PASSWORD` are plaintext in App Spec. Must be encrypted via DO dashboard → app-level env vars → lock icon.
 
-**DO routing rule:** NOT required. Next.js proxy handles all `/api/` forwarding.
-
-**Critical lesson — DO encrypted env vars:** If an env var is stored as "encrypted" in DO App Platform, it is passed as `EV[...]` at BUILD time (not decrypted until container startup). `NEXT_PUBLIC_*` vars must be PLAINTEXT because they are baked into the bundle at build time. If encrypted, `new URL(EV[...])` throws during Next.js static page collection → build fails.
+**Critical lessons learned:**
+1. `enhanced_threat_control_enabled: true` blocks server-to-server POST requests (no `cf_clearance`) — route at DO LB level to avoid
+2. `NEXT_PUBLIC_*` env vars must be PLAINTEXT — encrypted vars (`EV[...]`) are not decrypted at Next.js build time → `new URL(EV[...])` throws → build fails
+3. DO App Spec ingress rules must have more-specific paths BEFORE less-specific catch-alls
 
 DigitalOcean auto-provisions SSL via Let's Encrypt once DNS propagates (10–30 min).
 
