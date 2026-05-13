@@ -333,9 +333,10 @@ These are shared across all components. Set in App Platform → App-level enviro
 
 ---
 
-## Step 5 — Database Migrations ⏳
+## Step 5 — Database Migrations 🔄 (READY TO RUN)
 
-> Run AFTER all App Platform components are deployed and healthy.
+> api is connected to DO managed Postgres (confirmed: UndefinedTable = DB reached, just no tables yet).
+> Run now via api Console.
 
 Open Console on the `api` component:
 ```bash

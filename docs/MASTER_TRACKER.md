@@ -92,9 +92,12 @@ All V0 foundations are shipped. The stack is live locally with:
 | App Platform — `web` component DEPLOYED and HEALTHY (trekyatra-ssvha.ondigitalocean.app) | done |
 | App Platform — `api` component (FastAPI) DEPLOYED and HEALTHY | done |
 | config.py — SSL auto-detection: port 25060→sslmode=require; port 25061→rediss:// | done |
-| DO env vars — POSTGRES_SERVER/PORT/DB/USER/PASSWORD need to be added (DATABASE_URL was wrong approach) | pending — next |
+| DO env vars — POSTGRES_SERVER/PORT/DB/USER/PASSWORD added; DATABASE_URL/REDIS_URL removed | done |
+| api CONNECTING to DO managed Postgres — confirmed (UndefinedTable warning = DB reached, migrations pending) | done |
+| alembic upgrade head — run via api Console to create all 30 tables | pending — next |
 | App Platform — `celery-worker` component | pending |
 | App Platform — `celery-beat` component | pending |
+| alembic upgrade head on production | pending — run immediately |
 | App Platform — remaining env vars (ANTHROPIC_API_KEY, SMTP, Stripe, Razorpay, Google OAuth) | pending |
 | alembic upgrade head on production | pending |
 | Domain DNS → GoDaddy | pending |
