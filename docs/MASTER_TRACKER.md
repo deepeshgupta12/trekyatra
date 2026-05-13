@@ -89,9 +89,11 @@ All V0 foundations are shipped. The stack is live locally with:
 | Valkey 8 Redis cluster (db-valkey-blr1-95254, BLR1) | done |
 | App Platform — `web` component configured (Next.js, port 3000) | done |
 | App Platform — App-level env vars (12/12 set, encrypted, server-side only) | done |
-| App Platform — `api` component (FastAPI) | pending |
+| App Platform — `web` component DEPLOYED and HEALTHY (trekyatra-ssvha.ondigitalocean.app) | done |
+| App Platform — `api` component (FastAPI) | pending — add next |
 | App Platform — `celery-worker` component | pending |
 | App Platform — `celery-beat` component | pending |
+| App Platform — remaining env vars (ANTHROPIC_API_KEY, SMTP, Stripe, Razorpay, Google OAuth) | pending |
 | alembic upgrade head on production | pending |
 | Domain DNS → GoDaddy | pending |
 | Stripe webhook registration | pending |

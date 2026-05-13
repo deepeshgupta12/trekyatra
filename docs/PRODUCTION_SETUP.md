@@ -125,9 +125,11 @@ REDIS_PORT=25061
 
 ---
 
-## Step 4 — App Platform Setup ✅ (App created — components pending)
+## Step 4 — App Platform Setup 🔄 (web HEALTHY — api/worker/beat pending)
 
 **App name:** `trekyatra`
+**Temporary DO URL:** `https://trekyatra-ssvha.ondigitalocean.app/`
+**Final URL (after DNS):** `https://trekyatra.co.in`
 **Region:** Bangalore BLR1
 
 ### Security note on environment variables
@@ -149,7 +151,7 @@ public network + SSL is secure and is the correct approach here.
 
 ---
 
-### Component 1 — `web` (Next.js Frontend) ✅
+### Component 1 — `web` (Next.js Frontend) ✅ HEALTHY
 
 | Setting | Value |
 |---------|-------|
