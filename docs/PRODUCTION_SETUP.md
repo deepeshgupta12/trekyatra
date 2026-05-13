@@ -409,7 +409,14 @@ CORSMiddleware added to main.py (commit 02be391).
 
 **WebsiteBuilder A record deleted ✅.** DNS propagating (up to 60 min due to 1hr TTL).
 Run `dig trekyatra.co.in A +short` — when it shows `162.159.140.98`/`172.66.0.96` → click "Refresh status" in DO.
-**Browser test:** https://www.trekyatra.co.in and https://api.trekyatra.co.in/api/v1/health work NOW in browser.
+**Browser test results (confirmed):**
+- https://www.trekyatra.co.in ✅ LIVE — homepage renders perfectly
+- https://api.trekyatra.co.in/api/v1/health ✅ `{"status":"ok","service":"TrekYatra API","environment":"production"}`
+- https://www.trekyatra.co.in/admin/sign-in — page loads but login failing (fixed: see next.config.mjs fix)
+
+**Critical bug fixed (next.config.mjs):** `destination: "http://localhost:8000/api/:path*"` was hardcoded for ALL envs.
+Fixed to: `destination: \`${process.env.NEXT_PUBLIC_API_BASE ?? "http://localhost:8000"}/api/:path*\``
+This makes ALL client-side API calls (auth, admin, user features) work in production.
 > DNS propagation: 10–30 minutes. DO auto-provisions SSL via Let's Encrypt after DNS resolves.
 
 ### Step A5 — Component Routing Rules ✅ DONE

@@ -436,9 +436,9 @@ Full API docs available at http://localhost:8000/docs when the backend is runnin
 | Celery Beat — `celery-beat` | DO App Platform | BLR1 Bangalore | ✅ HEALTHY (2% CPU, 14% RAM) |
 | PostgreSQL 16 + pgvector | DO Managed DB | BLR1 Bangalore | ✅ Ready — 30 migrations applied |
 | Valkey 8 (Redis) | DO Managed DB | BLR1 Bangalore | ✅ Ready — SSL + auth configured |
-| `www.trekyatra.co.in` | GoDaddy → DO | BLR1 | ✅ Active — SSL provisioned |
-| `api.trekyatra.co.in` | GoDaddy → DO | BLR1 | ✅ Active — SSL provisioned |
-| `trekyatra.co.in` (root) | GoDaddy → DO | BLR1 | 🔄 DNS propagating (60min TTL) — auto-resolves |
+| `www.trekyatra.co.in` | GoDaddy → DO | BLR1 | ✅ LIVE — homepage rendering in production |
+| `api.trekyatra.co.in` | GoDaddy → DO | BLR1 | ✅ LIVE — health check confirmed in production |
+| `trekyatra.co.in` (root) | GoDaddy → DO | BLR1 | 🔄 SSL pending — DNS TTL propagating (auto) |
 
 **Live URL (www):** `https://www.trekyatra.co.in`
 **Live API:** `https://api.trekyatra.co.in`

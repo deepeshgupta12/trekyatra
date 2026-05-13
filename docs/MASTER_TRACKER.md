@@ -107,8 +107,11 @@ All V0 foundations are shipped. The stack is live locally with:
 | www.trekyatra.co.in → DO Active ✅ | done |
 | api.trekyatra.co.in → DO Active ✅ | done |
 | trekyatra.co.in — WebsiteBuilder A record deleted ✅; DNS propagating (1hr TTL) → auto-resolves | in progress |
-| www + api domains — LIVE in browser (Cloudflare bot detection only blocks curl, not browsers) | done |
-| DO App Platform uses Cloudflare IPs (162.159.x.x, 172.66.x.x) — this is expected behaviour | confirmed |
+| www.trekyatra.co.in — LIVE in browser ✅ (homepage renders perfectly) | done |
+| api.trekyatra.co.in/api/v1/health — LIVE: {"status":"ok","service":"TrekYatra API","environment":"production"} | done |
+| next.config.mjs — CRITICAL FIX: destination hardcoded to localhost:8000 → replaced with ${NEXT_PUBLIC_API_BASE}/api/:path* | done |
+| Admin login failing — root cause was localhost:8000 proxy (no server at that address on DO) → fixed by next.config.mjs update | done |
+| Root domain trekyatra.co.in — SSL error (DNS still propagating from 1hr TTL) → auto-resolves | pending |
 | App Platform — remaining env vars (ANTHROPIC_API_KEY, SMTP, Stripe, Razorpay, Google OAuth) | pending |
 | Stripe webhook registration | pending |
 | Google Search Console | pending |
