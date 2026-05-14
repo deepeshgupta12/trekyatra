@@ -116,7 +116,9 @@ All V0 foundations are shipped. The stack is live locally with:
 | Admin login root cause CONFIRMED: enhanced_threat_control_enabled=true blocks server-to-server POST | done |
 | code: admin-auth-api.ts BASE = relative /api/v1/admin/auth; admin_auth.py cookie domain removed | done |
 | code: next.config.mjs — EV[...] guard + www→api substitution to prevent proxy loop | done |
-| DO App Spec: added ingress rule www.trekyatra.co.in/api → api component (bypasses api.trekyatra.co.in Cloudflare) | pending |
+| DO App Spec: ingress rule www.trekyatra.co.in/api → api component — ✅ DEPLOYED AND WORKING | done |
+| Admin login — ✅ CONFIRMED WORKING on production (2026-05-14) | done |
+| GitNexus re-indexed: 9,421 nodes, 13,054 edges, 359 clusters, 104 flows | done |
 | Security: ADMIN_EMAIL + ADMIN_PASSWORD are plaintext in App Spec — must encrypt via DO dashboard | pending |
 | NEXT_PUBLIC_API_BASE + NEXT_PUBLIC_SITE_URL confirmed plaintext in web component ✅ | done |
 | App Platform — remaining env vars (ANTHROPIC_API_KEY, SMTP, Stripe, Razorpay, Google OAuth) | pending |
