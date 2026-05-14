@@ -129,6 +129,7 @@ All V0 foundations are shipped. The stack is live locally with:
 | DO App Spec: ingress rule www.trekyatra.co.in/api → api component — ✅ DEPLOYED AND WORKING | done |
 | Admin login — ✅ CONFIRMED WORKING on production (2026-05-14) | done |
 | GitNexus re-indexed: 9,421 nodes, 13,054 edges, 359 clusters, 104 flows | done |
+| GitNexus re-indexed (2252d9d): 9,490 nodes, 13,125 edges, 357 clusters, 104 flows | done |
 | Security: ADMIN_EMAIL + ADMIN_PASSWORD are plaintext in App Spec — must encrypt via DO dashboard | pending |
 | NEXT_PUBLIC_API_BASE + NEXT_PUBLIC_SITE_URL confirmed plaintext in web component ✅ | done |
 | App Platform — remaining env vars (ANTHROPIC_API_KEY, SMTP, Stripe, Razorpay, Google OAuth) | pending |
