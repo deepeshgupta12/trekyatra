@@ -22,10 +22,14 @@ export const metadata: Metadata = {
     site: "@trekyatra",
   },
   robots: { index: true, follow: true },
+  ...(process.env.NEXT_PUBLIC_GOOGLE_SITE_VERIFICATION
+    ? { verification: { google: process.env.NEXT_PUBLIC_GOOGLE_SITE_VERIFICATION } }
+    : {}),
 };
 
 const ADSENSE_ID = process.env.NEXT_PUBLIC_ADSENSE_ID;
 const GA4_ID = process.env.NEXT_PUBLIC_GA4_ID;
+const GSC_VERIFICATION = process.env.NEXT_PUBLIC_GOOGLE_SITE_VERIFICATION;
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (

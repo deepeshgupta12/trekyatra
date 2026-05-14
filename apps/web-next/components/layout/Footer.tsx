@@ -79,7 +79,7 @@ export const Footer = () => (
 
       <div className="grid lg:grid-cols-6 gap-12 mb-12">
         <div className="lg:col-span-2">
-          <Logo variant="light" />
+          <Logo variant="light" size="lg" />
           <p className="mt-5 text-sm text-surface/70 leading-relaxed max-w-xs">
             India&apos;s editorial trekking companion. We map routes, surface trust, and help you choose the right trail — from the Sahyadris to the high Himalayas.
           </p>
@@ -105,15 +105,18 @@ export const Footer = () => (
         ))}
       </div>
 
-      <div className="border-t border-surface/10 pt-8 flex flex-col md:flex-row justify-between items-start md:items-center gap-4 text-xs text-surface/50">
-        <div className="flex items-center gap-4">
+      <div className="border-t border-surface/10 pt-8 flex flex-col gap-3 md:flex-row md:justify-between md:items-center text-xs text-surface/50">
+        <div className="flex flex-col gap-1.5 sm:flex-row sm:items-center sm:gap-4">
+          <span className="flex items-center gap-1.5 font-medium text-surface/60">
+            © 2023–{new Date().getFullYear()} TrekYatra. All rights reserved.
+          </span>
           <span className="flex items-center gap-1.5">
-            © {new Date().getFullYear()} TrekYatra. Made with <Heart className="h-3 w-3 text-accent fill-accent" /> in India.
+            Made with <Heart className="h-3 w-3 text-accent fill-accent" /> in India.
           </span>
         </div>
         <div className="flex items-center gap-4">
           <span className="flex items-center gap-1.5"><MapPin className="h-3 w-3" /> Gurgaon · India</span>
-          <span className="flex items-center gap-1.5"><Phone className="h-3 w-3" /> hello@trekyatra.in</span>
+          <span className="flex items-center gap-1.5"><Phone className="h-3 w-3" /> hello@trekyatra.co.in</span>
         </div>
       </div>
     </div>

@@ -176,6 +176,10 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
         </header>
 
         <main className="flex-1 p-4 lg:p-6 overflow-auto">{children}</main>
+        <footer className="px-4 lg:px-6 py-3 border-t border-white/5 text-[10px] text-white/20 flex items-center justify-between">
+          <span>© 2023–{new Date().getFullYear()} TrekYatra. All rights reserved.</span>
+          <span>CMS Admin</span>
+        </footer>
       </div>
     </div>
   );

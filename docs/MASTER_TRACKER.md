@@ -77,6 +77,16 @@ All V0 foundations are shipped. The stack is live locally with:
 | 39 | Trip planning assistant | done |
 | 40 | Premium subscription layer | done |
 | 41 | B2B content / API extensions | pending |
+| 42 | CMS-driven static pages | pending |
+| 43 | Slug deduplication — CMS as canonical source | pending |
+| 44 | Discovery engine improvements (Search, Interlinking, Recommendations, Compare) | pending |
+
+## V5 — Mobile App Roadmap
+| Item | Status |
+|------|--------|
+| V5 roadmap document created | done |
+| Kickoff decision (after V4 complete + 3 months traffic) | pending |
+> Full spec: `docs/versions/V5-MOBILE-APP.md`
 
 ## Production Deployment — In Progress (DigitalOcean BLR1)
 > Full details in `docs/PRODUCTION_SETUP.md`

@@ -5,6 +5,8 @@ interface LogoProps {
   className?: string;
   /** Pass compact to hide the tagline — use in space-constrained headers */
   compact?: boolean;
+  /** Controls logo image + text size. md = default (48px), lg = footer (56px) */
+  size?: "md" | "lg";
 }
 
 // PNG logo is at /public/images/Logo_Trekyatra.png — used directly below.
@@ -62,33 +64,36 @@ function LogoMark({ size = 42 }: { size?: number }) {
   );
 }
 
-export const Logo = ({ variant = "dark", className = "", compact = false }: LogoProps) => {
+export const Logo = ({ variant = "dark", className = "", compact = false, size = "md" }: LogoProps) => {
   const isLight = variant === "light";
+  const isLarge = size === "lg";
   return (
-    <Link href="/" className={`flex items-center gap-2 group ${className}`}>
+    <Link href="/" className={`flex items-center gap-2.5 group ${className}`}>
       {/* Actual brand logo PNG */}
       <div className="relative flex-shrink-0">
         <div className="absolute inset-0 bg-orange-400/20 blur-lg rounded-full opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
         <img
           src="/images/Logo_Trekyatra.png"
           alt="TrekYatra logo"
-          width={44}
-          height={44}
-          className="w-11 h-11 object-contain relative"
+          width={isLarge ? 56 : 48}
+          height={isLarge ? 56 : 48}
+          className={`${isLarge ? "w-14 h-14" : "w-12 h-12"} object-contain relative`}
         />
       </div>
       <div className="leading-none whitespace-nowrap">
         <div
-          className={`font-display text-[20px] font-bold tracking-tight leading-none ${
-            isLight ? "text-white" : "text-[#1e2d4e]"
+          className={`font-display font-bold tracking-tight leading-none ${
+            isLarge ? "text-[25px]" : "text-[22px]"
+          } ${
+            isLight ? "!text-white drop-shadow-sm" : "text-[#1e2d4e]"
           }`}
         >
-          Trek<span className="text-orange-500">yatra</span>
+          Trek<span className={isLight ? "text-orange-300" : "text-orange-500"}>yatra</span>
         </div>
         {!compact && (
           <div
             className={`text-[8px] uppercase tracking-[0.22em] font-semibold mt-0.5 hidden sm:block ${
-              isLight ? "text-white/50" : "text-[#166534]/80"
+              isLight ? "!text-white/60" : "text-[#166534]/80"
             }`}
           >
             Explore. Dream. Discover.

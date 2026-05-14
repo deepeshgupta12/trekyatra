@@ -303,7 +303,36 @@
 - Admin partner + key management; usage analytics
 - Step doc: `docs/steps/STEP-41-b2b-api-extensions.md`
 
+### Step 42 — CMS-driven static pages [pending]
+- All public content pages (about, contact, legal, methodology) become CMS-editable
+- Static JSX retained as fallback — no regression risk
+- Owner can update any page via `/admin/cms` without a code deploy
+- Step doc: `docs/steps/STEP-42-cms-driven-static-pages.md`
+
+### Step 43 — Slug deduplication — CMS as canonical source [pending]
+- No URL can be served by both static data and CMS simultaneously
+- CMS always wins when a published page exists for a slug
+- Slug conflict detection in CMS service + admin UI warning
+- Migration path: static treks in `data/treks.ts` → CMS pages
+- Step doc: `docs/steps/STEP-43-slug-deduplication.md`
+
+### Step 44 — Discovery engine improvements [pending]
+- Search: covers all CMS page types, click tracking, "did you mean?", recent searches
+- Internal linking: anchor text quality scoring, editorial overrides
+- Recommendations: popularity signals, collaborative filtering lite, recently viewed
+- Compare: 3-trek support, extended attributes, saved comparisons on `/account/compare`
+- Step doc: `docs/steps/STEP-44-discovery-engine-improvements.md`
+
 ---
+
+## V5 — Mobile App Roadmap [pending — post-V4]
+- React Native + Expo, same FastAPI backend
+- Phase 1: offline trek guides, push notifications, trip planning
+- Phase 2: community (check-ins, trip reports, buddy matching)
+- Phase 3: in-app monetisation (IAP, subscriptions)
+- Phase 4: contextual intelligence (weather, GPS, permit alerts)
+- Full spec: `docs/versions/V5-MOBILE-APP.md`
+- Kickoff: only after V4 complete + 3 months production traffic
 
 ---
 

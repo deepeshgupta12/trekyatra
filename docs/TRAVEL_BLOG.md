@@ -2083,3 +2083,50 @@ A **headless, automated, multi-agent, WordPress-backed trekking content business
 It is not simply a blog.
 It is a **content operating system for the trekking niche**.
 
+---
+
+# 12. Future Roadmap
+
+## 12.1 Pending Implementation Steps (V4 website — in progress)
+
+| Step | Title | Status |
+|------|-------|--------|
+| 41 | B2B content / API extensions | Pending |
+| 42 | CMS-driven static pages (all content pages editable without deploy) | Pending |
+| 43 | Slug deduplication — CMS as canonical source, no conflicts with static data | Pending |
+| 44 | Discovery engine improvements — Search, Interlinking, Recommendations, Compare | Pending |
+
+## 12.2 V5 — Mobile App (post-V4 website completion)
+
+A native mobile companion app for TrekYatra targeting Indian trekkers on Android and iOS.
+
+**When:** Only after V4 is fully complete, all bugs resolved, ≥50 CMS pages published, and 3 months of production traffic data available.
+
+**Technology:** React Native + Expo (TypeScript, shared API with web backend)
+
+**Phase 1 — Core Content App:**
+- Offline-first trek guides
+- Trek search and browse
+- Bookmarks (synced with web account)
+- Push notifications: permit alerts, seasonal updates, trek conditions
+- Trip planning wizard (native UX for existing plan flow)
+- Trek alert delivery (activates the stored `trek_alerts` system)
+
+**Phase 2 — Trekker Community:**
+- Trek check-ins and completion history
+- Trip reports (trail condition updates)
+- Photo sharing on trek pages
+- Trek buddy matching
+
+**Phase 3 — Monetisation in App:**
+- In-app purchases for digital products
+- Premium subscriptions (Apple/Google IAP)
+- Affiliate deep links and operator bookings
+
+**Phase 4 — Contextual Intelligence:**
+- Live trek conditions (IMD weather API)
+- Permit alerts (permit window push notifications)
+- GPS-based nearby trek suggestions
+
+Full roadmap: `docs/versions/V5-MOBILE-APP.md`
+
