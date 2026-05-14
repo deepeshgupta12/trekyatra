@@ -463,10 +463,13 @@ All 5 routing rules configured in DO Networking tab:
 Placed before the `www.trekyatra.co.in / → web` catch-all rule. This routes all `/api/...` paths on `www` DIRECTLY to the `api` component at the DO LB level — no `api.trekyatra.co.in` Cloudflare processing, no bot challenge.
 
 **DO env vars (web component — PLAINTEXT, do NOT encrypt):**
-| Variable | Value |
-|----------|-------|
-| `NEXT_PUBLIC_API_BASE` | `https://www.trekyatra.co.in` |
-| `NEXT_PUBLIC_SITE_URL` | `https://www.trekyatra.co.in` |
+| Variable | Value | Status |
+|----------|-------|--------|
+| `NEXT_PUBLIC_API_BASE` | `https://www.trekyatra.co.in` | ✅ Set |
+| `NEXT_PUBLIC_SITE_URL` | `https://www.trekyatra.co.in` | ✅ Set |
+| `NEXT_PUBLIC_GA4_ID` | `G-XM61V2PPDK` | ✅ Set (GA4 property: TrekYatra Web) |
+| `NEXT_PUBLIC_GOOGLE_SITE_VERIFICATION` | (from Search Console HTML tag) | ⏳ Pending |
+| `NEXT_PUBLIC_ADSENSE_ID` | (after AdSense approval) | ⏳ Pending |
 
 **Security issue found:** `ADMIN_EMAIL` and `ADMIN_PASSWORD` are plaintext in App Spec. Must be encrypted via DO dashboard → app-level env vars → lock icon.
 
