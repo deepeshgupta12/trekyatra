@@ -47,7 +47,7 @@ PAGES: list[dict] = [
 <p>For editorial enquiries, corrections, or partnership discussions, write to us at <strong>hello@trekyatra.co.in</strong>. We respond within 2 business days.</p>""",
     },
     {
-        "slug": "privacy-policy",
+        "slug": "privacy",
         "page_type": "editorial",
         "title": "Privacy Policy — TrekYatra",
         "seo_title": "Privacy Policy — TrekYatra",
@@ -92,7 +92,7 @@ PAGES: list[dict] = [
 <p><strong>privacy@trekyatra.co.in</strong> | TrekYatra, Gurgaon, Haryana, India</p>""",
     },
     {
-        "slug": "terms-of-service",
+        "slug": "terms",
         "page_type": "editorial",
         "title": "Terms & Conditions — TrekYatra",
         "seo_title": "Terms & Conditions — TrekYatra",
@@ -172,7 +172,7 @@ PAGES: list[dict] = [
 <p>Write to <strong>editorial@trekyatra.co.in</strong>.</p>""",
     },
     {
-        "slug": "editorial-methodology",
+        "slug": "methodology",
         "page_type": "editorial",
         "title": "Editorial Methodology — How TrekYatra Researches and Writes",
         "seo_title": "Editorial Methodology — How TrekYatra Researches and Writes",

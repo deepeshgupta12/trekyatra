@@ -10,7 +10,7 @@ const AUTHOR = { "@type": "Organization", name: "TrekYatra Editorial Team", url:
 const PUBLISHER = { "@type": "Organization", name: "TrekYatra", url: SITE_URL, logo: { "@type": "ImageObject", url: LOGO_URL } };
 
 export async function generateMetadata(): Promise<Metadata> {
-  const cms = await fetchCMSPage("privacy-policy").catch(() => null);
+  const cms = await fetchCMSPage("privacy").catch(() => null);
   return {
     title: cms?.seo_title ?? "Privacy Policy — TrekYatra",
     description: cms?.seo_description ?? "Read TrekYatra's privacy policy — what personal data we collect, how we use it, and how you can control your data.",
@@ -22,7 +22,7 @@ export async function generateMetadata(): Promise<Metadata> {
 }
 
 export default async function Privacy() {
-  const cms = await fetchCMSPage("privacy-policy").catch(() => null);
+  const cms = await fetchCMSPage("privacy").catch(() => null);
   if (cms?.status === "published") {
     const schema = { "@context": "https://schema.org", "@type": "WebPage", name: cms.title, description: cms.seo_description ?? "", url: `${SITE_URL}/privacy`, author: AUTHOR, publisher: PUBLISHER };
     return (

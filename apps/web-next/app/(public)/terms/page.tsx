@@ -10,7 +10,7 @@ const AUTHOR = { "@type": "Organization", name: "TrekYatra Editorial Team", url:
 const PUBLISHER = { "@type": "Organization", name: "TrekYatra", url: SITE_URL, logo: { "@type": "ImageObject", url: LOGO_URL } };
 
 export async function generateMetadata(): Promise<Metadata> {
-  const cms = await fetchCMSPage("terms-of-service").catch(() => null);
+  const cms = await fetchCMSPage("terms").catch(() => null);
   return {
     title: cms?.seo_title ?? "Terms & Conditions — TrekYatra",
     description: cms?.seo_description ?? "TrekYatra's terms and conditions — the rules for using our trekking guide platform, digital products, and content.",
@@ -22,7 +22,7 @@ export async function generateMetadata(): Promise<Metadata> {
 }
 
 export default async function Terms() {
-  const cms = await fetchCMSPage("terms-of-service").catch(() => null);
+  const cms = await fetchCMSPage("terms").catch(() => null);
   if (cms?.status === "published") {
     const schema = { "@context": "https://schema.org", "@type": "WebPage", name: cms.title, description: cms.seo_description ?? "", url: `${SITE_URL}/terms`, author: AUTHOR, publisher: PUBLISHER };
     return (

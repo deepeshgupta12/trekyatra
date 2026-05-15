@@ -10,7 +10,7 @@ const AUTHOR = { "@type": "Organization", name: "TrekYatra Editorial Team", url:
 const PUBLISHER = { "@type": "Organization", name: "TrekYatra", url: SITE_URL, logo: { "@type": "ImageObject", url: LOGO_URL } };
 
 export async function generateMetadata(): Promise<Metadata> {
-  const cms = await fetchCMSPage("editorial-methodology").catch(() => null);
+  const cms = await fetchCMSPage("methodology").catch(() => null);
   return {
     title: cms?.seo_title ?? "Editorial Methodology — How TrekYatra Researches and Writes",
     description: cms?.seo_description ?? "TrekYatra's editorial methodology — how we research trek guides, verify permits, handle AI-assisted content, and enforce YMYL safety standards.",
@@ -21,7 +21,7 @@ export async function generateMetadata(): Promise<Metadata> {
 }
 
 export default async function Methodology() {
-  const cms = await fetchCMSPage("editorial-methodology").catch(() => null);
+  const cms = await fetchCMSPage("methodology").catch(() => null);
   if (cms?.status === "published") {
     const schema = { "@context": "https://schema.org", "@type": "WebPage", name: cms.title, description: cms.seo_description ?? "", url: `${SITE_URL}/methodology`, author: AUTHOR, publisher: PUBLISHER };
     return (
