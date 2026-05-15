@@ -17,6 +17,7 @@ const PAGE_TYPES = [
   { value: "permit_guide", label: "Permit Guide" },
   { value: "beginner_roundup", label: "Beginner Roundup" },
   { value: "region_listing", label: "Region / Category" },
+  { value: "editorial", label: "Editorial / Static Page" },
 ];
 
 const STATUSES = [

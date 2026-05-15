@@ -75,14 +75,20 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
         seasonal_hub: "/seasons",
         cluster_hub: "/trek-types",
         regional_hub: "/regions",
+        // editorial pages use their own slug as the full path (e.g. /about, /contact)
+        editorial: "/",
       };
       const base = prefix[p.page_type];
-      if (base) {
+      if (base !== undefined) {
+        // editorial pages: URL is /{slug} not //{slug}
+        const pageUrl = p.page_type === "editorial"
+          ? `${SITE_URL}/${p.slug}`
+          : `${SITE_URL}${base}/${p.slug}`;
         entries.push({
-          url: `${SITE_URL}${base}/${p.slug}`,
+          url: pageUrl,
           lastModified: new Date(p.updated_at),
-          changeFrequency: "weekly",
-          priority: 0.8,
+          changeFrequency: p.page_type === "editorial" ? "monthly" : "weekly",
+          priority: p.page_type === "editorial" ? 0.5 : 0.8,
         });
       }
     }
