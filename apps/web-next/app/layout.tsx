@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import Script from "next/script";
 import "./globals.css";
 import { Providers } from "@/components/Providers";
 
@@ -29,33 +30,33 @@ export const metadata: Metadata = {
 
 const ADSENSE_ID = process.env.NEXT_PUBLIC_ADSENSE_ID;
 const GA4_ID = process.env.NEXT_PUBLIC_GA4_ID;
-const GSC_VERIFICATION = process.env.NEXT_PUBLIC_GOOGLE_SITE_VERIFICATION;
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en" suppressHydrationWarning>
-      <head>
-        {GA4_ID && (
-          <>
-            <script async src={`https://www.googletagmanager.com/gtag/js?id=${GA4_ID}`} />
-            <script
-              dangerouslySetInnerHTML={{
-                __html: `window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag('js',new Date());gtag('config','${GA4_ID}');`,
-              }}
-            />
-          </>
-        )}
-        {ADSENSE_ID && (
-          <script
-            async
-            src={`https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=${ADSENSE_ID}`}
-            crossOrigin="anonymous"
-          />
-        )}
-      </head>
       <body>
         <Providers>{children}</Providers>
       </body>
+      {/* GA4 — next/script ensures execution on initial load AND client-side navigations */}
+      {GA4_ID && (
+        <>
+          <Script
+            src={`https://www.googletagmanager.com/gtag/js?id=${GA4_ID}`}
+            strategy="afterInteractive"
+          />
+          <Script id="ga4-init" strategy="afterInteractive">
+            {`window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag('js',new Date());gtag('config','${GA4_ID}');`}
+          </Script>
+        </>
+      )}
+      {/* AdSense — loads after page is interactive */}
+      {ADSENSE_ID && (
+        <Script
+          src={`https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=${ADSENSE_ID}`}
+          strategy="afterInteractive"
+          crossOrigin="anonymous"
+        />
+      )}
     </html>
   );
 }
