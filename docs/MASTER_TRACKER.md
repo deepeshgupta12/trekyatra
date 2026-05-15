@@ -138,6 +138,10 @@ All V0 foundations are shipped. The stack is live locally with:
 | Google Search Console — sitemap.xml submitted and processed ✅ — 23 pages discovered (2026-05-15) | done |
 | robots.txt — auto-generated via app/robots.ts, served at /robots.txt, no GSC submission needed | done |
 | Google AdSense — application pending (apply after ≥20 CMS pages published via content pipeline) | pending |
+| Amazon Associates India — account created, Associate ID: trekyatra21-21 (180-day deadline: ~2026-11-15) | done |
+| Amazon Associates — Tax information (PAN + bank) must be completed at affiliate-program.amazon.in | pending |
+| Amazon Associates — affiliate product links to be seeded in /admin/monetization after content pipeline runs | pending |
+| ANTHROPIC_API_KEY — credits purchased; must be added to DO App Platform at APP LEVEL (not component level) env vars | pending |
 | App Platform — remaining env vars (ANTHROPIC_API_KEY, SMTP, Stripe, Razorpay, Google OAuth) | pending |
 | Stripe webhook registration | pending |
 | Google Search Console | pending |
