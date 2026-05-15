@@ -168,7 +168,7 @@ All V0 foundations are shipped. The stack is live locally with:
 | 403→200 Cloudflare challenge — root cause: enhanced_threat_control_enabled=true in App Spec; see note below | documented |
 | CMS slug/URL mismatch fix — privacy-policy→privacy, terms-of-service→terms, editorial-methodology→methodology (commit 1612706) | done |
 | /about/authors page — updated with real editorial lead: Deepesh Kumar Gupta; removed fictional authors (commit 1612706) | done |
-| DO Console action: delete old CMS pages (privacy-policy, terms-of-service, editorial-methodology) then re-run seed script | pending |
+| DO Console action: cleanup + re-seed — ✅ DONE (2026-05-15) — 3 deleted, 3 created, 3 updated | done |
 | App Platform — remaining env vars (ANTHROPIC_API_KEY, SMTP, Stripe, Razorpay, Google OAuth) | pending |
 | Stripe webhook registration | pending |
 | Google Search Console | pending |
