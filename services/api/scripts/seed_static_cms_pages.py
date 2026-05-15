@@ -16,7 +16,6 @@ import os
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from app.db.session import SessionLocal
-from app.modules.cms.service import upsert_cms_page
 from app.schemas.cms import CMSPageCreate
 
 PAGES: list[dict] = [
