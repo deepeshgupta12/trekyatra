@@ -1,6 +1,6 @@
 # Step 42 — CMS-Driven Static Pages
 
-## Status: Pending
+## Status: Done — commit b4924d6 (2026-05-15)
 
 ## Summary
 All pages that currently serve static hardcoded content must become CMS-driven. The CMS (cms_pages table) is the single source of truth for all public content. When a CMS page with the matching slug exists, it is served; when it doesn't, the static fallback is used. Owner creates pages in the admin CMS — no code deployment required to update any content page.

@@ -77,8 +77,8 @@ All V0 foundations are shipped. The stack is live locally with:
 | 39 | Trip planning assistant | done |
 | 40 | Premium subscription layer | done |
 | 41 | B2B content / API extensions | pending |
-| 42 | CMS-driven static pages | pending |
-| 43 | Slug deduplication — CMS as canonical source | pending |
+| 42 | CMS-driven static pages | done |
+| 43 | Slug deduplication — CMS as canonical source | done |
 | 44 | Discovery engine improvements (Search, Interlinking, Recommendations, Compare) | pending |
 
 ## V5 — Mobile App Roadmap
@@ -142,6 +142,7 @@ All V0 foundations are shipped. The stack is live locally with:
 | Amazon Associates — Tax information (PAN + bank) must be completed at affiliate-program.amazon.in | pending |
 | Amazon Associates — affiliate product links to be seeded in /admin/monetization after content pipeline runs | pending |
 | ANTHROPIC_API_KEY — credits purchased; must be added to DO App Platform at APP LEVEL (not component level) env vars | pending |
+| Step 42+43 — CMS-driven pages + slug dedup + sitemap real-time + agent 2026 (commit b4924d6) | done |
 | App Platform — remaining env vars (ANTHROPIC_API_KEY, SMTP, Stripe, Razorpay, Google OAuth) | pending |
 | Stripe webhook registration | pending |
 | Google Search Console | pending |

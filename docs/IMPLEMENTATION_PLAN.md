@@ -303,13 +303,13 @@
 - Admin partner + key management; usage analytics
 - Step doc: `docs/steps/STEP-41-b2b-api-extensions.md`
 
-### Step 42 — CMS-driven static pages [pending]
+### Step 42 — CMS-driven static pages [DONE — commit b4924d6]
 - All public content pages (about, contact, legal, methodology) become CMS-editable
 - Static JSX retained as fallback — no regression risk
 - Owner can update any page via `/admin/cms` without a code deploy
 - Step doc: `docs/steps/STEP-42-cms-driven-static-pages.md`
 
-### Step 43 — Slug deduplication — CMS as canonical source [pending]
+### Step 43 — Slug deduplication — CMS as canonical source [DONE (frontend) — commit b4924d6]
 - No URL can be served by both static data and CMS simultaneously
 - CMS always wins when a published page exists for a slug
 - Slug conflict detection in CMS service + admin UI warning

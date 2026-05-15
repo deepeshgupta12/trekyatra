@@ -1,6 +1,12 @@
 # Step 43 — Slug Deduplication & CMS as Canonical Source
 
-## Status: Pending
+## Status: Done (frontend portion) — commit b4924d6 (2026-05-15)
+
+## Notes
+- dynamicParams=true + revalidate=60 added to trek/[slug]/page.tsx
+- CMS-first logic was already in place from Step 18; Step 43 made it explicit and added on-demand rendering for CMS-only slugs
+- Backend slug conflict detection API (GET /admin/cms/slug-check) and admin UI warning deferred to post-launch (lower priority)
+- Sitemap real-time: dynamic="force-dynamic" + revalidate=0 added to sitemap.ts
 
 ## Summary
 Ensure no two content sources serve the same URL. The CMS (`cms_pages`) is the canonical source for all published content. Static data in `data/treks.ts` and any other hardcoded datasets must not conflict with CMS slugs. Implement slug registry, conflict detection, and redirect resolution so every URL has exactly one authoritative source.

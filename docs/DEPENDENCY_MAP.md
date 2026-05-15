@@ -114,6 +114,15 @@ This file tracks structural dependencies, source-of-truth modules, and Nexus/Git
 - `apps/web-next/app/(public)/premium/page.tsx` -> public pricing/marketing page; blast radius: LOW (new page)
 - `apps/web-next/app/(public)/account/premium/page.tsx` -> auth-gated subscription dashboard; blast radius: LOW (new page)
 - `apps/web-next/app/(public)/plan/page.tsx` -> full rewrite: 4-step wizard + TrekPlanCard result; blast radius: LOW (leaf page)
+- `apps/web-next/app/(public)/about/page.tsx` -> Step 42: CMS-first (slug "about") with static ContentPage fallback; blast radius: LOW
+- `apps/web-next/app/(public)/privacy/page.tsx` -> Step 42: CMS-first (slug "privacy-policy"); blast radius: LOW
+- `apps/web-next/app/(public)/terms/page.tsx` -> Step 42: CMS-first (slug "terms-of-service"); blast radius: LOW
+- `apps/web-next/app/(public)/contact/page.tsx` -> Step 42: CMS-first (slug "contact"); blast radius: LOW
+- `apps/web-next/app/(public)/affiliate-disclosure/page.tsx` -> Step 42: CMS-first (slug "affiliate-disclosure"); blast radius: LOW
+- `apps/web-next/app/(public)/methodology/page.tsx` -> Step 42: CMS-first (slug "editorial-methodology"); blast radius: LOW
+- `apps/web-next/app/(public)/trek/[slug]/page.tsx` -> Step 43: dynamicParams=true, revalidate=60; CMS wins over static data; blast radius: LOW
+- `apps/web-next/app/sitemap.ts` -> Step 43: dynamic="force-dynamic", revalidate=0; always fetches live published CMS pages; blast radius: LOW
+- `services/api/app/modules/agents/content_writing/prompts.py` -> CONTENT_WRITING_SYSTEM updated: current year 2026 injected; blast radius: LOW (only called by ContentWritingAgent)
 - `services/api/app/modules/agents/translation/agent.py` -> TranslationAgent: translate_page(title, content_html, target_language); Anthropic claude-haiku with ephemeral caching; rule-based fallback; blast radius: LOW (only called by translation route)
 - `services/api/app/schemas/translation.py` -> TranslateRequest, TranslateResponse; blast radius: LOW
 - `services/api/app/api/routes/translation.py` -> POST /admin/cms/{slug}/translate; blast radius: LOW (new endpoint)
