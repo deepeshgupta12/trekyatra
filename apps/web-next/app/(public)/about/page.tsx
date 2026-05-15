@@ -1,12 +1,26 @@
+import type { Metadata } from "next";
 import { ContentPage } from "@/components/content/ContentPage";
 import { Mountain } from "lucide-react";
 import { fetchCMSPage } from "@/lib/api";
 
+const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? "https://www.trekyatra.co.in";
+
+export async function generateMetadata(): Promise<Metadata> {
+  const cms = await fetchCMSPage("about").catch(() => null);
+  return {
+    title: cms?.seo_title ?? "About TrekYatra — India's Editorial Trekking Platform",
+    description: cms?.seo_description ?? "TrekYatra is India's most trusted trekking guide platform. Trail-tested guides, verified permits, honest cost breakdowns for 250+ treks.",
+    alternates: { canonical: `${SITE_URL}/about` },
+  };
+}
+
 export default async function About() {
   const cms = await fetchCMSPage("about").catch(() => null);
   if (cms?.status === "published") {
+    const schema = { "@context": "https://schema.org", "@type": "AboutPage", name: cms.title, description: cms.seo_description ?? "", url: `${SITE_URL}/about`, publisher: { "@type": "Organization", name: "TrekYatra", url: SITE_URL } };
     return (
       <section className="container-wide py-16 lg:py-24">
+        <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(schema) }} />
         <h1 className="font-display text-4xl lg:text-5xl font-bold text-foreground mb-4">{cms.title}</h1>
         {cms.seo_description && <p className="text-xl text-foreground/70 mb-12 max-w-2xl">{cms.seo_description}</p>}
         <div className="prose prose-lg max-w-none" dangerouslySetInnerHTML={{ __html: cms.content_html }} />

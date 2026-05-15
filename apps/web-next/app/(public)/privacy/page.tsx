@@ -1,12 +1,27 @@
+import type { Metadata } from "next";
 import { ContentPage } from "@/components/content/ContentPage";
 import { Shield } from "lucide-react";
 import { fetchCMSPage } from "@/lib/api";
 
+const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? "https://www.trekyatra.co.in";
+
+export async function generateMetadata(): Promise<Metadata> {
+  const cms = await fetchCMSPage("privacy-policy").catch(() => null);
+  return {
+    title: cms?.seo_title ?? "Privacy Policy — TrekYatra",
+    description: cms?.seo_description ?? "Read TrekYatra's privacy policy — what personal data we collect, how we use it, and how you can control your data.",
+    alternates: { canonical: `${SITE_URL}/privacy` },
+    robots: { index: true, follow: false },
+  };
+}
+
 export default async function Privacy() {
   const cms = await fetchCMSPage("privacy-policy").catch(() => null);
   if (cms?.status === "published") {
+    const schema = { "@context": "https://schema.org", "@type": "WebPage", name: cms.title, description: cms.seo_description ?? "", url: `${SITE_URL}/privacy`, publisher: { "@type": "Organization", name: "TrekYatra", url: SITE_URL } };
     return (
       <section className="container-wide py-16 lg:py-24">
+        <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(schema) }} />
         <h1 className="font-display text-4xl lg:text-5xl font-bold text-foreground mb-4">{cms.title}</h1>
         {cms.seo_description && <p className="text-xl text-foreground/70 mb-12 max-w-2xl">{cms.seo_description}</p>}
         <div className="prose prose-lg max-w-none" dangerouslySetInnerHTML={{ __html: cms.content_html }} />

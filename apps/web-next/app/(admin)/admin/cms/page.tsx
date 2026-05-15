@@ -19,6 +19,25 @@ interface CMSPage {
   is_premium: boolean;
 }
 
+// Maps page_type to its public URL prefix. Editorial pages use empty prefix (/{slug}).
+const PAGE_PREFIX: Record<string, string> = {
+  trek_guide: "/trek", packing_list: "/packing", packing_guide: "/packing",
+  permit_guide: "/permits", beginner_guide: "/guides", beginner_roundup: "/guides",
+  cost_guide: "/guides", gear_guide: "/guides", safety_guide: "/guides",
+  itinerary: "/guides", expert_guide: "/guides", premium_compendium: "/guides",
+  comparison: "/compare", seasonal: "/seasons", seasonal_hub: "/seasons",
+  cluster_hub: "/trek-types", regional_hub: "/regions",
+  editorial: "",
+};
+function getLiveUrl(page: CMSPage): string {
+  const base = PAGE_PREFIX[page.page_type];
+  if (base === undefined) return `/trek/${page.slug}`;
+  return base === "" ? `/${page.slug}` : `${base}/${page.slug}`;
+}
+
+// Editorial pages are system pages — protect them from deletion
+const PROTECTED_PAGE_TYPES = new Set(["editorial"]);
+
 const statusStyle: Record<string, string> = {
   draft: "text-white/40 bg-white/5 border border-white/10",
   review: "text-amber-400 bg-amber-400/10 border border-amber-400/20",
@@ -72,7 +91,13 @@ export default function CMSAdminPage() {
     }
   }
 
-  async function deletePage(slug: string) {
+  async function deletePage(slug: string, pageType: string) {
+    if (PROTECTED_PAGE_TYPES.has(pageType)) {
+      setFeedback("Editorial pages are protected and cannot be deleted. Edit their content instead.");
+      setTimeout(() => setFeedback(null), 4000);
+      return;
+    }
+    if (!confirm(`Delete /${slug}? This cannot be undone.`)) return;
     await fetch(`/api/v1/cms/pages/${slug}`, { method: "DELETE" });
     setPages((prev) => prev.filter((p) => p.slug !== slug));
   }
@@ -256,7 +281,7 @@ export default function CMSAdminPage() {
                           </button>
                         )}
                         <a
-                          href={`/trek/${page.slug}`}
+                          href={getLiveUrl(page)}
                           target="_blank"
                           rel="noopener noreferrer"
                           className="text-white/40 hover:text-white transition-colors"
@@ -264,13 +289,19 @@ export default function CMSAdminPage() {
                         >
                           <Globe className="h-3.5 w-3.5" />
                         </a>
-                        <button
-                          onClick={() => deletePage(page.slug)}
-                          className="text-white/40 hover:text-red-400 transition-colors"
-                          title="Delete page"
-                        >
-                          <Trash2 className="h-3.5 w-3.5" />
-                        </button>
+                        {PROTECTED_PAGE_TYPES.has(page.page_type) ? (
+                          <span className="text-white/20 cursor-not-allowed" title="Protected — editorial pages cannot be deleted">
+                            <Trash2 className="h-3.5 w-3.5" />
+                          </span>
+                        ) : (
+                          <button
+                            onClick={() => deletePage(page.slug, page.page_type)}
+                            className="text-white/40 hover:text-red-400 transition-colors"
+                            title="Delete page"
+                          >
+                            <Trash2 className="h-3.5 w-3.5" />
+                          </button>
+                        )}
                       </div>
                     </td>
                   </tr>
