@@ -19,24 +19,37 @@ function url(path: string, priority = 0.7, changefreq: MetadataRoute.Sitemap[0][
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const entries: MetadataRoute.Sitemap = [
+    // Core public pages
     url("/", 1.0, "daily"),
     url("/explore", 0.9, "daily"),
-    url("/treks", 0.9, "daily"),
     url("/packing", 0.7, "weekly"),
     url("/permits", 0.7, "weekly"),
     url("/guides", 0.7, "weekly"),
     url("/compare", 0.7, "weekly"),
     url("/seasons", 0.7, "monthly"),
     url("/regions", 0.7, "weekly"),
-    url("/plan", 0.6, "monthly"),
+    url("/plan", 0.8, "monthly"),
     url("/gear", 0.6, "monthly"),
+    url("/operators", 0.8, "weekly"),
+    url("/products", 0.6, "weekly"),
+    url("/premium", 0.6, "monthly"),
+    url("/newsletter", 0.4, "monthly"),
+    // Trust + editorial pages
+    url("/about", 0.6, "monthly"),
+    url("/about/authors", 0.5, "monthly"),
+    url("/contact", 0.4, "yearly"),
+    url("/methodology", 0.5, "monthly"),
+    url("/privacy", 0.3, "yearly"),
+    url("/terms", 0.3, "yearly"),
+    url("/affiliate-disclosure", 0.3, "yearly"),
+    url("/safety-disclaimer", 0.4, "monthly"),
   ];
 
-  // Trek detail pages from static data
+  // Trek detail pages from static data — /trek/{slug} (singular, matches the actual route)
   try {
     const treks = await fetchTreks();
     for (const t of treks) {
-      entries.push(url(`/treks/${t.slug}`, 0.85, "weekly"));
+      entries.push(url(`/trek/${t.slug}`, 0.85, "weekly"));
     }
   } catch { /* static data unavailable */ }
 

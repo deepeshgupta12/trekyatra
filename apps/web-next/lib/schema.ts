@@ -3,9 +3,9 @@
  * All builders return plain objects; SchemaInjector renders them as <script> tags.
  */
 
-const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? "https://trekyatra.com";
+const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? "https://www.trekyatra.co.in";
 const SITE_NAME = "TrekYatra";
-const LOGO_URL = `${SITE_URL}/images/logo.png`;
+const LOGO_URL = `${SITE_URL}/images/Logo_Trekyatra.png`;
 
 export interface BreadcrumbItem {
   label: string;
@@ -35,17 +35,29 @@ export function buildArticleSchema({
   updatedAt?: string | null;
   imageUrl?: string | null;
 }) {
+  // Google Rich Results: headline must be ≤110 chars
+  const headline = title.length > 110 ? `${title.slice(0, 107)}...` : title;
   return {
     "@context": "https://schema.org",
     "@type": "Article",
-    headline: title,
+    headline,
     description,
     url: `${SITE_URL}${url}`,
-    ...(imageUrl ? { image: imageUrl } : {}),
+    // Required by Google Rich Results — Person or Organization
+    author: {
+      "@type": "Person",
+      name: "TrekYatra Editorial Team",
+      url: `${SITE_URL}/about/authors`,
+    },
+    // ImageObject with dimensions required for Google Image Rich Results
+    ...(imageUrl
+      ? { image: { "@type": "ImageObject", url: imageUrl, width: 1200, height: 630 } }
+      : {}),
     publisher: {
       "@type": "Organization",
       name: SITE_NAME,
-      logo: { "@type": "ImageObject", url: LOGO_URL },
+      url: SITE_URL,
+      logo: { "@type": "ImageObject", url: LOGO_URL, width: 512, height: 512 },
     },
     ...(publishedAt ? { datePublished: publishedAt } : {}),
     ...(updatedAt ? { dateModified: updatedAt } : {}),
