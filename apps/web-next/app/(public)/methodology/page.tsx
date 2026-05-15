@@ -1,7 +1,18 @@
 import { ContentPage } from "@/components/content/ContentPage";
 import { FileCheck } from "lucide-react";
+import { fetchCMSPage } from "@/lib/api";
 
-export default function Methodology() {
+export default async function Methodology() {
+  const cms = await fetchCMSPage("editorial-methodology").catch(() => null);
+  if (cms?.status === "published") {
+    return (
+      <section className="container-wide py-16 lg:py-24">
+        <h1 className="font-display text-4xl lg:text-5xl font-bold text-foreground mb-4">{cms.title}</h1>
+        {cms.seo_description && <p className="text-xl text-foreground/70 mb-12 max-w-2xl">{cms.seo_description}</p>}
+        <div className="prose prose-lg max-w-none" dangerouslySetInnerHTML={{ __html: cms.content_html }} />
+      </section>
+    );
+  }
   return (
     <ContentPage
       eyebrow="Methodology"

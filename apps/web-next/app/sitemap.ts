@@ -2,6 +2,10 @@ import type { MetadataRoute } from "next";
 import { fetchTreks } from "@/lib/trekApi";
 import { fetchCMSPages } from "@/lib/api";
 
+// Always fetch fresh CMS pages so newly published pages appear immediately
+export const dynamic = "force-dynamic";
+export const revalidate = 0;
+
 const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? "https://trekyatra.com";
 
 function url(path: string, priority = 0.7, changefreq: MetadataRoute.Sitemap[0]["changeFrequency"] = "weekly") {

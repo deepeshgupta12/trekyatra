@@ -25,6 +25,11 @@ import {
 } from "lucide-react";
 import type { Trek } from "@/components/trek/TrekCard";
 
+// Allow CMS-published slugs not in static data to be served on-demand (Step 43)
+export const dynamicParams = true;
+// Revalidate cached pages every 60s so newly published CMS content appears quickly
+export const revalidate = 60;
+
 export async function generateStaticParams() {
   const treks = await fetchTreks();
   return treks.map((t) => ({ slug: t.slug }));
