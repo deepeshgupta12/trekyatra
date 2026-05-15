@@ -486,6 +486,8 @@ Placed before the `www.trekyatra.co.in / → web` catch-all rule. This routes al
 1. `enhanced_threat_control_enabled: true` blocks server-to-server POST requests (no `cf_clearance`) — route at DO LB level to avoid
 2. `NEXT_PUBLIC_*` env vars must be PLAINTEXT — encrypted vars (`EV[...]`) are not decrypted at Next.js build time → `new URL(EV[...])` throws → build fails
 3. DO App Spec ingress rules must have more-specific paths BEFORE less-specific catch-alls
+4. `enhanced_threat_control_enabled: true` also challenges ALL page loads for regular users (403 first, then 200 after JS challenge). To stop this, set `enhanced_threat_control_enabled: false` in App Spec. Trade-off: less bot protection but better UX for real users. Admin login and API routes still work via the DO ingress rule.
+5. Server components that fetch from `www.trekyatra.co.in/api/` get Cloudflare-challenged at runtime → must use `force-dynamic` + handle null fallback, OR convert to client components
 
 DigitalOcean auto-provisions SSL via Let's Encrypt once DNS propagates (10–30 min).
 
