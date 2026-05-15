@@ -3,7 +3,7 @@ import Script from "next/script";
 import "./globals.css";
 import { Providers } from "@/components/Providers";
 
-const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? "https://trekyatra.com";
+const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? "https://www.trekyatra.co.in";
 
 export const metadata: Metadata = {
   metadataBase: new URL(SITE_URL),
@@ -13,6 +13,16 @@ export const metadata: Metadata = {
   },
   description:
     "Discover, compare and plan India's best treks. Trail-tested guides, real permit updates, honest cost notes — from the Sahyadris to the high Himalayas.",
+  // Favicon — uses the TrekYatra logo PNG
+  icons: {
+    icon: [{ url: "/images/Logo_Trekyatra.png", type: "image/png" }],
+    apple: "/images/Logo_Trekyatra.png",
+    shortcut: "/images/Logo_Trekyatra.png",
+  },
+  // Author and publisher — shown by SEO tools and required for Google Rich Results
+  authors: [{ name: "TrekYatra Editorial Team", url: `${SITE_URL}/about/authors` }],
+  creator: "TrekYatra",
+  publisher: "TrekYatra",
   openGraph: {
     siteName: "TrekYatra",
     type: "website",

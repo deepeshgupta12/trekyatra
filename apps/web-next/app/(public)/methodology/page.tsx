@@ -3,7 +3,11 @@ import { ContentPage } from "@/components/content/ContentPage";
 import { FileCheck } from "lucide-react";
 import { fetchCMSPage } from "@/lib/api";
 
+export const dynamic = "force-dynamic";
 const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? "https://www.trekyatra.co.in";
+const LOGO_URL = `${SITE_URL}/images/Logo_Trekyatra.png`;
+const AUTHOR = { "@type": "Organization", name: "TrekYatra Editorial Team", url: `${SITE_URL}/about/authors` };
+const PUBLISHER = { "@type": "Organization", name: "TrekYatra", url: SITE_URL, logo: { "@type": "ImageObject", url: LOGO_URL } };
 
 export async function generateMetadata(): Promise<Metadata> {
   const cms = await fetchCMSPage("editorial-methodology").catch(() => null);
@@ -11,13 +15,15 @@ export async function generateMetadata(): Promise<Metadata> {
     title: cms?.seo_title ?? "Editorial Methodology — How TrekYatra Researches and Writes",
     description: cms?.seo_description ?? "TrekYatra's editorial methodology — how we research trek guides, verify permits, handle AI-assisted content, and enforce YMYL safety standards.",
     alternates: { canonical: `${SITE_URL}/methodology` },
+    authors: [{ name: "TrekYatra Editorial Team", url: `${SITE_URL}/about/authors` }],
+    creator: "TrekYatra", publisher: "TrekYatra",
   };
 }
 
 export default async function Methodology() {
   const cms = await fetchCMSPage("editorial-methodology").catch(() => null);
   if (cms?.status === "published") {
-    const schema = { "@context": "https://schema.org", "@type": "WebPage", name: cms.title, description: cms.seo_description ?? "", url: `${SITE_URL}/methodology`, publisher: { "@type": "Organization", name: "TrekYatra", url: SITE_URL } };
+    const schema = { "@context": "https://schema.org", "@type": "WebPage", name: cms.title, description: cms.seo_description ?? "", url: `${SITE_URL}/methodology`, author: AUTHOR, publisher: PUBLISHER };
     return (
       <section className="container-wide py-16 lg:py-24">
         <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(schema) }} />
@@ -27,9 +33,12 @@ export default async function Methodology() {
       </section>
     );
   }
+  const staticSchema = { "@context": "https://schema.org", "@type": "WebPage", name: "Editorial Methodology — TrekYatra", description: "How TrekYatra researches and verifies trekking content.", url: `${SITE_URL}/methodology`, author: AUTHOR, publisher: PUBLISHER };
   return (
-    <ContentPage
-      eyebrow="Methodology"
+    <>
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(staticSchema) }} />
+      <ContentPage
+        eyebrow="Methodology"
       title="How we research, write & verify"
       subtitle="Our editorial process, freshness standards, and safety-first principles. Last updated: May 2026."
       icon={FileCheck}
@@ -70,5 +79,6 @@ export default async function Methodology() {
         },
       ]}
     />
+    </>
   );
 }

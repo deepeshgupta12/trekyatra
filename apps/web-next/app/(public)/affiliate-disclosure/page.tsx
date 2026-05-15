@@ -3,7 +3,11 @@ import { ContentPage } from "@/components/content/ContentPage";
 import { FileCheck } from "lucide-react";
 import { fetchCMSPage } from "@/lib/api";
 
+export const dynamic = "force-dynamic";
 const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? "https://www.trekyatra.co.in";
+const LOGO_URL = `${SITE_URL}/images/Logo_Trekyatra.png`;
+const AUTHOR = { "@type": "Organization", name: "TrekYatra Editorial Team", url: `${SITE_URL}/about/authors` };
+const PUBLISHER = { "@type": "Organization", name: "TrekYatra", url: SITE_URL, logo: { "@type": "ImageObject", url: LOGO_URL } };
 
 export async function generateMetadata(): Promise<Metadata> {
   const cms = await fetchCMSPage("affiliate-disclosure").catch(() => null);
@@ -11,13 +15,15 @@ export async function generateMetadata(): Promise<Metadata> {
     title: cms?.seo_title ?? "Affiliate Disclosure — TrekYatra",
     description: cms?.seo_description ?? "TrekYatra's full affiliate disclosure — how we earn commissions, which programmes we participate in, and our editorial independence policy.",
     alternates: { canonical: `${SITE_URL}/affiliate-disclosure` },
+    authors: [{ name: "TrekYatra Editorial Team", url: `${SITE_URL}/about/authors` }],
+    creator: "TrekYatra", publisher: "TrekYatra",
   };
 }
 
 export default async function AffiliateDisclosure() {
   const cms = await fetchCMSPage("affiliate-disclosure").catch(() => null);
   if (cms?.status === "published") {
-    const schema = { "@context": "https://schema.org", "@type": "WebPage", name: cms.title, description: cms.seo_description ?? "", url: `${SITE_URL}/affiliate-disclosure`, publisher: { "@type": "Organization", name: "TrekYatra", url: SITE_URL } };
+    const schema = { "@context": "https://schema.org", "@type": "WebPage", name: cms.title, description: cms.seo_description ?? "", url: `${SITE_URL}/affiliate-disclosure`, author: AUTHOR, publisher: PUBLISHER };
     return (
       <section className="container-wide py-16 lg:py-24">
         <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(schema) }} />
@@ -27,9 +33,12 @@ export default async function AffiliateDisclosure() {
       </section>
     );
   }
+  const staticSchema = { "@context": "https://schema.org", "@type": "WebPage", name: "Affiliate Disclosure — TrekYatra", description: "TrekYatra's affiliate disclosure and editorial independence policy.", url: `${SITE_URL}/affiliate-disclosure`, author: AUTHOR, publisher: PUBLISHER };
   return (
-    <ContentPage
-      eyebrow="Disclosure"
+    <>
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(staticSchema) }} />
+      <ContentPage
+        eyebrow="Disclosure"
       title="Affiliate Disclosure"
       subtitle="How we make money — and why it does not affect what we write. Last updated: May 2026."
       icon={FileCheck}
@@ -79,5 +88,6 @@ export default async function AffiliateDisclosure() {
         },
       ]}
     />
+    </>
   );
 }

@@ -3,7 +3,13 @@ import { ContentPage } from "@/components/content/ContentPage";
 import { Mountain } from "lucide-react";
 import { fetchCMSPage } from "@/lib/api";
 
+// force-dynamic: fetches CMS at request time so newly published pages show without redeploy
+export const dynamic = "force-dynamic";
+
 const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? "https://www.trekyatra.co.in";
+const LOGO_URL = `${SITE_URL}/images/Logo_Trekyatra.png`;
+const AUTHOR = { "@type": "Organization", name: "TrekYatra Editorial Team", url: `${SITE_URL}/about/authors` };
+const PUBLISHER = { "@type": "Organization", name: "TrekYatra", url: SITE_URL, logo: { "@type": "ImageObject", url: LOGO_URL } };
 
 export async function generateMetadata(): Promise<Metadata> {
   const cms = await fetchCMSPage("about").catch(() => null);
@@ -11,13 +17,16 @@ export async function generateMetadata(): Promise<Metadata> {
     title: cms?.seo_title ?? "About TrekYatra — India's Editorial Trekking Platform",
     description: cms?.seo_description ?? "TrekYatra is India's most trusted trekking guide platform. Trail-tested guides, verified permits, honest cost breakdowns for 250+ treks.",
     alternates: { canonical: `${SITE_URL}/about` },
+    authors: [{ name: "TrekYatra Editorial Team", url: `${SITE_URL}/about/authors` }],
+    creator: "TrekYatra",
+    publisher: "TrekYatra",
   };
 }
 
 export default async function About() {
   const cms = await fetchCMSPage("about").catch(() => null);
   if (cms?.status === "published") {
-    const schema = { "@context": "https://schema.org", "@type": "AboutPage", name: cms.title, description: cms.seo_description ?? "", url: `${SITE_URL}/about`, publisher: { "@type": "Organization", name: "TrekYatra", url: SITE_URL } };
+    const schema = { "@context": "https://schema.org", "@type": "AboutPage", name: cms.title, description: cms.seo_description ?? "", url: `${SITE_URL}/about`, author: AUTHOR, publisher: PUBLISHER };
     return (
       <section className="container-wide py-16 lg:py-24">
         <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(schema) }} />
@@ -27,10 +36,14 @@ export default async function About() {
       </section>
     );
   }
+  // Static fallback also gets JSON-LD so schema exists even if CMS is unavailable
+  const staticSchema = { "@context": "https://schema.org", "@type": "AboutPage", name: "About TrekYatra — India's Editorial Trekking Platform", description: "TrekYatra is India's most trusted trekking guide platform.", url: `${SITE_URL}/about`, author: AUTHOR, publisher: PUBLISHER };
   return (
-    <ContentPage
-      eyebrow="About TrekYatra"
-      title="Why we built TrekYatra"
+    <>
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(staticSchema) }} />
+      <ContentPage
+        eyebrow="About TrekYatra"
+        title="Why we built TrekYatra"
       subtitle="Because Indian trekking deserves better than generic blog content — and trekkers deserve information they can trust with their lives."
       icon={Mountain}
       blocks={[
@@ -64,5 +77,6 @@ export default async function About() {
         },
       ]}
     />
+    </>
   );
 }

@@ -3,7 +3,11 @@ import { ContentPage } from "@/components/content/ContentPage";
 import { Shield } from "lucide-react";
 import { fetchCMSPage } from "@/lib/api";
 
+export const dynamic = "force-dynamic";
 const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? "https://www.trekyatra.co.in";
+const LOGO_URL = `${SITE_URL}/images/Logo_Trekyatra.png`;
+const AUTHOR = { "@type": "Organization", name: "TrekYatra Editorial Team", url: `${SITE_URL}/about/authors` };
+const PUBLISHER = { "@type": "Organization", name: "TrekYatra", url: SITE_URL, logo: { "@type": "ImageObject", url: LOGO_URL } };
 
 export async function generateMetadata(): Promise<Metadata> {
   const cms = await fetchCMSPage("privacy-policy").catch(() => null);
@@ -12,13 +16,15 @@ export async function generateMetadata(): Promise<Metadata> {
     description: cms?.seo_description ?? "Read TrekYatra's privacy policy — what personal data we collect, how we use it, and how you can control your data.",
     alternates: { canonical: `${SITE_URL}/privacy` },
     robots: { index: true, follow: false },
+    authors: [{ name: "TrekYatra Editorial Team", url: `${SITE_URL}/about/authors` }],
+    creator: "TrekYatra", publisher: "TrekYatra",
   };
 }
 
 export default async function Privacy() {
   const cms = await fetchCMSPage("privacy-policy").catch(() => null);
   if (cms?.status === "published") {
-    const schema = { "@context": "https://schema.org", "@type": "WebPage", name: cms.title, description: cms.seo_description ?? "", url: `${SITE_URL}/privacy`, publisher: { "@type": "Organization", name: "TrekYatra", url: SITE_URL } };
+    const schema = { "@context": "https://schema.org", "@type": "WebPage", name: cms.title, description: cms.seo_description ?? "", url: `${SITE_URL}/privacy`, author: AUTHOR, publisher: PUBLISHER };
     return (
       <section className="container-wide py-16 lg:py-24">
         <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(schema) }} />
@@ -28,10 +34,13 @@ export default async function Privacy() {
       </section>
     );
   }
+  const staticSchema = { "@context": "https://schema.org", "@type": "WebPage", name: "Privacy Policy — TrekYatra", description: "TrekYatra's privacy policy — what we collect and how we protect it.", url: `${SITE_URL}/privacy`, author: AUTHOR, publisher: PUBLISHER };
   return (
-    <ContentPage
-      eyebrow="Privacy"
-      title="Privacy Policy"
+    <>
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(staticSchema) }} />
+      <ContentPage
+        eyebrow="Privacy"
+        title="Privacy Policy"
       subtitle="What we collect, why we collect it, and how we protect it. Last updated: May 2026."
       icon={Shield}
       blocks={[
@@ -96,5 +105,6 @@ export default async function Privacy() {
         },
       ]}
     />
+    </>
   );
 }
