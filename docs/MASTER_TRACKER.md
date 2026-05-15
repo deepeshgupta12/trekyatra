@@ -135,6 +135,7 @@ All V0 foundations are shipped. The stack is live locally with:
 | GitNexus re-indexed (47535ed): 9,539 nodes, 13,205 edges, 360 clusters, 104 flows | done |
 | GitNexus re-indexed (77f4e1a): 9,569 nodes, 13,235 edges, 360 clusters, 104 flows | done |
 | GitNexus re-indexed (1612706): 9,572 nodes, 13,237 edges, 360 clusters, 104 flows | done |
+| GitNexus re-indexed (e8032cb): 9,578 nodes, 13,243 edges, 361 clusters, 104 flows | done |
 | Security: ADMIN_EMAIL + ADMIN_PASSWORD are plaintext in App Spec — must encrypt via DO dashboard | pending |
 | NEXT_PUBLIC_API_BASE + NEXT_PUBLIC_SITE_URL confirmed plaintext in web component ✅ | done |
 | Google Analytics 4 — property created, Measurement ID: G-XM61V2PPDK, NEXT_PUBLIC_GA4_ID set in DO web component | done |
