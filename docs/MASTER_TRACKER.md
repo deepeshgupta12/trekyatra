@@ -131,6 +131,7 @@ All V0 foundations are shipped. The stack is live locally with:
 | GitNexus re-indexed: 9,421 nodes, 13,054 edges, 359 clusters, 104 flows | done |
 | GitNexus re-indexed (2252d9d): 9,490 nodes, 13,125 edges, 357 clusters, 104 flows | done |
 | GitNexus re-indexed (a3b8d53): 9,502 nodes, 13,154 edges, 358 clusters, 104 flows | done |
+| GitNexus re-indexed (ebd6dc9): 9,514 nodes, 13,166 edges, 359 clusters, 104 flows | done |
 | Security: ADMIN_EMAIL + ADMIN_PASSWORD are plaintext in App Spec — must encrypt via DO dashboard | pending |
 | NEXT_PUBLIC_API_BASE + NEXT_PUBLIC_SITE_URL confirmed plaintext in web component ✅ | done |
 | Google Analytics 4 — property created, Measurement ID: G-XM61V2PPDK, NEXT_PUBLIC_GA4_ID set in DO web component | done |
@@ -148,7 +149,9 @@ All V0 foundations are shipped. The stack is live locally with:
 | Sitemap — 12 static pages added; /treks/{slug} bug fixed to /trek/{slug} (commit a3b8d53) | done |
 | NEXT_PUBLIC_GOOGLE_CLIENT_ID — NOT set in DO web component; required for Google OAuth on production | pending |
 | ANTHROPIC_API_KEY — NOT set in DO; Plan My Trek + all LLM agents blocked without it | pending |
-| CMS static pages (6) — content written, user must create in /admin/cms/new | pending |
+| CMSPageForm — editorial page_type added to dropdown (commit ebd6dc9) | done |
+| CMS seed script — services/api/scripts/seed_static_cms_pages.py created (commit ebd6dc9) | done |
+| CMS static pages (6) — run seed script from DO api Console to publish all 6 pages | pending |
 | App Platform — remaining env vars (ANTHROPIC_API_KEY, SMTP, Stripe, Razorpay, Google OAuth) | pending |
 | Stripe webhook registration | pending |
 | Google Search Console | pending |

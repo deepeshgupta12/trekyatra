@@ -123,6 +123,9 @@ This file tracks structural dependencies, source-of-truth modules, and Nexus/Git
 - `apps/web-next/app/(public)/trek/[slug]/page.tsx` -> Step 43: dynamicParams=true, revalidate=60; CMS wins over static data; blast radius: LOW
 - `apps/web-next/app/sitemap.ts` -> Step 43: dynamic="force-dynamic", revalidate=0; always fetches live published CMS pages; blast radius: LOW
 - `services/api/app/modules/agents/content_writing/prompts.py` -> CONTENT_WRITING_SYSTEM updated: current year 2026 injected; blast radius: LOW (only called by ContentWritingAgent)
+- `apps/web-next/components/admin/CMSPageForm.tsx` -> PAGE_TYPES: added "editorial" (Editorial / Static Page) type; blast radius: LOW (only used by /admin/cms/new and /admin/cms/[slug]/edit)
+- `apps/web-next/app/sitemap.ts` -> editorial page_type mapped to /{slug}; 12 static pages added; /treks/ → /trek/ fix; blast radius: LOW
+- `services/api/scripts/seed_static_cms_pages.py` -> one-shot script: creates 6 editorial CMS pages (about, privacy-policy, terms-of-service, contact, affiliate-disclosure, editorial-methodology); run from DO Console
 - `services/api/app/modules/agents/translation/agent.py` -> TranslationAgent: translate_page(title, content_html, target_language); Anthropic claude-haiku with ephemeral caching; rule-based fallback; blast radius: LOW (only called by translation route)
 - `services/api/app/schemas/translation.py` -> TranslateRequest, TranslateResponse; blast radius: LOW
 - `services/api/app/api/routes/translation.py` -> POST /admin/cms/{slug}/translate; blast radius: LOW (new endpoint)
