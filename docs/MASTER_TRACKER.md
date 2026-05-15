@@ -132,6 +132,7 @@ All V0 foundations are shipped. The stack is live locally with:
 | GitNexus re-indexed (2252d9d): 9,490 nodes, 13,125 edges, 357 clusters, 104 flows | done |
 | GitNexus re-indexed (a3b8d53): 9,502 nodes, 13,154 edges, 358 clusters, 104 flows | done |
 | GitNexus re-indexed (ebd6dc9): 9,514 nodes, 13,166 edges, 359 clusters, 104 flows | done |
+| GitNexus re-indexed (47535ed): 9,539 nodes, 13,205 edges, 360 clusters, 104 flows | done |
 | Security: ADMIN_EMAIL + ADMIN_PASSWORD are plaintext in App Spec — must encrypt via DO dashboard | pending |
 | NEXT_PUBLIC_API_BASE + NEXT_PUBLIC_SITE_URL confirmed plaintext in web component ✅ | done |
 | Google Analytics 4 — property created, Measurement ID: G-XM61V2PPDK, NEXT_PUBLIC_GA4_ID set in DO web component | done |
@@ -152,7 +153,11 @@ All V0 foundations are shipped. The stack is live locally with:
 | CMSPageForm — editorial page_type added to dropdown (commit ebd6dc9) | done |
 | CMS seed script — services/api/scripts/seed_static_cms_pages.py created (commit ebd6dc9) | done |
 | CMS seed script bug fix — db.commit() missing; create_page uses flush() not commit() (commit b34cf96) | done |
-| CMS static pages (6) — re-run seed script in DO Console after b34cf96 deploys | pending |
+| CMS static pages (6) — ✅ published in production DB (seed script ran successfully) | done |
+| CMS admin URL bug fix — getLiveUrl() helper maps page_type to correct public URL (commit 47535ed) | done |
+| CMS delete protection — editorial pages show disabled delete + block with message (commit 47535ed) | done |
+| CMS edit page 404 fix — converted to client component; server→server Cloudflare challenge bypassed (commit 47535ed) | done |
+| Editorial pages generateMetadata + JSON-LD schema — all 6 pages (commit 47535ed) | done |
 | App Platform — remaining env vars (ANTHROPIC_API_KEY, SMTP, Stripe, Razorpay, Google OAuth) | pending |
 | Stripe webhook registration | pending |
 | Google Search Console | pending |

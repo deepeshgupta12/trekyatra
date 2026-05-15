@@ -125,7 +125,15 @@ This file tracks structural dependencies, source-of-truth modules, and Nexus/Git
 - `services/api/app/modules/agents/content_writing/prompts.py` -> CONTENT_WRITING_SYSTEM updated: current year 2026 injected; blast radius: LOW (only called by ContentWritingAgent)
 - `apps/web-next/components/admin/CMSPageForm.tsx` -> PAGE_TYPES: added "editorial" (Editorial / Static Page) type; blast radius: LOW (only used by /admin/cms/new and /admin/cms/[slug]/edit)
 - `apps/web-next/app/sitemap.ts` -> editorial page_type mapped to /{slug}; 12 static pages added; /treks/ → /trek/ fix; blast radius: LOW
-- `services/api/scripts/seed_static_cms_pages.py` -> one-shot script: creates 6 editorial CMS pages (about, privacy-policy, terms-of-service, contact, affiliate-disclosure, editorial-methodology); run from DO Console
+- `services/api/scripts/seed_static_cms_pages.py` -> one-shot script: creates 6 editorial CMS pages; run from DO Console (fixed: db.commit() added, verified working)
+- `apps/web-next/app/(admin)/admin/cms/page.tsx` -> getLiveUrl() helper: page_type→URL mapping; PROTECTED_PAGE_TYPES: editorial pages undeletable; deletePage() requires confirm(); blast radius: LOW (admin-only page)
+- `apps/web-next/app/(admin)/admin/cms/[slug]/edit/page.tsx` -> converted to 'use client' to bypass Cloudflare enhanced_threat_control challenge on server-to-server fetches; getLiveUrl() used; blast radius: LOW (admin-only page)
+- `apps/web-next/app/(public)/about/page.tsx` -> generateMetadata + JSON-LD AboutPage schema; blast radius: LOW
+- `apps/web-next/app/(public)/privacy/page.tsx` -> generateMetadata + JSON-LD WebPage schema, robots nofollow; blast radius: LOW
+- `apps/web-next/app/(public)/terms/page.tsx` -> generateMetadata + JSON-LD WebPage schema, robots nofollow; blast radius: LOW
+- `apps/web-next/app/(public)/contact/page.tsx` -> generateMetadata + JSON-LD ContactPage schema; blast radius: LOW
+- `apps/web-next/app/(public)/affiliate-disclosure/page.tsx` -> generateMetadata + JSON-LD WebPage schema; blast radius: LOW
+- `apps/web-next/app/(public)/methodology/page.tsx` -> generateMetadata + JSON-LD WebPage schema; blast radius: LOW
 - `services/api/app/modules/agents/translation/agent.py` -> TranslationAgent: translate_page(title, content_html, target_language); Anthropic claude-haiku with ephemeral caching; rule-based fallback; blast radius: LOW (only called by translation route)
 - `services/api/app/schemas/translation.py` -> TranslateRequest, TranslateResponse; blast radius: LOW
 - `services/api/app/api/routes/translation.py` -> POST /admin/cms/{slug}/translate; blast radius: LOW (new endpoint)
