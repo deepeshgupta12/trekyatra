@@ -133,7 +133,10 @@ This file tracks structural dependencies, source-of-truth modules, and Nexus/Git
 - `apps/web-next/app/(public)/terms/page.tsx` -> generateMetadata + JSON-LD WebPage schema, robots nofollow; blast radius: LOW
 - `apps/web-next/app/(public)/contact/page.tsx` -> generateMetadata + JSON-LD ContactPage schema; blast radius: LOW
 - `apps/web-next/app/(public)/affiliate-disclosure/page.tsx` -> generateMetadata + JSON-LD WebPage schema; blast radius: LOW
-- `apps/web-next/app/(public)/methodology/page.tsx` -> generateMetadata + JSON-LD WebPage schema; blast radius: LOW
+- `apps/web-next/app/(public)/methodology/page.tsx` -> generateMetadata + JSON-LD WebPage schema; blast radius: LOW; CMS slug corrected to 'methodology' (was 'editorial-methodology')
+- `apps/web-next/app/(public)/privacy/page.tsx` -> CMS slug corrected to 'privacy' (was 'privacy-policy'); blast radius: LOW
+- `apps/web-next/app/(public)/terms/page.tsx` -> CMS slug corrected to 'terms' (was 'terms-of-service'); blast radius: LOW
+- `apps/web-next/app/(public)/about/authors/page.tsx` -> updated: fictional authors replaced with real editorial lead Deepesh Kumar Gupta; Metadata + JSON-LD Person schema added; blast radius: LOW
 - `services/api/app/modules/agents/translation/agent.py` -> TranslationAgent: translate_page(title, content_html, target_language); Anthropic claude-haiku with ephemeral caching; rule-based fallback; blast radius: LOW (only called by translation route)
 - `services/api/app/schemas/translation.py` -> TranslateRequest, TranslateResponse; blast radius: LOW
 - `services/api/app/api/routes/translation.py` -> POST /admin/cms/{slug}/translate; blast radius: LOW (new endpoint)

@@ -134,6 +134,7 @@ All V0 foundations are shipped. The stack is live locally with:
 | GitNexus re-indexed (ebd6dc9): 9,514 nodes, 13,166 edges, 359 clusters, 104 flows | done |
 | GitNexus re-indexed (47535ed): 9,539 nodes, 13,205 edges, 360 clusters, 104 flows | done |
 | GitNexus re-indexed (77f4e1a): 9,569 nodes, 13,235 edges, 360 clusters, 104 flows | done |
+| GitNexus re-indexed (1612706): 9,572 nodes, 13,237 edges, 360 clusters, 104 flows | done |
 | Security: ADMIN_EMAIL + ADMIN_PASSWORD are plaintext in App Spec — must encrypt via DO dashboard | pending |
 | NEXT_PUBLIC_API_BASE + NEXT_PUBLIC_SITE_URL confirmed plaintext in web component ✅ | done |
 | Google Analytics 4 — property created, Measurement ID: G-XM61V2PPDK, NEXT_PUBLIC_GA4_ID set in DO web component | done |
@@ -164,6 +165,9 @@ All V0 foundations are shipped. The stack is live locally with:
 | Schema in BOTH branches (CMS + static fallback) — all 6 editorial pages (commit 77f4e1a) | done |
 | force-dynamic — all 6 editorial pages: CMS content shows at runtime without rebuild (commit 77f4e1a) | done |
 | 403→200 Cloudflare challenge — root cause: enhanced_threat_control_enabled=true in App Spec; see note below | documented |
+| CMS slug/URL mismatch fix — privacy-policy→privacy, terms-of-service→terms, editorial-methodology→methodology (commit 1612706) | done |
+| /about/authors page — updated with real editorial lead: Deepesh Kumar Gupta; removed fictional authors (commit 1612706) | done |
+| DO Console action: delete old CMS pages (privacy-policy, terms-of-service, editorial-methodology) then re-run seed script | pending |
 | App Platform — remaining env vars (ANTHROPIC_API_KEY, SMTP, Stripe, Razorpay, Google OAuth) | pending |
 | Stripe webhook registration | pending |
 | Google Search Console | pending |
