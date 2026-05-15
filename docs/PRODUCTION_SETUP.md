@@ -467,7 +467,7 @@ Placed before the `www.trekyatra.co.in / → web` catch-all rule. This routes al
 |----------|-------|--------|
 | `NEXT_PUBLIC_API_BASE` | `https://www.trekyatra.co.in` | ✅ Set |
 | `NEXT_PUBLIC_SITE_URL` | `https://www.trekyatra.co.in` | ✅ Set |
-| `NEXT_PUBLIC_GA4_ID` | `G-XM61V2PPDK` | ✅ Set (GA4 property: TrekYatra Web) |
+| `NEXT_PUBLIC_GA4_ID` | `G-XM61V2PPDK` | ✅ Set (GA4 property: TrekYatra Web) — fixed: switched to next/script commit f33f7b0 |
 | `NEXT_PUBLIC_GOOGLE_SITE_VERIFICATION` | (from Search Console HTML tag) | ⏳ Pending |
 | `NEXT_PUBLIC_ADSENSE_ID` | (after AdSense approval) | ⏳ Pending |
 
