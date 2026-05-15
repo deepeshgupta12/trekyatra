@@ -134,6 +134,8 @@ All V0 foundations are shipped. The stack is live locally with:
 | NEXT_PUBLIC_API_BASE + NEXT_PUBLIC_SITE_URL confirmed plaintext in web component ✅ | done |
 | Google Analytics 4 — property created, Measurement ID: G-XM61V2PPDK, NEXT_PUBLIC_GA4_ID set in DO web component | done |
 | GA4 script fixed: switched from raw <script> tags to next/script strategy=afterInteractive (commit f33f7b0) | done |
+| Google Search Console — verified ✅ via DNS TXT record (HTML tag + GA methods blocked by enhanced_threat_control) | done |
+| Google Search Console — sitemap.xml submitted: https://www.trekyatra.co.in/sitemap.xml | done |
 | App Platform — remaining env vars (ANTHROPIC_API_KEY, SMTP, Stripe, Razorpay, Google OAuth) | pending |
 | Stripe webhook registration | pending |
 | Google Search Console | pending |

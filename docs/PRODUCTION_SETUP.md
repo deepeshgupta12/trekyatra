@@ -468,8 +468,17 @@ Placed before the `www.trekyatra.co.in / → web` catch-all rule. This routes al
 | `NEXT_PUBLIC_API_BASE` | `https://www.trekyatra.co.in` | ✅ Set |
 | `NEXT_PUBLIC_SITE_URL` | `https://www.trekyatra.co.in` | ✅ Set |
 | `NEXT_PUBLIC_GA4_ID` | `G-XM61V2PPDK` | ✅ Set (GA4 property: TrekYatra Web) — fixed: switched to next/script commit f33f7b0 |
-| `NEXT_PUBLIC_GOOGLE_SITE_VERIFICATION` | (from Search Console HTML tag) | ⏳ Pending |
+| `NEXT_PUBLIC_GOOGLE_SITE_VERIFICATION` | `Al2c8OHlj7uy8dUr2sGo8KqzKF_r6ezcqG_whKCr8iI` | ✅ Set (not needed — see GSC note below) |
 | `NEXT_PUBLIC_ADSENSE_ID` | (after AdSense approval) | ⏳ Pending |
+
+**Google Search Console — verified ✅ via DNS TXT record**
+- HTML tag, Google Analytics, and Google Tag verification methods all failed with "Could not find your site"
+- Root cause: `enhanced_threat_control_enabled: true` in App Spec enables Cloudflare Bot Management, which challenges GSC's verification bots with a JavaScript CAPTCHA. GSC bots cannot solve it → Cloudflare returns challenge page → GSC sees "site not found"
+- Regular Googlebot (for indexing) is whitelisted by Cloudflare by IP, so organic crawling is NOT affected
+- DNS TXT record verification bypasses Cloudflare entirely (goes to GoDaddy nameservers directly)
+- TXT record added in GoDaddy DNS: `google-site-verification=<value>` on `@`
+- Sitemap submitted: `https://www.trekyatra.co.in/sitemap.xml`
+- Lesson: For any Google/third-party site verification on DO App Platform with enhanced_threat_control, always use DNS TXT record method
 
 **Security issue found:** `ADMIN_EMAIL` and `ADMIN_PASSWORD` are plaintext in App Spec. Must be encrypted via DO dashboard → app-level env vars → lock icon.
 
