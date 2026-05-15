@@ -249,7 +249,11 @@ def seed_pages() -> None:
                 print(f"  CREATED: /{page_data['slug']}")
                 created += 1
 
+        db.commit()  # create_page uses flush() not commit() — must commit explicitly
         print(f"\nDone — {created} created, {updated} updated.")
+    except Exception:
+        db.rollback()
+        raise
     finally:
         db.close()
 
