@@ -151,7 +151,8 @@ All V0 foundations are shipped. The stack is live locally with:
 | ANTHROPIC_API_KEY — NOT set in DO; Plan My Trek + all LLM agents blocked without it | pending |
 | CMSPageForm — editorial page_type added to dropdown (commit ebd6dc9) | done |
 | CMS seed script — services/api/scripts/seed_static_cms_pages.py created (commit ebd6dc9) | done |
-| CMS static pages (6) — run seed script from DO api Console to publish all 6 pages | pending |
+| CMS seed script bug fix — db.commit() missing; create_page uses flush() not commit() (commit b34cf96) | done |
+| CMS static pages (6) — re-run seed script in DO Console after b34cf96 deploys | pending |
 | App Platform — remaining env vars (ANTHROPIC_API_KEY, SMTP, Stripe, Razorpay, Google OAuth) | pending |
 | Stripe webhook registration | pending |
 | Google Search Console | pending |
