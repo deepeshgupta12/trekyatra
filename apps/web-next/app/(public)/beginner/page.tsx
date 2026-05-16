@@ -3,8 +3,19 @@ import CMSPageHub, { fetchCMSHubPages } from "@/components/content/CMSPageHub";
 import { Mountain } from "lucide-react";
 import { fetchTreks } from "@/lib/trekApi";
 import { TrekCard } from "@/components/trek/TrekCard";
+import Breadcrumb from "@/components/content/Breadcrumb";
+import { buildBreadcrumbSchema } from "@/lib/schema";
+import type { Metadata } from "next";
 
 export const revalidate = 3600;
+const CRUMBS = [{ label: "Home", href: "/" }, { label: "Beginner Treks" }];
+
+export const metadata: Metadata = {
+  title: "Beginner Treks in India — Easy First-Time Treks | TrekYatra",
+  description: "Discover the best beginner-friendly treks in India. Curated easy treks for first-timers, with verified permits, realistic cost breakdowns, and safe route profiles.",
+  alternates: { canonical: "https://www.trekyatra.co.in/beginner" },
+  authors: [{ name: "TrekYatra Editorial Team" }],
+};
 
 export default async function Beginner() {
   const [cmsPages, treks] = await Promise.all([
@@ -12,9 +23,12 @@ export default async function Beginner() {
     fetchTreks(),
   ]);
   const beginnerTreks = treks.filter((t) => t.beginner).slice(0, 3);
+  const bcSchema = buildBreadcrumbSchema(CRUMBS);
 
   return (
     <>
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(bcSchema) }} />
+      <div className="container-wide pt-4 pb-0"><Breadcrumb items={CRUMBS} /></div>
       <section className="py-10 container-wide">
         <div className="text-xs uppercase tracking-[0.25em] text-accent mb-3">Beginner guides</div>
         <h1 className="font-display text-3xl md:text-4xl font-semibold text-foreground mb-2">Your first trek — start here</h1>

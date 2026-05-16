@@ -1,13 +1,19 @@
 import { ContentPage } from "@/components/content/ContentPage";
 import CMSPageHub, { fetchCMSHubPages } from "@/components/content/CMSPageHub";
 import { Wallet } from "lucide-react";
+import Breadcrumb from "@/components/content/Breadcrumb";
+import { buildBreadcrumbSchema } from "@/lib/schema";
 
 export const revalidate = 3600;
+const CRUMBS = [{ label: "Home", href: "/" }, { label: "Cost Guides" }];
 
 export default async function Costs() {
   const cmsPages = await fetchCMSHubPages("cost_guide");
+  const schema = buildBreadcrumbSchema(CRUMBS);
   return (
     <>
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(schema) }} />
+      <div className="container-wide pt-4 pb-0"><Breadcrumb items={CRUMBS} /></div>
       <section className="py-10 container-wide">
         <div className="text-xs uppercase tracking-[0.25em] text-accent mb-3">Cost guides</div>
         <h1 className="font-display text-3xl md:text-4xl font-semibold text-foreground mb-2">What Indian trekking actually costs</h1>

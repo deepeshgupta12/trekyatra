@@ -166,11 +166,9 @@ Last updated: 2026-05-16
 
 ## Pending URL Structures (Proposed — Not Yet Built)
 
-| Proposed URL | Purpose | Step |
-|--------------|---------|------|
-| `/beginner` → rich category page | Beginner trek category with tabs | Step 44 + Issue 8 |
-| `/moderate` | Moderate trek category page | Step 44 + Issue 8 |
-| `/challenging` | Challenging trek category page | Step 44 + Issue 8 |
+| `/beginner` | Beginner trek category — hub + trek cards + SEO content | ✅ IMPLEMENTED |
+| `/moderate` | Moderate trek category — hub + trek cards + FAQs + schema | ✅ IMPLEMENTED |
+| `/challenging` | Challenging trek category — hub + trek cards + FAQs + schema | ✅ IMPLEMENTED |
 | `/api/partner/v1/*` | B2B partner API | Step 41 |
 | `/search/*` | Enhanced search with click tracking | Step 44 |
 

@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Search, SlidersHorizontal, X } from "lucide-react";
 import { fetchTreks } from "@/lib/trekApi";
 import PersonalisedFeed from "@/components/content/PersonalisedFeed";
+import Breadcrumb from "@/components/content/Breadcrumb";
 
 const filterGroups = [
   { name: "State", options: ["Uttarakhand", "Himachal Pradesh", "Jammu & Kashmir", "Ladakh", "Maharashtra", "West Bengal / Sikkim"] },
@@ -29,6 +30,9 @@ export default function Explore() {
 
   return (
     <>
+      <div className="container-wide pt-4 pb-0">
+        <Breadcrumb items={[{ label: "Home", href: "/" }, { label: "Explore All Treks" }]} />
+      </div>
       {/* Hero */}
       <section className="bg-gradient-pine text-surface pt-16 pb-20 relative overflow-hidden">
         <div className="absolute inset-0 opacity-10">

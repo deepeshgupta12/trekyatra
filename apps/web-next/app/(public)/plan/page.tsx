@@ -70,20 +70,50 @@ export default function PlanPage() {
     await emailPlan(plan.id, email);
   }
 
+  // Build a human-readable summary of the user's selections for the result header
+  const selectionSummary = [
+    form.region && form.region !== "" ? form.region : null,
+    form.duration_days ? `${form.duration_days} days` : null,
+    form.experience ? form.experience.charAt(0).toUpperCase() + form.experience.slice(1) : null,
+    form.month ? form.month.charAt(0).toUpperCase() + form.month.slice(1) : null,
+    form.group_size || null,
+  ].filter(Boolean).join(" · ");
+
   if (plan?.output) {
     return (
-      <div className="container-wide py-12 max-w-3xl mx-auto">
-        <div className="mb-6 flex items-center gap-3">
-          <Button variant="outline" size="sm" onClick={() => { setPlan(null); setStep(1); }} className="gap-1.5">
-            <ArrowLeft className="h-3.5 w-3.5" /> New plan
-          </Button>
-          <span className="text-muted-foreground text-sm">Your personalised trek plan is ready</span>
+      <div className="container-wide py-8 max-w-3xl mx-auto">
+        {/* Result header — shows what the user selected */}
+        <div className="mb-6 p-4 bg-card border border-border rounded-2xl">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+            <div>
+              <p className="text-xs text-muted-foreground uppercase tracking-widest mb-1">Your plan is ready</p>
+              {selectionSummary && (
+                <p className="text-sm text-foreground font-medium">{selectionSummary}</p>
+              )}
+            </div>
+            <div className="flex gap-2">
+              <Button variant="outline" size="sm" onClick={() => { setPlan(null); setStep(1); }} className="gap-1.5">
+                <ArrowLeft className="h-3.5 w-3.5" /> New plan
+              </Button>
+            </div>
+          </div>
         </div>
         <TrekPlanCard
           plan={plan.output as TripPlanOutput}
           planId={plan.id}
           onEmailPlan={handleEmailPlan}
         />
+
+        {/* Alternative options */}
+        <div className="text-center py-4">
+          <p className="text-sm text-muted-foreground mb-2">Not quite right?</p>
+          <button
+            onClick={() => { setPlan(null); setStep(1); }}
+            className="text-sm text-accent hover:underline font-medium"
+          >
+            ← Try different preferences
+          </button>
+        </div>
       </div>
     );
   }
@@ -132,16 +162,26 @@ export default function PlanPage() {
 
           {step === 2 && (
             <WizardStep step={2} totalSteps={TOTAL_STEPS} title="Your experience and fitness">
-              <div className="space-y-3">
-                {EXPERIENCE_LEVELS.map((level) => {
-                  const val = level.split(" — ")[0].toLowerCase();
-                  return (
-                    <label key={level} className={`flex items-center gap-3 p-3.5 rounded-xl border cursor-pointer transition-colors ${form.experience === val ? "border-accent bg-accent/5" : "border-border hover:border-accent/40"}`}>
-                      <input type="radio" name="experience" value={val} checked={form.experience === val} onChange={() => setField("experience", val)} className="accent-accent" />
-                      <span className="text-sm text-foreground">{level}</span>
-                    </label>
-                  );
-                })}
+              <div className="space-y-2.5">
+                {[
+                  { val: "beginner", label: "Beginner", sub: "First trek ever", emoji: "🟢" },
+                  { val: "intermediate", label: "Intermediate", sub: "A few treks done", emoji: "🟡" },
+                  { val: "advanced", label: "Advanced", sub: "Experienced trekker", emoji: "🔴" },
+                ].map(({ val, label, sub, emoji }) => (
+                  <button
+                    key={val}
+                    type="button"
+                    onClick={() => setField("experience", val)}
+                    className={`w-full flex items-center gap-4 p-4 rounded-xl border text-left transition-all ${form.experience === val ? "border-accent bg-accent/5 ring-1 ring-accent/30" : "border-border hover:border-accent/40 bg-card"}`}
+                  >
+                    <span className="text-2xl">{emoji}</span>
+                    <div>
+                      <div className="font-medium text-sm text-foreground">{label}</div>
+                      <div className="text-xs text-muted-foreground">{sub}</div>
+                    </div>
+                    {form.experience === val && <Check className="h-4 w-4 text-accent ml-auto" />}
+                  </button>
+                ))}
               </div>
             </WizardStep>
           )}

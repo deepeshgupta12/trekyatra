@@ -8,6 +8,7 @@ import { buildWebSiteSchema } from "@/lib/schema";
 import HomeSearchBar from "@/components/home/HomeSearchBar";
 import PersonalisedFeed from "@/components/content/PersonalisedFeed";
 import { SeasonalTreksSection } from "@/components/home/SeasonalTreksSection";
+import { DifficultyTabsSection } from "@/components/home/DifficultyTabsSection";
 
 const regions = [
   { name: "Himachal Pradesh", count: "48 treks", image: "/images/region-himachal-camp.jpg", slug: "himachal" },
@@ -27,8 +28,7 @@ const trustStats = [
 export default async function Home() {
   const trekList = await fetchTreks();
   const trending = trekList.slice(0, 4);
-  const beginner = trekList.filter((t) => t.beginner);
-  // SeasonalTreksSection handles its own filtering client-side by current month
+  // DifficultyTabsSection and SeasonalTreksSection filter client-side from trekList
 
   return (
     <>
@@ -137,12 +137,8 @@ export default async function Home() {
         </div>
       </Section>
 
-      {/* BEGINNER */}
-      <Section eyebrow="Just starting out?" title="Beginner-friendly treks across India" cta={{ label: "Beginner guide", to: "/beginner" }} muted>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
-          {beginner.slice(0, 3).map(t => <TrekCard key={t.slug} trek={t} />)}
-        </div>
-      </Section>
+      {/* DIFFICULTY TABS — Easy | Moderate | Challenging with view-all per tab */}
+      <DifficultyTabsSection treks={trekList} />
 
       {/* EDITORIAL FEATURE */}
       <section className="py-16 md:py-24">

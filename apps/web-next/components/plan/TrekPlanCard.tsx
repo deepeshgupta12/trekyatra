@@ -2,10 +2,11 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { Mountain, Calendar, Wallet, AlertCircle, Printer, Mail } from "lucide-react";
+import { Mountain, Calendar, Wallet, AlertCircle, Printer, Mail, Share2, Backpack, CheckCircle2, ArrowRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import ItineraryDay from "./ItineraryDay";
 import OperatorInquiryForm from "@/components/operators/OperatorInquiryForm";
+import { treks as staticTreks } from "@/data/treks";
 import type { TripPlanOutput } from "@/lib/api";
 
 interface Props {
@@ -61,50 +62,103 @@ function EmailPlanSection({ onEmailPlan }: { onEmailPlan: (email: string) => Pro
 }
 
 export default function TrekPlanCard({ plan, planId, onEmailPlan }: Props) {
+  const trekData = plan.trek_slug ? staticTreks.find((t) => t.slug === plan.trek_slug) : null;
+
+  async function handleShare() {
+    const url = typeof window !== "undefined" ? window.location.href : "";
+    if (navigator.share) {
+      await navigator.share({ title: `My ${plan.trek_title} plan`, text: `Check out my personalised ${plan.trek_title} itinerary on TrekYatra`, url }).catch(() => {});
+    } else if (navigator.clipboard) {
+      await navigator.clipboard.writeText(url).catch(() => {});
+    }
+  }
+
   return (
     <div className="space-y-6 print:space-y-4">
-      {/* Trek header */}
-      <div className="bg-card rounded-2xl border border-border p-6">
-        <div className="flex items-start justify-between gap-4 flex-wrap mb-4">
-          <div>
-            <h2 className="font-display text-2xl font-semibold text-foreground mb-1">
-              {plan.trek_title}
-            </h2>
+
+      {/* Hero image + title card */}
+      <div className="bg-card rounded-2xl border border-border overflow-hidden">
+        {trekData?.image && (
+          <div className="relative h-48 sm:h-56 overflow-hidden">
+            <img src={trekData.image} alt={plan.trek_title} className="w-full h-full object-cover" />
+            <div className="absolute inset-0 bg-gradient-to-t from-foreground/80 to-transparent" />
+            <div className="absolute bottom-4 left-5 right-5 flex items-end justify-between">
+              <div>
+                <h2 className="font-display text-2xl sm:text-3xl font-semibold text-surface leading-tight">
+                  {plan.trek_title}
+                </h2>
+                {plan.difficulty && (
+                  <span className="inline-block mt-1 text-xs px-2.5 py-1 rounded-full bg-accent text-accent-foreground font-semibold">
+                    {plan.difficulty}
+                  </span>
+                )}
+              </div>
+            </div>
+          </div>
+        )}
+        <div className="p-5">
+          {!trekData?.image && (
+            <div className="flex items-start justify-between gap-4 flex-wrap mb-4">
+              <div>
+                <h2 className="font-display text-2xl font-semibold text-foreground mb-1">{plan.trek_title}</h2>
+                {plan.difficulty && (
+                  <span className="inline-block text-xs px-2.5 py-1 rounded-full bg-accent/10 text-accent border border-accent/20">{plan.difficulty}</span>
+                )}
+              </div>
+            </div>
+          )}
+
+          {/* Match tags — why we picked this */}
+          <div className="flex flex-wrap gap-2 mb-4">
+            <span className="flex items-center gap-1 text-xs px-2.5 py-1 rounded-full bg-pine/10 text-pine border border-pine/20">
+              <CheckCircle2 className="h-3 w-3" /> Matched your criteria
+            </span>
+            {plan.best_month && (
+              <span className="flex items-center gap-1 text-xs px-2.5 py-1 rounded-full bg-blue-400/10 text-blue-500 border border-blue-400/20">
+                <Calendar className="h-3 w-3" /> {plan.best_month}
+              </span>
+            )}
             {plan.difficulty && (
-              <span className="inline-block text-xs px-2.5 py-1 rounded-full bg-accent/10 text-accent border border-accent/20">
-                {plan.difficulty}
+              <span className="flex items-center gap-1 text-xs px-2.5 py-1 rounded-full bg-accent/10 text-accent border border-accent/20">
+                <Mountain className="h-3 w-3" /> {plan.difficulty}
               </span>
             )}
           </div>
-          <div className="flex gap-2 print:hidden">
+
+          {/* Cost estimate — highlighted */}
+          {plan.cost_estimate && (
+            <div className="flex items-center gap-3 p-3 bg-accent/5 border border-accent/20 rounded-xl mb-4">
+              <Wallet className="h-5 w-5 text-accent flex-shrink-0" />
+              <div>
+                <div className="text-xs text-muted-foreground">Estimated cost per person</div>
+                <div className="font-semibold text-foreground text-sm">{plan.cost_estimate}</div>
+              </div>
+            </div>
+          )}
+
+          {plan.permit_note && (
+            <div className="flex items-start gap-2 text-sm text-muted-foreground mb-4">
+              <AlertCircle className="h-4 w-4 text-amber-500 flex-shrink-0 mt-0.5" />
+              <span>{plan.permit_note}</span>
+            </div>
+          )}
+
+          {/* Action buttons */}
+          <div className="flex flex-wrap gap-2 print:hidden">
+            {plan.trek_slug && (
+              <Link href={`/trek/${plan.trek_slug}`}>
+                <Button variant="hero" size="sm" className="gap-1.5">
+                  View full trek guide <ArrowRight className="h-3.5 w-3.5" />
+                </Button>
+              </Link>
+            )}
+            <Button variant="outline" size="sm" onClick={handleShare} className="gap-1.5">
+              <Share2 className="h-3.5 w-3.5" /> Share plan
+            </Button>
             <Button variant="outline" size="sm" onClick={() => window.print()} className="gap-1.5">
               <Printer className="h-3.5 w-3.5" /> Print
             </Button>
-            {plan.trek_slug && (
-              <Link href={`/trek/${plan.trek_slug}`}>
-                <Button variant="outline" size="sm">View full guide →</Button>
-              </Link>
-            )}
           </div>
-        </div>
-
-        {/* Meta chips */}
-        <div className="flex flex-wrap gap-3 text-sm text-muted-foreground">
-          {plan.best_month && (
-            <span className="flex items-center gap-1.5">
-              <Calendar className="h-3.5 w-3.5" /> {plan.best_month}
-            </span>
-          )}
-          {plan.cost_estimate && (
-            <span className="flex items-center gap-1.5">
-              <Wallet className="h-3.5 w-3.5" /> {plan.cost_estimate}
-            </span>
-          )}
-          {plan.permit_note && (
-            <span className="flex items-center gap-1.5">
-              <AlertCircle className="h-3.5 w-3.5" /> {plan.permit_note}
-            </span>
-          )}
         </div>
       </div>
 
@@ -122,33 +176,47 @@ export default function TrekPlanCard({ plan, planId, onEmailPlan }: Props) {
         </div>
       )}
 
-      {/* Gear essentials */}
+      {/* Gear essentials — visual pills */}
       {plan.gear_essentials.length > 0 && (
         <div className="bg-card rounded-2xl border border-border p-5">
-          <h3 className="font-semibold text-foreground mb-3">Essential gear</h3>
-          <ul className="grid grid-cols-1 sm:grid-cols-2 gap-1.5">
+          <h3 className="font-semibold text-foreground mb-3 flex items-center gap-2">
+            <Backpack className="h-4 w-4 text-accent" /> Essential gear
+          </h3>
+          <div className="flex flex-wrap gap-2">
             {plan.gear_essentials.map((item, i) => (
-              <li key={i} className="flex items-center gap-2 text-sm text-foreground/80">
-                <span className="text-accent">✓</span> {item}
-              </li>
+              <span key={i} className="flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-full bg-card border border-border text-foreground/80">
+                <CheckCircle2 className="h-3 w-3 text-accent flex-shrink-0" /> {item}
+              </span>
             ))}
-          </ul>
+          </div>
+          <p className="text-xs text-muted-foreground mt-3">
+            Full packing list →{" "}
+            <Link href="/packing" className="text-accent hover:underline">Packing guides</Link>
+          </p>
         </div>
       )}
 
+      {/* Operator CTA — improved */}
+      <div className="bg-gradient-twilight text-surface rounded-2xl p-6 print:hidden">
+        <div className="flex items-start justify-between gap-4 flex-wrap mb-4">
+          <div>
+            <h3 className="font-display text-lg font-semibold mb-1">Book this trek with a vetted operator</h3>
+            <p className="text-surface/70 text-sm">
+              TrekYatra only lists operators we have verified. Get matched in 48 hours — free, no commitment.
+            </p>
+          </div>
+        </div>
+        <OperatorInquiryForm defaultTrekInterest={plan.trek_title} />
+      </div>
+
       {/* Email plan */}
-      <div className="print:hidden">
+      <div className="print:hidden bg-card rounded-2xl border border-border p-5">
+        <h3 className="font-semibold text-foreground mb-3 flex items-center gap-2">
+          <Mail className="h-4 w-4 text-accent" /> Email this plan to yourself
+        </h3>
         <EmailPlanSection onEmailPlan={onEmailPlan} />
       </div>
 
-      {/* Operator CTA */}
-      <div className="bg-accent/5 rounded-2xl border border-accent/20 p-5 print:hidden">
-        <h3 className="font-semibold text-foreground mb-1">Want help booking?</h3>
-        <p className="text-sm text-muted-foreground mb-4">
-          Connect with a vetted operator for this trek. Free, no pressure.
-        </p>
-        <OperatorInquiryForm defaultTrekInterest={plan.trek_title} />
-      </div>
     </div>
   );
 }
