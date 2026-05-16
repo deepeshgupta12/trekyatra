@@ -170,6 +170,19 @@ All V0 foundations are shipped. The stack is live locally with:
 | /about/authors page — updated with real editorial lead: Deepesh Kumar Gupta; removed fictional authors (commit 1612706) | done |
 | DO Console action: cleanup + re-seed — ✅ DONE (2026-05-15) — 3 deleted, 3 created, 3 updated | done |
 | App Platform — remaining env vars (ANTHROPIC_API_KEY, SMTP, Stripe, Razorpay, Google OAuth) | pending |
+| GitNexus re-indexed (12c61c6): 9,501 nodes, 13,184 edges, 363 clusters, 104 flows | done |
+| recommendations/service.py — exclude editorial page_type from all SQL queries (commit 12c61c6) | done |
+| trip_planner/agent.py — _STATIC_TREKS fallback when no CMS trek guides published (commit 12c61c6) | done |
+| Trek page CTAs — TrekCTAs.tsx client component: Plan (Link→/plan), Save, Compare, Share all wired (commit 12c61c6) | done |
+| Homepage seasonal tabs — SeasonalTreksSection: auto-select by month, state tags on cards (commit 12c61c6) | done |
+| Breadcrumbs — visual nav + JSON-LD on packing, permits hub pages (commit 12c61c6) | done |
+| schema.ts — buildWebSiteSchema logo with width/height/contentUrl + SearchAction (commit 12c61c6) | done |
+| CMSPageForm — added cost_guide, gear_guide, itinerary, beginner_guide, expert_guide, safety_guide, hub types (commit 12c61c6) | done |
+| docs/URL_MAP.md — complete URL skeleton created (Issue 9) | done |
+| CLAUDE.md — Section 17: URL Structure Rule added; URL_MAP.md added to source-of-truth table | done |
+| Plan My Trek flow improvements — NOTED as pending implementation | pending |
+| Category tabs (beginner/moderate/challenging) — NOTED as pending Step 44 | pending |
+| Breadcrumbs on remaining hub pages (costs, gear, itineraries, beginner, explore) | pending |
 | Stripe webhook registration | pending |
 | Google Search Console | pending |
 | 41 | B2B content / API extensions | pending |

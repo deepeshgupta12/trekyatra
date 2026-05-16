@@ -1,7 +1,7 @@
 <!-- gitnexus:start -->
 # GitNexus — Code Intelligence
 
-This project is indexed by GitNexus as **trekyatra** (9399 symbols, 16005 relationships, 221 execution flows). Use the GitNexus MCP tools to understand code, assess impact, and navigate safely.
+This project is indexed by GitNexus as **trekyatra** (9501 symbols, 13184 relationships, 104 execution flows). Use the GitNexus MCP tools to understand code, assess impact, and navigate safely.
 
 > If any GitNexus tool warns the index is stale, run `npx gitnexus analyze` in terminal first.
 
@@ -359,10 +359,33 @@ Cover at minimum: happy path, one error/edge case, mobile layout check, and any 
 | Current progress | `docs/MASTER_TRACKER.md` |
 | Step plan | `docs/IMPLEMENTATION_PLAN.md` |
 | Dependency map | `docs/DEPENDENCY_MAP.md` |
+| **URL structure map** | **`docs/URL_MAP.md`** |
 | Process rules | `docs/PROCESS_GUARDRAILS.md` + this file |
 | Active step | `docs/steps/STEP-XX-*.md` |
 | Frontend source | `apps/web-next/` |
 | Backend source | `services/api/` |
+
+---
+
+## 17. URL Structure Rule (MANDATORY)
+
+**Before creating any new URL, route, or page:**
+
+1. **Check `docs/URL_MAP.md` first** — if the URL pattern already exists, use it. Do not create duplicates.
+2. **Propose the new URL** to the user before implementing — include: the URL pattern, what page it serves, what CMS `page_type` it uses.
+3. **Get explicit confirmation** before creating any new route file or API endpoint with a new URL pattern.
+4. **Update `docs/URL_MAP.md`** after the new URL is confirmed and implemented — add it to the correct section with page type and notes.
+5. **Update the sitemap** (`app/sitemap.ts`) if the new URL should be indexed by search engines.
+
+Violation of this rule = creating orphan URLs that conflict with existing routes, break the sitemap, or confuse Google crawling.
+
+**URL naming conventions (non-negotiable):**
+- kebab-case only: `/trek-types`, `/safety-disclaimer`
+- Dynamic segments: `[slug]` or `[id]` — never numeric IDs in public URLs
+- CMS slugs must exactly match the URL path segment
+- No trailing slashes
+- Admin routes: always prefix `/admin/`
+- API routes: always prefix `/api/v1/`
 
 ---
 
