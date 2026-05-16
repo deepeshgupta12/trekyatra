@@ -144,6 +144,10 @@ This file tracks structural dependencies, source-of-truth modules, and Nexus/Git
 - `apps/web-next/app/(public)/challenging/page.tsx` -> new page: generateMetadata + trek cards + FAQPage schema + BreadcrumbList; blast radius: LOW (new route)
 - `apps/web-next/components/plan/TrekPlanCard.tsx` -> trek hero image, match tags, visual gear pills, share button, improved operator CTA; blast radius: LOW (only plan page uses it)
 - `apps/web-next/app/(public)/plan/page.tsx` -> selection summary strip, emoji experience cards; blast radius: LOW
+- `apps/web-next/lib/behavior-tracker.ts` -> NEW: localStorage behavior tracking; recordTrekView, getBehaviorProfile, hasBehaviorData; no backend calls
+- `apps/web-next/components/trek/TrekViewTracker.tsx` -> NEW: invisible client component; records trek visits via useEffect → recordTrekView()
+- `apps/web-next/components/content/PersonalisedFeed.tsx` -> behavior-gated: hides section when hasBehaviorData()=false AND not logged in; blast radius: LOW
+- `apps/web-next/components/home/DifficultyTabsSection.tsx` -> accepts cmsPages prop; cmsToTrek() converts CMSPage→Trek; CMS-first with static fallback; blast radius: LOW
 - `apps/web-next/app/(public)/privacy/page.tsx` -> CMS slug corrected to 'privacy' (was 'privacy-policy'); blast radius: LOW
 - `apps/web-next/app/(public)/terms/page.tsx` -> CMS slug corrected to 'terms' (was 'terms-of-service'); blast radius: LOW
 - `apps/web-next/app/(public)/about/authors/page.tsx` -> updated: fictional authors replaced with real editorial lead Deepesh Kumar Gupta; Metadata + JSON-LD Person schema added; blast radius: LOW
