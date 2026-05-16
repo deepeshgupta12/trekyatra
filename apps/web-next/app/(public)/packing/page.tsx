@@ -1,8 +1,16 @@
 import { ContentPage } from "@/components/content/ContentPage";
 import { Backpack } from "lucide-react";
+import Breadcrumb from "@/components/content/Breadcrumb";
+import { buildBreadcrumbSchema } from "@/lib/schema";
+
+const CRUMBS = [{ label: "Home", href: "/" }, { label: "Packing Guides" }];
 
 export default function Packing() {
+  const schema = buildBreadcrumbSchema(CRUMBS);
   return (
+    <>
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(schema) }} />
+      <div className="container-wide pt-4 pb-0"><Breadcrumb items={CRUMBS} /></div>
     <ContentPage
       eyebrow="Packing"
       title="The Indian trekker's packing system"
@@ -18,5 +26,6 @@ export default function Packing() {
         { eyebrow: "Documents", title: "What to carry in your wallet", bullets: ["Govt photo ID (mandatory)", "Medical insurance", "Emergency contacts (printed)", "Cash + cards", "Permits (printed)"] },
       ]}
     />
+    </>
   );
 }

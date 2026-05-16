@@ -1,8 +1,16 @@
 import { ContentPage } from "@/components/content/ContentPage";
 import { FileCheck } from "lucide-react";
+import Breadcrumb from "@/components/content/Breadcrumb";
+import { buildBreadcrumbSchema } from "@/lib/schema";
+
+const CRUMBS = [{ label: "Home", href: "/" }, { label: "Permit Guides" }];
 
 export default function Permits() {
+  const schema = buildBreadcrumbSchema(CRUMBS);
   return (
+    <>
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(schema) }} />
+      <div className="container-wide pt-4 pb-0"><Breadcrumb items={CRUMBS} /></div>
     <ContentPage
       eyebrow="Permits"
       title="India trekking permits — the complete map"
@@ -19,5 +27,6 @@ export default function Permits() {
         { title: "Common permit mistakes", bullets: ["Carrying photocopies without the original ID", "Permits expired by 1-2 days", "Wrong issuing authority", "Missing trekker insurance proof"] },
       ]}
     />
+    </>
   );
 }

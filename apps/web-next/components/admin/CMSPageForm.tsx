@@ -10,14 +10,28 @@ import {
 } from "@/lib/api";
 
 const PAGE_TYPES = [
-  { value: "trek_guide", label: "Trek Guide" },
-  { value: "packing_list", label: "Packing List" },
-  { value: "seasonal", label: "Seasonal / Best Time" },
-  { value: "comparison", label: "Comparison" },
-  { value: "permit_guide", label: "Permit Guide" },
+  // Content pages — appear in /trek/[slug], /packing/[slug], /permits/[slug] etc.
+  { value: "trek_guide",       label: "Trek Guide" },
+  { value: "packing_list",     label: "Packing List" },
+  { value: "permit_guide",     label: "Permit Guide" },
+  { value: "cost_guide",       label: "Cost Guide" },          // → /costs hub + /guides/[slug]
+  { value: "gear_guide",       label: "Gear Guide" },          // → /gear hub + /guides/[slug]
+  { value: "itinerary",        label: "Itinerary Guide" },     // → /itineraries hub + /guides/[slug]
+  { value: "beginner_guide",   label: "Beginner Guide" },      // → /beginner hub + /guides/[slug]
   { value: "beginner_roundup", label: "Beginner Roundup" },
-  { value: "region_listing", label: "Region / Category" },
-  { value: "editorial", label: "Editorial / Static Page" },
+  { value: "expert_guide",     label: "Expert Guide" },
+  { value: "safety_guide",     label: "Safety Guide" },
+  { value: "seasonal",         label: "Seasonal / Best Time" },
+  { value: "comparison",       label: "Comparison" },
+  // Hub pages — landing pages for regions, seasons, trek types
+  { value: "regional_hub",     label: "Regional Hub" },        // → /regions/[slug]
+  { value: "seasonal_hub",     label: "Seasonal Hub" },        // → /seasons/[slug]
+  { value: "cluster_hub",      label: "Trek Type Hub" },       // → /trek-types/[slug]
+  { value: "region_listing",   label: "Region / Category" },
+  // Premium
+  { value: "premium_compendium", label: "Premium Compendium" },
+  // Editorial/static — protected from deletion
+  { value: "editorial",        label: "Editorial / Static Page" },
 ];
 
 const STATUSES = [

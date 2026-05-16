@@ -34,6 +34,23 @@ _MONTH_SEASON = {
     "october": "autumn", "november": "autumn", "december": "winter",
 }
 
+# Static trek catalog — used as fallback when no CMS trek_guide pages are published.
+# Mirrors data/treks.ts. Updated manually when new trek data is added.
+_STATIC_TREKS = [
+    {"id": "s-kedarkantha", "slug": "kedarkantha", "title": "Kedarkantha", "difficulty": "Moderate", "duration": "6 days", "season": "Dec – Apr", "altitude": "12,500 ft", "permits": "", "base": "Sankri, Uttarakhand", "cost_estimate": "", "itinerary_text": "", "packing_text": ""},
+    {"id": "s-valley-of-flowers", "slug": "valley-of-flowers", "title": "Valley of Flowers", "difficulty": "Moderate", "duration": "6 days", "season": "Jul – Sep", "altitude": "14,400 ft", "permits": "", "base": "Govindghat, Uttarakhand", "cost_estimate": "", "itinerary_text": "", "packing_text": ""},
+    {"id": "s-hampta-pass", "slug": "hampta-pass", "title": "Hampta Pass", "difficulty": "Moderate", "duration": "5 days", "season": "Jun – Sep", "altitude": "14,100 ft", "permits": "", "base": "Jobra, Himachal Pradesh", "cost_estimate": "", "itinerary_text": "", "packing_text": ""},
+    {"id": "s-kashmir-great-lakes", "slug": "kashmir-great-lakes", "title": "Kashmir Great Lakes", "difficulty": "Difficult", "duration": "8 days", "season": "Jul – Sep", "altitude": "13,800 ft", "permits": "", "base": "Sonamarg, J&K", "cost_estimate": "", "itinerary_text": "", "packing_text": ""},
+    {"id": "s-brahmatal", "slug": "brahmatal", "title": "Brahmatal", "difficulty": "Moderate", "duration": "6 days", "season": "Dec – Mar", "altitude": "12,250 ft", "permits": "", "base": "Lohajung, Uttarakhand", "cost_estimate": "", "itinerary_text": "", "packing_text": ""},
+    {"id": "s-rajmachi", "slug": "rajmachi", "title": "Rajmachi Monsoon Trek", "difficulty": "Easy", "duration": "2 days", "season": "Jun – Sep", "altitude": "2,710 ft", "permits": "", "base": "Lonavala, Maharashtra", "cost_estimate": "", "itinerary_text": "", "packing_text": ""},
+    {"id": "s-rupin-pass", "slug": "rupin-pass", "title": "Rupin Pass", "difficulty": "Challenging", "duration": "8 days", "season": "May – Jun, Sep – Oct", "altitude": "15,250 ft", "permits": "", "base": "Dhaula, Himachal Pradesh", "cost_estimate": "", "itinerary_text": "", "packing_text": ""},
+    {"id": "s-kalsubai", "slug": "kalsubai", "title": "Kalsubai", "difficulty": "Moderate", "duration": "1 day", "season": "Oct – Feb", "altitude": "5,400 ft", "permits": "", "base": "Bari, Maharashtra", "cost_estimate": "", "itinerary_text": "", "packing_text": ""},
+    {"id": "s-markha-valley", "slug": "markha-valley", "title": "Markha Valley", "difficulty": "Difficult", "duration": "8 days", "season": "Jun – Sep", "altitude": "17,100 ft", "permits": "", "base": "Leh, Ladakh", "cost_estimate": "", "itinerary_text": "", "packing_text": ""},
+    {"id": "s-sandakphu", "slug": "sandakphu", "title": "Sandakphu Phalut", "difficulty": "Moderate", "duration": "6 days", "season": "Oct – Dec, Mar – May", "altitude": "11,950 ft", "permits": "", "base": "Manebhanjan, West Bengal", "cost_estimate": "", "itinerary_text": "", "packing_text": ""},
+    {"id": "s-chadar", "slug": "chadar", "title": "Chadar Frozen River", "difficulty": "Challenging", "duration": "9 days", "season": "Jan – Feb", "altitude": "11,150 ft", "permits": "", "base": "Leh, Ladakh", "cost_estimate": "", "itinerary_text": "", "packing_text": ""},
+    {"id": "s-harishchandragad", "slug": "harishchandragad", "title": "Harishchandragad", "difficulty": "Moderate", "duration": "2 days", "season": "Oct – Mar", "altitude": "4,670 ft", "permits": "", "base": "Khireshwar, Maharashtra", "cost_estimate": "", "itinerary_text": "", "packing_text": ""},
+]
+
 
 class TripPlanState(TypedDict):
     region: str | None
@@ -120,13 +137,16 @@ def select_treks(state: TripPlanState) -> TripPlanState:
     try:
         pages = list_pages(db, status="published", page_type="trek_guide", limit=50)
         candidates = [_page_to_dict(p) for p in pages]
-        # Score and sort
-        scored = sorted(candidates, key=lambda t: _score_trek(t, state), reverse=True)
-        state["candidate_treks"] = scored[:5]
-        state["selected_trek"] = scored[0] if scored else None
     except Exception:
-        state["candidate_treks"] = []
-        state["selected_trek"] = None
+        candidates = []
+
+    # Fall back to static catalog when no CMS trek guides are published yet
+    if not candidates:
+        candidates = list(_STATIC_TREKS)
+
+    scored = sorted(candidates, key=lambda t: _score_trek(t, state), reverse=True)
+    state["candidate_treks"] = scored[:5]
+    state["selected_trek"] = scored[0] if scored else None
     return state
 
 

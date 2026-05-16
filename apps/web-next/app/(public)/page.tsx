@@ -7,6 +7,7 @@ import SchemaInjector from "@/components/seo/SchemaInjector";
 import { buildWebSiteSchema } from "@/lib/schema";
 import HomeSearchBar from "@/components/home/HomeSearchBar";
 import PersonalisedFeed from "@/components/content/PersonalisedFeed";
+import { SeasonalTreksSection } from "@/components/home/SeasonalTreksSection";
 
 const regions = [
   { name: "Himachal Pradesh", count: "48 treks", image: "/images/region-himachal-camp.jpg", slug: "himachal" },
@@ -27,7 +28,7 @@ export default async function Home() {
   const trekList = await fetchTreks();
   const trending = trekList.slice(0, 4);
   const beginner = trekList.filter((t) => t.beginner);
-  const monsoon = trekList.filter((t) => t.state === "Maharashtra");
+  // SeasonalTreksSection handles its own filtering client-side by current month
 
   return (
     <>
@@ -158,7 +159,7 @@ export default async function Home() {
               <div className="flex flex-wrap items-center gap-4 mb-8 text-sm text-muted-foreground">
                 <div className="flex items-center gap-2">
                   <div className="h-9 w-9 rounded-full bg-gradient-pine" />
-                  <div><div className="text-foreground font-medium">Aarav Sharma</div><div className="text-xs">Editor · 14 yrs in the Himalayas</div></div>
+                  <div><div className="text-foreground font-medium">TrekYatra Editorial</div><div className="text-xs">Verified by our editorial team</div></div>
                 </div>
                 <span className="flex items-center gap-1.5"><Clock className="h-3.5 w-3.5" /> 12 min read</span>
                 <span className="flex items-center gap-1.5"><Star className="h-3.5 w-3.5 text-accent fill-accent" /> Updated last week</span>
@@ -171,12 +172,8 @@ export default async function Home() {
         </div>
       </section>
 
-      {/* MONSOON */}
-      <Section eyebrow="Sahyadri season" title="Monsoon treks in Maharashtra & Karnataka" cta={{ label: "Monsoon collection", to: "/seasons/monsoon" }}>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
-          {monsoon.slice(0, 3).map(t => <TrekCard key={t.slug} trek={t} />)}
-        </div>
-      </Section>
+      {/* SEASONAL TABS — auto-select based on current month, shows state tags */}
+      <SeasonalTreksSection treks={trekList} />
 
       {/* PERSONALISED FEED */}
       <Section eyebrow="For you" title="Treks matched to your interests">

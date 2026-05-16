@@ -19,10 +19,11 @@ import StickyMobileCTA from "@/components/trust/StickyMobileCTA";
 import type { AffiliateCardItem } from "@/components/monetization/AffiliateCard";
 import { buildArticleSchema, buildFAQSchema, buildBreadcrumbSchema } from "@/lib/schema";
 import {
-  Bookmark, Share2, GitCompare, Sparkles, Clock, TrendingUp, Calendar,
+  Clock, TrendingUp, Calendar,
   Shield, FileCheck, Backpack, Wallet, ChevronRight, Star, MapPin,
   Check, Mountain, Info,
 } from "lucide-react";
+import { TrekCTAs } from "@/components/trek/TrekCTAs";
 import type { Trek } from "@/components/trek/TrekCard";
 
 // Allow CMS-published slugs not in static data to be served on-demand (Step 43)
@@ -194,12 +195,7 @@ export default async function TrekDetailPage({ params }: { params: { slug: strin
             {cmsDisplayName ?? trek.name}
           </h1>
           <p className="text-base sm:text-lg text-surface/85 max-w-2xl mb-6">{trek.description}</p>
-          <div className="flex flex-wrap items-center gap-2 sm:gap-3">
-            <Button variant="hero" size="default"><Sparkles className="h-4 w-4" /> Plan this trek</Button>
-            <Button variant="glass" size="default"><Bookmark className="h-4 w-4" /> Save</Button>
-            <Button variant="glass" size="default"><GitCompare className="h-4 w-4" /> Compare</Button>
-            <Button variant="glass" size="default"><Share2 className="h-4 w-4" /> Share</Button>
-          </div>
+          <TrekCTAs slug={trek.slug} region={trek.region} name={trek.name} />
         </div>
       </section>
 

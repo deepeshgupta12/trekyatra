@@ -33,7 +33,8 @@ def find_similar_pages(db: Session, page_id: uuid.UUID, limit: int = 5) -> list[
             text(
                 "SELECT id, slug, title, page_type, hero_image_url, seo_description, published_at "
                 "FROM cms_pages "
-                "WHERE status = 'published' AND id != :pid AND embedding IS NOT NULL "
+                "WHERE status = 'published' AND page_type != 'editorial' "
+                "AND id != :pid AND embedding IS NOT NULL "
                 "ORDER BY embedding <=> CAST(:emb AS vector(1536))"
                 "LIMIT :lim"
             ),
@@ -41,10 +42,10 @@ def find_similar_pages(db: Session, page_id: uuid.UUID, limit: int = 5) -> list[
         ).fetchall()
         return [_row_to_dict(r) for r in rows]
 
-    # Fallback: same cluster or page_type
+    # Fallback: same cluster or page_type (never return editorial pages as similar)
     stmt = (
         select(CMSPage)
-        .where(CMSPage.status == "published", CMSPage.id != page_id)
+        .where(CMSPage.status == "published", CMSPage.id != page_id, CMSPage.page_type != "editorial")
         .order_by(CMSPage.published_at.desc().nullslast())
         .limit(limit)
     )
@@ -62,7 +63,7 @@ def find_similar_to_query(db: Session, query_embedding: list[float], limit: int 
         text(
             "SELECT id, slug, title, page_type, hero_image_url, seo_description, published_at "
             "FROM cms_pages "
-            "WHERE status = 'published' AND embedding IS NOT NULL "
+            "WHERE status = 'published' AND page_type != 'editorial' AND embedding IS NOT NULL "
             "ORDER BY embedding <=> CAST(:emb AS vector(1536))"
             "LIMIT :lim"
         ),
@@ -111,19 +112,19 @@ def get_anonymous_recommendations(db: Session, limit: int = 6) -> list[dict]:
         text(
             "SELECT DISTINCT ON (cluster_id) id, slug, title, page_type, hero_image_url, "
             "seo_description, published_at, cluster_id "
-            "FROM cms_pages WHERE status = 'published' "
+            "FROM cms_pages WHERE status = 'published' AND page_type != 'editorial' "
             "ORDER BY cluster_id, published_at DESC NULLS LAST "
             "LIMIT :lim"
         ),
         {"lim": limit},
     ).fetchall()
     if len(rows) < limit:
-        # Backfill with any published pages
+        # Backfill with any published non-editorial pages
         existing_ids = {str(r[0]) for r in rows}
         extra = db.execute(
             text(
                 "SELECT id, slug, title, page_type, hero_image_url, seo_description, published_at "
-                "FROM cms_pages WHERE status = 'published' "
+                "FROM cms_pages WHERE status = 'published' AND page_type != 'editorial' "
                 "ORDER BY published_at DESC NULLS LAST LIMIT :lim"
             ),
             {"lim": limit * 2},

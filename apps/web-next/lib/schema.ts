@@ -127,14 +127,28 @@ export function buildWebSiteSchema() {
     url: SITE_URL,
     description:
       "India's editorial trekking companion — trail-tested guides, real permit updates, honest cost notes.",
+    // potentialAction enables Google Sitelinks search box
+    potentialAction: {
+      "@type": "SearchAction",
+      target: { "@type": "EntryPoint", urlTemplate: `${SITE_URL}/search?q={search_term_string}` },
+      "query-input": "required name=search_term_string",
+    },
     publisher: {
       "@type": "Organization",
       name: SITE_NAME,
       url: SITE_URL,
-      logo: { "@type": "ImageObject", url: LOGO_URL },
+      // Google requires logo with explicit dimensions (min 112×112, max 1000×1000)
+      logo: {
+        "@type": "ImageObject",
+        url: LOGO_URL,
+        width: 512,
+        height: 512,
+        contentUrl: LOGO_URL,
+      },
       sameAs: [
         "https://instagram.com/trekyatra",
         "https://youtube.com/trekyatra",
+        "https://www.trekyatra.co.in",
       ],
     },
   };
