@@ -3,6 +3,7 @@ import { Mountain, Sparkles, ArrowRight, Star, Shield, FileCheck, Backpack, Wall
 import { Button } from "@/components/ui/button";
 import { TrekCard } from "@/components/trek/TrekCard";
 import { fetchTreks } from "@/lib/trekApi";
+import { fetchCMSPages } from "@/lib/api";
 import SchemaInjector from "@/components/seo/SchemaInjector";
 import { buildWebSiteSchema } from "@/lib/schema";
 import HomeSearchBar from "@/components/home/HomeSearchBar";
@@ -26,15 +27,17 @@ const trustStats = [
 ];
 
 export default async function Home() {
-  const trekList = await fetchTreks();
+  const [trekList, cmsTrekPages] = await Promise.all([
+    fetchTreks(),
+    fetchCMSPages({ page_type: "trek_guide", status: "published", limit: 50 }).catch(() => []),
+  ]);
   const trending = trekList.slice(0, 4);
-  // DifficultyTabsSection and SeasonalTreksSection filter client-side from trekList
 
   return (
     <>
       <SchemaInjector schemas={[buildWebSiteSchema()]} />
-      {/* HERO — 78vh on desktop, 85vh on mobile so content+search are always above fold */}
-      <section className="relative min-h-[85vh] md:min-h-[78vh] flex flex-col">
+      {/* HERO — reduced height; content always above fold */}
+      <section className="relative min-h-[65vh] md:min-h-[55vh] flex flex-col">
         {/* Background image + gradients */}
         <div className="absolute inset-0 overflow-hidden">
           <img
@@ -138,7 +141,7 @@ export default async function Home() {
       </Section>
 
       {/* DIFFICULTY TABS — Easy | Moderate | Challenging with view-all per tab */}
-      <DifficultyTabsSection treks={trekList} />
+      <DifficultyTabsSection treks={trekList} cmsPages={cmsTrekPages} />
 
       {/* EDITORIAL FEATURE */}
       <section className="py-16 md:py-24">

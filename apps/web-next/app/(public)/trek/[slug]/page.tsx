@@ -5,6 +5,7 @@ import { TrekCard } from "@/components/trek/TrekCard";
 import { Button } from "@/components/ui/button";
 import { fetchTreks, fetchTrekBySlug } from "@/lib/trekApi";
 import { fetchCMSPage, type CMSPage, type FAQItem } from "@/lib/api";
+import { TrekViewTracker } from "@/components/trek/TrekViewTracker";
 import TableOfContents from "@/components/content/TableOfContents";
 import RecommendedContent from "@/components/content/RecommendedContent";
 import FAQAccordion from "@/components/content/FAQAccordion";
@@ -169,6 +170,13 @@ export default async function TrekDetailPage({ params }: { params: { slug: strin
 
   return (
     <>
+      {/* Invisible behavior tracker — records this trek visit for cookie-based personalisation */}
+      <TrekViewTracker
+        slug={trek.slug}
+        region={trek.region}
+        difficulty={trek.difficulty}
+        season={trek.season}
+      />
       <SchemaInjector schemas={[articleSchema, faqSchema, breadcrumbSchema]} />
       {/* Hero */}
       <section className="relative h-[78vh] min-h-[600px] flex items-end overflow-hidden">

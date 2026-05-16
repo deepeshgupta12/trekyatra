@@ -4,6 +4,39 @@ import { useState } from "react";
 import Link from "next/link";
 import { ArrowRight } from "lucide-react";
 import { TrekCard, type Trek } from "@/components/trek/TrekCard";
+import type { CMSPage, TrekFacts } from "@/lib/api";
+
+/** Convert a CMS trek_guide page to a Trek card-compatible object. */
+function cmsToTrek(page: CMSPage): Trek {
+  const tf = (page.content_json?.trek_facts ?? {}) as TrekFacts;
+  const rawDiff = (tf.difficulty ?? "Moderate").trim();
+  const diffMap: Record<string, Trek["difficulty"]> = {
+    easy: "Easy", beginner: "Easy",
+    moderate: "Moderate", intermediate: "Moderate",
+    difficult: "Difficult", hard: "Difficult",
+    challenging: "Challenging", strenuous: "Challenging",
+  };
+  const difficulty: Trek["difficulty"] =
+    diffMap[rawDiff.toLowerCase().split(/[\s-]/)[0]] ?? "Moderate";
+  return {
+    slug: page.slug,
+    name: page.title,
+    region: tf.base ?? "",
+    state: "",
+    image: page.hero_image_url ?? "/images/trek-forest.jpg",
+    duration: tf.duration ?? "—",
+    altitude: tf.altitude ?? "—",
+    difficulty,
+    season: tf.season ?? "—",
+    description: page.seo_description ?? "",
+    beginner: difficulty === "Easy",
+  };
+}
+
+function cmsMatchesDifficulty(page: CMSPage, match: string[]): boolean {
+  const d = (page.content_json?.trek_facts as TrekFacts | undefined)?.difficulty?.toLowerCase() ?? "";
+  return match.some((m) => d.includes(m));
+}
 
 type Difficulty = "Easy" | "Moderate" | "Challenging";
 
@@ -41,12 +74,24 @@ const DIFF_CONFIG: {
   },
 ];
 
-export function DifficultyTabsSection({ treks }: { treks: Trek[] }) {
+interface Props {
+  treks: Trek[];          // static fallback
+  cmsPages?: CMSPage[];   // CMS trek_guide pages (preferred source)
+}
+
+export function DifficultyTabsSection({ treks, cmsPages = [] }: Props) {
   const [active, setActive] = useState<Difficulty>("Easy");
   const cfg = DIFF_CONFIG.find((d) => d.label === active)!;
-  const filtered = treks
-    .filter((t) => cfg.match.some((m) => t.difficulty.includes(m)))
-    .slice(0, 3);
+
+  // Prefer CMS pages; fall back to static treks for this difficulty
+  const cmsFiltered = cmsPages
+    .filter((p) => cmsMatchesDifficulty(p, cfg.match))
+    .slice(0, 3)
+    .map(cmsToTrek);
+
+  const filtered = cmsFiltered.length > 0
+    ? cmsFiltered
+    : treks.filter((t) => cfg.match.some((m) => t.difficulty.toLowerCase().includes(m))).slice(0, 3);
 
   return (
     <section className="py-16 md:py-24 bg-surface-muted">

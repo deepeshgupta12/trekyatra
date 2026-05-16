@@ -2,7 +2,19 @@ import { ContentPage } from "@/components/content/ContentPage";
 import CMSPageHub, { fetchCMSHubPages } from "@/components/content/CMSPageHub";
 import { Mountain } from "lucide-react";
 import { fetchTreks } from "@/lib/trekApi";
-import { TrekCard } from "@/components/trek/TrekCard";
+import { TrekCard, type Trek } from "@/components/trek/TrekCard";
+import { fetchCMSPages, type CMSPage, type TrekFacts } from "@/lib/api";
+
+function cmsToTrek(page: CMSPage): Trek {
+  const tf = (page.content_json?.trek_facts ?? {}) as TrekFacts;
+  return {
+    slug: page.slug, name: page.title, region: tf.base ?? "", state: "",
+    image: page.hero_image_url ?? "/images/trek-forest.jpg",
+    duration: tf.duration ?? "—", altitude: tf.altitude ?? "—",
+    difficulty: "Easy", season: tf.season ?? "—",
+    description: page.seo_description ?? "", beginner: true,
+  };
+}
 import Breadcrumb from "@/components/content/Breadcrumb";
 import { buildBreadcrumbSchema } from "@/lib/schema";
 import type { Metadata } from "next";
@@ -18,11 +30,24 @@ export const metadata: Metadata = {
 };
 
 export default async function Beginner() {
-  const [cmsPages, treks] = await Promise.all([
+  const [cmsPages, allCmsTrekGuides, treks] = await Promise.all([
     fetchCMSHubPages("beginner_guide"),
+    fetchCMSPages({ page_type: "trek_guide", status: "published", limit: 100 }).catch(() => []),
     fetchTreks(),
   ]);
-  const beginnerTreks = treks.filter((t) => t.beginner).slice(0, 3);
+
+  // CMS trek_guide pages with easy/beginner difficulty — preferred
+  const cmsBeginnerTreks = allCmsTrekGuides
+    .filter((p) => {
+      const d = ((p.content_json?.trek_facts as TrekFacts | undefined)?.difficulty ?? "").toLowerCase();
+      return d.includes("easy") || d.includes("beginner");
+    })
+    .map(cmsToTrek)
+    .slice(0, 3);
+
+  const beginnerTreks = cmsBeginnerTreks.length > 0
+    ? cmsBeginnerTreks
+    : treks.filter((t) => t.beginner).slice(0, 3);
   const bcSchema = buildBreadcrumbSchema(CRUMBS);
 
   return (

@@ -1,7 +1,19 @@
 import type { Metadata } from "next";
 import CMSPageHub, { fetchCMSHubPages } from "@/components/content/CMSPageHub";
-import { TrekCard } from "@/components/trek/TrekCard";
+import { TrekCard, type Trek } from "@/components/trek/TrekCard";
 import { fetchTreks } from "@/lib/trekApi";
+import { fetchCMSPages, type CMSPage, type TrekFacts } from "@/lib/api";
+
+function cmsToTrek(page: CMSPage): Trek {
+  const tf = (page.content_json?.trek_facts ?? {}) as TrekFacts;
+  return {
+    slug: page.slug, name: page.title, region: tf.base ?? "", state: "",
+    image: page.hero_image_url ?? "/images/trek-forest.jpg",
+    duration: tf.duration ?? "—", altitude: tf.altitude ?? "—",
+    difficulty: "Challenging", season: tf.season ?? "—",
+    description: page.seo_description ?? "", beginner: false,
+  };
+}
 import Breadcrumb from "@/components/content/Breadcrumb";
 import { buildBreadcrumbSchema } from "@/lib/schema";
 import Link from "next/link";
@@ -26,16 +38,26 @@ const FAQ = [
 ];
 
 export default async function ChallengingPage() {
-  const [cmsPages, treks] = await Promise.all([
+  const [cmsPages, allCmsTrekGuides, treks] = await Promise.all([
     fetchCMSHubPages("trek_guide"),
+    fetchCMSPages({ page_type: "trek_guide", status: "published", limit: 100 }).catch(() => []),
     fetchTreks(),
   ]);
-  const challengingTreks = treks.filter((t) =>
-    t.difficulty === "Difficult" ||
-    t.difficulty === "Challenging" ||
-    t.difficulty.toLowerCase().includes("difficult") ||
-    t.difficulty.toLowerCase().includes("challenging")
+
+  // CMS trek_guide pages with difficult/challenging difficulty — preferred source
+  const cmsChallengingTreks = allCmsTrekGuides
+    .filter((p) => {
+      const d = ((p.content_json?.trek_facts as TrekFacts | undefined)?.difficulty ?? "").toLowerCase();
+      return d.includes("difficult") || d.includes("challenging") || d.includes("strenuous") || d.includes("hard");
+    })
+    .map(cmsToTrek);
+
+  // Static fallback when no CMS trek guides published yet
+  const staticChallengingTreks = treks.filter((t) =>
+    t.difficulty === "Difficult" || t.difficulty === "Challenging" ||
+    t.difficulty.toLowerCase().includes("difficult") || t.difficulty.toLowerCase().includes("challenging")
   );
+  const challengingTreks = cmsChallengingTreks.length > 0 ? cmsChallengingTreks : staticChallengingTreks;
   const bcSchema = buildBreadcrumbSchema(CRUMBS);
   const faqSchema = {
     "@context": "https://schema.org",

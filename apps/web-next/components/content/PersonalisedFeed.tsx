@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useAuth } from "@/lib/auth-context";
+import { hasBehaviorData, getBehaviorProfile } from "@/lib/behavior-tracker";
 import {
   RecommendationItem,
   fetchPersonalisedRecommendations,
@@ -44,20 +45,34 @@ export default function PersonalisedFeed({ limit = 6 }: { limit?: number }) {
   const [items, setItems] = useState<RecommendationItem[]>([]);
   const [personalised, setPersonalised] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [hasBehavior, setHasBehavior] = useState(false);
 
   useEffect(() => {
+    // Cookie/localStorage gate: only show section when user has browsed treks
+    const behavior = hasBehaviorData();
+    setHasBehavior(behavior || !!user);
+
     if (authLoading) return;
+
+    if (!behavior && !user) {
+      // No browsing history and not logged in → hide section entirely
+      setLoading(false);
+      return;
+    }
+
     const fetcher = user ? fetchPersonalisedRecommendations : fetchAnonymousRecommendations;
     fetcher(limit)
       .then((data) => {
         setItems(data.items);
-        setPersonalised(data.personalised);
+        // Personalised if logged in OR if we have behavioral data
+        setPersonalised(data.personalised || behavior);
       })
       .catch(() => setItems([]))
       .finally(() => setLoading(false));
   }, [user, authLoading, limit]);
 
-  if (loading || items.length === 0) return null;
+  // Hide completely when no behavior and not loading (no data to show)
+  if (loading || items.length === 0 || !hasBehavior) return null;
 
   return (
     <div>
