@@ -136,6 +136,7 @@ All V0 foundations are shipped. The stack is live locally with:
 | GitNexus re-indexed (77f4e1a): 9,569 nodes, 13,235 edges, 360 clusters, 104 flows | done |
 | GitNexus re-indexed (1612706): 9,572 nodes, 13,237 edges, 360 clusters, 104 flows | done |
 | GitNexus re-indexed (e8032cb): 9,578 nodes, 13,243 edges, 361 clusters, 104 flows | done |
+| GitNexus re-indexed (ec9f586): 9,559 nodes, 13,279 edges, 364 clusters, 106 flows | done |
 | Security: ADMIN_EMAIL + ADMIN_PASSWORD are plaintext in App Spec — must encrypt via DO dashboard | pending |
 | NEXT_PUBLIC_API_BASE + NEXT_PUBLIC_SITE_URL confirmed plaintext in web component ✅ | done |
 | Google Analytics 4 — property created, Measurement ID: G-XM61V2PPDK, NEXT_PUBLIC_GA4_ID set in DO web component | done |
@@ -182,7 +183,11 @@ All V0 foundations are shipped. The stack is live locally with:
 | CLAUDE.md — Section 17: URL Structure Rule added; URL_MAP.md added to source-of-truth table | done |
 | Plan My Trek flow improvements — NOTED as pending implementation | pending |
 | Category tabs (beginner/moderate/challenging) — NOTED as pending Step 44 | pending |
-| Breadcrumbs on remaining hub pages (costs, gear, itineraries, beginner, explore) | pending |
+| Breadcrumbs on remaining hub pages (costs, gear, itineraries, beginner, explore) — DONE (commit ec9f586) | done |
+| DifficultyTabsSection: Easy/Moderate/Challenging tabs on homepage (commit ec9f586) | done |
+| /moderate and /challenging rich category pages — schema, FAQs, breadcrumbs, sitemap (commit ec9f586) | done |
+| Plan My Trek wow factor: trek image, match tags, visual gear pills, share, emoji experience cards (commit ec9f586) | done |
+| Plan My Trek flow improvements — further enhancements pending (interactive map, trek comparison in wizard) | pending |
 | Stripe webhook registration | pending |
 | Google Search Console | pending |
 | 41 | B2B content / API extensions | pending |

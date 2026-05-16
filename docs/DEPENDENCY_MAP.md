@@ -134,6 +134,16 @@ This file tracks structural dependencies, source-of-truth modules, and Nexus/Git
 - `apps/web-next/app/(public)/contact/page.tsx` -> generateMetadata + JSON-LD ContactPage schema; blast radius: LOW
 - `apps/web-next/app/(public)/affiliate-disclosure/page.tsx` -> generateMetadata + JSON-LD WebPage schema; blast radius: LOW
 - `apps/web-next/app/(public)/methodology/page.tsx` -> generateMetadata + JSON-LD WebPage schema; blast radius: LOW; CMS slug corrected to 'methodology' (was 'editorial-methodology')
+- `apps/web-next/app/(public)/gear/page.tsx` -> breadcrumb + JSON-LD added; blast radius: LOW
+- `apps/web-next/app/(public)/costs/page.tsx` -> breadcrumb + JSON-LD added; blast radius: LOW
+- `apps/web-next/app/(public)/itineraries/page.tsx` -> breadcrumb + JSON-LD added; blast radius: LOW
+- `apps/web-next/app/(public)/beginner/page.tsx` -> generateMetadata + breadcrumb + JSON-LD added; blast radius: LOW
+- `apps/web-next/app/(public)/explore/page.tsx` -> breadcrumb (client) added; blast radius: LOW
+- `apps/web-next/components/home/DifficultyTabsSection.tsx` -> new client component: Easy/Moderate/Challenging tabs; blast radius: LOW
+- `apps/web-next/app/(public)/moderate/page.tsx` -> new page: generateMetadata + trek cards + FAQPage schema + BreadcrumbList; blast radius: LOW (new route)
+- `apps/web-next/app/(public)/challenging/page.tsx` -> new page: generateMetadata + trek cards + FAQPage schema + BreadcrumbList; blast radius: LOW (new route)
+- `apps/web-next/components/plan/TrekPlanCard.tsx` -> trek hero image, match tags, visual gear pills, share button, improved operator CTA; blast radius: LOW (only plan page uses it)
+- `apps/web-next/app/(public)/plan/page.tsx` -> selection summary strip, emoji experience cards; blast radius: LOW
 - `apps/web-next/app/(public)/privacy/page.tsx` -> CMS slug corrected to 'privacy' (was 'privacy-policy'); blast radius: LOW
 - `apps/web-next/app/(public)/terms/page.tsx` -> CMS slug corrected to 'terms' (was 'terms-of-service'); blast radius: LOW
 - `apps/web-next/app/(public)/about/authors/page.tsx` -> updated: fictional authors replaced with real editorial lead Deepesh Kumar Gupta; Metadata + JSON-LD Person schema added; blast radius: LOW
