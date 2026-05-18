@@ -148,6 +148,9 @@ This file tracks structural dependencies, source-of-truth modules, and Nexus/Git
 - `apps/web-next/components/trek/TrekViewTracker.tsx` -> NEW: invisible client component; records trek visits via useEffect → recordTrekView()
 - `apps/web-next/components/content/PersonalisedFeed.tsx` -> behavior-gated: hides section when hasBehaviorData()=false AND not logged in; blast radius: LOW
 - `apps/web-next/components/home/DifficultyTabsSection.tsx` -> accepts cmsPages prop; cmsToTrek() converts CMSPage→Trek; CMS-first with static fallback; blast radius: LOW
+- `services/api/app/api/routes/sitemap_data.py` (NEW) -> GET /api/v1/public/sitemap-pages; no auth; returns slug/page_type/updated_at for published CMS pages; used by sitemap.ts; blast radius: LOW
+- `apps/web-next/app/sitemap.ts` -> replaced apiFetch (3s timeout) with fetchCmsSitemapPages() (20s + fallback to api subdomain); maps to new /public/sitemap-pages endpoint; blast radius: LOW
+- `apps/web-next/app/(public)/trek/[slug]/page.tsx` -> permanentRedirect when static slug has CMS version at different (extended) slug; deduplicates /trek/ URLs for Google; blast radius: LOW
 - `services/api/app/modules/agents/content_writing/agent.py` -> _slugify: UUID suffix removed; _store_results: canonical slug from meta['target_keyword']; blast radius: LOW (only ContentWritingAgent uses it)
 - `services/api/app/modules/agents/content_writing/prompts.py` -> slug instruction updated to use short canonical trek name; blast radius: LOW
 - `services/api/app/api/routes/media.py` (NEW) -> POST /admin/media/upload; JPG/PNG/WEBP; DO Spaces if configured, local fallback; blast radius: LOW
