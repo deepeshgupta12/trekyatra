@@ -1728,3 +1728,40 @@ export async function deleteAdminAffiliateProduct(id: string): Promise<void> {
   });
   if (!res.ok && res.status !== 204) throw new Error(`API ${res.status}`);
 }
+
+// ---------------------------------------------------------------------------
+// Step 44 — Search analytics
+// ---------------------------------------------------------------------------
+
+export interface SearchLogPayload {
+  query: string;
+  results_count?: number;
+  session_id?: string;
+  clicked_slug?: string;
+  clicked_page_type?: string;
+}
+
+export interface SearchSuggestion {
+  slug: string;
+  title: string;
+  page_type: string;
+  hero_image_url: string | null;
+  seo_description: string | null;
+}
+
+/** Fire-and-forget: log a search query + optional click. Never throws. */
+export async function logSearchEvent(payload: SearchLogPayload): Promise<void> {
+  await fetch("/api/v1/search/log", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(payload),
+  }).catch(() => {}); // fire-and-forget — never block the UI
+}
+
+/** Fetch CMS-powered autocomplete suggestions across all page types. */
+export async function fetchSearchSuggestions(q: string, limit = 6): Promise<SearchSuggestion[]> {
+  if (q.length < 2) return [];
+  const res = await fetch(`/api/v1/search/suggestions?q=${encodeURIComponent(q)}&limit=${limit}`);
+  if (!res.ok) return [];
+  return res.json();
+}

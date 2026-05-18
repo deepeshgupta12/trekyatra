@@ -72,6 +72,11 @@ class Settings(BaseSettings):
     # OpenAI — required for embedding generation (Step 35+). Leave unset to skip embeddings.
     openai_api_key: str | None = None
 
+    # Step 44 — Search analytics (no API key required for basic search)
+    # Step 45 — Image gathering agent (all optional; graceful skip if unset)
+    unsplash_access_key: str | None = None    # unsplash.com/developers → Client-ID
+    pixabay_api_key: str | None = None        # pixabay.com/api → free signup
+
     # DigitalOcean Spaces — object storage for media uploads (images, files)
     # Create a Space at cloud.digitalocean.com/spaces; generate API keys under API > Spaces Keys
     do_spaces_key: str | None = None

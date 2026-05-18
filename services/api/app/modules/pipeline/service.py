@@ -417,8 +417,43 @@ class PipelineOrchestrator:
         if not draft_id_str:
             raise ValueError("No draft_id available for publish stage.")
         result = publish_to_cms(self.db, draft_id=uuid.UUID(str(draft_id_str)))
+
+        # Step 45 — Image Gathering Agent: attempt to find a hero image for the
+        # newly published CMS page. Runs as a non-blocking post-publish step.
+        # Errors are silently logged — never affect the publish result.
+        self._attempt_image_search(
+            page_slug=result.published_url.split("/")[-1] if result.published_url else "",
+            context=context,
+        )
+
         return {
             "agent_run_id": None,
             "cms_page_id": str(result.cms_page_id),
             "published_url": result.published_url,
         }
+
+    def _attempt_image_search(self, page_slug: str, context: dict[str, Any]) -> None:
+        """Non-blocking image search after publish. Never raises."""
+        if not page_slug:
+            return
+        try:
+            from app.modules.agents.image_search.agent import run_image_search
+            from app.modules.content import service as content_service
+
+            # Get trek name from the brief's target keyword for a relevant image search
+            brief_id_str = context.get("brief_id")
+            trek_name = ""
+            region = ""
+            if brief_id_str:
+                brief = content_service.get_brief(self.db, uuid.UUID(str(brief_id_str)))
+                if brief:
+                    trek_name = brief.target_keyword or ""
+                    # Extract region from key_entities if available
+                    entities = (brief.content_json or {}).get("key_entities", []) if brief.content_json else []
+                    indian_regions = ["Uttarakhand", "Himachal Pradesh", "Ladakh", "Kashmir", "Maharashtra", "Sikkim", "West Bengal"]
+                    region = next((e for e in entities if any(r in e for r in indian_regions)), "")
+
+            run_image_search(self.db, page_slug=page_slug, trek_name=trek_name, region=region)
+        except Exception as exc:
+            from app.core.logging import get_logger
+            get_logger(__name__).warning("Post-publish image search failed: %s", exc)

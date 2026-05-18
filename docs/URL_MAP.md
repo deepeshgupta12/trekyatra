@@ -144,6 +144,9 @@ Last updated: 2026-05-16
 |---------|-------|
 | `/api/v1/health` | Health check |
 | `/api/v1/public/sitemap-pages` | **Public** — returns slug/page_type/updated_at for published pages; used by sitemap.ts |
+| `/api/v1/search/log` | **Public POST** — fire-and-forget search event logging (query, clicks); Step 44 |
+| `/api/v1/search/suggestions?q=` | **Public GET** — CMS-powered autocomplete across all page types; Step 44 |
+| `/api/v1/search/trending` | **Public GET** — most-searched queries last 7 days; Step 44 |
 | `/api/v1/auth/*` | User auth (email + Google) |
 | `/api/v1/admin/auth/*` | Admin CMS auth |
 | `/api/v1/cms/pages/*` | CMS CRUD |

@@ -25,6 +25,7 @@ from app.modules.products.models import DigitalProduct, UserOrder
 from app.modules.monetization.models import AffiliateProduct, PageIntentSession
 from app.modules.plan.models import TripPlan
 from app.modules.subscriptions.models import Subscription
+from app.modules.search.models import SearchEvent
 
 __all__ = [
     "Operator",
@@ -75,4 +76,5 @@ __all__ = [
     "PageIntentSession",
     "TripPlan",
     "Subscription",
+    "SearchEvent",
 ]
