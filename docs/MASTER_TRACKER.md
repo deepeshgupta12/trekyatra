@@ -139,6 +139,7 @@ All V0 foundations are shipped. The stack is live locally with:
 | GitNexus re-indexed (ec9f586): 9,559 nodes, 13,279 edges, 364 clusters, 106 flows | done |
 | GitNexus re-indexed (167a193): 9,602 nodes, 13,349 edges, 364 clusters, 107 flows | done |
 | GitNexus re-indexed (15fd7c8): 9,648 nodes, 13,403 edges, 367 clusters, 107 flows | done |
+| GitNexus re-indexed (f41079c): 9,658 nodes, 13,417 edges, 366 clusters, 107 flows | done |
 | Security: ADMIN_EMAIL + ADMIN_PASSWORD are plaintext in App Spec — must encrypt via DO dashboard | pending |
 | NEXT_PUBLIC_API_BASE + NEXT_PUBLIC_SITE_URL confirmed plaintext in web component ✅ | done |
 | Google Analytics 4 — property created, Measurement ID: G-XM61V2PPDK, NEXT_PUBLIC_GA4_ID set in DO web component | done |
@@ -198,6 +199,12 @@ All V0 foundations are shipped. The stack is live locally with:
 | Issue 2: Breadcrumb moved to top of trek hero, white text, correct region href (commit 15fd7c8) | done |
 | Issue 1: Image upload — POST /api/v1/admin/media/upload; DO Spaces + local fallback; CMSPageForm UI (commit 15fd7c8) | done |
 | DO Spaces setup required for persistent image storage — DO_SPACES_KEY/SECRET/BUCKET/ENDPOINT/CDN env vars | pending |
+| Sign-in crash fixed — GoogleOAuthProvider guard (Providers.tsx); only renders when NEXT_PUBLIC_GOOGLE_CLIENT_ID set (commit f41079c) | done |
+| Plan My Trek HTML fix — cost_estimate rendered via dangerouslySetInnerHTML; gear items HTML-stripped (commit f41079c) | done |
+| Plan rate limiting — 2/hour per IP via Redis; 429 with retry-in message; local/test bypass (commit f41079c) | done |
+| Uploads StaticFiles mount — data/uploads/ served at /uploads/ in FastAPI (commit f41079c) | done |
+| SeasonalTreksSection hydration fix — useEffect for date-based state; resolves React errors #418/#423/#425 (commit f41079c) | done |
+| NEXT_PUBLIC_GOOGLE_CLIENT_ID — must be set in DO web component for Google OAuth | pending |
 | Stripe webhook registration | pending |
 | Google Search Console | pending |
 | 41 | B2B content / API extensions | pending |
