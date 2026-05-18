@@ -317,6 +317,14 @@
 - Step doc: `docs/steps/STEP-43-slug-deduplication.md`
 
 ### Step 44 — Discovery engine improvements [pending]
+
+### Step 45 — Image Gathering Agent [pending]
+- Automated agent to find, validate, and assign hero images to pipeline-published trek pages
+- Sources: Unsplash API (UNSPLASH_ACCESS_KEY) → Pixabay API (PIXABAY_API_KEY) → Wikimedia Commons (no key)
+- LangGraph: select_source → search_images → validate → store_image_url
+- Integrates after pipeline publish stage; graceful failure (never blocks pipeline)
+- DO Spaces upload for permanent image storage
+- Step doc: `docs/steps/STEP-45-image-gathering-agent.md`
 - Search: covers all CMS page types, click tracking, "did you mean?", recent searches
 - Internal linking: anchor text quality scoring, editorial overrides
 - Recommendations: popularity signals, collaborative filtering lite, recently viewed

@@ -142,6 +142,7 @@ All V0 foundations are shipped. The stack is live locally with:
 | GitNexus re-indexed (f41079c): 9,658 nodes, 13,417 edges, 366 clusters, 107 flows | done |
 | GitNexus re-indexed (930dd7c): 9,663 nodes, 13,423 edges, 367 clusters, 107 flows | done |
 | GitNexus re-indexed (75b3f53): 9,685 nodes, 13,450 edges, 368 clusters, 107 flows | done |
+| GitNexus re-indexed (9a2db42): 9,704 nodes, 13,470 edges, 368 clusters, 107 flows | done |
 | Security: ADMIN_EMAIL + ADMIN_PASSWORD are plaintext in App Spec — must encrypt via DO dashboard | pending |
 | NEXT_PUBLIC_API_BASE + NEXT_PUBLIC_SITE_URL confirmed plaintext in web component ✅ | done |
 | Google Analytics 4 — property created, Measurement ID: G-XM61V2PPDK, NEXT_PUBLIC_GA4_ID set in DO web component | done |
@@ -214,6 +215,11 @@ All V0 foundations are shipped. The stack is live locally with:
 | Sitemap CMS pages fix — GET /api/v1/public/sitemap-pages endpoint (no auth, 20s timeout, direct SQL); sitemap.ts updated (commit 75b3f53) | done |
 | Trek URL deduplication — permanentRedirect from static slug to CMS slug when CMS version exists (commit 75b3f53) | done |
 | URL_MAP.md — /api/v1/public/sitemap-pages added per URL structure rule | done |
+| SEO AEO Agent resilience — graceful JSON parse failure; max_tokens 20000; pipeline no longer fails on JSON errors (commit 9a2db42) | done |
+| ContentWritingAgent prompt — MANDATORY SECTIONS block added: itinerary, permits, cost, packing, safety always required (commit 9a2db42) | done |
+| ContentBriefAgent prompt — 9-section trek guide template enforced; itinerary + permits always in heading_structure (commit 9a2db42) | done |
+| TrekCard tag alignment — flex-wrap + bookmark repositioned absolute; Beginner+Moderate tags no longer overflow (commit 9a2db42) | done |
+| Step 45 — Image Gathering Agent — spec documented (Unsplash/Wikimedia/Pixabay; pending implementation) | pending |
 | Stripe webhook registration | pending |
 | Google Search Console | pending |
 | 41 | B2B content / API extensions | pending |
