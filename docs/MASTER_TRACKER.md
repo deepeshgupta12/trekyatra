@@ -138,6 +138,7 @@ All V0 foundations are shipped. The stack is live locally with:
 | GitNexus re-indexed (e8032cb): 9,578 nodes, 13,243 edges, 361 clusters, 104 flows | done |
 | GitNexus re-indexed (ec9f586): 9,559 nodes, 13,279 edges, 364 clusters, 106 flows | done |
 | GitNexus re-indexed (167a193): 9,602 nodes, 13,349 edges, 364 clusters, 107 flows | done |
+| GitNexus re-indexed (15fd7c8): 9,648 nodes, 13,403 edges, 367 clusters, 107 flows | done |
 | Security: ADMIN_EMAIL + ADMIN_PASSWORD are plaintext in App Spec — must encrypt via DO dashboard | pending |
 | NEXT_PUBLIC_API_BASE + NEXT_PUBLIC_SITE_URL confirmed plaintext in web component ✅ | done |
 | Google Analytics 4 — property created, Measurement ID: G-XM61V2PPDK, NEXT_PUBLIC_GA4_ID set in DO web component | done |
@@ -192,6 +193,11 @@ All V0 foundations are shipped. The stack is live locally with:
 | Enhancement 1: Cookie-based PersonalisedFeed — behavior-tracker.ts + TrekViewTracker + hide-when-no-data (commit 167a193) | done |
 | Enhancement 2: CMS-driven difficulty tabs — DifficultyTabsSection accepts cmsPages; beginner/moderate/challenging use CMS first (commit 167a193) | done |
 | Enhancement 3: Hero height reduced — 85vh/78vh → 65vh/55vh (commit 167a193) | done |
+| Issue 3: Duplicate trek slug fixed — _slugify no UUID; canonical slug from target_keyword (commit 15fd7c8) | done |
+| Issue 3: Trek page — region/state/facts populated from CMS trek_facts for CMS-only pages (commit 15fd7c8) | done |
+| Issue 2: Breadcrumb moved to top of trek hero, white text, correct region href (commit 15fd7c8) | done |
+| Issue 1: Image upload — POST /api/v1/admin/media/upload; DO Spaces + local fallback; CMSPageForm UI (commit 15fd7c8) | done |
+| DO Spaces setup required for persistent image storage — DO_SPACES_KEY/SECRET/BUCKET/ENDPOINT/CDN env vars | pending |
 | Stripe webhook registration | pending |
 | Google Search Console | pending |
 | 41 | B2B content / API extensions | pending |

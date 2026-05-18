@@ -148,6 +148,13 @@ This file tracks structural dependencies, source-of-truth modules, and Nexus/Git
 - `apps/web-next/components/trek/TrekViewTracker.tsx` -> NEW: invisible client component; records trek visits via useEffect → recordTrekView()
 - `apps/web-next/components/content/PersonalisedFeed.tsx` -> behavior-gated: hides section when hasBehaviorData()=false AND not logged in; blast radius: LOW
 - `apps/web-next/components/home/DifficultyTabsSection.tsx` -> accepts cmsPages prop; cmsToTrek() converts CMSPage→Trek; CMS-first with static fallback; blast radius: LOW
+- `services/api/app/modules/agents/content_writing/agent.py` -> _slugify: UUID suffix removed; _store_results: canonical slug from meta['target_keyword']; blast radius: LOW (only ContentWritingAgent uses it)
+- `services/api/app/modules/agents/content_writing/prompts.py` -> slug instruction updated to use short canonical trek name; blast radius: LOW
+- `services/api/app/api/routes/media.py` (NEW) -> POST /admin/media/upload; JPG/PNG/WEBP; DO Spaces if configured, local fallback; blast radius: LOW
+- `services/api/app/api/router.py` -> media_router registered; blast radius: LOW
+- `services/api/app/core/config.py` -> DO_SPACES_* settings added; blast radius: LOW (additive)
+- `apps/web-next/components/content/Breadcrumb.tsx` -> className prop added for colour override; blast radius: MEDIUM (used on 12+ pages)
+- `apps/web-next/components/admin/CMSPageForm.tsx` -> Upload button + handleImageUpload(); DO Spaces upload or local fallback; blast radius: LOW (admin-only)
 - `apps/web-next/app/(public)/privacy/page.tsx` -> CMS slug corrected to 'privacy' (was 'privacy-policy'); blast radius: LOW
 - `apps/web-next/app/(public)/terms/page.tsx` -> CMS slug corrected to 'terms' (was 'terms-of-service'); blast radius: LOW
 - `apps/web-next/app/(public)/about/authors/page.tsx` -> updated: fictional authors replaced with real editorial lead Deepesh Kumar Gupta; Metadata + JSON-LD Person schema added; blast radius: LOW
