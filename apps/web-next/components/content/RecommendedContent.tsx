@@ -2,13 +2,16 @@ import Link from "next/link";
 import { fetchSimilarPages, RecommendationItem } from "@/lib/api";
 import { treks } from "@/data/treks";
 
+// Map: slug → image path from static trek dataset (used as fallback for CMS pages with no hero)
+const staticImageMap = new Map(treks.map((t) => [t.slug, t.image]));
+
 function trekToItem(trek: (typeof treks)[0]): RecommendationItem {
   return {
     id: trek.slug,
     slug: trek.slug,
     title: trek.name,
     page_type: "trek_guide",
-    hero_image_url: null,
+    hero_image_url: trek.image || null,   // fixed: was always null, now uses static image
     seo_description: trek.description,
     published_at: null,
   };
@@ -54,6 +57,15 @@ export default async function RecommendedContent({ slug, limit = 3 }: { slug: st
     items = data.items;
   } catch {
     // API unavailable — fall through to static fallback below
+  }
+
+  // Enrich API-returned CMS items with static trek images when hero_image_url is null.
+  // CMS pages published by the pipeline may not have a hero image set yet.
+  if (items.length > 0) {
+    items = items.map((item) => ({
+      ...item,
+      hero_image_url: item.hero_image_url || staticImageMap.get(item.slug) || null,
+    }));
   }
 
   // Static fallback: show other treks from the local dataset when API returns nothing

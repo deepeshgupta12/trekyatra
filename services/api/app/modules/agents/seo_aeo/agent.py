@@ -154,6 +154,19 @@ class SEOAEOAgent(BaseAgent):
         except Exception as exc:
             return {"errors": [f"Failed to store optimized content: {exc}"]}
 
+        # Also persist the SEO-optimised meta description (snippet_intro) so that
+        # upsert_page_from_draft uses it as the CMS page's seo_description.
+        # Previously this was discarded — causing CMS pages to use the unoptimised
+        # ContentWritingAgent description instead of the SEOAEOAgent snippet.
+        snippet_intro = opt.get("snippet_intro", "")
+        if snippet_intro:
+            try:
+                content_service.update_draft_seo_fields(
+                    self.db, draft_id, meta_description=snippet_intro
+                )
+            except Exception:
+                pass  # non-fatal — optimised content already stored
+
         return {
             "output": {
                 **state.get("output", {}),

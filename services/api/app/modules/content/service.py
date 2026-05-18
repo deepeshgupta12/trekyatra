@@ -214,6 +214,25 @@ def update_draft_optimized_content(db: Session, draft_id: uuid.UUID, optimized_c
     return draft
 
 
+def update_draft_seo_fields(
+    db: Session,
+    draft_id: uuid.UUID,
+    *,
+    meta_description: str | None = None,
+    meta_title: str | None = None,
+) -> None:
+    """Update SEO-optimised meta fields on a draft after the SEOAEOAgent runs."""
+    draft = db.get(ContentDraft, draft_id)
+    if draft is None:
+        return
+    if meta_description:
+        draft.meta_description = meta_description[:160]  # enforce Google 160-char limit
+    if meta_title:
+        draft.meta_title = meta_title[:60]               # enforce Google 60-char title limit
+    draft.updated_at = _utc_now()
+    db.commit()
+
+
 def create_draft_claim(db: Session, payload: DraftClaimCreate) -> DraftClaim:
     claim = DraftClaim(
         id=uuid.uuid4(),

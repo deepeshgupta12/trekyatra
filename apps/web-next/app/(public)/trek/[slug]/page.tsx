@@ -190,16 +190,18 @@ export default async function TrekDetailPage({ params }: { params: { slug: strin
           <img src={heroImg} alt={trek.name} className="w-full h-full object-cover" width={1920} height={1080} />
           <div className="absolute inset-0 bg-gradient-to-t from-foreground via-foreground/40 to-foreground/20" />
         </div>
-        {/* Breadcrumb — top of hero, white text for visibility against image */}
+        {/* Breadcrumb — dark semi-transparent pill so it's readable on any hero image */}
         <div className="absolute top-20 left-0 right-0 z-10 container-wide">
-          <Breadcrumb
-            items={[
-              { label: "Explore", href: "/explore" },
-              { label: trek.state || (trek.region ? trek.region.split(",")[0] : "India"), href: trek.state ? `/regions/${trek.state.toLowerCase().replace(/\s+/g, "-")}` : "/explore" },
-              { label: cmsDisplayName ?? trek.name },
-            ]}
-            className="text-white/75 [&_a]:text-white/75 [&_a:hover]:text-white"
-          />
+          <div className="inline-flex items-center bg-black/45 backdrop-blur-sm rounded-full px-3 py-1.5">
+            <Breadcrumb
+              items={[
+                { label: "Explore", href: "/explore" },
+                { label: trek.state || (trek.region ? trek.region.split(",")[0] : "India"), href: trek.state ? `/regions/${trek.state.toLowerCase().replace(/\s+/g, "-")}` : "/explore" },
+                { label: cmsDisplayName ?? trek.name },
+              ]}
+              className="!text-white/90 [&>span>a]:!text-white/80 [&>span>a:hover]:!text-white [&>span>span]:!text-white"
+            />
+          </div>
         </div>
         <div className="container-wide relative pb-12 text-surface">
           <div className="flex items-center gap-2 mt-3 mb-3 flex-wrap">
