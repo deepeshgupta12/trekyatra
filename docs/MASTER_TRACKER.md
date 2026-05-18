@@ -140,6 +140,7 @@ All V0 foundations are shipped. The stack is live locally with:
 | GitNexus re-indexed (167a193): 9,602 nodes, 13,349 edges, 364 clusters, 107 flows | done |
 | GitNexus re-indexed (15fd7c8): 9,648 nodes, 13,403 edges, 367 clusters, 107 flows | done |
 | GitNexus re-indexed (f41079c): 9,658 nodes, 13,417 edges, 366 clusters, 107 flows | done |
+| GitNexus re-indexed (930dd7c): 9,663 nodes, 13,423 edges, 367 clusters, 107 flows | done |
 | Security: ADMIN_EMAIL + ADMIN_PASSWORD are plaintext in App Spec — must encrypt via DO dashboard | pending |
 | NEXT_PUBLIC_API_BASE + NEXT_PUBLIC_SITE_URL confirmed plaintext in web component ✅ | done |
 | Google Analytics 4 — property created, Measurement ID: G-XM61V2PPDK, NEXT_PUBLIC_GA4_ID set in DO web component | done |
@@ -206,6 +207,10 @@ All V0 foundations are shipped. The stack is live locally with:
 | Uploads StaticFiles mount — data/uploads/ served at /uploads/ in FastAPI (commit f41079c) | done |
 | SeasonalTreksSection hydration fix — useEffect for date-based state; resolves React errors #418/#423/#425 (commit f41079c) | done |
 | NEXT_PUBLIC_GOOGLE_CLIENT_ID — must be set in DO web component for Google OAuth | pending |
+| Breadcrumb visibility fix — dark backdrop pill on hero; !text-white/90 with !important (commit 930dd7c) | done |
+| Similar treks images — staticImageMap fallback; trekToItem uses trek.image; API items enriched (commit 930dd7c) | done |
+| SEO meta pipeline fix — update_draft_seo_fields() added; SEOAEOAgent saves snippet_intro as meta_description (commit 930dd7c) | done |
+| Sitemap — kedarkantha-trek-complete-guide IS in sitemap (force-dynamic); Google crawl delay normal (24-72h) | documented |
 | Stripe webhook registration | pending |
 | Google Search Console | pending |
 | 41 | B2B content / API extensions | pending |
