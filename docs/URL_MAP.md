@@ -143,6 +143,7 @@ Last updated: 2026-05-16
 | Pattern | Notes |
 |---------|-------|
 | `/api/v1/health` | Health check |
+| `/api/v1/public/sitemap-pages` | **Public** — returns slug/page_type/updated_at for published pages; used by sitemap.ts |
 | `/api/v1/auth/*` | User auth (email + Google) |
 | `/api/v1/admin/auth/*` | Admin CMS auth |
 | `/api/v1/cms/pages/*` | CMS CRUD |

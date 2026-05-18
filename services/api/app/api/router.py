@@ -46,6 +46,7 @@ from app.api.routes.translation import router as translation_router
 from app.api.routes.plan import router as plan_router
 from app.api.routes.subscriptions import router as subscriptions_router
 from app.api.routes.media import router as media_router
+from app.api.routes.sitemap_data import router as sitemap_data_router
 
 api_router = APIRouter()
 api_router.include_router(health_router, tags=["health"])
@@ -94,3 +95,4 @@ api_router.include_router(translation_router)
 api_router.include_router(plan_router)
 api_router.include_router(subscriptions_router)
 api_router.include_router(media_router)
+api_router.include_router(sitemap_data_router)

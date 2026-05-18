@@ -1,10 +1,49 @@
 import type { MetadataRoute } from "next";
 import { fetchTreks } from "@/lib/trekApi";
-import { fetchCMSPages } from "@/lib/api";
 
 // Always fetch fresh CMS pages so newly published pages appear immediately
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
+
+/** Lightweight CMS sitemap entry — matches the /public/sitemap-pages backend response. */
+interface CmsSitemapEntry {
+  slug: string;
+  page_type: string;
+  updated_at: string;
+  published_at: string | null;
+}
+
+/**
+ * Fetch published CMS pages for the sitemap using the dedicated lightweight public
+ * endpoint (/api/v1/public/sitemap-pages) with a 20-second timeout.
+ *
+ * The standard apiFetch helper uses a 3-second timeout and routes through
+ * www.trekyatra.co.in which is subject to Cloudflare enhanced_threat_control
+ * challenges for server-to-server requests. This function:
+ *  1. Tries the primary API base (www domain via DO ingress rule)
+ *  2. Falls back to api.trekyatra.co.in (direct, no www routing)
+ *  Both attempts use a 20-second timeout to survive Cloudflare latency.
+ */
+async function fetchCmsSitemapPages(): Promise<CmsSitemapEntry[]> {
+  const primaryBase = process.env.NEXT_PUBLIC_API_BASE ?? "http://localhost:8000";
+  const fallbackBase = "https://api.trekyatra.co.in";
+  const path = "/api/v1/public/sitemap-pages?limit=500";
+
+  for (const base of [primaryBase, fallbackBase]) {
+    try {
+      const res = await fetch(`${base}${path}`, {
+        signal: AbortSignal.timeout(20_000),   // 20 seconds — survive Cloudflare latency
+        cache: "no-store",
+      });
+      if (res.ok) {
+        return (await res.json()) as CmsSitemapEntry[];
+      }
+    } catch {
+      // try next base
+    }
+  }
+  return [];
+}
 
 const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? "https://trekyatra.com";
 
@@ -57,46 +96,30 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     }
   } catch { /* static data unavailable */ }
 
-  // Published CMS pages
-  try {
-    const pages = await fetchCMSPages({ status: "published", limit: 500 });
-    for (const p of pages) {
-      const prefix: Record<string, string> = {
-        trek_guide: "/trek",
-        packing_list: "/packing",
-        packing_guide: "/packing",
-        permit_guide: "/permits",
-        beginner_guide: "/guides",
-        beginner_roundup: "/guides",
-        cost_guide: "/guides",
-        gear_guide: "/guides",
-        safety_guide: "/guides",
-        itinerary: "/guides",
-        expert_guide: "/guides",
-        premium_compendium: "/guides",
-        comparison: "/compare",
-        seasonal: "/seasons",
-        seasonal_hub: "/seasons",
-        cluster_hub: "/trek-types",
-        regional_hub: "/regions",
-        // editorial pages use their own slug as the full path (e.g. /about, /contact)
-        editorial: "/",
-      };
-      const base = prefix[p.page_type];
-      if (base !== undefined) {
-        // editorial pages: URL is /{slug} not //{slug}
-        const pageUrl = p.page_type === "editorial"
-          ? `${SITE_URL}/${p.slug}`
-          : `${SITE_URL}${base}/${p.slug}`;
-        entries.push({
-          url: pageUrl,
-          lastModified: new Date(p.updated_at),
-          changeFrequency: p.page_type === "editorial" ? "monthly" : "weekly",
-          priority: p.page_type === "editorial" ? 0.5 : 0.8,
-        });
-      }
+  // Published CMS pages — use dedicated lightweight endpoint with 20s timeout
+  const PAGE_PREFIX: Record<string, string | undefined> = {
+    trek_guide: "/trek", packing_list: "/packing", packing_guide: "/packing",
+    permit_guide: "/permits", beginner_guide: "/guides", beginner_roundup: "/guides",
+    cost_guide: "/guides", gear_guide: "/guides", safety_guide: "/guides",
+    itinerary: "/guides", expert_guide: "/guides", premium_compendium: "/guides",
+    comparison: "/compare", seasonal: "/seasons", seasonal_hub: "/seasons",
+    cluster_hub: "/trek-types", regional_hub: "/regions", editorial: "/",
+  };
+  const cmsPages = await fetchCmsSitemapPages();
+  for (const p of cmsPages) {
+    const base = PAGE_PREFIX[p.page_type];
+    if (base !== undefined) {
+      const pageUrl = p.page_type === "editorial"
+        ? `${SITE_URL}/${p.slug}`
+        : `${SITE_URL}${base}/${p.slug}`;
+      entries.push({
+        url: pageUrl,
+        lastModified: new Date(p.updated_at),
+        changeFrequency: p.page_type === "editorial" ? "monthly" : "weekly",
+        priority: p.page_type === "editorial" ? 0.5 : 0.8,
+      });
     }
-  } catch { /* CMS unavailable at build time */ }
+  }
 
   // Deduplicate by URL
   const seen = new Set<string>();

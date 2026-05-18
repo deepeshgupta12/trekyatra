@@ -1,10 +1,10 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { notFound } from "next/navigation";
+import { notFound, permanentRedirect } from "next/navigation";
 import { TrekCard } from "@/components/trek/TrekCard";
 import { Button } from "@/components/ui/button";
 import { fetchTreks, fetchTrekBySlug } from "@/lib/trekApi";
-import { fetchCMSPage, type CMSPage, type FAQItem } from "@/lib/api";
+import { fetchCMSPage, fetchCMSPages, type CMSPage, type FAQItem } from "@/lib/api";
 import { TrekViewTracker } from "@/components/trek/TrekViewTracker";
 import TableOfContents from "@/components/content/TableOfContents";
 import RecommendedContent from "@/components/content/RecommendedContent";
@@ -91,6 +91,24 @@ export default async function TrekDetailPage({ params }: { params: { slug: strin
   } catch { /* render with static data only */ }
 
   if (!trekRaw && !cmsPage) notFound();
+
+  // Issue 2 — Deduplication: when a static trek exists at this slug BUT no CMS page
+  // exists here, check if the pipeline created a richer CMS page whose slug starts with
+  // this slug (e.g. kedarkantha-trek-complete-guide starts with kedarkantha).
+  // If found → 301 redirect to the CMS page URL so Google only indexes one canonical URL.
+  // With our _slugify fix, future pipeline runs create pages at the same canonical slug,
+  // so this redirect only activates for pages created before the fix.
+  if (trekRaw && !cmsPage) {
+    try {
+      const allGuides = await fetchCMSPages({ page_type: "trek_guide", status: "published", limit: 100 });
+      const cmsVersion = allGuides.find(
+        (p) => p.slug !== params.slug && p.slug.startsWith(params.slug)
+      );
+      if (cmsVersion) {
+        permanentRedirect(`/trek/${cmsVersion.slug}`);
+      }
+    } catch { /* API unavailable — render static fallback */ }
+  }
 
   const cmsDisplayName = cmsPage?.title
     ? cmsPage.title.split(/[:—]/)[0].trim()
