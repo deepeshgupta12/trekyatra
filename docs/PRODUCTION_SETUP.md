@@ -482,6 +482,25 @@ Placed before the `www.trekyatra.co.in / → web` catch-all rule. This routes al
 
 **Security issue found:** `ADMIN_EMAIL` and `ADMIN_PASSWORD` are plaintext in App Spec. Must be encrypted via DO dashboard → app-level env vars → lock icon.
 
+---
+
+## DO Spaces — Media Storage ✅ CONFIGURED
+
+| Setting | Value |
+|---------|-------|
+| Space name | `trekyatra-media` |
+| Region | `sgp1` (Singapore) |
+| Endpoint | `https://sgp1.digitaloceanspaces.com` |
+| Origin URL | `https://trekyatra-media.sgp1.digitaloceanspaces.com` |
+| CDN | Not enabled (origin endpoint used for delivery) |
+
+**Env vars added to api component App Spec (all encrypted as SECRET):**
+`DO_SPACES_KEY`, `DO_SPACES_SECRET`, `DO_SPACES_BUCKET=trekyatra-media`, `DO_SPACES_ENDPOINT`, `DO_SPACES_REGION=sgp1`, `DO_SPACES_CDN_ENDPOINT`
+
+**Important:** Credentials are stored encrypted in DO App Spec and are never committed to the codebase.
+
+**Next:** After api component redeploys, use the Upload button in `/admin/cms/[slug]/edit` to upload trek images. Files will be stored permanently at `https://trekyatra-media.sgp1.digitaloceanspaces.com/media/{filename}`.
+
 **Critical lessons learned:**
 1. `enhanced_threat_control_enabled: true` blocks server-to-server POST requests (no `cf_clearance`) — route at DO LB level to avoid
 2. `NEXT_PUBLIC_*` env vars must be PLAINTEXT — encrypted vars (`EV[...]`) are not decrypted at Next.js build time → `new URL(EV[...])` throws → build fails

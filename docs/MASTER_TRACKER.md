@@ -198,7 +198,8 @@ All V0 foundations are shipped. The stack is live locally with:
 | Issue 3: Trek page — region/state/facts populated from CMS trek_facts for CMS-only pages (commit 15fd7c8) | done |
 | Issue 2: Breadcrumb moved to top of trek hero, white text, correct region href (commit 15fd7c8) | done |
 | Issue 1: Image upload — POST /api/v1/admin/media/upload; DO Spaces + local fallback; CMSPageForm UI (commit 15fd7c8) | done |
-| DO Spaces setup required for persistent image storage — DO_SPACES_KEY/SECRET/BUCKET/ENDPOINT/CDN env vars | pending |
+| DO Spaces setup — Space created: trekyatra-media (sgp1 Singapore); env vars added to api component App Spec | done |
+| DO Spaces — DO_SPACES_KEY/SECRET (encrypted), BUCKET, ENDPOINT, REGION, CDN_ENDPOINT set in DO App Spec | done |
 | Sign-in crash fixed — GoogleOAuthProvider guard (Providers.tsx); only renders when NEXT_PUBLIC_GOOGLE_CLIENT_ID set (commit f41079c) | done |
 | Plan My Trek HTML fix — cost_estimate rendered via dangerouslySetInnerHTML; gear items HTML-stripped (commit f41079c) | done |
 | Plan rate limiting — 2/hour per IP via Redis; 429 with retry-in message; local/test bypass (commit f41079c) | done |
