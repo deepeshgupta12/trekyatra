@@ -96,22 +96,28 @@ export default async function TrekDetailPage({ params }: { params: { slug: strin
     ? cmsPage.title.split(/[:—]/)[0].trim()
     : null;
 
+  // Extract trek_facts early so we can use them in the Trek fallback object
+  const tf = cmsPage?.content_json?.trek_facts ?? {};
+  // Parse state from trek_facts.base — format is usually "Town, StateName"
+  const tfBase = (tf as { base?: string }).base ?? "";
+  const parsedState = tfBase.includes(",") ? tfBase.split(",").pop()?.trim() ?? "" : tfBase;
+  const parsedRegion = tfBase || "";
+
   const trek: Trek = trekRaw ?? {
     slug: params.slug,
     name: cmsDisplayName ?? cmsPage!.title,
     description: cmsPage!.seo_description ?? "",
-    region: "",
-    state: "",
+    region: parsedRegion,
+    state: parsedState,
     image: cmsPage!.hero_image_url ?? "/images/trek-forest.jpg",
-    duration: "—",
-    altitude: "—",
-    difficulty: "Moderate",
-    season: "—",
-    beginner: false,
+    duration: (tf as { duration?: string }).duration ?? "—",
+    altitude: (tf as { altitude?: string }).altitude ?? "—",
+    difficulty: ((tf as { difficulty?: string }).difficulty ?? "Moderate") as Trek["difficulty"],
+    season: (tf as { season?: string }).season ?? "—",
+    beginner: ((tf as { difficulty?: string }).difficulty ?? "").toLowerCase().includes("easy"),
   };
 
   const related = allTreks.filter(t => t.slug !== trek.slug).slice(0, 3);
-  const tf = cmsPage?.content_json?.trek_facts ?? {};
   const facts = [
     { icon: Clock,      label: "Duration",    value: tf.duration    || trek.duration    || "—" },
     { icon: TrendingUp, label: "Max altitude", value: tf.altitude    || trek.altitude    || "—" },
@@ -184,12 +190,18 @@ export default async function TrekDetailPage({ params }: { params: { slug: strin
           <img src={heroImg} alt={trek.name} className="w-full h-full object-cover" width={1920} height={1080} />
           <div className="absolute inset-0 bg-gradient-to-t from-foreground via-foreground/40 to-foreground/20" />
         </div>
+        {/* Breadcrumb — top of hero, white text for visibility against image */}
+        <div className="absolute top-20 left-0 right-0 z-10 container-wide">
+          <Breadcrumb
+            items={[
+              { label: "Explore", href: "/explore" },
+              { label: trek.state || (trek.region ? trek.region.split(",")[0] : "India"), href: trek.state ? `/regions/${trek.state.toLowerCase().replace(/\s+/g, "-")}` : "/explore" },
+              { label: cmsDisplayName ?? trek.name },
+            ]}
+            className="text-white/75 [&_a]:text-white/75 [&_a:hover]:text-white"
+          />
+        </div>
         <div className="container-wide relative pb-12 text-surface">
-          <Breadcrumb items={[
-            { label: "Explore", href: "/explore" },
-            { label: trek.state || "Himalayan Treks", href: "/explore" },
-            { label: cmsDisplayName ?? trek.name },
-          ]} />
           <div className="flex items-center gap-2 mt-3 mb-3 flex-wrap">
             {tf.difficulty && (
               <span className="px-3 py-1 rounded-full bg-accent text-accent-foreground text-xs font-semibold uppercase tracking-widest">{tf.difficulty.split(" ")[0]}</span>

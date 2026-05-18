@@ -8,11 +8,12 @@ export interface BreadcrumbItem {
 
 interface Props {
   items: BreadcrumbItem[];
+  className?: string;
 }
 
-export default function Breadcrumb({ items }: Props) {
+export default function Breadcrumb({ items, className = "" }: Props) {
   return (
-    <nav aria-label="Breadcrumb" className="flex items-center gap-1 text-xs text-muted-foreground flex-wrap">
+    <nav aria-label="Breadcrumb" className={`flex items-center gap-1 text-xs flex-wrap text-muted-foreground ${className}`}>
       {items.map((item, i) => {
         const isLast = i === items.length - 1;
         return (

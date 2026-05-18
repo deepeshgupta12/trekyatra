@@ -57,8 +57,8 @@ def _clean_llm_json(raw: str) -> str:
 
 
 def _slugify(text: str) -> str:
-    slug = re.sub(r"[^a-z0-9]+", "-", text.lower()).strip("-")[:72]
-    return f"{slug}-{str(uuid.uuid4())[:8]}"
+    """Create a canonical slug without UUID suffix so CMS deduplication works correctly."""
+    return re.sub(r"[^a-z0-9]+", "-", text.lower()).strip("-")[:72]
 
 
 class ContentWritingAgent(BaseAgent):
@@ -183,10 +183,20 @@ class ContentWritingAgent(BaseAgent):
         )
         draft_status = "requires_review" if has_flagged else "draft"
 
+        # Derive canonical slug from the brief's target_keyword (primary keyword),
+        # NOT from the LLM's verbose output slug (which produces duplicates like
+        # "kedarkantha-trek-complete-guide" vs the canonical "kedarkantha").
+        target_kw = meta.get("target_keyword", "")
+        if target_kw:
+            canonical_slug = _slugify(target_kw)
+        else:
+            # Fall back to LLM slug or title, but without UUID (per _slugify fix)
+            canonical_slug = _slugify(draft_data.get("slug") or draft_data.get("title", "draft"))
+
         payload = ContentDraftCreate(
             brief_id=brief_id_str,
             title=draft_data.get("title", meta.get("title", "Draft"))[:255],
-            slug=draft_data.get("slug") or _slugify(draft_data.get("title", "draft")),
+            slug=canonical_slug,
             content_markdown=draft_data.get("content_markdown", ""),
             excerpt=draft_data.get("excerpt"),
             meta_title=draft_data.get("title", "")[:255],

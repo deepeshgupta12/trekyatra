@@ -1,9 +1,9 @@
 "use client";
 
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
-import { Loader2, Save, Globe, RefreshCw, Plus, Trash2 } from "lucide-react";
+import { Loader2, Save, Globe, RefreshCw, Plus, Trash2, Upload } from "lucide-react";
 import {
   createCMSPage, updateCMSPage, reparseCMSSections,
   type CMSPage, type CMSPagePayload, type TrekContentSections, type TrekFacts, type FAQItem,
@@ -71,6 +71,33 @@ export default function CMSPageForm({ mode, existing }: Props) {
   const [seoTitle, setSeoTitle] = useState(existing?.seo_title ?? "");
   const [seoDesc, setSeoDesc] = useState(existing?.seo_description ?? "");
   const [heroImageUrl, setHeroImageUrl] = useState(existing?.hero_image_url ?? "");
+  const [uploadingImage, setUploadingImage] = useState(false);
+  const [uploadWarning, setUploadWarning] = useState<string | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  async function handleImageUpload(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setUploadingImage(true);
+    setUploadWarning(null);
+    try {
+      const formData = new FormData();
+      formData.append("file", file);
+      const res = await fetch("/api/v1/admin/media/upload", { method: "POST", body: formData });
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        throw new Error((err as { detail?: string }).detail ?? `Upload failed (${res.status})`);
+      }
+      const data = await res.json() as { url: string; warning?: string };
+      setHeroImageUrl(data.url);
+      if (data.warning) setUploadWarning(data.warning);
+    } catch (err: unknown) {
+      setUploadWarning((err as Error).message ?? "Upload failed.");
+    } finally {
+      setUploadingImage(false);
+      if (fileInputRef.current) fileInputRef.current.value = "";
+    }
+  }
   const [trekFacts, setTrekFacts] = useState<TrekFacts>({
     duration: tf.duration ?? "",
     altitude: tf.altitude ?? "",
@@ -246,13 +273,52 @@ export default function CMSPageForm({ mode, existing }: Props) {
       {/* Hero image */}
       <div className="bg-[#14161f] rounded-2xl border border-white/10 p-5 space-y-4">
         <h2 className="text-white font-semibold text-sm">Hero image</h2>
+        {/* Upload button */}
+        <div>
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept="image/jpeg,image/png,image/webp"
+            className="hidden"
+            onChange={handleImageUpload}
+          />
+          <div className="flex gap-2">
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              className="border-white/20 text-white/60 hover:text-white gap-1.5"
+              onClick={() => fileInputRef.current?.click()}
+              disabled={uploadingImage}
+            >
+              {uploadingImage
+                ? <><Loader2 className="h-3.5 w-3.5 animate-spin" /> Uploading…</>
+                : <><Upload className="h-3.5 w-3.5" /> Upload image (JPG/PNG/WEBP)</>
+              }
+            </Button>
+          </div>
+          {uploadWarning && (
+            <p className="text-amber-400 text-xs mt-2 leading-relaxed">⚠ {uploadWarning}</p>
+          )}
+        </div>
+        {/* URL input — also editable manually */}
         <div>
           <label className={labelCls}>Hero image URL</label>
-          <input className={inputCls} value={heroImageUrl} onChange={(e) => setHeroImageUrl(e.target.value)} placeholder="https://cdn.example.com/hero.jpg" />
-          <p className="text-white/25 text-xs mt-1">Full URL to the hero image shown at the top of the trek page.</p>
+          <input
+            className={inputCls}
+            value={heroImageUrl}
+            onChange={(e) => setHeroImageUrl(e.target.value)}
+            placeholder="https://cdn.example.com/hero.jpg"
+          />
+          <p className="text-white/25 text-xs mt-1">Upload a file above, or paste an external URL. JPG/PNG/WEBP supported.</p>
         </div>
         {heroImageUrl && (
-          <img src={heroImageUrl} alt="Hero preview" className="w-full max-h-40 object-cover rounded-xl opacity-80" onError={(e) => { (e.target as HTMLImageElement).style.display = "none"; }} />
+          <img
+            src={heroImageUrl}
+            alt="Hero preview"
+            className="w-full max-h-40 object-cover rounded-xl opacity-80"
+            onError={(e) => { (e.target as HTMLImageElement).style.display = "none"; }}
+          />
         )}
       </div>
 

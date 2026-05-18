@@ -34,7 +34,7 @@ Return a JSON object with EXACTLY this structure (no extra keys, raw JSON only):
   "title": "<SEO-optimised title (50–60 chars)>",
   "meta_description": "<150–160 char meta description with target keyword>",
   "excerpt": "<2–3 sentence excerpt for cards and previews>",
-  "slug": "<url-safe slug>",
+  "slug": "<canonical url-safe slug — use only the trek/topic name, max 40 chars, NO descriptive suffixes like -complete-guide or -2026>",
   "content_markdown": "<full article in markdown — follow the heading structure exactly; include FAQ section; 1200–{word_count_target} words>",
   "confidence_score": <overall confidence 0.0–1.0>,
   "fact_check_claims": [

@@ -72,6 +72,15 @@ class Settings(BaseSettings):
     # OpenAI — required for embedding generation (Step 35+). Leave unset to skip embeddings.
     openai_api_key: str | None = None
 
+    # DigitalOcean Spaces — object storage for media uploads (images, files)
+    # Create a Space at cloud.digitalocean.com/spaces; generate API keys under API > Spaces Keys
+    do_spaces_key: str | None = None
+    do_spaces_secret: str | None = None
+    do_spaces_bucket: str | None = None          # e.g. "trekyatra-media"
+    do_spaces_endpoint: str | None = None        # e.g. "https://blr1.digitaloceanspaces.com"
+    do_spaces_region: str = "blr1"
+    do_spaces_cdn_endpoint: str | None = None    # e.g. "https://trekyatra-media.blr1.cdn.digitaloceanspaces.com"
+
     model_config = SettingsConfigDict(
         env_file=".env",
         env_file_encoding="utf-8",
