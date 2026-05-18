@@ -1,6 +1,20 @@
 # Step 45 — Image Gathering Agent
 
-## Status: Pending
+## Status: Done — commit 6e3dd9d
+
+## What was implemented
+- `modules/agents/image_search/service.py`: find_trek_image() — Unsplash → Pixabay → Wikimedia Commons
+- `modules/agents/image_search/agent.py`: run_image_search() — updates hero_image_url, skips if already set, never raises
+- `modules/pipeline/service.py`: _attempt_image_search() called post-publish (non-blocking)
+- `config.py`: UNSPLASH_ACCESS_KEY, PIXABAY_API_KEY settings (both optional)
+- `.env.example`: documented
+- 7 new tests pass
+
+## What is deferred
+- DO Spaces upload for found images (currently uses direct CDN URL from source)
+- Requires: run `alembic upgrade head` on production
+- Optionally: set UNSPLASH_ACCESS_KEY or PIXABAY_API_KEY in DO for better image quality
+- Wikimedia Commons works without any API key as fallback
 
 ## Summary
 Create an automated agent that finds, validates, and assigns high-quality hero images

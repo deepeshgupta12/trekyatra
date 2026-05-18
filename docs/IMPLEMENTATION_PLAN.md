@@ -316,9 +316,9 @@
 - Migration path: static treks in `data/treks.ts` → CMS pages
 - Step doc: `docs/steps/STEP-43-slug-deduplication.md`
 
-### Step 44 — Discovery engine improvements [pending]
+### Step 44 — Discovery engine improvements [DONE (partial) — commit 6e3dd9d]
 
-### Step 45 — Image Gathering Agent [pending]
+### Step 45 — Image Gathering Agent [DONE — commit 6e3dd9d]
 - Automated agent to find, validate, and assign hero images to pipeline-published trek pages
 - Sources: Unsplash API (UNSPLASH_ACCESS_KEY) → Pixabay API (PIXABAY_API_KEY) → Wikimedia Commons (no key)
 - LangGraph: select_source → search_images → validate → store_image_url

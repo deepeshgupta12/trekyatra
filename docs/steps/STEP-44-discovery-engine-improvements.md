@@ -1,6 +1,18 @@
 # Step 44 — Discovery Engine Improvements (Search, Interlinking, Recommendations, Compare)
 
-## Status: Pending
+## Status: Done (partial) — commit 6e3dd9d
+
+## What was implemented
+- **Search analytics**: `search_events` table (migration 0031), POST /search/log, GET /search/suggestions (CMS full-text), GET /search/trending
+- **Compare 3-trek support**: up to 3 treks, dynamic columns, share URL (?slugs=), navigator.share
+- **Frontend**: `logSearchEvent()` + `fetchSearchSuggestions()` in lib/api.ts
+- **Tests**: 8 new search tests pass
+
+## What is deferred (post-launch)
+- `page_views` table + collaborative filtering (overlaps with behavior-tracker.ts)
+- Editorial link pin/unpin in admin
+- `/account/compare` saved comparisons (needs new DB table)
+- Search click tracking wired into frontend search page
 
 ## Summary
 A comprehensive improvement pass across four interconnected discovery features: site search, internal linking, content recommendations, and trek comparison. Each subsystem is functional but has significant quality gaps that reduce user engagement and SEO value.

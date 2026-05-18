@@ -143,6 +143,7 @@ All V0 foundations are shipped. The stack is live locally with:
 | GitNexus re-indexed (930dd7c): 9,663 nodes, 13,423 edges, 367 clusters, 107 flows | done |
 | GitNexus re-indexed (75b3f53): 9,685 nodes, 13,450 edges, 368 clusters, 107 flows | done |
 | GitNexus re-indexed (9a2db42): 9,704 nodes, 13,470 edges, 368 clusters, 107 flows | done |
+| GitNexus re-indexed (6e3dd9d): 9,848 nodes, 13,652 edges, 371 clusters, 106 flows | done |
 | Security: ADMIN_EMAIL + ADMIN_PASSWORD are plaintext in App Spec — must encrypt via DO dashboard | pending |
 | NEXT_PUBLIC_API_BASE + NEXT_PUBLIC_SITE_URL confirmed plaintext in web component ✅ | done |
 | Google Analytics 4 — property created, Measurement ID: G-XM61V2PPDK, NEXT_PUBLIC_GA4_ID set in DO web component | done |
@@ -220,6 +221,11 @@ All V0 foundations are shipped. The stack is live locally with:
 | ContentBriefAgent prompt — 9-section trek guide template enforced; itinerary + permits always in heading_structure (commit 9a2db42) | done |
 | TrekCard tag alignment — flex-wrap + bookmark repositioned absolute; Beginner+Moderate tags no longer overflow (commit 9a2db42) | done |
 | Step 45 — Image Gathering Agent — spec documented (Unsplash/Wikimedia/Pixabay; pending implementation) | pending |
+| Step 44 DONE — search_events table + POST /search/log + GET /search/suggestions + compare 3-trek + share URL (commit 6e3dd9d) | done |
+| Step 45 DONE — image_search agent (Unsplash/Pixabay/Wikimedia) + pipeline post-publish integration (commit 6e3dd9d) | done |
+| Step 44+45 — 487 backend tests pass (15 new); alembic 0031 search_events applied locally | done |
+| DO Console action: run alembic upgrade head on production (adds search_events table) | pending |
+| DO env vars: UNSPLASH_ACCESS_KEY + PIXABAY_API_KEY for image agent (both optional — Wikimedia works without keys) | pending |
 | Stripe webhook registration | pending |
 | Google Search Console | pending |
 | 41 | B2B content / API extensions | pending |
