@@ -47,6 +47,23 @@ Return a JSON object with EXACTLY this structure (no extra keys, raw JSON only):
   ]
 }}
 
+## MANDATORY SECTIONS — Trek guides MUST contain ALL of these H2 sections
+Every trek guide article MUST include ALL of the following H2 headings.
+Do NOT skip any section — write what you know and flag uncertain facts for review.
+
+Required H2 sections (use EXACTLY these heading names):
+- "## Day-wise itinerary" — complete day-by-day plan for ALL days of the trek
+- "## Permits" — specific permit names, cost range, where and how to obtain them
+- "## Cost estimate" — DIY vs. organised package cost breakdown in INR
+- "## Packing list" — essential gear, clothing layers, documents
+- "## Safety tips" — altitude, weather, emergency, fitness requirements
+
+Additional required sections (from heading_structure above):
+- Route overview, Why this trek, Best time to visit, Difficulty & fitness, FAQs
+
+If a section's specific data is uncertain, write the best available information
+and flag the specific claims with flagged_for_review: true — but INCLUDE the section.
+
 ## Fact-check rules
 - Flag EVERY specific number: distances, altitudes, durations, costs, permit fees
 - Flag seasonal claims ("best in December", "closed in monsoon")

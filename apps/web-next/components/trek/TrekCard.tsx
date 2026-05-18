@@ -78,17 +78,21 @@ export const TrekCard = ({ trek, featured = false, initialBookmarked = false }: 
           <div className="absolute inset-0 bg-gradient-to-t from-foreground/90 via-foreground/30 to-transparent" />
         </div>
 
-        <div className="absolute top-4 left-4 right-4 flex justify-between">
-          <div className="flex gap-1.5">
+        <div className="absolute top-4 left-4 right-14 flex items-start">
+          {/* right-14 leaves room for the bookmark button (h-9 w-9 = 36px + 16px margin) */}
+          <div className="flex flex-wrap gap-1 max-w-full">
             {trek.beginner && (
-              <span className="text-[10px] font-semibold uppercase tracking-wider px-2.5 py-1 rounded-full bg-blue-600 text-white shadow">
+              <span className="text-[10px] font-semibold uppercase tracking-wider px-2 py-0.5 rounded-full bg-blue-600 text-white shadow whitespace-nowrap">
                 Beginner
               </span>
             )}
-            <span className={`text-[10px] font-semibold uppercase tracking-wider px-2.5 py-1 rounded-full ${diffColors[trek.difficulty]}`}>
+            <span className={`text-[10px] font-semibold uppercase tracking-wider px-2 py-0.5 rounded-full whitespace-nowrap ${diffColors[trek.difficulty]}`}>
               {trek.difficulty}
             </span>
           </div>
+        </div>
+        {/* Bookmark — fixed at top-right, independent of tag width */}
+        <div className="absolute top-4 right-4">
           <button
             onClick={handleBookmark}
             disabled={loading}

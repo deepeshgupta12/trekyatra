@@ -113,7 +113,7 @@ class SEOAEOAgent(BaseAgent):
         client = get_anthropic_client()
         message = client.messages.create(
             model=MODEL,
-            max_tokens=16000,
+            max_tokens=20000,  # increased from 16000 — long trek articles need more tokens
             system=[{
                 "type": "text",
                 "text": SEO_AEO_SYSTEM,
@@ -126,13 +126,37 @@ class SEOAEOAgent(BaseAgent):
             raw = re.sub(r"^```[a-z]*\n?", "", raw)
             raw = re.sub(r"\n?```$", "", raw)
 
-        try:
-            result: dict[str, Any] = json.loads(raw)
-        except json.JSONDecodeError:
+        # Try standard parse → cleaned parse → graceful degradation (never fail pipeline)
+        result: dict[str, Any] = {}
+        parse_error: str | None = None
+        for attempt, raw_to_parse in enumerate([raw, _clean_llm_json(raw)], 1):
             try:
-                result = json.loads(_clean_llm_json(raw))
+                result = json.loads(raw_to_parse)
+                parse_error = None
+                break
             except json.JSONDecodeError as exc:
-                return {"errors": [f"LLM returned invalid JSON: {exc}. raw_length={len(raw)}"]}
+                parse_error = f"attempt {attempt}: {exc}"
+
+        if parse_error:
+            # JSON parse failed — log warning but do NOT fail the pipeline.
+            # _store_results will persist whatever snippet_intro/faq data was extracted;
+            # optimized_content defaults to "" so upsert_page_from_draft uses original.
+            from app.core.logging import get_logger
+            get_logger(__name__).warning(
+                "SEOAEOAgent JSON parse failed (%s). raw_length=%d. "
+                "Pipeline continues with original content.",
+                parse_error, len(raw),
+            )
+            # Return partial result — save snippet_intro if we can extract it quickly
+            snippet_match = re.search(r'"snippet_intro"\s*:\s*"([^"]{10,200})"', raw)
+            result = {
+                "optimized_content": "",  # original content used in upsert_page_from_draft
+                "snippet_intro": snippet_match.group(1) if snippet_match else "",
+                "faq_schema": [],
+                "changes_summary": ["JSON parse failed — original content preserved"],
+                "internal_link_opportunities": [],
+                "schema_payload": {},
+            }
 
         return {"output": {"optimization": result}}
 

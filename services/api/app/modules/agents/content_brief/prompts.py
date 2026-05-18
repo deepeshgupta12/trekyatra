@@ -44,7 +44,17 @@ Rules:
 - faqs must contain 5–8 questions targeting People Also Ask intent.
 - word_count_target should be 1200–3500 depending on page_type complexity.
 - editorial_brief_markdown must be a complete, self-contained brief a writer can open and start writing from.
-- For trek_guide pages: include a difficulty rating section, best time to visit, what to pack, permit requirements.
+- For trek_guide pages: heading_structure MUST include ALL of these H2 sections in this order:
+    1. H2: "Why [Trek Name]" — why trekkers choose this trek
+    2. H2: "Route overview" — trail, distance, elevation profile
+    3. H2: "Day-wise itinerary" — complete day-by-day plan (MANDATORY even for 1-day treks)
+    4. H2: "Best time to visit" — season-by-season breakdown
+    5. H2: "Difficulty & fitness" — who can do it, training needed
+    6. H2: "Permits" — specific permit names, cost, where to get them (MANDATORY)
+    7. H2: "Cost estimate" — DIY vs. package breakdown in INR (MANDATORY)
+    8. H2: "Packing list" — gear, clothing, documents
+    9. H2: "Safety tips" — altitude, weather, emergency contacts
+    Missing any of these sections will cause the article to fail quality review.
 - For comparison pages: include a comparison table H2.
 - Monetization: suggest gear affiliate cards after packing/gear sections; suggest lead forms after itinerary sections.
 - Keep editorial_brief_markdown under 600 words — it is a brief, not the article itself. Use short bullet points per section, not full prose.
