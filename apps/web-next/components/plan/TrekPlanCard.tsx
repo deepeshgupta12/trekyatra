@@ -125,14 +125,22 @@ export default function TrekPlanCard({ plan, planId, onEmailPlan }: Props) {
             )}
           </div>
 
-          {/* Cost estimate — highlighted */}
+          {/* Cost estimate — render as HTML (LLM returns formatted markdown/HTML) */}
           {plan.cost_estimate && (
-            <div className="flex items-center gap-3 p-3 bg-accent/5 border border-accent/20 rounded-xl mb-4">
-              <Wallet className="h-5 w-5 text-accent flex-shrink-0" />
-              <div>
-                <div className="text-xs text-muted-foreground">Estimated cost per person</div>
-                <div className="font-semibold text-foreground text-sm">{plan.cost_estimate}</div>
+            <div className="p-4 bg-accent/5 border border-accent/20 rounded-xl mb-4">
+              <div className="flex items-center gap-2 mb-2">
+                <Wallet className="h-4 w-4 text-accent flex-shrink-0" />
+                <span className="text-xs text-muted-foreground font-medium">Estimated cost per person</span>
               </div>
+              {plan.cost_estimate.includes("<") ? (
+                // LLM returned HTML — render safely (content is from our own trusted LLM)
+                <div
+                  className="prose prose-sm max-w-none text-foreground/80 [&_h3]:text-sm [&_h3]:font-semibold [&_table]:text-xs [&_td]:p-1 [&_th]:p-1"
+                  dangerouslySetInnerHTML={{ __html: plan.cost_estimate }}
+                />
+              ) : (
+                <div className="font-semibold text-foreground text-sm">{plan.cost_estimate}</div>
+              )}
             </div>
           )}
 
@@ -183,11 +191,15 @@ export default function TrekPlanCard({ plan, planId, onEmailPlan }: Props) {
             <Backpack className="h-4 w-4 text-accent" /> Essential gear
           </h3>
           <div className="flex flex-wrap gap-2">
-            {plan.gear_essentials.map((item, i) => (
-              <span key={i} className="flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-full bg-card border border-border text-foreground/80">
-                <CheckCircle2 className="h-3 w-3 text-accent flex-shrink-0" /> {item}
-              </span>
-            ))}
+            {plan.gear_essentials.map((item, i) => {
+              // Strip HTML tags (LLM sometimes adds <br /> or other tags)
+              const clean = item.replace(/<[^>]+>/g, " ").replace(/\s+/g, " ").trim();
+              return clean ? (
+                <span key={i} className="flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-full bg-card border border-border text-foreground/80">
+                  <CheckCircle2 className="h-3 w-3 text-accent flex-shrink-0" /> {clean}
+                </span>
+              ) : null;
+            })}
           </div>
           <p className="text-xs text-muted-foreground mt-3">
             Full packing list →{" "}

@@ -10,13 +10,22 @@ const GOOGLE_CLIENT_ID = process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID ?? "";
 
 export function Providers({ children }: { children: React.ReactNode }) {
   const [queryClient] = useState(() => new QueryClient());
+  const inner = (
+    <AuthProvider>
+      <TooltipProvider>{children}</TooltipProvider>
+    </AuthProvider>
+  );
   return (
     <QueryClientProvider client={queryClient}>
-      <GoogleOAuthProvider clientId={GOOGLE_CLIENT_ID}>
-        <AuthProvider>
-          <TooltipProvider>{children}</TooltipProvider>
-        </AuthProvider>
-      </GoogleOAuthProvider>
+      {/* Only render GoogleOAuthProvider when clientId is set.
+          An empty clientId throws "Missing required parameter client_id" on sign-in page. */}
+      {GOOGLE_CLIENT_ID ? (
+        <GoogleOAuthProvider clientId={GOOGLE_CLIENT_ID}>
+          {inner}
+        </GoogleOAuthProvider>
+      ) : (
+        inner
+      )}
     </QueryClientProvider>
   );
 }

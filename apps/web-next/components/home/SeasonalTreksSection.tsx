@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useEffect, useState, useMemo } from "react";
 import Link from "next/link";
 import { ArrowRight } from "lucide-react";
 import { TrekCard, type Trek } from "@/components/trek/TrekCard";
@@ -36,8 +36,12 @@ function trekMatchesSeason(trek: Trek, season: Season): boolean {
 }
 
 export function SeasonalTreksSection({ treks }: { treks: Trek[] }) {
-  const defaultSeason: Season = MONTH_TO_SEASON[new Date().getMonth()] ?? "Monsoon";
-  const [active, setActive] = useState<Season>(defaultSeason);
+  // Use a static default to prevent SSR/client hydration mismatch.
+  // useEffect updates to the correct season after client-side mount.
+  const [active, setActive] = useState<Season>("Monsoon");
+  useEffect(() => {
+    setActive(MONTH_TO_SEASON[new Date().getMonth()] ?? "Monsoon");
+  }, []);
 
   const filtered = useMemo(
     () => treks.filter((t) => trekMatchesSeason(t, active)).slice(0, 3),

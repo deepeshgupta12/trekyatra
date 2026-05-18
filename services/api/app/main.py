@@ -1,7 +1,9 @@
 from contextlib import asynccontextmanager
+import os
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.staticfiles import StaticFiles
 from sqlalchemy import update
 
 from app.api.router import api_router
@@ -88,3 +90,9 @@ async def root_health() -> dict[str, str]:
 
 
 app.include_router(api_router, prefix=settings.api_v1_prefix)
+
+# Serve locally-uploaded media files at /uploads/{filename}
+# In production, configure DO Spaces for persistent storage (DO_SPACES_* env vars)
+_UPLOADS_DIR = "data/uploads"
+os.makedirs(_UPLOADS_DIR, exist_ok=True)
+app.mount("/uploads", StaticFiles(directory=_UPLOADS_DIR), name="uploads")
