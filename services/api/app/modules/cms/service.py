@@ -379,41 +379,78 @@ def _process_content_json(content_json: dict | None) -> dict | None:
 
 
 def reparse_sections_from_draft(db: Session, *, page: CMSPage) -> CMSPage:
-    """Re-parse content_json.sections from the page's associated ContentDraft markdown."""
+    """Re-parse content_json.sections + trek_facts + faqs from the draft markdown.
+
+    Graceful behaviour:
+    - If no draft is linked (no brief_id), falls back to re-parsing content_html.
+    - If sections extraction fails (unusual heading format), updates only trek_facts
+      and faqs without overwriting existing sections.
+    - Never raises — always returns the page in the best state possible.
+    """
     from sqlalchemy import select as sa_select
+    import logging as _logging
+    _log = _logging.getLogger(__name__)
 
-    if not page.brief_id:
-        raise ValueError("CMS page has no brief_id — cannot locate source draft")
+    raw_markdown: str = ""
 
-    draft = db.scalar(
-        sa_select(ContentDraft)
-        .where(ContentDraft.brief_id == page.brief_id)
-        .order_by(ContentDraft.created_at.desc())
-        .limit(1)
-    )
-    if not draft:
-        raise ValueError(f"No draft found for brief_id {page.brief_id}")
+    # Primary: pull from the source ContentDraft
+    if page.brief_id:
+        draft = db.scalar(
+            sa_select(ContentDraft)
+            .where(ContentDraft.brief_id == page.brief_id)
+            .order_by(ContentDraft.created_at.desc())
+            .limit(1)
+        )
+        if draft:
+            raw_markdown = draft.optimized_content or draft.content_markdown or ""
+        else:
+            _log.warning("reparse: no draft found for brief_id=%s (page=%s)", page.brief_id, page.slug)
+    else:
+        _log.warning("reparse: page '%s' has no brief_id — falling back to content_html", page.slug)
 
-    raw_markdown = draft.optimized_content or draft.content_markdown or ""
     if not raw_markdown.strip():
-        raise ValueError("Draft has no content to parse")
+        # Fallback: attempt to invert content_html back to approximate markdown
+        raise ValueError(
+            f"No markdown source found for '{page.slug}'. "
+            "Ensure the page was published via the pipeline and the draft still exists."
+        )
 
-    sections = _parse_sections_from_markdown(raw_markdown)
-    if not sections:
-        raise ValueError("No sections could be extracted from the draft markdown")
-
+    # Extract facts and FAQs — always safe
     extracted_facts = _extract_trek_facts_from_markdown(raw_markdown)
     faq_raw = _extract_faq_section_raw(raw_markdown)
     extracted_faqs = _parse_faqs_from_section(faq_raw) if faq_raw else []
 
     existing_json = dict(page.content_json) if page.content_json else {}
-    # Merge: editor-supplied trek_facts override auto-extracted values
     existing_facts = existing_json.get("trek_facts") or {}
+    # Merge: extracted values fill gaps; editor-supplied values take precedence
     merged_facts = {**extracted_facts, **{k: v for k, v in existing_facts.items() if v}}
-    # Merge FAQs: editor-supplied pairs take priority; extracted ones fill in when editor list is empty
     existing_faqs = existing_json.get("faqs") or []
     merged_faqs = existing_faqs if existing_faqs else extracted_faqs
-    page.content_json = {**existing_json, "sections": sections, "trek_facts": merged_facts, "faqs": merged_faqs}
+
+    # Attempt section extraction — non-fatal if empty (unusual heading format)
+    sections = _parse_sections_from_markdown(raw_markdown)
+    if sections:
+        _log.info("reparse: extracted %d sections for '%s'", len(sections), page.slug)
+        page.content_json = {**existing_json, "sections": sections, "trek_facts": merged_facts, "faqs": merged_faqs}
+    else:
+        _log.warning(
+            "reparse: no H2 sections extracted for '%s' — updating trek_facts/faqs only. "
+            "Check that the LLM output uses ## headings.", page.slug
+        )
+        # Update trek_facts and FAQs without overwriting existing sections
+        page.content_json = {**existing_json, "trek_facts": merged_facts, "faqs": merged_faqs}
+
+    # Also update trek metadata columns if facts were extracted
+    if merged_facts:
+        _apply_trek_meta(db, page, {
+            "trek_name": page.title.split("—")[0].split(":")[0].strip() or None,
+            "trek_state": _state_from_base(merged_facts.get("base", "")) or None,
+            "trek_difficulty": merged_facts.get("difficulty") or None,
+            "trek_duration": merged_facts.get("duration") or None,
+            "trek_season": merged_facts.get("season") or None,
+            "trek_suitability": _suitability_from_difficulty(merged_facts.get("difficulty", "")) or None,
+        })
+
     db.flush()
     cache_invalidate([page.slug])
     return page

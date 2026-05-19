@@ -82,6 +82,7 @@ All V0 foundations are shipped. The stack is live locally with:
 | 44 | Discovery engine improvements (Search, Interlinking, Recommendations, Compare) | done |
 | 46 | Trek CMS unification + pipeline quality fixes (slug, flagged-for-review, trek metadata, force_page_type, publish savepoint) | done |
 | 47 | Trek guide quality fixes: cluster sidebar editorial filter, permits/base extraction, trek metadata in CMS admin, trek-specific Quick Utility routes | done |
+| 48 | Critical pipeline + CMS fixes: upsert_topic (no more "No topic_id" on re-run), CMSPagePatch trek_* editable, trek metadata editable in admin form, reparse robustness | done |
 
 ## V5 — Mobile App Roadmap
 | Item | Status |

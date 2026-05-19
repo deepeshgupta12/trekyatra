@@ -342,6 +342,16 @@
 - URL_MAP.md: /trek/[slug]/packing, /trek/[slug]/permits, /trek/[slug]/costs added
 - Step doc: docs/steps/STEP-47-trek-guide-quality-fixes.md
 
+### Step 48 — Critical Pipeline + CMS Fixes [DONE — 2026-05-19]
+- content/service.py: upsert_topic() — returns existing topic on slug conflict, never returns empty topic_ids
+- trend_discovery/agent.py: uses upsert_topic() instead of create_topic()
+- cms/service.py: reparse_sections_from_draft rewritten — partial success (updates trek_facts/FAQs even when H2 sections absent), triggers _apply_trek_meta on reparse, clear error messages
+- schemas/cms.py: CMSPagePatch now has all 6 trek_* fields (trek_name, trek_state, trek_difficulty, trek_duration, trek_season, trek_suitability)
+- lib/api.ts: CMSPagePayload has all 6 trek_* fields
+- CMSPageForm.tsx: trek metadata editable inputs with trekMeta state; buildPayload includes trek_* in PATCH
+- test_cms.py, test_pipeline.py: updated assertions to match new behaviour
+- Step doc: docs/steps/STEP-48-pipeline-cms-critical-fixes.md
+
 ### Step 45 — Image Gathering Agent [DONE — commit 6e3dd9d]
 - Automated agent to find, validate, and assign hero images to pipeline-published trek pages
 - Sources: Unsplash API (UNSPLASH_ACCESS_KEY) → Pixabay API (PIXABAY_API_KEY) → Wikimedia Commons (no key)

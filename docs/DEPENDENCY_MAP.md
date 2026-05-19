@@ -846,6 +846,15 @@ Before editing any backend file:
 - `apps/web-next/components/layout/Header.tsx` — UPDATED: Logo compact, search functional (onClick+⌘K→/search), mobile search functional, nav px-2.5, useEffect import; blast radius: MEDIUM (header on every public page — visual + functional fix only)
 - `apps/web-next/app/(public)/page.tsx` — UPDATED: compare section fully responsive (heading text-2xl→sm:text-3xl→md:text-4xl, card p-3 md:p-4, text-sm md:text-base, no overflow); blast radius: LOW (leaf homepage)
 
+### Step 48 — Critical Pipeline + CMS Fixes (2026-05-19) blast radius
+- `services/api/app/modules/content/service.py` — ADDED: upsert_topic() upsert function; blast radius: LOW (additive)
+- `services/api/app/modules/agents/trend_discovery/agent.py` — UPDATED: create_topic → upsert_topic; blast radius: MEDIUM (fixes pipeline for all re-runs; behavior change: slug conflict now returns existing topic instead of skipping)
+- `services/api/app/modules/cms/service.py` — UPDATED: reparse_sections_from_draft rewritten for robustness; blast radius: LOW (only called by reparse endpoint; now partial success vs hard failure)
+- `services/api/app/schemas/cms.py` — UPDATED: CMSPagePatch has 6 trek_* fields; blast radius: MEDIUM (all CMS PATCH requests now accept trek metadata)
+- `apps/web-next/lib/api.ts` — UPDATED: CMSPagePayload has 6 trek_* fields; blast radius: LOW (additive)
+- `apps/web-next/components/admin/CMSPageForm.tsx` — UPDATED: trek metadata editable inputs replacing read-only display; blast radius: LOW (admin-only)
+- `services/api/tests/test_cms.py`, `test_pipeline.py` — UPDATED: assertions updated for new behavior
+
 ### Step 47 — Trek Guide Quality Fixes (2026-05-19) blast radius
 - `services/api/app/modules/linking/service.py` — UPDATED: _EXCLUDED_FROM_LINKING frozenset; sync_pages_from_cms excludes editorial/hub types; get_related_pages filters to safe_types; _page_type_from_cms explicit mapping expanded; blast radius: MEDIUM (linking sync runs post-publish + admin sync; now filters correctly)
 - `services/api/app/modules/cms/service.py` — UPDATED: _FACT_TABLE base and season patterns broadened; _FACT_KV base and permits patterns improved; blast radius: LOW (purely additive regex, doesn't break existing matches)

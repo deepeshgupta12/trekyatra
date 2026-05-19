@@ -297,6 +297,13 @@ export interface CMSPagePayload {
   seo_title?: string | null;
   seo_description?: string | null;
   hero_image_url?: string | null;
+  // Trek guide metadata DB columns (editable by admin)
+  trek_name?: string | null;
+  trek_state?: string | null;
+  trek_difficulty?: string | null;
+  trek_duration?: string | null;
+  trek_season?: string | null;
+  trek_suitability?: string | null;
 }
 
 export async function createCMSPage(data: CMSPagePayload & { slug: string; title: string; page_type: string }): Promise<CMSPage> {

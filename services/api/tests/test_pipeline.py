@@ -76,10 +76,10 @@ def test_get_pipeline_run_not_found():
 def test_list_pipeline_runs():
     db = next(get_db())
     try:
-        before = len(pipeline_service.list_pipeline_runs(db, limit=100))
-        pipeline_service.create_pipeline_run(db, input_data={"seed_topics": ["list-test"]})
-        after = pipeline_service.list_pipeline_runs(db, limit=100)
-        assert len(after) == before + 1
+        run = pipeline_service.create_pipeline_run(db, input_data={"seed_topics": ["list-test"]})
+        # Verify the newly created run appears in the list (use a large limit to handle existing data)
+        after = pipeline_service.list_pipeline_runs(db, limit=200)
+        assert any(r.id == run.id for r in after), "Newly created run not found in list"
     finally:
         db.close()
 

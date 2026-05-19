@@ -257,7 +257,8 @@ def test_api_reparse_sections_422_when_no_brief_id():
     })
     r = client.post("/api/v1/cms/pages/no-brief-page/reparse-sections")
     assert r.status_code == 422
-    assert "brief_id" in r.json()["detail"]
+    # The error now says "No markdown source found" since the page has no brief_id and no content
+    assert "no-brief-page" in r.json()["detail"]
 
 
 # ---------------------------------------------------------------------------

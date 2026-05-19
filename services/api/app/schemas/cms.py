@@ -38,6 +38,13 @@ class CMSPagePatch(BaseModel):
     language: str | None = None
     translations: dict[str, Any] | None = None
     is_premium: bool | None = None
+    # Trek guide metadata columns (Step 46) — editable by admin
+    trek_name: str | None = None
+    trek_state: str | None = None
+    trek_difficulty: str | None = None
+    trek_duration: str | None = None
+    trek_season: str | None = None
+    trek_suitability: str | None = None
 
 
 class CMSPageResponse(BaseModel):

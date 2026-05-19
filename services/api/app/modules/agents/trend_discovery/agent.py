@@ -16,7 +16,7 @@ from app.modules.agents.base_agent import BaseAgent
 from app.modules.agents.client import get_anthropic_client
 from app.modules.agents.state import BaseAgentState
 from app.modules.agents.trend_discovery.prompts import TREND_DISCOVERY_PROMPT
-from app.modules.content.service import create_topic
+from app.modules.content.service import upsert_topic
 from app.schemas.content import TopicOpportunityCreate
 
 MODEL = "claude-sonnet-4-6"
@@ -106,7 +106,9 @@ class TrendDiscoveryAgent(BaseAgent):
                     status="new",
                     notes=t.get("notes"),
                 )
-                topic = create_topic(self.db, payload)
+                # upsert_topic returns an existing topic if the slug already exists,
+                # so re-running a pipeline for the same trek never produces empty topic_ids.
+                topic = upsert_topic(self.db, payload)
                 created_ids.append(str(topic.id))
             except Exception as exc:
                 logger.warning("Failed to store topic %r: %s", t.get("title"), exc)

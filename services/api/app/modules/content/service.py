@@ -38,6 +38,18 @@ def list_topics(db: Session) -> list[TopicOpportunity]:
     )
 
 
+def upsert_topic(db: Session, payload: TopicOpportunityCreate) -> TopicOpportunity:
+    """Return existing topic by slug if it exists, otherwise create a new one.
+
+    This prevents pipeline failures when the same trek is run multiple times —
+    re-runs reuse the existing topic so topic_ids is never empty.
+    """
+    existing = db.scalar(select(TopicOpportunity).where(TopicOpportunity.slug == payload.slug))
+    if existing:
+        return existing
+    return create_topic(db, payload)
+
+
 def create_topic(db: Session, payload: TopicOpportunityCreate) -> TopicOpportunity:
     now = _utc_now()
     topic = TopicOpportunity(

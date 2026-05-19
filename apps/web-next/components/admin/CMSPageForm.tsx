@@ -71,6 +71,15 @@ export default function CMSPageForm({ mode, existing }: Props) {
   const [seoTitle, setSeoTitle] = useState(existing?.seo_title ?? "");
   const [seoDesc, setSeoDesc] = useState(existing?.seo_description ?? "");
   const [heroImageUrl, setHeroImageUrl] = useState(existing?.hero_image_url ?? "");
+  // Trek metadata DB columns — editable, saved via PATCH
+  const [trekMeta, setTrekMeta] = useState({
+    trek_name:        existing?.trek_name        ?? "",
+    trek_state:       existing?.trek_state       ?? "",
+    trek_difficulty:  existing?.trek_difficulty  ?? "",
+    trek_duration:    existing?.trek_duration    ?? "",
+    trek_season:      existing?.trek_season      ?? "",
+    trek_suitability: existing?.trek_suitability ?? "",
+  });
   const [uploadingImage, setUploadingImage] = useState(false);
   const [uploadWarning, setUploadWarning] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -152,6 +161,16 @@ export default function CMSPageForm({ mode, existing }: Props) {
     const hasFacts = Object.keys(nonEmptyFacts).length > 0;
     const hasSections = Object.keys(nonEmptySections).length > 0;
     const hasFaqs = validFaqs.length > 0;
+    // Include trek metadata columns — only for trek_guide pages, only if non-empty
+    const trekMetaPayload = pageType === "trek_guide" ? {
+      trek_name:        trekMeta.trek_name.trim()        || null,
+      trek_state:       trekMeta.trek_state.trim()       || null,
+      trek_difficulty:  trekMeta.trek_difficulty.trim()  || null,
+      trek_duration:    trekMeta.trek_duration.trim()    || null,
+      trek_season:      trekMeta.trek_season.trim()      || null,
+      trek_suitability: trekMeta.trek_suitability.trim() || null,
+    } : {};
+
     return {
       title: title.trim(),
       slug: slug.trim(),
@@ -167,6 +186,7 @@ export default function CMSPageForm({ mode, existing }: Props) {
             faqs: hasFaqs ? validFaqs : undefined,
           }
         : null,
+      ...trekMetaPayload,
     };
   }
 
@@ -322,27 +342,30 @@ export default function CMSPageForm({ mode, existing }: Props) {
         )}
       </div>
 
-      {/* Trek metadata DB columns — populated by pipeline at publish time */}
-      {existing?.page_type === "trek_guide" && (
-        <div className="bg-[#14161f] rounded-2xl border border-white/10 p-5 space-y-3">
+      {/* Trek metadata DB columns — editable, saved on Save / Publish */}
+      {pageType === "trek_guide" && (
+        <div className="bg-[#14161f] rounded-2xl border border-white/10 p-5 space-y-4">
           <div>
-            <h2 className="text-white font-semibold text-sm">Trek metadata (pipeline-generated)</h2>
-            <p className="text-white/40 text-xs mt-0.5">Auto-populated at publish time. Used in breadcrumbs, filters, and discovery features. Re-publish after migration to refresh.</p>
+            <h2 className="text-white font-semibold text-sm">Trek metadata</h2>
+            <p className="text-white/40 text-xs mt-0.5">Used in breadcrumbs, SEO, filters, and discovery. Auto-populated by pipeline — edit here to override.</p>
           </div>
-          <div className="grid sm:grid-cols-3 gap-3">
+          <div className="grid sm:grid-cols-3 gap-4">
             {([
-              ["Trek name", existing?.trek_name],
-              ["State", existing?.trek_state],
-              ["Difficulty", existing?.trek_difficulty],
-              ["Duration", existing?.trek_duration],
-              ["Season", existing?.trek_season],
-              ["Suitability", existing?.trek_suitability],
-            ] as [string, string | null | undefined][]).map(([label, val]) => (
-              <div key={label}>
-                <p className="text-white/40 text-[10px] uppercase tracking-wider mb-1">{label}</p>
-                <p className={`text-sm font-mono rounded-lg px-3 py-2 border ${val ? "text-white/80 bg-white/5 border-white/10" : "text-white/20 bg-transparent border-white/5 italic"}`}>
-                  {val || "not set"}
-                </p>
+              ["trek_name",        "Trek name",   "Kedarkantha"],
+              ["trek_state",       "State",        "Uttarakhand"],
+              ["trek_difficulty",  "Difficulty",   "Easy / Moderate"],
+              ["trek_duration",    "Duration",     "6 days"],
+              ["trek_season",      "Season",       "Dec – Apr"],
+              ["trek_suitability", "Suitability",  "Beginners, Intermediate"],
+            ] as [keyof typeof trekMeta, string, string][]).map(([key, label, hint]) => (
+              <div key={key}>
+                <label className={labelCls}>{label}</label>
+                <input
+                  className={inputCls}
+                  value={trekMeta[key]}
+                  onChange={(e) => setTrekMeta(prev => ({ ...prev, [key]: e.target.value }))}
+                  placeholder={hint}
+                />
               </div>
             ))}
           </div>
