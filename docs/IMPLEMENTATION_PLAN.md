@@ -333,6 +333,15 @@
 - Post-ship fix (commit 4fa074a): didYouMeanFuse name-only instance; force_page_type pipeline param; force_page_type admin UI dropdown
 - Post-ship fix (2026-05-19): _apply_trek_meta() savepoint — publish HTTP 500 when migration 0034 not on production DB
 
+### Step 47 — Trek Guide Quality Fixes [DONE — 2026-05-19]
+- linking/service.py: _EXCLUDED_FROM_LINKING frozenset; editorial/hub pages excluded from sync_pages_from_cms + get_related_pages; In this cluster sidebar now only shows trek-relevant pages
+- cms/service.py: _FACT_TABLE base pattern accepts Nearest Base, Base Village, Base Camp headers; _FACT_KV base accepts plain "base:" without village suffix; permits value capture 80→150 chars; season table optional "Best" prefix
+- CMSPageForm.tsx: read-only trek metadata panel (trek_name, trek_state, trek_difficulty, trek_duration, trek_season, trek_suitability) shown for trek_guide pages
+- trek/[slug]/page.tsx: Quick Utilities links to /trek/[slug]/packing, /permits, /costs
+- trek/[slug]/packing/page.tsx, permits/page.tsx, costs/page.tsx: NEW pages — find CMS page by candidate slugs, 404 if absent, breadcrumb Home → Trek → Guide Type
+- URL_MAP.md: /trek/[slug]/packing, /trek/[slug]/permits, /trek/[slug]/costs added
+- Step doc: docs/steps/STEP-47-trek-guide-quality-fixes.md
+
 ### Step 45 — Image Gathering Agent [DONE — commit 6e3dd9d]
 - Automated agent to find, validate, and assign hero images to pipeline-published trek pages
 - Sources: Unsplash API (UNSPLASH_ACCESS_KEY) → Pixabay API (PIXABAY_API_KEY) → Wikimedia Commons (no key)

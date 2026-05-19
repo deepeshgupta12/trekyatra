@@ -322,6 +322,33 @@ export default function CMSPageForm({ mode, existing }: Props) {
         )}
       </div>
 
+      {/* Trek metadata DB columns — populated by pipeline at publish time */}
+      {existing?.page_type === "trek_guide" && (
+        <div className="bg-[#14161f] rounded-2xl border border-white/10 p-5 space-y-3">
+          <div>
+            <h2 className="text-white font-semibold text-sm">Trek metadata (pipeline-generated)</h2>
+            <p className="text-white/40 text-xs mt-0.5">Auto-populated at publish time. Used in breadcrumbs, filters, and discovery features. Re-publish after migration to refresh.</p>
+          </div>
+          <div className="grid sm:grid-cols-3 gap-3">
+            {([
+              ["Trek name", existing?.trek_name],
+              ["State", existing?.trek_state],
+              ["Difficulty", existing?.trek_difficulty],
+              ["Duration", existing?.trek_duration],
+              ["Season", existing?.trek_season],
+              ["Suitability", existing?.trek_suitability],
+            ] as [string, string | null | undefined][]).map(([label, val]) => (
+              <div key={label}>
+                <p className="text-white/40 text-[10px] uppercase tracking-wider mb-1">{label}</p>
+                <p className={`text-sm font-mono rounded-lg px-3 py-2 border ${val ? "text-white/80 bg-white/5 border-white/10" : "text-white/20 bg-transparent border-white/5 italic"}`}>
+                  {val || "not set"}
+                </p>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
       {/* Trek facts strip */}
       <div className="bg-[#14161f] rounded-2xl border border-white/10 p-5 space-y-4">
         <h2 className="text-white font-semibold text-sm">Trek facts strip</h2>

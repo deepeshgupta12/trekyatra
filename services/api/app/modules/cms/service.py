@@ -216,13 +216,16 @@ def _parse_sections_from_markdown(text: str) -> dict[str, str]:
 
 
 # Table-row patterns: "| **Key** | Value |" — highest fidelity, tried first.
+# LLMs produce variants like "**Nearest Base**", "**Permits Required**", "**Start Village**"
+# so each pattern is broad enough to match prefixed/suffixed header words.
 _FACT_TABLE: list[tuple[str, re.Pattern]] = [
     ("duration",   re.compile(r"\|\s*\*\*Duration\b[^|*]*\*\*\s*\|\s*([^|\n]+?)\s*\|", re.I)),
     ("altitude",   re.compile(r"\|\s*\*\*(?:Max(?:imum)?\s+)?(?:Altitude|Elevation|Height)\b[^|*]*\*\*\s*\|\s*([^|\n]+?)\s*\|", re.I)),
     ("difficulty", re.compile(r"\|\s*\*\*Difficulty\b[^|*]*\*\*\s*\|\s*([^|\n]+?)\s*\|", re.I)),
-    ("season",     re.compile(r"\|\s*\*\*Best\s+Season\b[^|*]*\*\*\s*\|\s*([^|\n]+?)\s*\|", re.I)),
+    ("season",     re.compile(r"\|\s*\*\*(?:Best\s+)?Season\b[^|*]*\*\*\s*\|\s*([^|\n]+?)\s*\|", re.I)),
     ("permits",    re.compile(r"\|\s*\*\*Permits?\b[^|*]*\*\*\s*\|\s*([^|\n]+?)\s*\|", re.I)),
-    ("base",       re.compile(r"\|\s*\*\*(?:Base|Start|Trailhead|Last\s+Village)\b[^|*]*\*\*\s*\|\s*([^|\n]+?)\s*\|", re.I)),
+    # Base: match "**Base**", "**Nearest Base**", "**Start/Starting**", "**Trailhead**", "**Base Village**"
+    ("base",       re.compile(r"\|\s*\*\*(?:(?:Nearest\s+)?Base|Start(?:ing)?|Trailhead|Last\s+Village|Base\s+Village|Base\s+Camp)\b[^|*]*\*\*\s*\|\s*([^|\n]+?)\s*\|", re.I)),
 ]
 
 # Key:value patterns.  Separator is `\*{0,2}:\*{0,2}\s*` which matches all three
@@ -233,8 +236,10 @@ _FACT_KV: list[tuple[str, re.Pattern]] = [
     ("altitude",   re.compile(r"(?:\*\*)?(?:max(?:imum)?\s+)?(?:altitude|elevation|height)(?:\*\*)?(?:\*{0,2}:\*{0,2}\s*)([^\n|*]{3,60}?)(?:\n|\||$)", re.I)),
     ("difficulty", re.compile(r"(?:\*\*)?difficulty(?:\s+level)?(?:\*\*)?(?:\*{0,2}:\*{0,2}\s*)([^\n|*]{3,50}?)(?:\n|\||$)", re.I)),
     ("season",     re.compile(r"(?:\*\*)?(?:best\s+season|ideal\s+season|season)(?:\*\*)?(?:\*{0,2}:\*{0,2}\s*)([^\n|*]{3,80}?)(?:\n|\||$)", re.I)),
-    ("permits",    re.compile(r"(?:\*\*)?permit\b[^*:\n]{0,20}(?:\*{0,2}:\*{0,2}\s*)([^\n|*]{3,80}?)(?:\n|\||$)", re.I)),
-    ("base",       re.compile(r"(?:\*\*)?(?:(?:nearest\s+)?base\s+(?:villages?|camp|town)|starting\s+(?:point|village)|trailhead)(?:\*{0,2}:\*{0,2}\s*)([^\n|*(]{3,50}?)(?:\s*\*|\n|\||$)", re.I)),
+    # Permits: broader prefix match, longer value capture (permit names can be verbose)
+    ("permits",    re.compile(r"(?:\*\*)?permits?(?:\s+required)?(?:\*\*)?(?:\*{0,2}:\*{0,2}\s*)([^\n|*]{3,150}?)(?:\n|\||$)", re.I)),
+    # Base: match "base:", "base village:", "nearest base:", "starting point:", "trailhead:"
+    ("base",       re.compile(r"(?:\*\*)?(?:(?:nearest\s+)?base(?:\s+(?:villages?|camp|town))?|starting\s+(?:point|village)|trailhead)(?:\*\*)?(?:\*{0,2}:\*{0,2}\s*)([^\n|*(]{3,80}?)(?:\s*\*|\n|\||$)", re.I)),
 ]
 
 

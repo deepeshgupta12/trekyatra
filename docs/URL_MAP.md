@@ -4,7 +4,7 @@
 > must be listed here and confirmed by the user. No new URL structures should be introduced
 > without updating this file and getting confirmation.
 
-Last updated: 2026-05-19
+Last updated: 2026-05-19 (Step 47)
 
 ---
 
@@ -18,6 +18,9 @@ Last updated: 2026-05-19
 | `/compare` | Trek comparison | — | Side-by-side compare tool |
 | `/plan` | Trip planning wizard | — | 4-step wizard → TripPlannerAgent |
 | `/trek/[slug]` | Trek detail | `trek_guide` | CMS-first, static fallback |
+| `/trek/[slug]/packing` | Trek-specific packing guide | `packing_list` | Links to the packing guide CMS page for this trek slug; 404 if no packing page exists |
+| `/trek/[slug]/permits` | Trek-specific permit guide | `permit_guide` | Links to the permit guide CMS page for this trek slug; 404 if no permit page exists |
+| `/trek/[slug]/costs` | Trek-specific cost guide | `cost_guide` | Links to the cost guide CMS page for this trek slug; 404 if no cost page exists |
 | `/packing` | Packing hub | — | Hub + CMSPageHub(packing_list) |
 | `/packing/[slug]` | Packing guide | `packing_list` | CMS-powered |
 | `/permits` | Permits hub | — | Hub + CMSPageHub(permit_guide) |

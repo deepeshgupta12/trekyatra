@@ -846,6 +846,16 @@ Before editing any backend file:
 - `apps/web-next/components/layout/Header.tsx` — UPDATED: Logo compact, search functional (onClick+⌘K→/search), mobile search functional, nav px-2.5, useEffect import; blast radius: MEDIUM (header on every public page — visual + functional fix only)
 - `apps/web-next/app/(public)/page.tsx` — UPDATED: compare section fully responsive (heading text-2xl→sm:text-3xl→md:text-4xl, card p-3 md:p-4, text-sm md:text-base, no overflow); blast radius: LOW (leaf homepage)
 
+### Step 47 — Trek Guide Quality Fixes (2026-05-19) blast radius
+- `services/api/app/modules/linking/service.py` — UPDATED: _EXCLUDED_FROM_LINKING frozenset; sync_pages_from_cms excludes editorial/hub types; get_related_pages filters to safe_types; _page_type_from_cms explicit mapping expanded; blast radius: MEDIUM (linking sync runs post-publish + admin sync; now filters correctly)
+- `services/api/app/modules/cms/service.py` — UPDATED: _FACT_TABLE base and season patterns broadened; _FACT_KV base and permits patterns improved; blast radius: LOW (purely additive regex, doesn't break existing matches)
+- `apps/web-next/components/admin/CMSPageForm.tsx` — UPDATED: trek metadata read-only panel added for trek_guide pages; blast radius: LOW (admin-only, additive display)
+- `apps/web-next/app/(public)/trek/[slug]/page.tsx` — UPDATED: Quick Utilities links to /trek/[slug]/packing etc.; blast radius: MEDIUM (every trek guide page sidebar)
+- `apps/web-next/app/(public)/trek/[slug]/packing/page.tsx` — NEW: trek-specific packing page; blast radius: LOW (new route)
+- `apps/web-next/app/(public)/trek/[slug]/permits/page.tsx` — NEW: trek-specific permit page; blast radius: LOW (new route)
+- `apps/web-next/app/(public)/trek/[slug]/costs/page.tsx` — NEW: trek-specific cost page; blast radius: LOW (new route)
+- `docs/URL_MAP.md` — UPDATED: /trek/[slug]/packing, /permits, /costs added
+
 ### fix: search did-you-mean + pipeline force_page_type (commit 4fa074a, 2026-05-19) blast radius
 - `apps/web-next/app/(public)/search/page.tsx` — UPDATED: dedicated `didYouMeanFuse` (name-only, threshold 0.55) replaces trekFuse-based check; blast radius: LOW (leaf page)
 - `apps/web-next/app/(admin)/admin/pipeline/page.tsx` — UPDATED: Force page type dropdown added to TriggerForm; blast radius: LOW (admin-only)

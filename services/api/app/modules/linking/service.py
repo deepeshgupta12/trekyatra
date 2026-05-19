@@ -23,28 +23,59 @@ _PAGE_TYPE_PRIORITY = [
 ]
 
 
+# Page types excluded from the linking graph entirely.
+# Editorial/trust pages (privacy, terms, methodology, contact…) should not appear
+# as "related content" alongside trek guides.
+_EXCLUDED_FROM_LINKING = frozenset({
+    "editorial",
+    "regional_hub",
+    "seasonal_hub",
+    "cluster_hub",
+    "region_listing",
+    "premium_compendium",
+})
+
+
 def _page_type_from_cms(cms_page: CMSPage) -> str:
-    """Derive a page_type from the CMS page_type field."""
+    """Derive a page_type for the linking graph from the CMS page_type field.
+
+    Returns None for page types excluded from the linking graph.
+    """
     mapping = {
         "trek_guide": "trek_guide",
         "packing_list": "packing_list",
         "permit_guide": "permit_guide",
         "beginner_guide": "beginner_guide",
+        "beginner_roundup": "beginner_guide",
         "seasonal": "seasonal",
         "comparison": "comparison",
+        "cost_guide": "comparison",
+        "gear_guide": "comparison",
+        "itinerary": "trek_guide",
+        "safety_guide": "trek_guide",
+        "expert_guide": "trek_guide",
     }
     return mapping.get(cms_page.page_type, "trek_guide")
 
 
 def sync_pages_from_cms(db: Session) -> int:
-    """Upsert rows in `pages` from all published cms_pages. Returns count synced."""
+    """Upsert rows in `pages` from all published cms_pages. Returns count synced.
+
+    Editorial and hub pages are excluded — they must not appear in the internal
+    linking graph or 'In this cluster' sidebars.
+    """
     published = db.scalars(
-        select(CMSPage).where(CMSPage.status == "published")
+        select(CMSPage).where(
+            CMSPage.status == "published",
+            ~CMSPage.page_type.in_(_EXCLUDED_FROM_LINKING),
+        )
     ).all()
 
     now = datetime.now(timezone.utc)
     synced = 0
     for cms in published:
+        if cms.page_type in _EXCLUDED_FROM_LINKING:
+            continue  # safety guard
         existing = db.scalar(select(Page).where(Page.slug == cms.slug))
         if existing:
             existing.title = cms.title
@@ -76,28 +107,44 @@ def sync_pages_from_cms(db: Session) -> int:
 def get_related_pages(db: Session, *, slug: str, limit: int = 5) -> list[Page]:
     """Return pages related to the given slug.
 
-    Primary: pages sharing the same cluster_id, ordered by page_type priority.
-    Fallback: most-recent pages of the same page_type when no cluster match.
+    Primary: pages sharing the same cluster_id (same trek/topic cluster).
+    Fallback: most-recent pages of the same page_type.
+
+    Editorial, hub, and policy pages are always excluded regardless of cluster.
     """
     source = db.scalar(select(Page).where(Page.slug == slug))
     if source is None:
         return []
 
+    # Base filter: exclude page types that don't belong in a trek sidebar
+    safe_types = list(
+        {"trek_guide", "packing_list", "permit_guide", "beginner_guide", "comparison", "seasonal"}
+        - _EXCLUDED_FROM_LINKING
+    )
+
     # Primary: same cluster
     if source.cluster_id:
         siblings = db.scalars(
             select(Page)
-            .where(Page.cluster_id == source.cluster_id, Page.id != source.id)
+            .where(
+                Page.cluster_id == source.cluster_id,
+                Page.id != source.id,
+                Page.page_type.in_(safe_types),
+            )
             .order_by(Page.published_at.desc())
             .limit(limit)
         ).all()
         if siblings:
             return list(siblings)
 
-    # Fallback: same page_type, most recent
+    # Fallback: same page_type, most recent, excluding self and editorial pages
     return list(db.scalars(
         select(Page)
-        .where(Page.page_type == source.page_type, Page.id != source.id)
+        .where(
+            Page.page_type == source.page_type,
+            Page.id != source.id,
+            Page.page_type.in_(safe_types),
+        )
         .order_by(Page.published_at.desc())
         .limit(limit)
     ).all())

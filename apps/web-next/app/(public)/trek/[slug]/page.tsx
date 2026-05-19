@@ -473,9 +473,9 @@ export default async function TrekDetailPage({ params }: { params: { slug: strin
                   <div className="text-xs uppercase tracking-widest text-muted-foreground mb-3">Quick utilities</div>
                   <div className="space-y-2">
                     {[
-                      [Backpack, "Packing checklist", "/packing"],
-                      [FileCheck, "Permit guide", "/permits"],
-                      [Wallet, "Cost calculator", "/costs"],
+                      [Backpack, "Packing checklist", `/trek/${params.slug}/packing`],
+                      [FileCheck, "Permit guide", `/trek/${params.slug}/permits`],
+                      [Wallet, "Cost calculator", `/trek/${params.slug}/costs`],
                     ].map(([Icon, label, to]: any) => (
                       <Link key={to} href={to} className="flex items-center justify-between p-3 rounded-xl hover:bg-muted transition-colors">
                         <span className="flex items-center gap-2.5 text-sm font-medium"><Icon className="h-4 w-4 text-accent" /> {label}</span>
