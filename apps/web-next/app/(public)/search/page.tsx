@@ -80,6 +80,15 @@ const guideFuse = new Fuse(guides, {
   minMatchCharLength: 2,
 });
 
+// Separate name-only instance for "Did you mean?" — higher threshold, single field,
+// so multi-field weighting doesn't compress scores below detection range.
+const didYouMeanFuse = new Fuse(treks, {
+  keys: [{ name: "name", weight: 1 }],
+  threshold: 0.55,
+  includeScore: true,
+  minMatchCharLength: 3,
+});
+
 // ── localStorage helpers ───────────────────────────────────────────────────────
 function readRecent(): string[] {
   try {
@@ -159,19 +168,21 @@ export default function SearchResults() {
     return guideFuse.search(q).map(r => r.item);
   }, [q]);
 
-  // "Did you mean?" — show when query is a fuzzy/typo variation of a known trek name.
-  // Score 0 = exact match, 1 = no match. We suggest when 0.05 ≤ score ≤ 0.5:
-  //   - Below 0.05 = essentially exact → no suggestion needed
-  //   - Above 0.5 = too far off to give a useful suggestion
+  // "Did you mean?" — uses a name-only Fuse instance (didYouMeanFuse, threshold 0.55)
+  // to avoid multi-field score compression that suppressed the banner with trekFuse.
   const didYouMeanTrek = useMemo(() => {
-    if (!q.trim()) return null;
-    const topResult = trekFuse.search(q, { limit: 1 })[0];
-    if (!topResult) return null;
-    const score = topResult.score ?? 1;
-    if (score < 0.05 || score > 0.5) return null;
-    // Don't suggest the same name the user already typed
-    if (topResult.item.name.toLowerCase() === q.trim().toLowerCase()) return null;
-    return topResult.item;
+    const trimmed = q.trim();
+    if (!trimmed || trimmed.length < 3) return null;
+    const results = didYouMeanFuse.search(trimmed, { limit: 1 });
+    if (!results.length) return null;
+    const { item, score = 1 } = results[0];
+    // Don't suggest when the user already typed the exact trek name
+    const qNorm = trimmed.toLowerCase().replace(/\s+/g, "");
+    const nameNorm = item.name.toLowerCase().replace(/\s+/g, "");
+    if (qNorm === nameNorm) return null;
+    // Omit near-perfect matches (score < 0.02 means essentially exact)
+    if (score < 0.02) return null;
+    return item;
   }, [q]);
 
   const handleQueryCommit = useCallback((value: string) => {

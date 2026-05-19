@@ -43,6 +43,8 @@ def trigger_pipeline(payload: PipelineRunCreate, db: Session = Depends(get_db)):
         input_data["brief_id"] = str(payload.brief_id)
     if payload.draft_id:
         input_data["draft_id"] = str(payload.draft_id)
+    if payload.force_page_type:
+        input_data["force_page_type"] = payload.force_page_type
 
     run = pipeline_service.create_pipeline_run(
         db,

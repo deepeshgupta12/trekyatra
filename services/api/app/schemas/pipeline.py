@@ -13,6 +13,7 @@ class PipelineRunCreate(BaseModel):
     end_stage: str = "publish"
     brief_id: uuid.UUID | None = None
     draft_id: uuid.UUID | None = None
+    force_page_type: str | None = None  # e.g. "trek_guide" — forces trend_discovery to only create this type
 
 
 class PipelineStageResponse(BaseModel):

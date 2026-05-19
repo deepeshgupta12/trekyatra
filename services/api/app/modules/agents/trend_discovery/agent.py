@@ -47,9 +47,12 @@ class TrendDiscoveryAgent(BaseAgent):
         if not settings.anthropic_api_key:
             return {"errors": ["ANTHROPIC_API_KEY is not configured"]}
 
-        seed_topics: list[str] = state.get("input", {}).get("seed_topics", [])
+        inp = state.get("input", {})
+        seed_topics: list[str] = inp.get("seed_topics", [])
         if not seed_topics:
             return {"errors": ["seed_topics must be a non-empty list"]}
+
+        force_page_type: str | None = inp.get("force_page_type")
 
         prompt = TREND_DISCOVERY_PROMPT.format(seed_topics=", ".join(seed_topics))
         client = get_anthropic_client()
@@ -64,6 +67,19 @@ class TrendDiscoveryAgent(BaseAgent):
             raw = re.sub(r"^```[a-z]*\n?", "", raw)
             raw = re.sub(r"\n?```$", "", raw)
         topics: list[dict[str, Any]] = json.loads(raw)
+
+        # If force_page_type is set, override page_type on ALL topics and drop any
+        # topics the LLM assigned a different type to (prefer the seed topic directly).
+        if force_page_type:
+            filtered = [t for t in topics if t.get("page_type") == force_page_type]
+            if filtered:
+                topics = filtered
+            else:
+                # LLM returned no topics of the forced type — override the top topic
+                for t in topics:
+                    t["page_type"] = force_page_type
+                topics = topics[:1]
+
         return {"output": {"topics": topics}}
 
     def _store_results(self, state: BaseAgentState) -> dict[str, Any]:

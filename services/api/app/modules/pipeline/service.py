@@ -299,7 +299,9 @@ class PipelineOrchestrator:
     def _run_trend_discovery(self, context: dict[str, Any]) -> dict[str, Any]:
         from app.modules.agents.trend_discovery.agent import TrendDiscoveryAgent
         seed_topics: list[str] = context.get("seed_topics") or []
-        input_data = {"seed_topics": seed_topics}
+        input_data: dict[str, Any] = {"seed_topics": seed_topics}
+        if context.get("force_page_type"):
+            input_data["force_page_type"] = context["force_page_type"]
         agent_run = agent_service.start_run(self.db, "trend_discovery", input_data)
         try:
             agent = TrendDiscoveryAgent(db=self.db)
@@ -353,7 +355,9 @@ class PipelineOrchestrator:
         cluster_id = cluster_ids[0] if cluster_ids else context.get("cluster_id")
         if not topic_id:
             raise ValueError("No topic_id available for content_brief stage.")
-        input_data = {"topic_id": str(topic_id), "cluster_id": str(cluster_id) if cluster_id else None}
+        input_data: dict[str, Any] = {"topic_id": str(topic_id), "cluster_id": str(cluster_id) if cluster_id else None}
+        if context.get("force_page_type"):
+            input_data["page_type"] = context["force_page_type"]
         agent_run = agent_service.start_run(self.db, "content_brief", input_data)
         try:
             agent = ContentBriefAgent(db=self.db)

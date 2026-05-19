@@ -242,28 +242,42 @@ const END_MAP: Record<string, string> = {
   publish:         "publish",
 };
 
+const PAGE_TYPE_OPTIONS = [
+  { value: "",              label: "Auto (let AI decide)" },
+  { value: "trek_guide",   label: "Trek Guide" },
+  { value: "comparison",   label: "Comparison" },
+  { value: "packing_list", label: "Packing List" },
+  { value: "permit_guide", label: "Permit Guide" },
+  { value: "best_time",    label: "Best Time Guide" },
+  { value: "roundup",      label: "Roundup" },
+  { value: "faq",          label: "FAQ" },
+];
+
 function TriggerForm({ onTriggered }: { onTriggered: () => void }) {
-  const [open, setOpen]           = useState(false);
-  const [startStage, setStart]    = useState("trend_discovery");
-  const [seedTopics, setTopics]   = useState("");
-  const [briefId, setBriefId]     = useState("");
-  const [draftId, setDraftId]     = useState("");
-  const [busy, setBusy]           = useState(false);
-  const [error, setError]         = useState("");
+  const [open, setOpen]              = useState(false);
+  const [startStage, setStart]       = useState("trend_discovery");
+  const [seedTopics, setTopics]      = useState("");
+  const [forcePageType, setPageType] = useState("");
+  const [briefId, setBriefId]        = useState("");
+  const [draftId, setDraftId]        = useState("");
+  const [busy, setBusy]              = useState(false);
+  const [error, setError]            = useState("");
 
   async function submit() {
     setBusy(true);
     setError("");
     try {
       await triggerPipeline({
-        start_stage:  startStage,
-        end_stage:    END_MAP[startStage] ?? "publish",
-        seed_topics:  seedTopics ? seedTopics.split(",").map(s => s.trim()).filter(Boolean) : undefined,
-        brief_id:     briefId || undefined,
-        draft_id:     draftId || undefined,
+        start_stage:     startStage,
+        end_stage:       END_MAP[startStage] ?? "publish",
+        seed_topics:     seedTopics ? seedTopics.split(",").map(s => s.trim()).filter(Boolean) : undefined,
+        force_page_type: forcePageType || undefined,
+        brief_id:        briefId || undefined,
+        draft_id:        draftId || undefined,
       });
       setOpen(false);
       setTopics("");
+      setPageType("");
       setBriefId("");
       setDraftId("");
       onTriggered();
@@ -299,15 +313,30 @@ function TriggerForm({ onTriggered }: { onTriggered: () => void }) {
           </select>
         </div>
         {(startStage === "trend_discovery" || startStage === "content_brief") && (
-          <div>
-            <label className="text-white/40 text-xs block mb-1">Seed topics (comma-separated)</label>
-            <input
-              value={seedTopics}
-              onChange={e => setTopics(e.target.value)}
-              placeholder="kedarkantha trek, triund trek guide"
-              className="w-full bg-[#0c0e14] border border-white/10 rounded-xl px-3 py-2 text-sm text-white/80 placeholder:text-white/20 focus:outline-none"
-            />
-          </div>
+          <>
+            <div>
+              <label className="text-white/40 text-xs block mb-1">Seed topics (comma-separated)</label>
+              <input
+                value={seedTopics}
+                onChange={e => setTopics(e.target.value)}
+                placeholder="kedarkantha trek, triund trek guide"
+                className="w-full bg-[#0c0e14] border border-white/10 rounded-xl px-3 py-2 text-sm text-white/80 placeholder:text-white/20 focus:outline-none"
+              />
+            </div>
+            <div>
+              <label className="text-white/40 text-xs block mb-1">Force page type</label>
+              <select
+                value={forcePageType}
+                onChange={e => setPageType(e.target.value)}
+                className="w-full bg-[#0c0e14] border border-white/10 rounded-xl px-3 py-2 text-sm text-white/80 focus:outline-none"
+              >
+                {PAGE_TYPE_OPTIONS.map(o => (
+                  <option key={o.value} value={o.value}>{o.label}</option>
+                ))}
+              </select>
+              <p className="text-white/25 text-[10px] mt-1">Set to &ldquo;Trek Guide&rdquo; to prevent AI choosing a comparison or FAQ topic.</p>
+            </div>
+          </>
         )}
         {startStage === "content_writing" && (
           <div>

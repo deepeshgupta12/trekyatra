@@ -384,6 +384,7 @@ export async function triggerPipeline(payload: {
   end_stage?: string;
   brief_id?: string;
   draft_id?: string;
+  force_page_type?: string;
 }): Promise<PipelineTriggerResponse> {
   const res = await fetch("/api/v1/admin/pipeline/run", {
     method: "POST",
