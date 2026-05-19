@@ -4,7 +4,7 @@ import { notFound, permanentRedirect } from "next/navigation";
 import { TrekCard } from "@/components/trek/TrekCard";
 import { Button } from "@/components/ui/button";
 import { fetchTreks, fetchTrekBySlug } from "@/lib/trekApi";
-import { fetchCMSPage, fetchCMSPages, type CMSPage, type FAQItem } from "@/lib/api";
+import { fetchCMSPage, fetchCMSPages, fetchRelatedPages, type CMSPage, type FAQItem, type RelatedPage } from "@/lib/api";
 import { TrekViewTracker } from "@/components/trek/TrekViewTracker";
 import TableOfContents from "@/components/content/TableOfContents";
 import RecommendedContent from "@/components/content/RecommendedContent";
@@ -136,6 +136,12 @@ export default async function TrekDetailPage({ params }: { params: { slug: strin
   };
 
   const related = allTreks.filter(t => t.slug !== trek.slug).slice(0, 3);
+
+  // Fetch cluster-related CMS pages for "In this cluster" sidebar
+  let clusterPages: RelatedPage[] = [];
+  try {
+    clusterPages = await fetchRelatedPages(params.slug, 5);
+  } catch { /* sidebar degrades gracefully */ }
   const facts = [
     { icon: Clock,      label: "Duration",    value: tf.duration    || trek.duration    || "—" },
     { icon: TrendingUp, label: "Max altitude", value: tf.altitude    || trek.altitude    || "—" },
@@ -197,6 +203,7 @@ export default async function TrekDetailPage({ params }: { params: { slug: strin
       {/* Invisible behavior tracker — records this trek visit for cookie-based personalisation */}
       <TrekViewTracker
         slug={trek.slug}
+        title={cmsDisplayName ?? trek.name}
         region={trek.region}
         difficulty={trek.difficulty}
         season={trek.season}
@@ -469,6 +476,36 @@ export default async function TrekDetailPage({ params }: { params: { slug: strin
                     ))}
                   </div>
                 </div>
+
+                {/* "In this cluster" — related CMS pages in the same content cluster */}
+                {clusterPages.length > 0 && (
+                  <div className="bg-card border border-border rounded-2xl p-5">
+                    <div className="text-xs uppercase tracking-widest text-muted-foreground mb-3">In this cluster</div>
+                    <div className="space-y-2">
+                      {clusterPages.map((page) => {
+                        const href =
+                          page.page_type === "trek_guide" ? `/trek/${page.slug}` :
+                          page.page_type === "packing_list" ? `/packing/${page.slug}` :
+                          page.page_type === "permit_guide" ? `/permits/${page.slug}` :
+                          `/guides/${page.slug}`;
+                        return (
+                          <Link
+                            key={page.id}
+                            href={href}
+                            className="flex items-start gap-2.5 p-2.5 rounded-xl hover:bg-muted transition-colors group"
+                          >
+                            <Mountain className="h-3.5 w-3.5 text-accent flex-shrink-0 mt-0.5" />
+                            <div className="min-w-0">
+                              <p className="text-sm font-medium leading-snug line-clamp-2 group-hover:text-accent transition-colors">
+                                {page.title}
+                              </p>
+                            </div>
+                          </Link>
+                        );
+                      })}
+                    </div>
+                  </div>
+                )}
               </div>
             </div>
           </aside>

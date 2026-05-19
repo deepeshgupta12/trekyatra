@@ -501,6 +501,7 @@ export interface OrphanPage {
 export interface AnchorSuggestion {
   text: string;
   reason: string;
+  quality?: number;
 }
 
 export async function fetchRelatedPages(slug: string, limit = 5): Promise<RelatedPage[]> {
@@ -1764,4 +1765,49 @@ export async function fetchSearchSuggestions(q: string, limit = 6): Promise<Sear
   const res = await fetch(`/api/v1/search/suggestions?q=${encodeURIComponent(q)}&limit=${limit}`);
   if (!res.ok) return [];
   return res.json();
+}
+
+/** Fire-and-forget: record a public page view for popularity weighting. */
+export async function trackPageView(pageSlug: string, pageType?: string, sessionId?: string): Promise<void> {
+  await fetch("/api/v1/track/page-view", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ page_slug: pageSlug, page_type: pageType, session_id: sessionId }),
+  }).catch(() => {});
+}
+
+export interface ComparisonItem {
+  id: string;
+  user_id: string;
+  name: string;
+  slugs: string[];
+  created_at: string;
+  updated_at: string;
+}
+
+/** Fetch saved comparisons for the current user. */
+export async function fetchComparisons(): Promise<ComparisonItem[]> {
+  const res = await fetch("/api/v1/account/comparisons", { credentials: "include" });
+  if (!res.ok) return [];
+  return res.json();
+}
+
+/** Save a new comparison list. */
+export async function saveComparison(name: string, slugs: string[]): Promise<ComparisonItem> {
+  const res = await fetch("/api/v1/account/comparisons", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    credentials: "include",
+    body: JSON.stringify({ name, slugs }),
+  });
+  if (!res.ok) throw new Error("Failed to save comparison");
+  return res.json();
+}
+
+/** Delete a saved comparison by ID. */
+export async function deleteComparison(id: string): Promise<void> {
+  await fetch(`/api/v1/account/comparisons/${id}`, {
+    method: "DELETE",
+    credentials: "include",
+  });
 }

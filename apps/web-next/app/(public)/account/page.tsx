@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
-import { Bookmark, BarChart2, Download, Bell, ExternalLink } from "lucide-react";
+import { Bookmark, BarChart2, Download, Bell, ExternalLink, Clock } from "lucide-react";
 import { useAuth } from "@/lib/auth-context";
 import {
   BookmarkResponse,
@@ -10,6 +10,22 @@ import {
   fetchDownloads,
   fetchAlerts,
 } from "@/lib/api";
+
+const RECENTLY_VIEWED_KEY = "ty_recently_viewed";
+
+interface RecentlyViewedItem {
+  slug: string;
+  title: string;
+  pageType?: string;
+  href: string;
+  viewedAt: number;
+}
+
+function readRecentlyViewed(): RecentlyViewedItem[] {
+  try {
+    return JSON.parse(localStorage.getItem(RECENTLY_VIEWED_KEY) ?? "[]");
+  } catch { return []; }
+}
 
 const PAGE_TYPE_LABELS: Record<string, string> = {
   trek_guide: "Trek Guide",
@@ -24,6 +40,7 @@ export default function AccountDashboard() {
   const [downloadCount, setDownloadCount] = useState(0);
   const [alertCount, setAlertCount] = useState(0);
   const [loading, setLoading] = useState(true);
+  const [recentlyViewed, setRecentlyViewed] = useState<RecentlyViewedItem[]>([]);
 
   const loadData = useCallback(() => {
     Promise.all([
@@ -39,6 +56,7 @@ export default function AccountDashboard() {
 
   useEffect(() => {
     loadData();
+    setRecentlyViewed(readRecentlyViewed().slice(0, 5));
   }, [loadData]);
 
   // Reactively refresh counts whenever any page bookmarks/unbookmarks
@@ -135,6 +153,36 @@ export default function AccountDashboard() {
           </div>
         )}
       </div>
+
+      {/* Recently viewed */}
+      {recentlyViewed.length > 0 && (
+        <div className="mt-10">
+          <div className="flex items-center justify-between mb-5">
+            <h2 className="font-display text-xl font-semibold flex items-center gap-2">
+              <Clock className="h-5 w-5 text-muted-foreground" /> Recently viewed
+            </h2>
+          </div>
+          <div className="space-y-2">
+            {recentlyViewed.map((item) => (
+              <Link
+                key={item.slug}
+                href={item.href}
+                className="flex items-center gap-3 p-3 rounded-xl border border-border hover:border-accent transition-colors bg-surface"
+              >
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-medium truncate">{item.title}</p>
+                  {item.pageType && (
+                    <p className="text-xs text-muted-foreground mt-0.5">
+                      {PAGE_TYPE_LABELS[item.pageType] ?? item.pageType}
+                    </p>
+                  )}
+                </div>
+                <ExternalLink className="h-3.5 w-3.5 text-muted-foreground flex-shrink-0" />
+              </Link>
+            ))}
+          </div>
+        </div>
+      )}
     </div>
   );
 }

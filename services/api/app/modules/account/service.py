@@ -8,7 +8,7 @@ from sqlalchemy import select
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
-from app.modules.account.models import TrekAlert, UserBookmark, UserDownload, UserProfile
+from app.modules.account.models import AccountComparison, TrekAlert, UserBookmark, UserDownload, UserProfile
 from app.modules.cms.models import CMSPage
 
 logger = logging.getLogger(__name__)
@@ -276,3 +276,35 @@ def upsert_profile(db: Session, user_id: UUID, data: dict) -> UserProfile:
     db.commit()
     db.refresh(profile)
     return profile
+
+
+# --- Saved Comparisons ---
+
+def list_comparisons(db: Session, user_id: UUID) -> list[AccountComparison]:
+    return list(db.scalars(
+        select(AccountComparison)
+        .where(AccountComparison.user_id == user_id)
+        .order_by(AccountComparison.updated_at.desc())
+    ).all())
+
+
+def save_comparison(db: Session, user_id: UUID, name: str, slugs: list[str]) -> AccountComparison:
+    comp = AccountComparison(user_id=user_id, name=name[:255], slugs=slugs[:3])
+    db.add(comp)
+    db.commit()
+    db.refresh(comp)
+    return comp
+
+
+def delete_comparison(db: Session, user_id: UUID, comparison_id: UUID) -> bool:
+    comp = db.scalar(
+        select(AccountComparison).where(
+            AccountComparison.id == comparison_id,
+            AccountComparison.user_id == user_id,
+        )
+    )
+    if comp is None:
+        return False
+    db.delete(comp)
+    db.commit()
+    return True

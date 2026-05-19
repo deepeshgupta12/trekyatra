@@ -1,18 +1,56 @@
 # Step 44 — Discovery Engine Improvements (Search, Interlinking, Recommendations, Compare)
 
-## Status: Done (partial) — commit 6e3dd9d
+## Status: Done — commits 6e3dd9d + (Step 44 remaining, 2026-05-19)
 
-## What was implemented
+## What was implemented (original commit 6e3dd9d)
 - **Search analytics**: `search_events` table (migration 0031), POST /search/log, GET /search/suggestions (CMS full-text), GET /search/trending
 - **Compare 3-trek support**: up to 3 treks, dynamic columns, share URL (?slugs=), navigator.share
 - **Frontend**: `logSearchEvent()` + `fetchSearchSuggestions()` in lib/api.ts
 - **Tests**: 8 new search tests pass
 
+## What was implemented (Step 44 remaining, 2026-05-19)
+
+### A. Search frontend wiring
+- `apps/web-next/app/(public)/search/page.tsx`: debounced `fetchSearchSuggestions()` (API-powered CMS autocomplete), click tracking via `logSearchEvent()`, page type badges on all result items, recent searches (localStorage `ty_recent_searches`, max 5), "Did you mean?" for near-miss queries (Fuse.js score threshold)
+
+### B. Recommendations — behavioral signals
+- `services/api/alembic/versions/20260519_0032_page_views.py`: `page_views` table migration
+- `services/api/app/modules/search/models.py`: `PageView` ORM model
+- `services/api/app/modules/search/service.py`: `record_page_view()` function
+- `services/api/app/api/routes/analytics.py`: `POST /track/page-view` endpoint
+- `services/api/app/modules/recommendations/service.py`: `get_anonymous_recommendations()` now blends popularity (30-day view count × 0.6) + recency (epoch × 0.4) with cluster diversity
+- `apps/web-next/components/trek/TrekViewTracker.tsx`: writes to `ty_recently_viewed` localStorage
+- `apps/web-next/app/(public)/account/page.tsx`: "Recently viewed" section reads from localStorage
+
+### C. Internal linking improvements
+- `services/api/app/modules/linking/service.py`: `get_anchor_suggestions()` now returns `quality` score (0.5–0.9) for each suggestion; sorted descending by quality
+- `services/api/app/schemas/linking.py`: `AnchorSuggestion` schema now includes `quality: float = 0.5`
+- `apps/web-next/lib/api.ts`: `AnchorSuggestion` interface updated with optional `quality`
+- `apps/web-next/app/(admin)/admin/linking/page.tsx`: quality score displayed as percentage badge per anchor suggestion
+
+### D. Compare — saved comparisons
+- `services/api/alembic/versions/20260519_0033_account_comparisons.py`: `account_comparisons` table migration (FK → users.id CASCADE)
+- `services/api/app/modules/account/models.py`: `AccountComparison` ORM model (JSONB slugs, user FK)
+- `services/api/app/modules/account/service.py`: `list_comparisons()`, `save_comparison()`, `delete_comparison()`
+- `services/api/app/schemas/account.py`: `ComparisonCreate` + `ComparisonResponse` schemas
+- `services/api/app/api/routes/account.py`: `GET /account/comparisons`, `POST /account/comparisons`, `DELETE /account/comparisons/{id}`
+- `apps/web-next/lib/api.ts`: `fetchComparisons()`, `saveComparison()`, `deleteComparison()`, `trackPageView()`
+- `apps/web-next/app/(public)/account/compare/page.tsx`: fully wired to real API (list, delete, link to /compare?slugs=)
+
+### E. Trek guide — "In this cluster" sidebar
+- `apps/web-next/app/(public)/trek/[slug]/page.tsx`: fetches `fetchRelatedPages(slug, 5)` server-side, renders "In this cluster" sidebar block in right column (degrades gracefully if empty)
+
+### Tests (new)
+- `services/api/tests/test_discovery_improvements.py`: 11 new tests — TC-B01 through TC-B11
+
 ## What is deferred (post-launch)
-- `page_views` table + collaborative filtering (overlaps with behavior-tracker.ts)
-- Editorial link pin/unpin in admin
-- `/account/compare` saved comparisons (needs new DB table)
-- Search click tracking wired into frontend search page
+- Collaborative filtering ("readers also read…") based on session co-occurrence
+- Editorial link pin/unpin in admin (requires separate `link_pins` table)
+- Search click tracking wired into /search page sidebar filter tabs
+
+## Notes
+- Requires: `alembic upgrade head` (migrations 0032 + 0033 applied 2026-05-19)
+- GitNexus re-index required after this step
 
 ## Summary
 A comprehensive improvement pass across four interconnected discovery features: site search, internal linking, content recommendations, and trek comparison. Each subsystem is functional but has significant quality gaps that reduce user engagement and SEO value.

@@ -387,6 +387,9 @@ cd apps/web-next && npm run build
 | Revenue | `/api/v1/admin/revenue/*` | Admin auth required |
 | Hubs | `/api/v1/admin/hubs/*` | Admin auth required |
 | Linking | `/api/v1/admin/links/*` | Admin auth required |
+| Search analytics | `POST /api/v1/search/log`, `GET /api/v1/search/suggestions`, `GET /api/v1/search/trending` | Public |
+| Page view tracking | `POST /api/v1/track/page-view` | Public (fire-and-forget) |
+| Saved comparisons | `GET/POST /api/v1/account/comparisons`, `DELETE /api/v1/account/comparisons/{id}` | User auth required |
 
 Full API docs available at http://localhost:8000/docs when the backend is running.
 
@@ -394,7 +397,7 @@ Full API docs available at http://localhost:8000/docs when the backend is runnin
 
 ## Database Overview
 
-**30 Alembic migrations applied.** Key table groups:
+**33 Alembic migrations applied.** Key table groups:
 
 | Domain | Tables |
 |--------|--------|
@@ -402,7 +405,7 @@ Full API docs available at http://localhost:8000/docs when the backend is runnin
 | Content pipeline | `topics`, `keyword_clusters`, `content_briefs`, `brief_versions`, `content_drafts`, `draft_claims` |
 | Pipeline tracking | `agent_runs`, `pipeline_runs`, `pipeline_stages` |
 | CMS | `cms_pages` (with `embedding vector(1536)`), `pages`, `page_links` |
-| User accounts | `user_bookmarks`, `user_downloads`, `trek_alerts`, `user_profiles` |
+| User accounts | `user_bookmarks`, `user_downloads`, `trek_alerts`, `user_profiles`, `account_comparisons` |
 | Products | `digital_products`, `user_orders` |
 | Monetisation | `affiliate_products`, `page_intent_sessions`, `lead_submissions`, `affiliate_clicks` |
 | Revenue | `revenue_attributions`, `revenue_config`, `executive_summaries` |
@@ -411,6 +414,7 @@ Full API docs available at http://localhost:8000/docs when the backend is runnin
 | Trip planning | `trip_plans` |
 | Subscriptions | `subscriptions` |
 | Content QA | `cannibalization_issues`, `compliance_issues`, `refresh_logs` |
+| Analytics | `search_events`, `page_views` |
 
 ---
 
@@ -434,7 +438,7 @@ Full API docs available at http://localhost:8000/docs when the backend is runnin
 | Backend API (FastAPI) — `api` | DO App Platform | BLR1 Bangalore | ✅ HEALTHY (3% CPU, 20% RAM) |
 | Celery Worker — `celery-worker` | DO App Platform | BLR1 Bangalore | ✅ HEALTHY (3% CPU, 35% RAM) |
 | Celery Beat — `celery-beat` | DO App Platform | BLR1 Bangalore | ✅ HEALTHY (2% CPU, 14% RAM) |
-| PostgreSQL 16 + pgvector | DO Managed DB | BLR1 Bangalore | ✅ Ready — 30 migrations applied |
+| PostgreSQL 16 + pgvector | DO Managed DB | BLR1 Bangalore | ✅ Ready — 33 migrations applied |
 | Valkey 8 (Redis) | DO Managed DB | BLR1 Bangalore | ✅ Ready — SSL + auth configured |
 | `www.trekyatra.co.in` | GoDaddy → DO | BLR1 | ✅ LIVE — homepage rendering in production |
 | `api.trekyatra.co.in` | GoDaddy → DO | BLR1 | ✅ LIVE — health check confirmed in production |

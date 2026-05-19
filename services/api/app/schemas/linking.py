@@ -30,6 +30,7 @@ class RelatedPageResponse(BaseModel):
 class AnchorSuggestion(BaseModel):
     text: str
     reason: str
+    quality: float = 0.5
 
 
 class SyncResponse(BaseModel):

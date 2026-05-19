@@ -316,7 +316,7 @@
 - Migration path: static treks in `data/treks.ts` → CMS pages
 - Step doc: `docs/steps/STEP-43-slug-deduplication.md`
 
-### Step 44 — Discovery engine improvements [DONE (partial) — commit 6e3dd9d]
+### Step 44 — Discovery engine improvements [DONE — commits 6e3dd9d + 2026-05-19]
 
 ### Step 45 — Image Gathering Agent [DONE — commit 6e3dd9d]
 - Automated agent to find, validate, and assign hero images to pipeline-published trek pages

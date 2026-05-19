@@ -20,12 +20,12 @@ from app.modules.email_sequences.models import (
     SubscriberTag,
 )
 from app.modules.revenue.models import RevenueAttribution, RevenueConfig, ExecutiveSummary
-from app.modules.account.models import UserBookmark, UserDownload, TrekAlert, UserProfile
+from app.modules.account.models import UserBookmark, UserDownload, TrekAlert, UserProfile, AccountComparison
 from app.modules.products.models import DigitalProduct, UserOrder
 from app.modules.monetization.models import AffiliateProduct, PageIntentSession
 from app.modules.plan.models import TripPlan
 from app.modules.subscriptions.models import Subscription
-from app.modules.search.models import SearchEvent
+from app.modules.search.models import PageView, SearchEvent
 
 __all__ = [
     "Operator",
@@ -77,4 +77,6 @@ __all__ = [
     "TripPlan",
     "Subscription",
     "SearchEvent",
+    "PageView",
+    "AccountComparison",
 ]

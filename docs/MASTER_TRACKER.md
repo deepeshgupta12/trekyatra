@@ -79,7 +79,7 @@ All V0 foundations are shipped. The stack is live locally with:
 | 41 | B2B content / API extensions | pending |
 | 42 | CMS-driven static pages | done |
 | 43 | Slug deduplication — CMS as canonical source | done |
-| 44 | Discovery engine improvements (Search, Interlinking, Recommendations, Compare) | pending |
+| 44 | Discovery engine improvements (Search, Interlinking, Recommendations, Compare) | done |
 
 ## V5 — Mobile App Roadmap
 | Item | Status |

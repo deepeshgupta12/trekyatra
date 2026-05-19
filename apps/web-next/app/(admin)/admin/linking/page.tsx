@@ -154,12 +154,19 @@ export default function InternalLinkingPage() {
                         <td colSpan={3} className="px-6 py-4">
                           <p className="text-white/50 text-xs font-medium mb-2">Anchor suggestions for &quot;{page.title}&quot;</p>
                           <div className="flex flex-wrap gap-2">
-                            {anchors.map((a) => (
-                              <div key={a.text} className="bg-white/5 border border-white/10 rounded-lg px-3 py-2">
-                                <p className="text-white/80 text-xs font-medium">{a.text}</p>
-                                <p className="text-white/30 text-[10px] mt-0.5">{a.reason}</p>
-                              </div>
-                            ))}
+                            {anchors.map((a) => {
+                              const q = a.quality ?? 0.5;
+                              const qColor = q >= 0.8 ? "text-pine" : q >= 0.6 ? "text-accent" : "text-amber-400";
+                              return (
+                                <div key={a.text} className="bg-white/5 border border-white/10 rounded-lg px-3 py-2">
+                                  <div className="flex items-center gap-2">
+                                    <p className="text-white/80 text-xs font-medium">{a.text}</p>
+                                    <span className={`text-[10px] font-semibold ${qColor}`}>{Math.round(q * 100)}%</span>
+                                  </div>
+                                  <p className="text-white/30 text-[10px] mt-0.5">{a.reason}</p>
+                                </div>
+                              );
+                            })}
                           </div>
                         </td>
                       </tr>

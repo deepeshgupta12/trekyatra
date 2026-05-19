@@ -17,6 +17,8 @@ from app.schemas.account import (
     BookmarkCheckResponse,
     BookmarkCreate,
     BookmarkResponse,
+    ComparisonCreate,
+    ComparisonResponse,
     DownloadResponse,
     TrekAlertCreate,
     TrekAlertResponse,
@@ -163,3 +165,35 @@ def upsert_profile(
     db: Session = Depends(get_db),
 ):
     return account_service.upsert_profile(db, current_user.id, body.model_dump(exclude_none=True))
+
+
+# --- Saved Comparisons ---
+
+@router.get("/comparisons", response_model=list[ComparisonResponse])
+def list_comparisons(
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    return account_service.list_comparisons(db, current_user.id)
+
+
+@router.post("/comparisons", response_model=ComparisonResponse, status_code=201)
+def save_comparison(
+    body: ComparisonCreate,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    if len(body.slugs) < 2:
+        raise HTTPException(status_code=422, detail="At least 2 slugs required for a comparison.")
+    return account_service.save_comparison(db, current_user.id, body.name, body.slugs)
+
+
+@router.delete("/comparisons/{comparison_id}", status_code=204)
+def delete_comparison(
+    comparison_id: UUID,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    deleted = account_service.delete_comparison(db, current_user.id, comparison_id)
+    if not deleted:
+        raise HTTPException(status_code=404, detail="Comparison not found.")

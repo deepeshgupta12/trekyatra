@@ -11,7 +11,7 @@ from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
 from app.modules.cms.models import CMSPage
-from app.modules.search.models import SearchEvent
+from app.modules.search.models import PageView, SearchEvent
 
 
 def log_search_event(
@@ -74,6 +74,27 @@ def get_cms_suggestions(db: Session, q: str, limit: int = 8) -> list[dict[str, A
         }
         for r in rows
     ]
+
+
+def record_page_view(
+    db: Session,
+    *,
+    page_slug: str,
+    page_type: str | None = None,
+    session_id: str | None = None,
+    user_id: uuid.UUID | None = None,
+) -> PageView:
+    """Record an anonymous or authenticated page view for popularity signals."""
+    view = PageView(
+        id=uuid.uuid4(),
+        page_slug=page_slug.strip()[:255],
+        page_type=page_type,
+        session_id=session_id,
+        user_id=user_id,
+    )
+    db.add(view)
+    db.commit()
+    return view
 
 
 def get_trending_queries(db: Session, limit: int = 10) -> list[str]:

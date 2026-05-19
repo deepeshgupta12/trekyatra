@@ -147,6 +147,10 @@ Last updated: 2026-05-16
 | `/api/v1/search/log` | **Public POST** — fire-and-forget search event logging (query, clicks); Step 44 |
 | `/api/v1/search/suggestions?q=` | **Public GET** — CMS-powered autocomplete across all page types; Step 44 |
 | `/api/v1/search/trending` | **Public GET** — most-searched queries last 7 days; Step 44 |
+| `/api/v1/track/page-view` | **Public POST** — fire-and-forget page view recording for popularity signals; Step 44 |
+| `/api/v1/account/comparisons` | **Auth GET** — list saved trek comparisons; Step 44 |
+| `/api/v1/account/comparisons` | **Auth POST** — save a new comparison (name + slugs[]); Step 44 |
+| `/api/v1/account/comparisons/{id}` | **Auth DELETE** — delete a saved comparison; Step 44 |
 | `/api/v1/auth/*` | User auth (email + Google) |
 | `/api/v1/admin/auth/*` | Admin CMS auth |
 | `/api/v1/cms/pages/*` | CMS CRUD |

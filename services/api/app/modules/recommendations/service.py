@@ -107,25 +107,48 @@ def get_recommendations_for_user(db: Session, user_id: uuid.UUID, limit: int = 6
 
 
 def get_anonymous_recommendations(db: Session, limit: int = 6) -> list[dict]:
-    """Freshness-sorted published pages with cluster diversity."""
+    """Popularity + freshness blended recommendations with cluster diversity.
+
+    Ranks by: (view_count_30d * 0.6) + (recency_score * 0.4).
+    Falls back to pure freshness when page_views table has no data.
+    """
     rows = db.execute(
         text(
-            "SELECT DISTINCT ON (cluster_id) id, slug, title, page_type, hero_image_url, "
-            "seo_description, published_at, cluster_id "
-            "FROM cms_pages WHERE status = 'published' AND page_type != 'editorial' "
-            "ORDER BY cluster_id, published_at DESC NULLS LAST "
+            "SELECT DISTINCT ON (c.cluster_id) "
+            "c.id, c.slug, c.title, c.page_type, c.hero_image_url, "
+            "c.seo_description, c.published_at, c.cluster_id, "
+            "COALESCE(v.view_count, 0) AS view_count "
+            "FROM cms_pages c "
+            "LEFT JOIN ("
+            "  SELECT page_slug, COUNT(*) AS view_count FROM page_views "
+            "  WHERE viewed_at > NOW() - INTERVAL '30 days' "
+            "  GROUP BY page_slug"
+            ") v ON v.page_slug = c.slug "
+            "WHERE c.status = 'published' AND c.page_type != 'editorial' "
+            "ORDER BY c.cluster_id, "
+            "(COALESCE(v.view_count, 0) * 0.6 + "
+            " EXTRACT(EPOCH FROM COALESCE(c.published_at, NOW() - INTERVAL '365 days')) / 1e9 * 0.4"
+            ") DESC NULLS LAST "
             "LIMIT :lim"
         ),
         {"lim": limit},
     ).fetchall()
     if len(rows) < limit:
-        # Backfill with any published non-editorial pages
         existing_ids = {str(r[0]) for r in rows}
         extra = db.execute(
             text(
-                "SELECT id, slug, title, page_type, hero_image_url, seo_description, published_at "
-                "FROM cms_pages WHERE status = 'published' AND page_type != 'editorial' "
-                "ORDER BY published_at DESC NULLS LAST LIMIT :lim"
+                "SELECT c.id, c.slug, c.title, c.page_type, c.hero_image_url, "
+                "c.seo_description, c.published_at, "
+                "COALESCE(v.view_count, 0) AS view_count "
+                "FROM cms_pages c "
+                "LEFT JOIN ("
+                "  SELECT page_slug, COUNT(*) AS view_count FROM page_views "
+                "  WHERE viewed_at > NOW() - INTERVAL '30 days' GROUP BY page_slug"
+                ") v ON v.page_slug = c.slug "
+                "WHERE c.status = 'published' AND c.page_type != 'editorial' "
+                "ORDER BY (COALESCE(v.view_count, 0) * 0.6 + "
+                "  EXTRACT(EPOCH FROM COALESCE(c.published_at, NOW() - INTERVAL '365 days')) / 1e9 * 0.4"
+                ") DESC NULLS LAST LIMIT :lim"
             ),
             {"lim": limit * 2},
         ).fetchall()

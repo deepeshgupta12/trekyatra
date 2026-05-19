@@ -845,3 +845,23 @@ Before editing any backend file:
 - `apps/web-next/components/brand/Logo.tsx` — UPDATED: compact prop added (hides tagline); blast radius: LOW (additive prop, default false preserves existing behaviour)
 - `apps/web-next/components/layout/Header.tsx` — UPDATED: Logo compact, search functional (onClick+⌘K→/search), mobile search functional, nav px-2.5, useEffect import; blast radius: MEDIUM (header on every public page — visual + functional fix only)
 - `apps/web-next/app/(public)/page.tsx` — UPDATED: compare section fully responsive (heading text-2xl→sm:text-3xl→md:text-4xl, card p-3 md:p-4, text-sm md:text-base, no overflow); blast radius: LOW (leaf homepage)
+
+### Step 44 remaining — Discovery Engine (2026-05-19) blast radius
+- `services/api/alembic/versions/20260519_0032_page_views.py` — NEW: `page_views` table; blast radius: LOW (new table)
+- `services/api/alembic/versions/20260519_0033_account_comparisons.py` — NEW: `account_comparisons` table (FK → users CASCADE); blast radius: LOW (new table)
+- `services/api/app/modules/search/models.py` — UPDATED: `PageView` ORM added; blast radius: LOW
+- `services/api/app/modules/account/models.py` — UPDATED: `AccountComparison` ORM added; blast radius: LOW
+- `services/api/app/db/base.py` — UPDATED: PageView + AccountComparison registered; blast radius: LOW
+- `services/api/app/modules/recommendations/service.py` — UPDATED: `get_anonymous_recommendations()` popularity + recency blended SQL; blast radius: MEDIUM (called by recommendations API)
+- `services/api/app/modules/linking/service.py` — UPDATED: `get_anchor_suggestions()` returns quality score (0.5–0.9), sorted desc; blast radius: LOW (admin endpoint)
+- `services/api/app/schemas/linking.py` — UPDATED: AnchorSuggestion.quality field (default 0.5); blast radius: LOW
+- `services/api/app/api/routes/analytics.py` — UPDATED: POST /track/page-view added; blast radius: LOW
+- `services/api/app/api/routes/account.py` — UPDATED: GET/POST/DELETE /account/comparisons added; blast radius: LOW
+- `services/api/tests/test_discovery_improvements.py` — NEW: 11 tests; blast radius: LOW
+- `apps/web-next/lib/api.ts` — UPDATED: trackPageView, fetchComparisons, saveComparison, deleteComparison, AnchorSuggestion.quality; blast radius: LOW (additive)
+- `apps/web-next/app/(public)/search/page.tsx` — REWRITTEN: CMS suggestions API, click tracking, type badges, recent searches, did-you-mean; blast radius: LOW (leaf page)
+- `apps/web-next/app/(public)/account/compare/page.tsx` — REWRITTEN: wired to real /account/comparisons API; blast radius: LOW
+- `apps/web-next/app/(public)/account/page.tsx` — UPDATED: "Recently viewed" section from localStorage; blast radius: LOW
+- `apps/web-next/app/(public)/trek/[slug]/page.tsx` — UPDATED: server-side cluster pages fetch + "In this cluster" sidebar; blast radius: MEDIUM (every trek guide page, graceful fallback)
+- `apps/web-next/components/trek/TrekViewTracker.tsx` — UPDATED: title prop + writes ty_recently_viewed localStorage; blast radius: LOW
+- `apps/web-next/app/(admin)/admin/linking/page.tsx` — UPDATED: quality score badge per anchor suggestion; blast radius: LOW

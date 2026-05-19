@@ -117,7 +117,10 @@ def get_orphan_pages(db: Session) -> list[Page]:
 
 
 def get_anchor_suggestions(db: Session, *, slug: str) -> list[dict]:
-    """Return candidate anchor text variants for the given page slug."""
+    """Return candidate anchor text variants with quality scores for the given page slug.
+
+    Quality score (0.0–1.0): higher = better anchor text choice for SEO.
+    """
     page = db.scalar(select(Page).where(Page.slug == slug))
     if page is None:
         return []
@@ -125,15 +128,20 @@ def get_anchor_suggestions(db: Session, *, slug: str) -> list[dict]:
     suggestions: list[dict] = []
     title = page.title
 
-    # Full title
-    suggestions.append({"text": title, "reason": "page title"})
+    # Full title — highest quality: exact, natural language
+    suggestions.append({"text": title, "reason": "page title", "quality": 0.9})
 
-    # First three words of the title
+    # Slug-based variant — good alternative, maps directly to URL
+    slug_readable = slug.replace("-", " ")
+    if slug_readable.lower() != title.lower():
+        suggestions.append({"text": slug_readable, "reason": "slug readable form", "quality": 0.7})
+
+    # First three words of the title — concise, keyword-rich
     words = title.split()
     if len(words) >= 3:
-        suggestions.append({"text": " ".join(words[:3]), "reason": "title prefix"})
+        suggestions.append({"text": " ".join(words[:3]), "reason": "title prefix", "quality": 0.6})
 
-    # Page-type suffix variant
+    # Page-type suffix variant — descriptive but verbose
     type_labels = {
         "trek_guide": "trek guide",
         "packing_list": "packing list",
@@ -144,11 +152,8 @@ def get_anchor_suggestions(db: Session, *, slug: str) -> list[dict]:
     }
     label = type_labels.get(page.page_type)
     if label and label.lower() not in title.lower():
-        suggestions.append({"text": f"{title} — {label}", "reason": "page type suffix"})
+        suggestions.append({"text": f"{title} — {label}", "reason": "page type suffix", "quality": 0.5})
 
-    # Slug-based variant (human-readable)
-    slug_readable = slug.replace("-", " ")
-    if slug_readable.lower() != title.lower():
-        suggestions.append({"text": slug_readable, "reason": "slug readable form"})
-
+    # Sort by quality descending
+    suggestions.sort(key=lambda s: s["quality"], reverse=True)
     return suggestions[:4]

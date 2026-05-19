@@ -79,3 +79,19 @@ class UserProfileResponse(BaseModel):
     updated_at: datetime
 
     model_config = {"from_attributes": True}
+
+
+class ComparisonCreate(BaseModel):
+    name: str
+    slugs: list[str]
+
+
+class ComparisonResponse(BaseModel):
+    id: UUID
+    user_id: UUID
+    name: str
+    slugs: list[str]
+    created_at: datetime
+    updated_at: datetime
+
+    model_config = {"from_attributes": True}
