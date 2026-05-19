@@ -112,19 +112,27 @@ def delete_page(db: Session, *, page: CMSPage) -> None:
 
 
 # Strips LLM inline fact-check markers before/after HTML conversion.
-# Markdown forms: *(flagged for verification)*, _(flagged)_, (flagged for verification — ...)
+# The LLM produces many variants: "flagged for verification", "flagged for review",
+# "flagged – please verify", "flagged for review by editor", etc.
+_FLAG_CORE = r"flagged(?:\s+for\s+(?:review|verification|fact.?check|editor|editorial|update))?(?:\s*[–—-][^)\]<\n]*)?"
+# Parenthesis forms: *(flagged for review)*, (flagged — please verify)
 _FLAG_MD = re.compile(
-    r"\s*[\*_]?\((?:flagged for verification|flagged)[^)]*\)[\*_]?",
+    r"\s*[\*_]?\(\s*" + _FLAG_CORE + r"\s*\)[\*_]?",
     re.I,
 )
-# Bracket form: [flagged for verification — rates vary by season]
+# Bracket form: [flagged for review — rates vary by season]
 _FLAG_MD_BRACKET = re.compile(
-    r"\s*\[(?:flagged for verification|flagged)[^\]]*\]",
+    r"\s*\[\s*" + _FLAG_CORE + r"\s*[^\]]*\]",
     re.I,
 )
-# HTML form: <em>(flagged for verification...)</em>
+# Bold/italic form: **flagged for review** or *flagged*
+_FLAG_MD_BOLD = re.compile(
+    r"\s*\*{1,2}\s*" + _FLAG_CORE + r"\s*\*{1,2}",
+    re.I,
+)
+# HTML form: <em>(flagged...)</em> or <strong>flagged</strong>
 _FLAG_HTML = re.compile(
-    r"\s*<em>\s*\((?:flagged for verification|flagged)[^<]*\)\s*<\/em>",
+    r"\s*<(?:em|strong)>\s*(?:\()?" + _FLAG_CORE.replace(r"[^)\]<\n]*", r"[^<]*") + r"\s*(?:\))?\s*<\/(?:em|strong)>",
     re.I,
 )
 
@@ -133,6 +141,7 @@ def _strip_flagged_markers(text: str) -> str:
     """Remove LLM fact-check markers from raw markdown before HTML conversion."""
     text = _FLAG_MD.sub("", text)
     text = _FLAG_MD_BRACKET.sub("", text)
+    text = _FLAG_MD_BOLD.sub("", text)
     return text
 
 
@@ -227,6 +236,27 @@ _FACT_KV: list[tuple[str, re.Pattern]] = [
     ("permits",    re.compile(r"(?:\*\*)?permit\b[^*:\n]{0,20}(?:\*{0,2}:\*{0,2}\s*)([^\n|*]{3,80}?)(?:\n|\||$)", re.I)),
     ("base",       re.compile(r"(?:\*\*)?(?:(?:nearest\s+)?base\s+(?:villages?|camp|town)|starting\s+(?:point|village)|trailhead)(?:\*{0,2}:\*{0,2}\s*)([^\n|*(]{3,50}?)(?:\s*\*|\n|\||$)", re.I)),
 ]
+
+
+def _state_from_base(base: str) -> str:
+    """Extract state name from base-camp field e.g. 'Sankri, Uttarakhand' → 'Uttarakhand'."""
+    if not base:
+        return ""
+    # Format: "Village, State" or just "State"
+    parts = [p.strip() for p in base.split(",")]
+    return parts[-1] if len(parts) >= 2 else ""
+
+
+def _suitability_from_difficulty(difficulty: str) -> str:
+    """Derive suitability label from difficulty string."""
+    d = difficulty.lower()
+    if any(w in d for w in ("easy", "beginner", "moderate-easy")):
+        return "Beginners"
+    if any(w in d for w in ("moderate",)):
+        return "Beginners, Intermediate"
+    if any(w in d for w in ("difficult", "hard", "challenging", "strenuous")):
+        return "Experienced trekkers"
+    return ""
 
 
 def _extract_trek_facts_from_markdown(text: str) -> dict[str, str]:
@@ -403,6 +433,18 @@ def upsert_page_from_draft(db: Session, *, draft: ContentDraft) -> CMSPage:
         if faqs:
             content_json["faqs"] = faqs
 
+    # Build trek metadata from extracted facts
+    trek_meta: dict[str, str | None] = {}
+    if trek_facts:
+        trek_meta = {
+            "trek_name": draft.title.split("—")[0].split(":")[0].strip() or None,
+            "trek_state": _state_from_base(trek_facts.get("base", "")) or None,
+            "trek_difficulty": trek_facts.get("difficulty") or None,
+            "trek_duration": trek_facts.get("duration") or None,
+            "trek_season": trek_facts.get("season") or None,
+            "trek_suitability": _suitability_from_difficulty(trek_facts.get("difficulty", "")) or None,
+        }
+
     if existing:
         existing.title = draft.title
         existing.content_html = content_html
@@ -412,6 +454,9 @@ def upsert_page_from_draft(db: Session, *, draft: ContentDraft) -> CMSPage:
         existing.status = "published"
         existing.published_at = datetime.now(timezone.utc)
         existing.brief_id = draft.brief_id
+        if trek_meta:
+            for col, val in trek_meta.items():
+                setattr(existing, col, val)
         db.flush()
         cache_invalidate([existing.slug])
         return existing
@@ -427,6 +472,7 @@ def upsert_page_from_draft(db: Session, *, draft: ContentDraft) -> CMSPage:
         status="published",
         published_at=datetime.now(timezone.utc),
         brief_id=draft.brief_id,
+        **trek_meta,
     )
     db.add(page)
     db.flush()

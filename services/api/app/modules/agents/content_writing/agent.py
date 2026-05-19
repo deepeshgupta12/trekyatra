@@ -61,6 +61,33 @@ def _slugify(text: str) -> str:
     return re.sub(r"[^a-z0-9]+", "-", text.lower()).strip("-")[:72]
 
 
+# Trailing suffixes that inflate trek guide slugs and cause URL duplication.
+# Applied before _slugify so "Kedarkantha Trek" → "kedarkantha" (not "kedarkantha-trek").
+_TREK_SLUG_NOISE = re.compile(
+    r"\s+(?:"
+    r"complete\s+guide|trekking\s+guide|trek\s+guide|trek\s+tips"
+    r"|trekking\s+route|trail\s+guide|expedition\s+guide"
+    r"|hike\s+guide|hiking\s+guide|travel\s+guide|india\s+trek"
+    r"|trek\s+20\d\d|trekking\s+20\d\d"
+    r"|trek|trail|expedition|trekking|hike|hiking|guide|tips"
+    r")\s*$",
+    re.I,
+)
+
+
+def _slugify_trek(keyword: str) -> str:
+    """Like _slugify but strips trek-genre noise suffixes first.
+
+    Ensures canonical URL alignment:
+        "Kedarkantha Trek"          → "kedarkantha"
+        "Hampta Pass Trek"          → "hampta-pass"
+        "Valley of Flowers trek"    → "valley-of-flowers"
+        "Kedarkantha Complete Guide"→ "kedarkantha"
+    """
+    cleaned = _TREK_SLUG_NOISE.sub("", keyword.strip())
+    return _slugify(cleaned or keyword)
+
+
 class ContentWritingAgent(BaseAgent):
     agent_type = "content_writing"
 
@@ -186,12 +213,14 @@ class ContentWritingAgent(BaseAgent):
         # Derive canonical slug from the brief's target_keyword (primary keyword),
         # NOT from the LLM's verbose output slug (which produces duplicates like
         # "kedarkantha-trek-complete-guide" vs the canonical "kedarkantha").
+        # _slugify_trek strips common trekking suffixes so "Kedarkantha Trek"
+        # becomes "kedarkantha" — matching the static stub URL and SEO intent.
         target_kw = meta.get("target_keyword", "")
         if target_kw:
-            canonical_slug = _slugify(target_kw)
+            canonical_slug = _slugify_trek(target_kw)
         else:
-            # Fall back to LLM slug or title, but without UUID (per _slugify fix)
-            canonical_slug = _slugify(draft_data.get("slug") or draft_data.get("title", "draft"))
+            # Fall back to LLM slug or title, stripping noise suffixes
+            canonical_slug = _slugify_trek(draft_data.get("slug") or draft_data.get("title", "draft"))
 
         payload = ContentDraftCreate(
             brief_id=brief_id_str,

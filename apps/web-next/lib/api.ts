@@ -68,6 +68,13 @@ export interface CMSPage {
   // Premium content gating (Step 40)
   is_premium: boolean;
   is_gated: boolean;
+  // Trek guide metadata (Step 46 — only set for page_type = "trek_guide")
+  trek_name: string | null;
+  trek_state: string | null;
+  trek_difficulty: string | null;
+  trek_duration: string | null;
+  trek_season: string | null;
+  trek_suitability: string | null;
 }
 
 // ---------------------------------------------------------------------------

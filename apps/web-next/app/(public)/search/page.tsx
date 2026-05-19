@@ -118,6 +118,11 @@ export default function SearchResults() {
     return () => document.removeEventListener("mousedown", handle);
   }, []);
 
+  // Re-read recent searches whenever query becomes empty (e.g. X button clicked)
+  useEffect(() => {
+    if (!q.trim()) setRecent(readRecent());
+  }, [q]);
+
   // Debounced CMS suggestions fetch
   useEffect(() => {
     if (debounceRef.current) clearTimeout(debounceRef.current);
@@ -154,14 +159,20 @@ export default function SearchResults() {
     return guideFuse.search(q).map(r => r.item);
   }, [q]);
 
-  // "Did you mean?" — trigger when best trek score > 0.35 (low confidence) but not empty
+  // "Did you mean?" — show when query is a fuzzy/typo variation of a known trek name.
+  // Score 0 = exact match, 1 = no match. We suggest when 0.05 ≤ score ≤ 0.5:
+  //   - Below 0.05 = essentially exact → no suggestion needed
+  //   - Above 0.5 = too far off to give a useful suggestion
   const didYouMeanTrek = useMemo(() => {
-    if (matchingTreks.length > 0) return null; // real results, no suggestion needed
     if (!q.trim()) return null;
     const topResult = trekFuse.search(q, { limit: 1 })[0];
-    if (topResult && (topResult.score ?? 1) < 0.6) return topResult.item;
-    return null;
-  }, [q, matchingTreks]);
+    if (!topResult) return null;
+    const score = topResult.score ?? 1;
+    if (score < 0.05 || score > 0.5) return null;
+    // Don't suggest the same name the user already typed
+    if (topResult.item.name.toLowerCase() === q.trim().toLowerCase()) return null;
+    return topResult.item;
+  }, [q]);
 
   const handleQueryCommit = useCallback((value: string) => {
     if (value.trim().length >= 2) saveRecent(value.trim());
@@ -338,10 +349,23 @@ export default function SearchResults() {
             </aside>
 
             <div className="space-y-10 min-w-0">
+              {/* "Did you mean?" — shown at top of results whenever query looks like a typo */}
+              {didYouMeanTrek && (
+                <p className="text-sm text-muted-foreground bg-muted/50 rounded-xl px-4 py-3">
+                  Did you mean{" "}
+                  <button
+                    className="text-accent font-semibold underline underline-offset-2"
+                    onClick={() => setQ(didYouMeanTrek.name)}
+                  >
+                    {didYouMeanTrek.name}
+                  </button>
+                  ?
+                </p>
+              )}
+
               {showTreks && matchingTreks.length > 0 && (
                 <div>
-                  <h2 className="font-display text-2xl font-semibold mb-1">Treks</h2>
-                  <p className="text-sm text-muted-foreground mb-4">{matchingTreks.length} matching trek{matchingTreks.length !== 1 ? "s" : ""} — fuzzy matched</p>
+                  <h2 className="font-display text-2xl font-semibold mb-4">Treks</h2>
                   <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-5">
                     {matchingTreks.map(t => (
                       <div key={t.slug} onClick={() => handleResultClick(t.slug, "trek_guide")}>
@@ -406,16 +430,7 @@ export default function SearchResults() {
                 </div>
               )}
 
-              {/* "Did you mean?" when there are some results but user query seems off */}
-              {didYouMeanTrek && totalCount > 0 && (
-                <p className="text-sm text-muted-foreground">
-                  Also try:{" "}
-                  <button className="text-accent font-medium underline underline-offset-2" onClick={() => setQ(didYouMeanTrek.name)}>
-                    {didYouMeanTrek.name}
-                  </button>
-                </p>
-              )}
-            </div>
+              </div>
           </div>
         </section>
       )}

@@ -62,6 +62,13 @@ class CMSPageResponse(BaseModel):
     source_page_id: uuid.UUID | None = None
     is_premium: bool = False
     is_gated: bool = False  # set True at route level for premium pages when user is free
+    # Trek guide metadata (only populated for page_type = "trek_guide")
+    trek_name: str | None = None
+    trek_state: str | None = None
+    trek_difficulty: str | None = None
+    trek_duration: str | None = None
+    trek_season: str | None = None
+    trek_suitability: str | None = None
 
     model_config = {"from_attributes": True}
 

@@ -846,6 +846,18 @@ Before editing any backend file:
 - `apps/web-next/components/layout/Header.tsx` — UPDATED: Logo compact, search functional (onClick+⌘K→/search), mobile search functional, nav px-2.5, useEffect import; blast radius: MEDIUM (header on every public page — visual + functional fix only)
 - `apps/web-next/app/(public)/page.tsx` — UPDATED: compare section fully responsive (heading text-2xl→sm:text-3xl→md:text-4xl, card p-3 md:p-4, text-sm md:text-base, no overflow); blast radius: LOW (leaf homepage)
 
+### Step 46 — Trek CMS Unification + Pipeline Quality Fixes (2026-05-19) blast radius
+- `services/api/alembic/versions/20260519_0034_cms_trek_metadata.py` — NEW: trek_state/name/difficulty/duration/season/suitability on cms_pages; blast radius: LOW (additive columns, nullable)
+- `services/api/app/modules/cms/models.py` — UPDATED: 6 trek metadata mapped columns; blast radius: MEDIUM (CMSPage used everywhere, but additive nullable fields)
+- `services/api/app/modules/cms/service.py` — UPDATED: _strip_flagged_markers regex extended; _state_from_base, _suitability_from_difficulty helpers; upsert_page_from_draft populates trek columns; blast radius: HIGH for _strip_flagged_markers (affects all CMS write paths — but change is additive)
+- `services/api/app/schemas/cms.py` — UPDATED: CMSPageResponse has 6 trek metadata fields; blast radius: LOW (additive)
+- `services/api/app/modules/agents/content_writing/agent.py` — UPDATED: _slugify_trek() strips noise suffixes; _store_results uses _slugify_trek; blast radius: LOW (content writing only)
+- `services/api/app/modules/pipeline/service.py` — UPDATED: image agent moved to post-content-writing; _attempt_image_search_for_draft replaces _attempt_image_search; blast radius: MEDIUM (pipeline orchestration)
+- `services/api/tests/test_trek_cms_unification.py` — NEW: 22 tests for slug, flagged regex, state extraction, trek metadata
+- `apps/web-next/lib/api.ts` — UPDATED: CMSPage interface + 6 trek fields; blast radius: LOW (additive)
+- `apps/web-next/app/(public)/search/page.tsx` — UPDATED: TC-F02 (recent searches refresh), TC-F03 (did-you-mean new threshold), removed "fuzzy matched" text; blast radius: LOW (leaf page)
+- `apps/web-next/app/(public)/trek/[slug]/page.tsx` — UPDATED: breadcrumb uses trek_state/trek_name from CMS; schema also updated; blast radius: MEDIUM (every trek guide page)
+
 ### Step 44 remaining — Discovery Engine (2026-05-19) blast radius
 - `services/api/alembic/versions/20260519_0032_page_views.py` — NEW: `page_views` table; blast radius: LOW (new table)
 - `services/api/alembic/versions/20260519_0033_account_comparisons.py` — NEW: `account_comparisons` table (FK → users CASCADE); blast radius: LOW (new table)

@@ -318,6 +318,19 @@
 
 ### Step 44 — Discovery engine improvements [DONE — commits 6e3dd9d + 2026-05-19]
 
+### Step 46 — Trek CMS Unification + Pipeline Quality Fixes [DONE — 2026-05-19]
+- Migration 0034: trek_state, trek_name, trek_difficulty, trek_duration, trek_season, trek_suitability on cms_pages
+- _slugify_trek(): strips "Trek", "Complete Guide" etc. so "Kedarkantha Trek" → slug "kedarkantha"
+- _strip_flagged_markers(): extended to match "flagged for review" and all LLM variants
+- _state_from_base() + _suitability_from_difficulty() helpers for trek metadata extraction
+- upsert_page_from_draft() populates all 6 trek columns at publish time
+- Image agent moved to post-content-writing (not post-publish)
+- Search page: TC-F02 (recent searches on X clear), TC-F03 (did-you-mean threshold fix), removed "fuzzy matched" text
+- Trek guide breadcrumb: Home → trek_state → trek_name (from CMS columns)
+- CMSPage interface + Pydantic schema include trek metadata fields
+- 22 new tests; 520 passed / 1 skipped total
+- Step doc: docs/steps/STEP-46-trek-cms-unification.md
+
 ### Step 45 — Image Gathering Agent [DONE — commit 6e3dd9d]
 - Automated agent to find, validate, and assign hero images to pipeline-published trek pages
 - Sources: Unsplash API (UNSPLASH_ACCESS_KEY) → Pixabay API (PIXABAY_API_KEY) → Wikimedia Commons (no key)

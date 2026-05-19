@@ -415,6 +415,7 @@ Full API docs available at http://localhost:8000/docs when the backend is runnin
 | Subscriptions | `subscriptions` |
 | Content QA | `cannibalization_issues`, `compliance_issues`, `refresh_logs` |
 | Analytics | `search_events`, `page_views` |
+| Trek metadata (on cms_pages) | `trek_state`, `trek_name`, `trek_difficulty`, `trek_duration`, `trek_season`, `trek_suitability` |
 
 ---
 
@@ -438,7 +439,7 @@ Full API docs available at http://localhost:8000/docs when the backend is runnin
 | Backend API (FastAPI) — `api` | DO App Platform | BLR1 Bangalore | ✅ HEALTHY (3% CPU, 20% RAM) |
 | Celery Worker — `celery-worker` | DO App Platform | BLR1 Bangalore | ✅ HEALTHY (3% CPU, 35% RAM) |
 | Celery Beat — `celery-beat` | DO App Platform | BLR1 Bangalore | ✅ HEALTHY (2% CPU, 14% RAM) |
-| PostgreSQL 16 + pgvector | DO Managed DB | BLR1 Bangalore | ✅ Ready — 33 migrations applied |
+| PostgreSQL 16 + pgvector | DO Managed DB | BLR1 Bangalore | ✅ Ready — 34 migrations applied |
 | Valkey 8 (Redis) | DO Managed DB | BLR1 Bangalore | ✅ Ready — SSL + auth configured |
 | `www.trekyatra.co.in` | GoDaddy → DO | BLR1 | ✅ LIVE — homepage rendering in production |
 | `api.trekyatra.co.in` | GoDaddy → DO | BLR1 | ✅ LIVE — health check confirmed in production |

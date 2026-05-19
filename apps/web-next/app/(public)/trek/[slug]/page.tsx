@@ -191,11 +191,14 @@ export default async function TrekDetailPage({ params }: { params: { slug: strin
     imageUrl: cmsPage?.hero_image_url ?? trek.image ?? undefined,
   });
   const faqSchema = faqItems.length ? buildFAQSchema(faqItems) : null;
+  const stateLabel = cmsPage?.trek_state || trek.state || "Treks";
+  const stateHref = (cmsPage?.trek_state || trek.state)
+    ? `/regions/${stateLabel.toLowerCase().replace(/\s+/g, "-")}`
+    : "/explore";
   const breadcrumbSchema = buildBreadcrumbSchema([
     { label: "Home", href: "/" },
-    { label: "Explore", href: "/explore" },
-    { label: trek.state || "Treks", href: "/explore" },
-    { label: cmsDisplayName ?? trek.name },
+    { label: stateLabel, href: stateHref },
+    { label: cmsPage?.trek_name || cmsDisplayName || trek.name },
   ]);
 
   return (
@@ -220,9 +223,14 @@ export default async function TrekDetailPage({ params }: { params: { slug: strin
           <div className="inline-flex items-center bg-black/45 backdrop-blur-sm rounded-full px-3 py-1.5">
             <Breadcrumb
               items={[
-                { label: "Explore", href: "/explore" },
-                { label: trek.state || (trek.region ? trek.region.split(",")[0] : "India"), href: trek.state ? `/regions/${trek.state.toLowerCase().replace(/\s+/g, "-")}` : "/explore" },
-                { label: cmsDisplayName ?? trek.name },
+                { label: "Home", href: "/" },
+                {
+                  label: cmsPage?.trek_state || trek.state || (trek.region ? trek.region.split(",")[0] : "Treks"),
+                  href: (cmsPage?.trek_state || trek.state)
+                    ? `/regions/${(cmsPage?.trek_state || trek.state)!.toLowerCase().replace(/\s+/g, "-")}`
+                    : "/explore",
+                },
+                { label: cmsPage?.trek_name || cmsDisplayName || trek.name },
               ]}
               className="!text-white/90 [&>span>a]:!text-white/80 [&>span>a:hover]:!text-white [&>span>span]:!text-white"
             />
