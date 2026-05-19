@@ -352,6 +352,11 @@
 - test_cms.py, test_pipeline.py: updated assertions to match new behaviour
 - Step doc: docs/steps/STEP-48-pipeline-cms-critical-fixes.md
 
+### Step 49 — Breadcrumb State Fix + Dropdowns [DONE — 2026-05-19]
+- cms/service.py: _STATE_ALIASES dict + _normalize_state() — maps "Uttrakhand" → "Uttarakhand", "HP" → "Himachal Pradesh" etc.; _state_from_base() now normalizes extracted state before storing
+- trek/[slug]/page.tsx: STATE_TO_REGION_SLUG mapping for breadcrumb — even if trek_state has a variant spelling, the /regions/[correct-slug] URL is generated; breadcrumb no longer falls through to Himachal Pradesh fallback
+- CMSPageForm.tsx: trek_state → state dropdown (Uttarakhand, Himachal Pradesh, J&K, Ladakh, etc.); trek_difficulty → difficulty dropdown (Easy–Expert Only); trek_season → season dropdown (Dec–Apr, Jun–Sep, etc.); trek_suitability → suitability dropdown; trek_name/duration remain free-text
+
 ### Step 45 — Image Gathering Agent [DONE — commit 6e3dd9d]
 - Automated agent to find, validate, and assign hero images to pipeline-published trek pages
 - Sources: Unsplash API (UNSPLASH_ACCESS_KEY) → Pixabay API (PIXABAY_API_KEY) → Wikimedia Commons (no key)

@@ -846,6 +846,11 @@ Before editing any backend file:
 - `apps/web-next/components/layout/Header.tsx` — UPDATED: Logo compact, search functional (onClick+⌘K→/search), mobile search functional, nav px-2.5, useEffect import; blast radius: MEDIUM (header on every public page — visual + functional fix only)
 - `apps/web-next/app/(public)/page.tsx` — UPDATED: compare section fully responsive (heading text-2xl→sm:text-3xl→md:text-4xl, card p-3 md:p-4, text-sm md:text-base, no overflow); blast radius: LOW (leaf homepage)
 
+### Step 49 — Breadcrumb State Fix + Dropdowns (2026-05-19) blast radius
+- `services/api/app/modules/cms/service.py` — ADDED: _STATE_ALIASES dict + _normalize_state(); _state_from_base() normalizes to canonical spelling; blast radius: LOW (additive, only affects auto-extracted trek_state values going forward)
+- `apps/web-next/app/(public)/trek/[slug]/page.tsx` — UPDATED: STATE_TO_REGION_SLUG map replaces raw toLowercase slug generation for breadcrumb; blast radius: MEDIUM (every trek guide page breadcrumb — but safer, never falls through to himachal)
+- `apps/web-next/components/admin/CMSPageForm.tsx` — UPDATED: trek_state/difficulty/season/suitability → controlled dropdowns with canonical option lists; blast radius: LOW (admin-only)
+
 ### Step 48 — Critical Pipeline + CMS Fixes (2026-05-19) blast radius
 - `services/api/app/modules/content/service.py` — ADDED: upsert_topic() upsert function; blast radius: LOW (additive)
 - `services/api/app/modules/agents/trend_discovery/agent.py` — UPDATED: create_topic → upsert_topic; blast radius: MEDIUM (fixes pipeline for all re-runs; behavior change: slug conflict now returns existing topic instead of skipping)

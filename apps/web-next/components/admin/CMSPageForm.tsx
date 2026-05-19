@@ -350,24 +350,64 @@ export default function CMSPageForm({ mode, existing }: Props) {
             <p className="text-white/40 text-xs mt-0.5">Used in breadcrumbs, SEO, filters, and discovery. Auto-populated by pipeline — edit here to override.</p>
           </div>
           <div className="grid sm:grid-cols-3 gap-4">
-            {([
-              ["trek_name",        "Trek name",   "Kedarkantha"],
-              ["trek_state",       "State",        "Uttarakhand"],
-              ["trek_difficulty",  "Difficulty",   "Easy / Moderate"],
-              ["trek_duration",    "Duration",     "6 days"],
-              ["trek_season",      "Season",       "Dec – Apr"],
-              ["trek_suitability", "Suitability",  "Beginners, Intermediate"],
-            ] as [keyof typeof trekMeta, string, string][]).map(([key, label, hint]) => (
-              <div key={key}>
-                <label className={labelCls}>{label}</label>
-                <input
-                  className={inputCls}
-                  value={trekMeta[key]}
-                  onChange={(e) => setTrekMeta(prev => ({ ...prev, [key]: e.target.value }))}
-                  placeholder={hint}
-                />
-              </div>
-            ))}
+            {/* Trek name — free text */}
+            <div>
+              <label className={labelCls}>Trek name</label>
+              <input className={inputCls} value={trekMeta.trek_name}
+                onChange={(e) => setTrekMeta(p => ({ ...p, trek_name: e.target.value }))}
+                placeholder="Kedarkantha" />
+            </div>
+            {/* State — dropdown to prevent LLM misspellings */}
+            <div>
+              <label className={labelCls}>State</label>
+              <select className={inputCls} value={trekMeta.trek_state}
+                onChange={(e) => setTrekMeta(p => ({ ...p, trek_state: e.target.value }))}>
+                <option value="">— select state —</option>
+                {["Uttarakhand","Himachal Pradesh","Jammu & Kashmir","Ladakh","Maharashtra","Sikkim","West Bengal","Karnataka","Rajasthan","Tamil Nadu","Arunachal Pradesh","Manipur"].map(s => (
+                  <option key={s} value={s}>{s}</option>
+                ))}
+              </select>
+            </div>
+            {/* Difficulty — dropdown */}
+            <div>
+              <label className={labelCls}>Difficulty</label>
+              <select className={inputCls} value={trekMeta.trek_difficulty}
+                onChange={(e) => setTrekMeta(p => ({ ...p, trek_difficulty: e.target.value }))}>
+                <option value="">— select —</option>
+                {["Easy","Easy–Moderate","Moderate","Moderate–Difficult","Difficult","Very Difficult","Expert Only"].map(d => (
+                  <option key={d} value={d}>{d}</option>
+                ))}
+              </select>
+            </div>
+            {/* Duration — free text */}
+            <div>
+              <label className={labelCls}>Duration</label>
+              <input className={inputCls} value={trekMeta.trek_duration}
+                onChange={(e) => setTrekMeta(p => ({ ...p, trek_duration: e.target.value }))}
+                placeholder="6 days" />
+            </div>
+            {/* Season — dropdown */}
+            <div>
+              <label className={labelCls}>Season</label>
+              <select className={inputCls} value={trekMeta.trek_season}
+                onChange={(e) => setTrekMeta(p => ({ ...p, trek_season: e.target.value }))}>
+                <option value="">— select —</option>
+                {["Dec – Apr","Jan – Mar","Mar – Jun","May – Jun","Jun – Sep","Jul – Sep","Sep – Nov","Oct – Dec","Oct – Jun","Year-round"].map(s => (
+                  <option key={s} value={s}>{s}</option>
+                ))}
+              </select>
+            </div>
+            {/* Suitability — dropdown */}
+            <div>
+              <label className={labelCls}>Suitability</label>
+              <select className={inputCls} value={trekMeta.trek_suitability}
+                onChange={(e) => setTrekMeta(p => ({ ...p, trek_suitability: e.target.value }))}>
+                <option value="">— select —</option>
+                {["Beginners","Beginners, Intermediate","Intermediate","Experienced trekkers","Advanced / Experienced","Expert Only"].map(s => (
+                  <option key={s} value={s}>{s}</option>
+                ))}
+              </select>
+            </div>
           </div>
         </div>
       )}

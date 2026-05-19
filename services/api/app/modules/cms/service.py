@@ -243,13 +243,64 @@ _FACT_KV: list[tuple[str, re.Pattern]] = [
 ]
 
 
+# Canonical state name mapping — catches LLM misspellings and old names.
+# Keys are lowercase; values are the canonical display name used in breadcrumbs and filters.
+_STATE_ALIASES: dict[str, str] = {
+    # Uttarakhand variants
+    "uttrakhand": "Uttarakhand",
+    "uttaranchal": "Uttarakhand",
+    "uttranchal": "Uttarakhand",
+    "uttrakand": "Uttarakhand",
+    "uttarakhand": "Uttarakhand",
+    # Himachal Pradesh variants
+    "himachal": "Himachal Pradesh",
+    "hp": "Himachal Pradesh",
+    "h.p.": "Himachal Pradesh",
+    "himachal pradesh": "Himachal Pradesh",
+    # J&K variants
+    "j&k": "Jammu & Kashmir",
+    "j & k": "Jammu & Kashmir",
+    "jammu and kashmir": "Jammu & Kashmir",
+    "jammu & kashmir": "Jammu & Kashmir",
+    "kashmir": "Jammu & Kashmir",
+    # Others
+    "ladakh": "Ladakh",
+    "maharashtra": "Maharashtra",
+    "sikkim": "Sikkim",
+    "west bengal": "West Bengal",
+    "karnataka": "Karnataka",
+}
+
+
+def _normalize_state(raw: str) -> str:
+    """Normalize an LLM-extracted state name to canonical spelling and casing."""
+    if not raw:
+        return ""
+    lc = raw.strip().lower()
+    # Exact lookup first
+    if lc in _STATE_ALIASES:
+        return _STATE_ALIASES[lc]
+    # Prefix fallback for subtle variants (e.g. "Uttarkashi District, Uttrakhand")
+    for alias, canonical in _STATE_ALIASES.items():
+        if lc.startswith(alias) or alias.startswith(lc):
+            return canonical
+    # Return with leading/trailing space trimmed if no alias match
+    return raw.strip()
+
+
 def _state_from_base(base: str) -> str:
-    """Extract state name from base-camp field e.g. 'Sankri, Uttarakhand' → 'Uttarakhand'."""
+    """Extract and normalize state name from base-camp field.
+
+    Input formats handled:
+      "Sankri, Uttarakhand"         → "Uttarakhand"
+      "Sankri, Uttrakhand"          → "Uttarakhand"   (LLM misspelling corrected)
+      "Sankri, Uttarkashi, Uttarakhand" → "Uttarakhand"
+    """
     if not base:
         return ""
-    # Format: "Village, State" or just "State"
     parts = [p.strip() for p in base.split(",")]
-    return parts[-1] if len(parts) >= 2 else ""
+    raw_state = parts[-1] if len(parts) >= 2 else ""
+    return _normalize_state(raw_state)
 
 
 def _suitability_from_difficulty(difficulty: str) -> str:
