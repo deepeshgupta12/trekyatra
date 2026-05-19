@@ -318,7 +318,7 @@
 
 ### Step 44 — Discovery engine improvements [DONE — commits 6e3dd9d + 2026-05-19]
 
-### Step 46 — Trek CMS Unification + Pipeline Quality Fixes [DONE — 2026-05-19]
+### Step 46 — Trek CMS Unification + Pipeline Quality Fixes [DONE — 2026-05-19, post-ship fixes 2026-05-19]
 - Migration 0034: trek_state, trek_name, trek_difficulty, trek_duration, trek_season, trek_suitability on cms_pages
 - _slugify_trek(): strips "Trek", "Complete Guide" etc. so "Kedarkantha Trek" → slug "kedarkantha"
 - _strip_flagged_markers(): extended to match "flagged for review" and all LLM variants
@@ -330,6 +330,8 @@
 - CMSPage interface + Pydantic schema include trek metadata fields
 - 22 new tests; 520 passed / 1 skipped total
 - Step doc: docs/steps/STEP-46-trek-cms-unification.md
+- Post-ship fix (commit 4fa074a): didYouMeanFuse name-only instance; force_page_type pipeline param; force_page_type admin UI dropdown
+- Post-ship fix (2026-05-19): _apply_trek_meta() savepoint — publish HTTP 500 when migration 0034 not on production DB
 
 ### Step 45 — Image Gathering Agent [DONE — commit 6e3dd9d]
 - Automated agent to find, validate, and assign hero images to pipeline-published trek pages

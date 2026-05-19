@@ -846,6 +846,18 @@ Before editing any backend file:
 - `apps/web-next/components/layout/Header.tsx` — UPDATED: Logo compact, search functional (onClick+⌘K→/search), mobile search functional, nav px-2.5, useEffect import; blast radius: MEDIUM (header on every public page — visual + functional fix only)
 - `apps/web-next/app/(public)/page.tsx` — UPDATED: compare section fully responsive (heading text-2xl→sm:text-3xl→md:text-4xl, card p-3 md:p-4, text-sm md:text-base, no overflow); blast radius: LOW (leaf homepage)
 
+### fix: search did-you-mean + pipeline force_page_type (commit 4fa074a, 2026-05-19) blast radius
+- `apps/web-next/app/(public)/search/page.tsx` — UPDATED: dedicated `didYouMeanFuse` (name-only, threshold 0.55) replaces trekFuse-based check; blast radius: LOW (leaf page)
+- `apps/web-next/app/(admin)/admin/pipeline/page.tsx` — UPDATED: Force page type dropdown added to TriggerForm; blast radius: LOW (admin-only)
+- `apps/web-next/lib/api.ts` — UPDATED: `force_page_type?: string` added to triggerPipeline payload; blast radius: LOW (additive)
+- `services/api/app/schemas/pipeline.py` — UPDATED: `force_page_type: str | None` on PipelineRunCreate; blast radius: LOW (additive)
+- `services/api/app/api/routes/pipeline.py` — UPDATED: force_page_type forwarded into input_data; blast radius: LOW
+- `services/api/app/modules/agents/trend_discovery/agent.py` — UPDATED: filters topics to forced page_type; blast radius: MEDIUM (affects topic selection for all pipeline runs using force_page_type)
+- `services/api/app/modules/pipeline/service.py` — UPDATED: force_page_type propagated to trend_discovery and content_brief inputs; blast radius: MEDIUM (pipeline orchestration)
+
+### fix: publish HTTP 500 — trek_meta savepoint (commit 2026-05-19) blast radius
+- `services/api/app/modules/cms/service.py` — UPDATED: _apply_trek_meta() helper uses nested savepoint so trek column failures never block publish; blast radius: HIGH (publish flow) — but fix makes it SAFER (gracefully degrades if migration 0034 not applied)
+
 ### Step 46 — Trek CMS Unification + Pipeline Quality Fixes (2026-05-19) blast radius
 - `services/api/alembic/versions/20260519_0034_cms_trek_metadata.py` — NEW: trek_state/name/difficulty/duration/season/suitability on cms_pages; blast radius: LOW (additive columns, nullable)
 - `services/api/app/modules/cms/models.py` — UPDATED: 6 trek metadata mapped columns; blast radius: MEDIUM (CMSPage used everywhere, but additive nullable fields)

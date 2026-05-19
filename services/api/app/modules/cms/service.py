@@ -414,6 +414,29 @@ def reparse_sections_from_draft(db: Session, *, page: CMSPage) -> CMSPage:
     return page
 
 
+def _apply_trek_meta(db: Session, page: CMSPage, trek_meta: dict) -> None:
+    """Apply trek metadata columns using a savepoint.
+
+    Uses a nested transaction so a missing column (migration 0034 not yet applied)
+    never blocks the publish flow — the savepoint rolls back silently and publish
+    succeeds without trek metadata. Once alembic upgrade head is run on the target
+    database the next publish will populate the columns automatically.
+    """
+    import logging as _logging
+    _log = _logging.getLogger(__name__)
+    savepoint = db.begin_nested()
+    try:
+        for col, val in trek_meta.items():
+            setattr(page, col, val)
+        db.flush()
+        savepoint.commit()
+    except Exception as exc:
+        savepoint.rollback()
+        _log.warning(
+            "Trek metadata columns not available (run alembic upgrade head): %s", exc
+        )
+
+
 def upsert_page_from_draft(db: Session, *, draft: ContentDraft) -> CMSPage:
     """Create or update a CMSPage from a ContentDraft at publish time."""
     existing = get_page_by_slug(db, draft.slug)
@@ -454,10 +477,11 @@ def upsert_page_from_draft(db: Session, *, draft: ContentDraft) -> CMSPage:
         existing.status = "published"
         existing.published_at = datetime.now(timezone.utc)
         existing.brief_id = draft.brief_id
-        if trek_meta:
-            for col, val in trek_meta.items():
-                setattr(existing, col, val)
         db.flush()
+        # Apply trek metadata in a savepoint — never blocks publish if migration 0034
+        # has not yet been applied on this database instance.
+        if trek_meta:
+            _apply_trek_meta(db, existing, trek_meta)
         cache_invalidate([existing.slug])
         return existing
 
@@ -472,8 +496,11 @@ def upsert_page_from_draft(db: Session, *, draft: ContentDraft) -> CMSPage:
         status="published",
         published_at=datetime.now(timezone.utc),
         brief_id=draft.brief_id,
-        **trek_meta,
     )
     db.add(page)
     db.flush()
+    # Apply trek metadata in a savepoint — never blocks publish if migration 0034
+    # has not yet been applied on this database instance.
+    if trek_meta:
+        _apply_trek_meta(db, page, trek_meta)
     return page

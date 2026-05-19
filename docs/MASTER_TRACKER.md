@@ -80,7 +80,7 @@ All V0 foundations are shipped. The stack is live locally with:
 | 42 | CMS-driven static pages | done |
 | 43 | Slug deduplication — CMS as canonical source | done |
 | 44 | Discovery engine improvements (Search, Interlinking, Recommendations, Compare) | done |
-| 46 | Trek CMS unification + pipeline quality fixes (slug, flagged-for-review, trek metadata) | done |
+| 46 | Trek CMS unification + pipeline quality fixes (slug, flagged-for-review, trek metadata, force_page_type, publish savepoint) | done |
 
 ## V5 — Mobile App Roadmap
 | Item | Status |
@@ -105,7 +105,8 @@ All V0 foundations are shipped. The stack is live locally with:
 | config.py — SSL auto-detection: port 25060→sslmode=require; port 25061→rediss:// | done |
 | DO env vars — POSTGRES_SERVER/PORT/DB/USER/PASSWORD added; DATABASE_URL/REDIS_URL removed | done |
 | api CONNECTING to DO managed Postgres — confirmed | done |
-| alembic upgrade head — ALL 34 MIGRATIONS APPLIED (0001→0034) | done |
+| alembic upgrade head — ALL 34 MIGRATIONS APPLIED (0001→0034) locally | done |
+| alembic upgrade head on PRODUCTION (0031–0034: search_events, page_views, account_comparisons, cms_trek_metadata) | **pending — REQUIRED to populate trek metadata columns and enable saved comparisons** |
 | App Platform — `celery-worker` component added | done |
 | App Platform — `celery-beat` component added | done |
 | celery-beat — ✅ HEALTHY | done |

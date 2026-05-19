@@ -1,6 +1,6 @@
 # Step 46 — Trek CMS Unification + Pipeline Quality Fixes
 
-## Status: Done — 2026-05-19
+## Status: Done — 2026-05-19 (additional fixes 2026-05-19)
 
 ## Summary
 A permanent fix for the slug collision issue, trek metadata exposure as first-class DB columns, image agent timing correction, and content quality fixes (flagged_for_review markers bleeding into rendered content).
@@ -65,6 +65,21 @@ Strip pattern (applied before `_slugify`): trailing `trek | trail | expedition |
 ## Breadcrumb (updated)
 `Home → {trek_state} → {trek_name}` (if trek_state available)
 Falls back to `Home → Explore → {trek.state || region}` (existing)
+
+## Post-Ship Fixes (commit 4fa074a + HTTP 500 fix)
+
+### TC-F01 Did you mean? (search page)
+- Root cause: `trekFuse` (6-field weighted) compresses scores below 0.05 guard
+- Fix: dedicated `didYouMeanFuse` (name-only, threshold 0.55, score guard 0.02)
+
+### Pipeline force_page_type
+- Added `force_page_type` to `PipelineRunCreate`, pipeline route, trend_discovery agent, pipeline service, lib/api.ts, admin TriggerForm dropdown
+- When set to "trek_guide", LLM comparison topics are filtered/overridden so pipeline always creates a trek guide
+
+### HTTP 500 on Publish — savepoint fix
+- Root cause: `**trek_meta` in CMSPage constructor fails when migration 0034 not applied on production DB
+- Fix: `_apply_trek_meta()` helper wraps trek column writes in a nested savepoint; publish succeeds with or without migration 0034 applied
+- **Production action required**: run `alembic upgrade head` on production to apply migrations 0031–0034 and start populating trek metadata columns
 
 ## Acceptance Criteria
 - [ ] New pipeline run for Kedarkantha publishes at `/trek/kedarkantha` (not `/trek/kedarkantha-trek`)
