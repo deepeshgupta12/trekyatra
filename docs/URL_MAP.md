@@ -4,7 +4,7 @@
 > must be listed here and confirmed by the user. No new URL structures should be introduced
 > without updating this file and getting confirmation.
 
-Last updated: 2026-05-16
+Last updated: 2026-05-19
 
 ---
 
@@ -61,7 +61,7 @@ Last updated: 2026-05-16
 | `/account/settings` | Profile settings | PATCH /auth/me |
 | `/account/enquiries` | Lead history | GET /auth/me/leads |
 | `/account/premium` | Subscription | Status + upgrade |
-| `/account/compare` | Saved comparisons | STUB — Step 44 pending |
+| `/account/compare` | Saved comparisons | Live — wired to GET/POST/DELETE /account/comparisons; Step 44 |
 
 ## Authentication
 
@@ -177,8 +177,8 @@ Last updated: 2026-05-16
 | `/beginner` | Beginner trek category — hub + trek cards + SEO content | ✅ IMPLEMENTED |
 | `/moderate` | Moderate trek category — hub + trek cards + FAQs + schema | ✅ IMPLEMENTED |
 | `/challenging` | Challenging trek category — hub + trek cards + FAQs + schema | ✅ IMPLEMENTED |
-| `/api/partner/v1/*` | B2B partner API | Step 41 |
-| `/search/*` | Enhanced search with click tracking | Step 44 |
+| `/search` | Enhanced search — CMS autocomplete, click tracking, recent searches, did-you-mean | ✅ IMPLEMENTED — Step 44 |
+| `/api/partner/v1/*` | B2B partner API | Step 41 — pending |
 
 ---
 
@@ -186,7 +186,7 @@ Last updated: 2026-05-16
 
 1. All URLs use **kebab-case** (`/trek-types`, `/safety-disclaimer`)
 2. Dynamic segments use `[slug]` or `[id]` — never numeric IDs in public URLs
-3. CMS slugs must **exactly match** the URL path segment (e.g. slug `kedarkantha` → `/trek/kedarkantha`)
+3. CMS slugs must **exactly match** the URL path segment (e.g. slug `kedarkantha` → `/trek/kedarkantha`). Pipeline enforces this via `_slugify_trek()` which strips noise suffixes ("Trek", "Complete Guide", etc.) so "Kedarkantha Trek" → slug `kedarkantha` — Step 46
 4. Multilingual URLs prefix with language code: `/hi/trek/[slug]`
 5. Admin URLs always prefix with `/admin/`
 6. API URLs always prefix with `/api/v1/`
