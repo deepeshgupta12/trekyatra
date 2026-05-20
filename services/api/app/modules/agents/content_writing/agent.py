@@ -187,8 +187,15 @@ class ContentWritingAgent(BaseAgent):
         except json.JSONDecodeError:
             try:
                 draft_data = json.loads(_clean_llm_json(raw))
-            except json.JSONDecodeError as exc:
-                return {"errors": [f"LLM returned invalid JSON: {exc}. raw_length={len(raw)}"]}
+            except json.JSONDecodeError:
+                # Final fallback: json_repair handles unescaped quotes and other
+                # common LLM JSON errors (e.g. "Here's a "quote" in the content")
+                try:
+                    from json_repair import repair_json
+                    repaired = repair_json(raw, return_objects=False, skip_json_loads=True)
+                    draft_data = json.loads(repaired)  # type: ignore[arg-type]
+                except Exception as exc:
+                    return {"errors": [f"LLM returned invalid JSON: {exc}. raw_length={len(raw)}"]}
 
         return {"output": {"draft": draft_data}}
 
