@@ -85,6 +85,7 @@ All V0 foundations are shipped. The stack is live locally with:
 | 48 | Critical pipeline + CMS fixes: upsert_topic (no more "No topic_id" on re-run), CMSPagePatch trek_* editable, trek metadata editable in admin form, reparse robustness | done |
 | 49 | Breadcrumb state normalization + STATE_TO_REGION_SLUG map + trek metadata dropdowns in CMS admin | done |
 | 50 | Trek page quality fixes: duplicate TrekYatra title, cluster sidebar editorial cleanup (DELETE on sync), CMS image overlay on trek cards (explore + regions) | done |
+| 51 | Trek entity wiring (full CMS data merge into cards), regions page dedup + View all link, explore sort + state URL filter, state-specific sitemaps | done |
 
 ## V5 — Mobile App Roadmap
 | Item | Status |

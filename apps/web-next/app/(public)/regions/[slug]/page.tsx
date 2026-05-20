@@ -4,7 +4,7 @@ import { TrekCard } from "@/components/trek/TrekCard";
 import { Button } from "@/components/ui/button";
 import { MapPin, Sparkles, ArrowRight } from "lucide-react";
 import { treks } from "@/data/treks";
-import { fetchCMSPage, fetchTrekCMSOverrides } from "@/lib/api";
+import { fetchCMSPage, fetchTrekCMSOverrides, type CMSTrekOverride } from "@/lib/api";
 import SchemaInjector from "@/components/seo/SchemaInjector";
 import { buildBreadcrumbSchema } from "@/lib/schema";
 import FAQAccordion from "@/components/content/FAQAccordion";
@@ -63,14 +63,26 @@ export default async function Region({ params }: Props) {
 
   const faqs = cmsPage?.content_json?.faqs ?? [];
 
-  // Fetch CMS image overrides so trek cards show the pipeline-published hero image
-  const cmsOverrides: Record<string, { image: string; title?: string }> = await fetchTrekCMSOverrides().catch(() => ({}));
+  // Fetch full CMS entity overrides (image, difficulty, duration, season, suitability, altitude)
+  const cmsOverrides: Record<string, CMSTrekOverride> = await fetchTrekCMSOverrides().catch(() => ({}));
 
+  // Fix: removed `.concat(treks)` which caused duplication of state-filtered treks
   const stateTreks = treks
     .filter((t) => t.state.toLowerCase().includes(r.name.toLowerCase().split(" ")[0]))
-    .concat(treks)
     .slice(0, 6)
-    .map(t => ({ ...t, image: cmsOverrides[t.slug]?.image ?? t.image }));
+    .map(t => {
+      const ov = cmsOverrides[t.slug] ?? {};
+      return {
+        ...t,
+        image:       ov.image       ?? t.image,
+        name:        ov.title       ?? t.name,
+        difficulty:  ov.difficulty  ?? t.difficulty,
+        duration:    ov.duration    ?? t.duration,
+        season:      ov.season      ?? t.season,
+        altitude:    ov.altitude    ?? t.altitude,
+        suitability: ov.suitability ?? undefined,
+      };
+    });
 
   const breadcrumbItems = [
     { label: "Home", href: `${siteUrl}/` },
@@ -133,7 +145,9 @@ export default async function Region({ params }: Props) {
         <div className="container-wide">
           <div className="flex items-end justify-between mb-8">
             <h2 className="font-display text-3xl md:text-4xl font-semibold">Top treks in {r.name}</h2>
-            <Link href="/explore" className="text-sm text-accent font-medium hidden md:block">View all →</Link>
+            <Link href={`/explore?state=${encodeURIComponent(r.name)}`} className="text-sm text-accent font-medium hidden md:block whitespace-nowrap">
+              View all treks in {r.name} →
+            </Link>
           </div>
           <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-5">
             {stateTreks.map((t) => (

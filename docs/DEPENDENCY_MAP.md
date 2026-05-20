@@ -846,6 +846,16 @@ Before editing any backend file:
 - `apps/web-next/components/layout/Header.tsx` — UPDATED: Logo compact, search functional (onClick+⌘K→/search), mobile search functional, nav px-2.5, useEffect import; blast radius: MEDIUM (header on every public page — visual + functional fix only)
 - `apps/web-next/app/(public)/page.tsx` — UPDATED: compare section fully responsive (heading text-2xl→sm:text-3xl→md:text-4xl, card p-3 md:p-4, text-sm md:text-base, no overflow); blast radius: LOW (leaf homepage)
 
+### Step 51 — Trek Entity Wiring + Explore/Regions Fixes (2026-05-20) blast radius
+- `apps/web-next/lib/api.ts` — UPDATED: fetchTrekCMSOverrides() extended to return CMSTrekOverride {image,title,difficulty,duration,season,suitability,altitude}; blast radius: MEDIUM (explore + regions + any consumer)
+- `apps/web-next/components/trek/TrekCard.tsx` — UPDATED: Trek.difficulty widened to string; diffColors extended (Easy–Moderate etc.); suitability?: string added; beginner badge checks suitability; blast radius: HIGH (TrekCard used everywhere — additive only, no breaking change)
+- `apps/web-next/app/(public)/regions/[slug]/page.tsx` — UPDATED: removed .concat(treks) dedup fix; full entity merge (difficulty/duration/season/altitude/suitability); "View all treks in X" → /explore?state=X; blast radius: MEDIUM (regions pages)
+- `apps/web-next/app/(public)/explore/page.tsx` — UPDATED: ExploreContent + Suspense wrapper; functional sort with tiebreakers (Featured/Difficulty/Duration/Altitude); ?state= URL param pre-filter; full entity merge; blast radius: HIGH (explore page)
+- `apps/web-next/lib/state-sitemap.ts` — NEW: generateStateTrekSitemap() helper; blast radius: LOW
+- 7 state sitemap route files (uttarakhand/himachal/kashmir/ladakh/maharashtra/sikkim/karnataka) — NEW; blast radius: LOW
+- `apps/web-next/app/sitemap.ts` — UPDATED: 7 state sitemap URLs added; blast radius: LOW
+- `docs/steps/STEP-51-trek-entity-wiring-explore-regions.md` — NEW
+
 ### Step 50 — Trek Page Quality Fixes (2026-05-20) blast radius
 - `apps/web-next/app/(public)/trek/[slug]/page.tsx` — UPDATED: seo_title strip; blast radius: LOW (fixes title only)
 - `services/api/app/modules/linking/service.py` — UPDATED: sync_pages_from_cms adds DELETE for excluded types; blast radius: MEDIUM (next admin sync will remove stale editorial pages from linking graph)

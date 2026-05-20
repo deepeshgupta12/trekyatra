@@ -1,12 +1,14 @@
 "use client";
 
-import { useState, useEffect } from "react";
-import { TrekCard } from "@/components/trek/TrekCard";
+import { useState, useEffect, useMemo } from "react";
+import { useSearchParams } from "next/navigation";
+import { Suspense } from "react";
+import { TrekCard, type Trek } from "@/components/trek/TrekCard";
 import { treks as staticTreks } from "@/data/treks";
 import { Button } from "@/components/ui/button";
 import { Search, SlidersHorizontal, X } from "lucide-react";
 import { fetchTreks } from "@/lib/trekApi";
-import { fetchTrekCMSOverrides } from "@/lib/api";
+import { fetchTrekCMSOverrides, type CMSTrekOverride } from "@/lib/api";
 import PersonalisedFeed from "@/components/content/PersonalisedFeed";
 import Breadcrumb from "@/components/content/Breadcrumb";
 
@@ -18,20 +20,72 @@ const filterGroups = [
   { name: "Suitability", options: ["Beginner", "Family", "Snow", "High altitude"] },
 ];
 
-export default function Explore() {
-  const [trekList, setTrekList] = useState(staticTreks);
-  const [active, setActive] = useState<string[]>(["Beginner"]);
+// ── Sort helpers ───────────────────────────────────────────────────────────────
+const DIFFICULTY_RANK: Record<string, number> = {
+  Easy: 1, "Easy–Moderate": 2, Moderate: 3,
+  "Moderate–Difficult": 4, Difficult: 5, "Very Difficult": 6, Challenging: 7,
+};
+const parseDays = (d: string) => parseInt(d.replace(/[^\d]/g, "")) || 999;
+const parseFt   = (a: string) => parseInt(a.replace(/[^\d]/g, "")) || 0;
+const diffRank  = (d: string) => DIFFICULTY_RANK[d] ?? 3;
+
+function sortTreks(list: Trek[], sortBy: string): Trek[] {
+  if (sortBy === "featured") return list;
+  return [...list].sort((a, b) => {
+    if (sortBy === "difficulty")
+      return diffRank(a.difficulty) - diffRank(b.difficulty)
+          || parseDays(a.duration) - parseDays(b.duration)
+          || parseFt(a.altitude) - parseFt(b.altitude);
+    if (sortBy === "duration")
+      return parseDays(a.duration) - parseDays(b.duration)
+          || diffRank(a.difficulty) - diffRank(b.difficulty)
+          || parseFt(a.altitude) - parseFt(b.altitude);
+    if (sortBy === "altitude")
+      return parseFt(a.altitude) - parseFt(b.altitude)
+          || diffRank(a.difficulty) - diffRank(b.difficulty)
+          || parseDays(a.duration) - parseDays(b.duration);
+    return 0;
+  });
+}
+
+function mergeCMSOverride(t: Trek, ov: CMSTrekOverride): Trek {
+  return {
+    ...t,
+    image:       ov.image       ?? t.image,
+    name:        ov.title       ?? t.name,
+    difficulty:  ov.difficulty  ?? t.difficulty,
+    duration:    ov.duration    ?? t.duration,
+    season:      ov.season      ?? t.season,
+    altitude:    ov.altitude    ?? t.altitude,
+    suitability: ov.suitability ?? undefined,
+  };
+}
+
+function ExploreContent() {
+  const searchParams = useSearchParams();
+  const stateParam = searchParams?.get("state") ?? null;
+
+  const [baseList, setBaseList] = useState<Trek[]>(staticTreks as unknown as Trek[]);
+  const [sortBy, setSortBy] = useState("featured");
+  const [active, setActive] = useState<string[]>(stateParam ? [stateParam] : []);
   const [showMobileFilters, setShowMobileFilters] = useState(false);
 
   useEffect(() => {
-    // Fetch static trek list then overlay CMS hero images for pipeline-published treks
+    // Fetch static trek list and overlay full CMS entity data
     Promise.all([fetchTreks(), fetchTrekCMSOverrides()]).then(([list, cmsOverrides]) => {
-      setTrekList(list.map(t => ({
-        ...t,
-        image: cmsOverrides[t.slug]?.image ?? t.image,
-      })));
-    }).catch(() => { fetchTreks().then(setTrekList).catch(() => {}); });
+      setBaseList(list.map(t => mergeCMSOverride(t as unknown as Trek, cmsOverrides[t.slug] ?? {})));
+    }).catch(() => { fetchTreks().then(list => setBaseList(list as unknown as Trek[])).catch(() => {}); });
   }, []);
+
+  // Apply state pre-filter from ?state= URL param
+  useEffect(() => {
+    if (stateParam && !active.includes(stateParam)) {
+      setActive(prev => [...prev, stateParam]);
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [stateParam]);
+
+  const trekList = useMemo(() => sortTreks(baseList, sortBy), [baseList, sortBy]);
 
   const toggle = (v: string) => setActive(p => p.includes(v) ? p.filter(x => x !== v) : [...p, v]);
 
@@ -98,11 +152,15 @@ export default function Explore() {
                 ))}
                 <span className="text-sm text-muted-foreground ml-2">Showing {trekList.length} treks</span>
               </div>
-              <select className="h-9 px-3 rounded-full border border-border bg-surface text-sm w-auto">
-                <option>Sort: Editor&apos;s pick</option>
-                <option>Difficulty (low → high)</option>
-                <option>Altitude (low → high)</option>
-                <option>Duration (short → long)</option>
+              <select
+                className="h-9 px-3 rounded-full border border-border bg-surface text-sm w-auto"
+                value={sortBy}
+                onChange={(e) => setSortBy(e.target.value)}
+              >
+                <option value="featured">Sort: Featured</option>
+                <option value="difficulty">Difficulty (low → high)</option>
+                <option value="duration">Duration (short → long)</option>
+                <option value="altitude">Altitude (low → high)</option>
               </select>
             </div>
 
@@ -175,5 +233,14 @@ export default function Explore() {
         </div>
       )}
     </>
+  );
+}
+
+// Wrap in Suspense — required by Next.js when useSearchParams is called in a client component
+export default function Explore() {
+  return (
+    <Suspense fallback={<div className="min-h-screen" />}>
+      <ExploreContent />
+    </Suspense>
   );
 }

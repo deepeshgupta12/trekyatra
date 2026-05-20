@@ -13,18 +13,23 @@ export type Trek = {
   image: string;
   duration: string;
   altitude: string;
-  difficulty: "Easy" | "Moderate" | "Difficult" | "Challenging";
+  difficulty: string;  // extended to include CMS values like "Easy–Moderate"
   season: string;
   description: string;
   beginner?: boolean;
+  suitability?: string;  // from CMS trek_suitability
 };
 
-const diffColors = {
-  Easy: "bg-emerald-600 text-white shadow",
-  Moderate: "bg-amber-500 text-white shadow",
-  Difficult: "bg-orange-600 text-white shadow",
-  Challenging: "bg-red-600 text-white shadow",
+const diffColors: Record<string, string> = {
+  Easy:                 "bg-emerald-600 text-white shadow",
+  "Easy–Moderate":      "bg-emerald-500 text-white shadow",
+  Moderate:             "bg-amber-500 text-white shadow",
+  "Moderate–Difficult": "bg-orange-500 text-white shadow",
+  Difficult:            "bg-orange-600 text-white shadow",
+  "Very Difficult":     "bg-red-600 text-white shadow",
+  Challenging:          "bg-red-600 text-white shadow",
 };
+const defaultDiffColor = "bg-amber-500 text-white shadow";
 
 export const TrekCard = ({ trek, featured = false, initialBookmarked = false }: { trek: Trek; featured?: boolean; initialBookmarked?: boolean }) => {
   const [bookmarked, setBookmarked] = useState(initialBookmarked);
@@ -81,14 +86,17 @@ export const TrekCard = ({ trek, featured = false, initialBookmarked = false }: 
         <div className="absolute top-4 left-4 right-14 flex items-start">
           {/* right-14 leaves room for the bookmark button (h-9 w-9 = 36px + 16px margin) */}
           <div className="flex flex-wrap gap-1 max-w-full">
-            {trek.beginner && (
+            {/* Beginner badge: from explicit flag OR suitability field */}
+            {(trek.beginner || trek.suitability?.toLowerCase().includes("begin")) && (
               <span className="text-[10px] font-semibold uppercase tracking-wider px-2 py-0.5 rounded-full bg-blue-600 text-white shadow whitespace-nowrap">
                 Beginner
               </span>
             )}
-            <span className={`text-[10px] font-semibold uppercase tracking-wider px-2 py-0.5 rounded-full whitespace-nowrap ${diffColors[trek.difficulty]}`}>
-              {trek.difficulty}
-            </span>
+            {trek.difficulty && (
+              <span className={`text-[10px] font-semibold uppercase tracking-wider px-2 py-0.5 rounded-full whitespace-nowrap ${diffColors[trek.difficulty] ?? defaultDiffColor}`}>
+                {trek.difficulty}
+              </span>
+            )}
           </div>
         </div>
         {/* Bookmark — fixed at top-right, independent of tag width */}

@@ -73,6 +73,14 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     url("/products", 0.6, "weekly"),
     url("/premium", 0.6, "monthly"),
     url("/newsletter", 0.4, "monthly"),
+    // State-specific trek sitemaps (child sitemaps referenced from master)
+    url("/uttarakhand-treks-sitemap.xml", 0.9, "daily"),
+    url("/himachal-treks-sitemap.xml",    0.9, "daily"),
+    url("/kashmir-treks-sitemap.xml",     0.9, "daily"),
+    url("/ladakh-treks-sitemap.xml",      0.9, "weekly"),
+    url("/maharashtra-treks-sitemap.xml", 0.8, "weekly"),
+    url("/sikkim-treks-sitemap.xml",      0.8, "weekly"),
+    url("/karnataka-treks-sitemap.xml",   0.8, "weekly"),
     // Difficulty category pages
     url("/beginner", 0.8, "weekly"),
     url("/moderate", 0.8, "weekly"),

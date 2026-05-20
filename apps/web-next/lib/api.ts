@@ -1765,18 +1765,39 @@ export interface SearchSuggestion {
   seo_description: string | null;
 }
 
+/** Full entity data available from a published CMS trek_guide page. */
+export interface CMSTrekOverride {
+  image?: string;
+  title?: string;
+  difficulty?: string;
+  duration?: string;
+  season?: string;
+  suitability?: string;
+  altitude?: string;
+}
+
 /**
- * Fetch published trek_guide CMS pages and return a slug → {image, title} map.
- * Used to override static treks.ts data with pipeline-published content in
- * explore, regions, and home pages so trek cards show the correct CMS image.
+ * Fetch published trek_guide CMS pages and return a slug → CMSTrekOverride map.
+ * Used to overlay CMS entity data (image, difficulty, duration, season, suitability,
+ * altitude) on top of static treks.ts data in explore, regions, and home pages.
  */
-export async function fetchTrekCMSOverrides(): Promise<Record<string, { image: string; title?: string }>> {
+export async function fetchTrekCMSOverrides(): Promise<Record<string, CMSTrekOverride>> {
   try {
     const pages = await fetchCMSPages({ page_type: "trek_guide", status: "published", limit: 100 });
     return Object.fromEntries(
-      pages
-        .filter((p) => p.hero_image_url)
-        .map((p) => [p.slug, { image: p.hero_image_url!, title: p.title }])
+      pages.map((p) => [
+        p.slug,
+        {
+          image:      p.hero_image_url                                          ?? undefined,
+          title:      p.trek_name    ?? p.title                                 ?? undefined,
+          difficulty: p.trek_difficulty                                          ?? undefined,
+          duration:   p.trek_duration                                            ?? undefined,
+          season:     p.trek_season                                              ?? undefined,
+          suitability: p.trek_suitability                                        ?? undefined,
+          // altitude lives inside content_json.trek_facts — not a top-level column
+          altitude:   (p.content_json?.trek_facts as Record<string, string> | undefined)?.altitude ?? undefined,
+        },
+      ])
     );
   } catch {
     return {};
