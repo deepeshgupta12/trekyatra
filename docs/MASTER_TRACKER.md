@@ -86,6 +86,7 @@ All V0 foundations are shipped. The stack is live locally with:
 | 49 | Breadcrumb state normalization + STATE_TO_REGION_SLUG map + trek metadata dropdowns in CMS admin | done |
 | 50 | Trek page quality fixes: duplicate TrekYatra title, cluster sidebar editorial cleanup (DELETE on sync), CMS image overlay on trek cards (explore + regions) | done |
 | 51 | Trek entity wiring (full CMS data merge into cards), regions page dedup + View all link, explore sort + state URL filter, state-specific sitemaps | done |
+| 52 | Dynamic explore filters — filter facets from CMS trek_* columns, wired filter logic, URL state, AND-logic across groups | pending |
 
 ## V5 — Mobile App Roadmap
 | Item | Status |
