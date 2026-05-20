@@ -63,7 +63,25 @@ def sync_pages_from_cms(db: Session) -> int:
 
     Editorial and hub pages are excluded — they must not appear in the internal
     linking graph or 'In this cluster' sidebars.
+
+    Also deletes any pre-existing Page rows whose source CMS page has an excluded
+    page_type — this cleans up stale data from before _EXCLUDED_FROM_LINKING was added.
     """
+    from sqlalchemy import delete as sa_delete
+
+    # Step 1: Remove any Page records linked to excluded CMS page types.
+    # This cleans up pages synced before Step 47 added _EXCLUDED_FROM_LINKING.
+    excluded_slugs_subq = (
+        select(CMSPage.slug)
+        .where(CMSPage.page_type.in_(_EXCLUDED_FROM_LINKING))
+    )
+    deleted = db.execute(
+        sa_delete(Page).where(Page.slug.in_(excluded_slugs_subq))
+    ).rowcount
+    if deleted:
+        logger.info("sync_pages_from_cms: removed %d editorial/hub pages from linking graph", deleted)
+
+    # Step 2: Upsert content pages (non-excluded types only)
     published = db.scalars(
         select(CMSPage).where(
             CMSPage.status == "published",

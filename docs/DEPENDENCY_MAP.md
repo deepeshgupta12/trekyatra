@@ -846,6 +846,13 @@ Before editing any backend file:
 - `apps/web-next/components/layout/Header.tsx` — UPDATED: Logo compact, search functional (onClick+⌘K→/search), mobile search functional, nav px-2.5, useEffect import; blast radius: MEDIUM (header on every public page — visual + functional fix only)
 - `apps/web-next/app/(public)/page.tsx` — UPDATED: compare section fully responsive (heading text-2xl→sm:text-3xl→md:text-4xl, card p-3 md:p-4, text-sm md:text-base, no overflow); blast radius: LOW (leaf homepage)
 
+### Step 50 — Trek Page Quality Fixes (2026-05-20) blast radius
+- `apps/web-next/app/(public)/trek/[slug]/page.tsx` — UPDATED: seo_title strip; blast radius: LOW (fixes title only)
+- `services/api/app/modules/linking/service.py` — UPDATED: sync_pages_from_cms adds DELETE for excluded types; blast radius: MEDIUM (next admin sync will remove stale editorial pages from linking graph)
+- `apps/web-next/lib/api.ts` — ADDED: fetchTrekCMSOverrides(); blast radius: LOW (new additive export)
+- `apps/web-next/app/(public)/explore/page.tsx` — UPDATED: CMS image merge in useEffect; blast radius: MEDIUM (explore page trek cards, graceful fallback to static)
+- `apps/web-next/app/(public)/regions/[slug]/page.tsx` — UPDATED: server-side CMS image merge; blast radius: MEDIUM (regions pages trek cards, graceful fallback)
+
 ### Step 49 — Breadcrumb State Fix + Dropdowns (2026-05-19) blast radius
 - `services/api/app/modules/cms/service.py` — ADDED: _STATE_ALIASES dict + _normalize_state(); _state_from_base() normalizes to canonical spelling; blast radius: LOW (additive, only affects auto-extracted trek_state values going forward)
 - `apps/web-next/app/(public)/trek/[slug]/page.tsx` — UPDATED: STATE_TO_REGION_SLUG map replaces raw toLowercase slug generation for breadcrumb; blast radius: MEDIUM (every trek guide page breadcrumb — but safer, never falls through to himachal)

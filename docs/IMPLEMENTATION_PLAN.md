@@ -357,6 +357,13 @@
 - trek/[slug]/page.tsx: STATE_TO_REGION_SLUG mapping for breadcrumb — even if trek_state has a variant spelling, the /regions/[correct-slug] URL is generated; breadcrumb no longer falls through to Himachal Pradesh fallback
 - CMSPageForm.tsx: trek_state → state dropdown (Uttarakhand, Himachal Pradesh, J&K, Ladakh, etc.); trek_difficulty → difficulty dropdown (Easy–Expert Only); trek_season → season dropdown (Dec–Apr, Jun–Sep, etc.); trek_suitability → suitability dropdown; trek_name/duration remain free-text
 
+### Step 50 — Trek Page Quality Fixes [DONE — 2026-05-20]
+- trek/[slug]/page.tsx generateMetadata: strips trailing '| TrekYatra' from seo_title — prevents 'TrekYatra | TrekYatra' duplication
+- linking/service.py sync_pages_from_cms: DELETEs existing Page rows for excluded types before upsert — clears stale editorial pages on next admin sync
+- lib/api.ts: fetchTrekCMSOverrides() — slug→{image,title} map from published trek_guide CMS pages
+- explore/page.tsx: useEffect merges CMS image overrides into static trek list
+- regions/[slug]/page.tsx: server-side CMS override merge into stateTreks before TrekCard render
+
 ### Step 45 — Image Gathering Agent [DONE — commit 6e3dd9d]
 - Automated agent to find, validate, and assign hero images to pipeline-published trek pages
 - Sources: Unsplash API (UNSPLASH_ACCESS_KEY) → Pixabay API (PIXABAY_API_KEY) → Wikimedia Commons (no key)

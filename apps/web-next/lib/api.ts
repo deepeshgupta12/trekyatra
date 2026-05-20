@@ -1765,6 +1765,24 @@ export interface SearchSuggestion {
   seo_description: string | null;
 }
 
+/**
+ * Fetch published trek_guide CMS pages and return a slug → {image, title} map.
+ * Used to override static treks.ts data with pipeline-published content in
+ * explore, regions, and home pages so trek cards show the correct CMS image.
+ */
+export async function fetchTrekCMSOverrides(): Promise<Record<string, { image: string; title?: string }>> {
+  try {
+    const pages = await fetchCMSPages({ page_type: "trek_guide", status: "published", limit: 100 });
+    return Object.fromEntries(
+      pages
+        .filter((p) => p.hero_image_url)
+        .map((p) => [p.slug, { image: p.hero_image_url!, title: p.title }])
+    );
+  } catch {
+    return {};
+  }
+}
+
 /** Fire-and-forget: log a search query + optional click. Never throws. */
 export async function logSearchEvent(payload: SearchLogPayload): Promise<void> {
   await fetch("/api/v1/search/log", {

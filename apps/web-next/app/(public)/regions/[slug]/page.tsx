@@ -4,7 +4,7 @@ import { TrekCard } from "@/components/trek/TrekCard";
 import { Button } from "@/components/ui/button";
 import { MapPin, Sparkles, ArrowRight } from "lucide-react";
 import { treks } from "@/data/treks";
-import { fetchCMSPage } from "@/lib/api";
+import { fetchCMSPage, fetchTrekCMSOverrides } from "@/lib/api";
 import SchemaInjector from "@/components/seo/SchemaInjector";
 import { buildBreadcrumbSchema } from "@/lib/schema";
 import FAQAccordion from "@/components/content/FAQAccordion";
@@ -63,10 +63,14 @@ export default async function Region({ params }: Props) {
 
   const faqs = cmsPage?.content_json?.faqs ?? [];
 
+  // Fetch CMS image overrides so trek cards show the pipeline-published hero image
+  const cmsOverrides: Record<string, { image: string; title?: string }> = await fetchTrekCMSOverrides().catch(() => ({}));
+
   const stateTreks = treks
     .filter((t) => t.state.toLowerCase().includes(r.name.toLowerCase().split(" ")[0]))
     .concat(treks)
-    .slice(0, 6);
+    .slice(0, 6)
+    .map(t => ({ ...t, image: cmsOverrides[t.slug]?.image ?? t.image }));
 
   const breadcrumbItems = [
     { label: "Home", href: `${siteUrl}/` },

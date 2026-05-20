@@ -6,6 +6,7 @@ import { treks as staticTreks } from "@/data/treks";
 import { Button } from "@/components/ui/button";
 import { Search, SlidersHorizontal, X } from "lucide-react";
 import { fetchTreks } from "@/lib/trekApi";
+import { fetchTrekCMSOverrides } from "@/lib/api";
 import PersonalisedFeed from "@/components/content/PersonalisedFeed";
 import Breadcrumb from "@/components/content/Breadcrumb";
 
@@ -23,7 +24,13 @@ export default function Explore() {
   const [showMobileFilters, setShowMobileFilters] = useState(false);
 
   useEffect(() => {
-    fetchTreks().then(setTrekList).catch(() => {});
+    // Fetch static trek list then overlay CMS hero images for pipeline-published treks
+    Promise.all([fetchTreks(), fetchTrekCMSOverrides()]).then(([list, cmsOverrides]) => {
+      setTrekList(list.map(t => ({
+        ...t,
+        image: cmsOverrides[t.slug]?.image ?? t.image,
+      })));
+    }).catch(() => { fetchTreks().then(setTrekList).catch(() => {}); });
   }, []);
 
   const toggle = (v: string) => setActive(p => p.includes(v) ? p.filter(x => x !== v) : [...p, v]);
