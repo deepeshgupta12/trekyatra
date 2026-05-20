@@ -1,6 +1,6 @@
 # Step 52 — Dynamic Explore Filters
 
-## Status: Pending
+## Status: Done — 2026-05-20 (implemented as part of Step 53 session)
 
 ## Summary
 Replace the hardcoded `filterGroups` array in the Explore page with dynamic filters derived from the actual published CMS trek_guide pages. Filters update automatically as new treks are pipeline-published, and apply correctly to the full trek list.

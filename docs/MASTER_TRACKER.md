@@ -86,7 +86,8 @@ All V0 foundations are shipped. The stack is live locally with:
 | 49 | Breadcrumb state normalization + STATE_TO_REGION_SLUG map + trek metadata dropdowns in CMS admin | done |
 | 50 | Trek page quality fixes: duplicate TrekYatra title, cluster sidebar editorial cleanup (DELETE on sync), CMS image overlay on trek cards (explore + regions) | done |
 | 51 | Trek entity wiring (full CMS data merge into cards), regions page dedup + View all link, explore sort + state URL filter, state-specific sitemaps | done |
-| 52 | Dynamic explore filters — filter facets from CMS trek_* columns, wired filter logic, URL state, AND-logic across groups | pending |
+| 52 | Dynamic explore filters — filter facets endpoint (/api/v1/treks/filter-facets), fetchFilterFacets, wired AND-across/OR-within filter logic, explore sidebar scroll fix | done |
+| 53 | UX bug fixes: regions page shows all CMS state treks (not just 3 static), season chart removed, home trending CMS overrides, DifficultyTabs state+difficulty fix | done |
 
 ## V5 — Mobile App Roadmap
 | Item | Status |

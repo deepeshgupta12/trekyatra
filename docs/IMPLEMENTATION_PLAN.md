@@ -357,13 +357,23 @@
 - trek/[slug]/page.tsx: STATE_TO_REGION_SLUG mapping for breadcrumb — even if trek_state has a variant spelling, the /regions/[correct-slug] URL is generated; breadcrumb no longer falls through to Himachal Pradesh fallback
 - CMSPageForm.tsx: trek_state → state dropdown (Uttarakhand, Himachal Pradesh, J&K, Ladakh, etc.); trek_difficulty → difficulty dropdown (Easy–Expert Only); trek_season → season dropdown (Dec–Apr, Jun–Sep, etc.); trek_suitability → suitability dropdown; trek_name/duration remain free-text
 
-### Step 52 — Dynamic Explore Filters [PENDING]
+### Step 53 — UX Bug Fixes: Home + Regions + Explore [DONE — 2026-05-20]
+- lib/api.ts: CMSTrekCard interface + fetchCMSTreksByState() — fetches CMS trek_guide pages by trek_state; CMSTrekOverride extended; FilterFacets + fetchFilterFacets() + STATIC_FILTER_FACETS fallback
+- regions/[slug]/page.tsx: fetchCMSTreksByState() merges CMS treks + static treks (de-duped by slug, most-recent 6 shown); season chart replaced with per-trek season summary list
+- explore/page.tsx: sidebar scroll fix (max-h-[calc(100vh-7rem)] overflow-y-auto on sticky div)
+- page.tsx (home): trending section applies cmsOverrides server-side for correct images/entities
+- DifficultyTabsSection.tsx: cmsToTrek uses trek_difficulty column + trek_state; cmsMatchesDifficulty checks trek_difficulty column
+- Step doc: docs/steps/STEP-53-ux-bugs-home-regions.md
+
+### Step 52 — Dynamic Explore Filters [DONE — 2026-05-20]
 - New backend: GET /api/v1/treks/filter-facets — DISTINCT trek_state/difficulty/season/suitability/duration from published cms_pages
 - lib/api.ts: FilterFacets interface + fetchFilterFacets()
 - explore/page.tsx: dynamic filterGroups from API, wired filter logic (AND across groups, OR within group), URL state for all filters
 - Duration bucket matching (1-3/4-6/7-9/10+ days), Season month-overlap matching, Suitability partial match, State exact match
 - Step doc: docs/steps/STEP-52-dynamic-explore-filters.md
 - Dependencies: Step 51 trek_* columns ✅
+- treks.py route: GET /api/v1/treks/filter-facets — DISTINCT trek_state/difficulty/season/suitability/duration with bucket grouping
+- explore/page.tsx: filterGroups now built from FilterFacets state; applyFilters() AND-across/OR-within; fetchFilterFacets() + STATIC_FILTER_FACETS fallback
 
 ### Step 50 — Trek Page Quality Fixes [DONE — 2026-05-20]
 - trek/[slug]/page.tsx generateMetadata: strips trailing '| TrekYatra' from seo_title — prevents 'TrekYatra | TrekYatra' duplication

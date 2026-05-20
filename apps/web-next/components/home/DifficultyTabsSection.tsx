@@ -6,36 +6,34 @@ import { ArrowRight } from "lucide-react";
 import { TrekCard, type Trek } from "@/components/trek/TrekCard";
 import type { CMSPage, TrekFacts } from "@/lib/api";
 
-/** Convert a CMS trek_guide page to a Trek card-compatible object. */
+/** Convert a CMS trek_guide page to a Trek card-compatible object.
+ *  Prefers trek_* DB columns (Step 46); falls back to content_json.trek_facts. */
 function cmsToTrek(page: CMSPage): Trek {
   const tf = (page.content_json?.trek_facts ?? {}) as TrekFacts;
-  const rawDiff = (tf.difficulty ?? "Moderate").trim();
-  const diffMap: Record<string, Trek["difficulty"]> = {
-    easy: "Easy", beginner: "Easy",
-    moderate: "Moderate", intermediate: "Moderate",
-    difficult: "Difficult", hard: "Difficult",
-    challenging: "Challenging", strenuous: "Challenging",
-  };
-  const difficulty: Trek["difficulty"] =
-    diffMap[rawDiff.toLowerCase().split(/[\s-]/)[0]] ?? "Moderate";
+  // trek_difficulty column (Step 46) is more reliable than trek_facts
+  const rawDiff = (page.trek_difficulty ?? tf.difficulty ?? "Moderate").trim();
+  const difficulty = rawDiff;  // preserve full value (Easy–Moderate, etc.) for TrekCard
   return {
     slug: page.slug,
-    name: page.title,
-    region: tf.base ?? "",
-    state: "",
-    image: page.hero_image_url ?? "/images/trek-forest.jpg",
-    duration: tf.duration ?? "—",
-    altitude: tf.altitude ?? "—",
+    name: page.trek_name ?? page.title,
+    region: tf.base ?? page.trek_state ?? "",
+    state: page.trek_state ?? "",  // was hardcoded as ""
+    image:       page.hero_image_url ?? "/images/trek-forest.jpg",
+    duration:    page.trek_duration  ?? tf.duration ?? "—",
+    altitude:    (tf as Record<string, string>).altitude ?? "—",
     difficulty,
-    season: tf.season ?? "—",
+    season:      page.trek_season ?? tf.season ?? "—",
     description: page.seo_description ?? "",
-    beginner: difficulty === "Easy",
+    beginner:    page.trek_suitability?.toLowerCase().includes("begin") ?? difficulty.toLowerCase().startsWith("easy"),
+    suitability: page.trek_suitability ?? undefined,
   };
 }
 
 function cmsMatchesDifficulty(page: CMSPage, match: string[]): boolean {
-  const d = (page.content_json?.trek_facts as TrekFacts | undefined)?.difficulty?.toLowerCase() ?? "";
-  return match.some((m) => d.includes(m));
+  // Prefer trek_difficulty column (Step 46); fall back to trek_facts
+  const tf = (page.content_json?.trek_facts as TrekFacts | undefined);
+  const d = (page.trek_difficulty ?? tf?.difficulty ?? "").toLowerCase();
+  return match.some((m) => d.includes(m.toLowerCase()));
 }
 
 type Difficulty = "Easy" | "Moderate" | "Challenging";

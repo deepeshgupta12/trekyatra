@@ -846,6 +846,17 @@ Before editing any backend file:
 - `apps/web-next/components/layout/Header.tsx` — UPDATED: Logo compact, search functional (onClick+⌘K→/search), mobile search functional, nav px-2.5, useEffect import; blast radius: MEDIUM (header on every public page — visual + functional fix only)
 - `apps/web-next/app/(public)/page.tsx` — UPDATED: compare section fully responsive (heading text-2xl→sm:text-3xl→md:text-4xl, card p-3 md:p-4, text-sm md:text-base, no overflow); blast radius: LOW (leaf homepage)
 
+### Step 53 — UX Bug Fixes (2026-05-20) blast radius
+- `apps/web-next/lib/api.ts` — ADDED: CMSTrekCard interface + fetchCMSTreksByState() + FilterFacets + fetchFilterFacets() + STATIC_FILTER_FACETS; blast radius: LOW (additive)
+- `apps/web-next/app/(public)/regions/[slug]/page.tsx` — UPDATED: CMS state treks merge, season chart replaced, CMSTrekCard typed import; blast radius: MEDIUM (regions pages)
+- `apps/web-next/app/(public)/explore/page.tsx` — UPDATED: dynamic filterGroups from facets, applyFilters() AND/OR logic wired, sidebar scroll CSS; blast radius: HIGH (explore page — filter now actually hides/shows treks)
+- `apps/web-next/app/(public)/page.tsx` — UPDATED: home trending applies cmsOverrides; blast radius: MEDIUM (homepage)
+- `apps/web-next/components/home/DifficultyTabsSection.tsx` — UPDATED: trek_difficulty + trek_state columns used; blast radius: MEDIUM (home difficulty section)
+- `services/api/app/api/routes/treks.py` — ADDED: GET /filter-facets endpoint; blast radius: LOW
+
+### Step 52 — Dynamic Explore Filters (2026-05-20) blast radius
+(see Step 53 above — both implemented together)
+
 ### Step 51 — Trek Entity Wiring + Explore/Regions Fixes (2026-05-20) blast radius
 - `apps/web-next/lib/api.ts` — UPDATED: fetchTrekCMSOverrides() extended to return CMSTrekOverride {image,title,difficulty,duration,season,suitability,altitude}; blast radius: MEDIUM (explore + regions + any consumer)
 - `apps/web-next/components/trek/TrekCard.tsx` — UPDATED: Trek.difficulty widened to string; diffColors extended (Easy–Moderate etc.); suitability?: string added; beginner badge checks suitability; blast radius: HIGH (TrekCard used everywhere — additive only, no breaking change)

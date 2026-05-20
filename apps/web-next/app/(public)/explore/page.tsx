@@ -8,17 +8,9 @@ import { treks as staticTreks } from "@/data/treks";
 import { Button } from "@/components/ui/button";
 import { Search, SlidersHorizontal, X } from "lucide-react";
 import { fetchTreks } from "@/lib/trekApi";
-import { fetchTrekCMSOverrides, type CMSTrekOverride } from "@/lib/api";
+import { fetchTrekCMSOverrides, fetchFilterFacets, STATIC_FILTER_FACETS, type CMSTrekOverride, type FilterFacets } from "@/lib/api";
 import PersonalisedFeed from "@/components/content/PersonalisedFeed";
 import Breadcrumb from "@/components/content/Breadcrumb";
-
-const filterGroups = [
-  { name: "State", options: ["Uttarakhand", "Himachal Pradesh", "Jammu & Kashmir", "Ladakh", "Maharashtra", "West Bengal / Sikkim"] },
-  { name: "Difficulty", options: ["Easy", "Moderate", "Difficult", "Challenging"] },
-  { name: "Duration", options: ["1 day", "2-3 days", "4-6 days", "7+ days"] },
-  { name: "Season", options: ["Winter", "Summer", "Monsoon", "Autumn"] },
-  { name: "Suitability", options: ["Beginner", "Family", "Snow", "High altitude"] },
-];
 
 // ── Sort helpers ───────────────────────────────────────────────────────────────
 const DIFFICULTY_RANK: Record<string, number> = {
@@ -61,6 +53,86 @@ function mergeCMSOverride(t: Trek, ov: CMSTrekOverride): Trek {
   };
 }
 
+// ── Filter logic ───────────────────────────────────────────────────────────────
+function parseDaysNum(d: string): number { return parseInt(d.replace(/[^\d]/g, "")) || 0; }
+
+function durationMatchesBucket(trekDuration: string, bucket: string): boolean {
+  const days = parseDaysNum(trekDuration);
+  if (!days) return false;
+  if (bucket === "1–3 days")  return days >= 1  && days <= 3;
+  if (bucket === "4–6 days")  return days >= 4  && days <= 6;
+  if (bucket === "7–9 days")  return days >= 7  && days <= 9;
+  if (bucket === "10+ days")  return days >= 10;
+  return false;
+}
+
+function seasonMonths(season: string): number[] {
+  const m: Record<string, number> = {
+    Jan: 1, Feb: 2, Mar: 3, Apr: 4, May: 5, Jun: 6,
+    Jul: 7, Aug: 8, Sep: 9, Oct: 10, Nov: 11, Dec: 12,
+  };
+  const parts = season.match(/[A-Za-z]{3}/g) ?? [];
+  return parts.map(p => m[p] ?? 0).filter(Boolean);
+}
+
+const SEASON_MONTHS: Record<string, number[]> = {
+  Winter: [12, 1, 2, 3],
+  Spring: [3, 4, 5],
+  Summer: [5, 6, 7],
+  Monsoon: [6, 7, 8, 9],
+  Autumn: [9, 10, 11],
+};
+
+function seasonMatchesBucket(trekSeason: string, bucket: string): boolean {
+  const bucketMonths = SEASON_MONTHS[bucket] ?? [];
+  const trekMonths = seasonMonths(trekSeason);
+  return trekMonths.some(m => bucketMonths.includes(m));
+}
+
+function applyFilters(list: Trek[], active: string[], facets: FilterFacets): Trek[] {
+  if (!active.length) return list;
+
+  // Group active selections by facet category for AND-across/OR-within logic
+  const byGroup: Record<string, string[]> = {};
+  for (const sel of active) {
+    if (facets.states.includes(sel))        { (byGroup.State ??= []).push(sel); continue; }
+    if (facets.difficulties.includes(sel))  { (byGroup.Difficulty ??= []).push(sel); continue; }
+    if (facets.durations.includes(sel))     { (byGroup.Duration ??= []).push(sel); continue; }
+    if (facets.seasons.includes(sel))       { (byGroup.Season ??= []).push(sel); continue; }
+    if (facets.suitabilities.includes(sel)) { (byGroup.Suitability ??= []).push(sel); continue; }
+    // Static options fallback
+    (byGroup.State ??= []).push(sel);
+  }
+
+  let result = list;
+
+  if (byGroup.State?.length) {
+    result = result.filter(t => byGroup.State.some(s =>
+      t.state.toLowerCase().includes(s.toLowerCase()) ||
+      s.toLowerCase().includes(t.state.toLowerCase())
+    ));
+  }
+  if (byGroup.Difficulty?.length) {
+    result = result.filter(t => byGroup.Difficulty.some(d =>
+      t.difficulty?.toLowerCase().includes(d.toLowerCase())
+    ));
+  }
+  if (byGroup.Duration?.length) {
+    result = result.filter(t => byGroup.Duration.some(b => durationMatchesBucket(t.duration, b)));
+  }
+  if (byGroup.Season?.length) {
+    result = result.filter(t => byGroup.Season.some(b => seasonMatchesBucket(t.season, b)));
+  }
+  if (byGroup.Suitability?.length) {
+    result = result.filter(t => byGroup.Suitability.some(s =>
+      t.suitability?.toLowerCase().includes(s.toLowerCase()) ||
+      (s.toLowerCase().includes("begin") && t.beginner)
+    ));
+  }
+
+  return result;
+}
+
 function ExploreContent() {
   const searchParams = useSearchParams();
   const stateParam = searchParams?.get("state") ?? null;
@@ -69,12 +141,22 @@ function ExploreContent() {
   const [sortBy, setSortBy] = useState("featured");
   const [active, setActive] = useState<string[]>(stateParam ? [stateParam] : []);
   const [showMobileFilters, setShowMobileFilters] = useState(false);
+  const [facets, setFacets] = useState<FilterFacets>(STATIC_FILTER_FACETS);
+
+  const filterGroups = [
+    { name: "State",       options: facets.states },
+    { name: "Difficulty",  options: facets.difficulties },
+    { name: "Duration",    options: facets.durations },
+    { name: "Season",      options: facets.seasons },
+    { name: "Suitability", options: facets.suitabilities },
+  ];
 
   useEffect(() => {
-    // Fetch static trek list and overlay full CMS entity data
-    Promise.all([fetchTreks(), fetchTrekCMSOverrides()]).then(([list, cmsOverrides]) => {
-      setBaseList(list.map(t => mergeCMSOverride(t as unknown as Trek, cmsOverrides[t.slug] ?? {})));
-    }).catch(() => { fetchTreks().then(list => setBaseList(list as unknown as Trek[])).catch(() => {}); });
+    // Fetch trek list, CMS overrides, and dynamic filter facets in parallel
+    Promise.all([fetchTreks(), fetchTrekCMSOverrides(), fetchFilterFacets()]).then(([list, cmsOv, f]) => {
+      setBaseList(list.map(t => mergeCMSOverride(t as unknown as Trek, cmsOv[t.slug] ?? {})));
+      setFacets(f);
+    }).catch(() => { fetchTreks().then(l => setBaseList(l as unknown as Trek[])).catch(() => {}); });
   }, []);
 
   // Apply state pre-filter from ?state= URL param
@@ -85,7 +167,11 @@ function ExploreContent() {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [stateParam]);
 
-  const trekList = useMemo(() => sortTreks(baseList, sortBy), [baseList, sortBy]);
+  // Sort THEN filter: AND across groups, OR within each group
+  const trekList = useMemo(
+    () => applyFilters(sortTreks(baseList, sortBy), active, facets),
+    [baseList, sortBy, active, facets]
+  );
 
   const toggle = (v: string) => setActive(p => p.includes(v) ? p.filter(x => x !== v) : [...p, v]);
 
@@ -116,7 +202,7 @@ function ExploreContent() {
       <section className="py-12">
         <div className="container-wide grid lg:grid-cols-[280px_1fr] gap-10">
           <aside className="hidden lg:block">
-            <div className="sticky top-24 space-y-7">
+            <div className="sticky top-24 max-h-[calc(100vh-7rem)] overflow-y-auto pr-1 space-y-7">
               <div className="flex items-center justify-between">
                 <h3 className="font-display text-xl font-semibold">Filters</h3>
                 {active.length > 0 && (

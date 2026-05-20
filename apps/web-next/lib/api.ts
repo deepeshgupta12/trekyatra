@@ -1781,6 +1781,53 @@ export interface CMSTrekOverride {
  * Used to overlay CMS entity data (image, difficulty, duration, season, suitability,
  * altitude) on top of static treks.ts data in explore, regions, and home pages.
  */
+export interface CMSTrekCard {
+  slug: string;
+  name: string;
+  image: string;
+  difficulty: string;
+  duration: string;
+  season: string;
+  altitude: string;
+  suitability?: string;
+  description: string;
+  state: string;
+  region: string;
+  beginner: boolean;
+}
+
+/**
+ * Fetch CMS trek_guide pages for a specific state and convert to Trek-card objects.
+ * Used by the regions page to show ALL pipeline-published treks for a state,
+ * not just the 3-12 entries in the static treks.ts file.
+ */
+export async function fetchCMSTreksByState(stateName: string): Promise<CMSTrekCard[]> {
+  try {
+    const pages = await fetchCMSPages({ page_type: "trek_guide", status: "published", limit: 100 });
+    return pages
+      .filter(p =>
+        p.trek_state?.toLowerCase() === stateName.toLowerCase() ||
+        p.trek_state?.toLowerCase().includes(stateName.toLowerCase().split(" ")[0])
+      )
+      .map(p => ({
+        slug:        p.slug,
+        name:        p.trek_name ?? p.title,
+        image:       p.hero_image_url ?? "/images/trek-forest.jpg",
+        difficulty:  p.trek_difficulty ?? "Moderate",
+        duration:    p.trek_duration   ?? "—",
+        season:      p.trek_season     ?? "—",
+        suitability: p.trek_suitability ?? undefined,
+        altitude:    (p.content_json?.trek_facts as Record<string, string> | undefined)?.altitude ?? "—",
+        description: p.seo_description ?? "",
+        state:       p.trek_state ?? stateName,
+        region:      stateName,
+        beginner:    p.trek_suitability?.toLowerCase().includes("begin") ?? false,
+      } satisfies CMSTrekCard));
+  } catch {
+    return [];
+  }
+}
+
 export async function fetchTrekCMSOverrides(): Promise<Record<string, CMSTrekOverride>> {
   try {
     const pages = await fetchCMSPages({ page_type: "trek_guide", status: "published", limit: 100 });
@@ -1802,6 +1849,30 @@ export async function fetchTrekCMSOverrides(): Promise<Record<string, CMSTrekOve
   } catch {
     return {};
   }
+}
+
+export interface FilterFacets {
+  states:        string[];
+  difficulties:  string[];
+  seasons:       string[];
+  suitabilities: string[];
+  durations:     string[];
+}
+
+/** Static fallback used while facets are loading or if API is unavailable. */
+export const STATIC_FILTER_FACETS: FilterFacets = {
+  states:        ["Uttarakhand", "Himachal Pradesh", "Jammu & Kashmir", "Ladakh", "Maharashtra", "West Bengal / Sikkim"],
+  difficulties:  ["Easy", "Moderate", "Difficult", "Challenging"],
+  seasons:       ["Winter", "Spring", "Summer", "Monsoon", "Autumn"],
+  suitabilities: ["Beginners", "Intermediate", "Experienced trekkers"],
+  durations:     ["1–3 days", "4–6 days", "7–9 days", "10+ days"],
+};
+
+/** Fetch dynamic filter facets from published trek_guide CMS pages. */
+export async function fetchFilterFacets(): Promise<FilterFacets> {
+  const res = await fetch("/api/v1/treks/filter-facets");
+  if (!res.ok) return STATIC_FILTER_FACETS;
+  return res.json();
 }
 
 /** Fire-and-forget: log a search query + optional click. Never throws. */

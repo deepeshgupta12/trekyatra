@@ -4,7 +4,7 @@ import { TrekCard } from "@/components/trek/TrekCard";
 import { Button } from "@/components/ui/button";
 import { MapPin, Sparkles, ArrowRight } from "lucide-react";
 import { treks } from "@/data/treks";
-import { fetchCMSPage, fetchTrekCMSOverrides, type CMSTrekOverride } from "@/lib/api";
+import { fetchCMSPage, fetchTrekCMSOverrides, fetchCMSTreksByState, type CMSTrekOverride, type CMSTrekCard } from "@/lib/api";
 import SchemaInjector from "@/components/seo/SchemaInjector";
 import { buildBreadcrumbSchema } from "@/lib/schema";
 import FAQAccordion from "@/components/content/FAQAccordion";
@@ -63,13 +63,16 @@ export default async function Region({ params }: Props) {
 
   const faqs = cmsPage?.content_json?.faqs ?? [];
 
-  // Fetch full CMS entity overrides (image, difficulty, duration, season, suitability, altitude)
-  const cmsOverrides: Record<string, CMSTrekOverride> = await fetchTrekCMSOverrides().catch(() => ({}));
+  // Fetch CMS trek_guide pages for this state (primary — includes pipeline-published treks)
+  // AND static trek data (fallback for treks not yet in CMS)
+  const [cmsStateTreks, cmsOverrides] = await Promise.all([
+    fetchCMSTreksByState(r.name).catch((): CMSTrekCard[] => []),
+    fetchTrekCMSOverrides().catch((): Record<string, CMSTrekOverride> => ({})),
+  ]);
 
-  // Fix: removed `.concat(treks)` which caused duplication of state-filtered treks
-  const stateTreks = treks
+  // Static treks for this state (enriched with CMS overrides)
+  const staticFiltered = treks
     .filter((t) => t.state.toLowerCase().includes(r.name.toLowerCase().split(" ")[0]))
-    .slice(0, 6)
     .map(t => {
       const ov = cmsOverrides[t.slug] ?? {};
       return {
@@ -81,8 +84,23 @@ export default async function Region({ params }: Props) {
         season:      ov.season      ?? t.season,
         altitude:    ov.altitude    ?? t.altitude,
         suitability: ov.suitability ?? undefined,
+        region:      t.region,
       };
     });
+
+  // Merge: CMS treks first, then fill with static treks not already covered by CMS slug
+  const cmsSlugSet = new Set(cmsStateTreks.map(p => p.slug));
+  const combinedTreks = [
+    ...cmsStateTreks.map(p => ({
+      slug: p.slug, name: p.name, region: p.region,
+      state: p.state, image: p.image,
+      duration: p.duration, altitude: p.altitude,
+      difficulty: p.difficulty, season: p.season,
+      description: p.description, beginner: p.beginner,
+      suitability: p.suitability,
+    })),
+    ...staticFiltered.filter(t => !cmsSlugSet.has(t.slug)),
+  ].slice(0, 6);
 
   const breadcrumbItems = [
     { label: "Home", href: `${siteUrl}/` },
@@ -150,7 +168,7 @@ export default async function Region({ params }: Props) {
             </Link>
           </div>
           <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-5">
-            {stateTreks.map((t) => (
+            {combinedTreks.map((t) => (
               <TrekCard key={t.slug} trek={t} />
             ))}
           </div>
@@ -166,26 +184,30 @@ export default async function Region({ params }: Props) {
         </section>
       )}
 
-      <section className="py-16 bg-surface-muted">
-        <div className="container-wide">
-          <h2 className="font-display text-3xl md:text-4xl font-semibold mb-8">Best time to trek in {r.name}</h2>
-          <div className="bg-card border border-border rounded-2xl p-6 overflow-x-auto">
-            <div className="grid grid-cols-12 gap-2 min-w-[700px]">
-              {["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"].map((m, i) => {
-                const intensity = [0.9, 0.8, 0.5, 0.3, 0.7, 0.95, 0.4, 0.4, 0.7, 0.95, 0.85, 0.9][i];
-                return (
-                  <div key={m} className="text-center">
-                    <div className="h-32 rounded-lg flex items-end overflow-hidden mb-2 bg-muted">
-                      <div className="w-full bg-gradient-saffron" style={{ height: `${intensity * 100}%` }} />
-                    </div>
-                    <div className="text-xs font-semibold">{m}</div>
+      {/* Season summary derived from the treks in this state */}
+      {combinedTreks.some(t => t.season && t.season !== "—") && (
+        <section className="py-12 bg-surface-muted">
+          <div className="container-wide max-w-4xl">
+            <h2 className="font-display text-2xl md:text-3xl font-semibold mb-6">When to trek in {r.name}</h2>
+            <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
+              {combinedTreks.filter(t => t.season && t.season !== "—").slice(0, 6).map(t => (
+                <div key={t.slug} className="bg-card border border-border rounded-xl p-4 flex items-start gap-3">
+                  <div className="flex-shrink-0 w-8 h-8 rounded-lg bg-accent/10 flex items-center justify-center">
+                    <span className="text-accent text-xs font-bold">⛰</span>
                   </div>
-                );
-              })}
+                  <div className="min-w-0">
+                    <p className="text-sm font-semibold truncate">{t.name}</p>
+                    <p className="text-xs text-accent font-medium mt-0.5">{t.season}</p>
+                  </div>
+                </div>
+              ))}
             </div>
+            <p className="text-sm text-muted-foreground mt-5">
+              Peak trekking months vary by altitude and route. Always check current conditions before departing.
+            </p>
           </div>
-        </div>
-      </section>
+        </section>
+      )}
 
       <section className="py-16">
         <div className="container-wide grid lg:grid-cols-2 gap-10">

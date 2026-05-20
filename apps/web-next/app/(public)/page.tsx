@@ -3,7 +3,7 @@ import { Mountain, Sparkles, ArrowRight, Star, Shield, FileCheck, Backpack, Wall
 import { Button } from "@/components/ui/button";
 import { TrekCard } from "@/components/trek/TrekCard";
 import { fetchTreks } from "@/lib/trekApi";
-import { fetchCMSPages } from "@/lib/api";
+import { fetchCMSPages, fetchTrekCMSOverrides } from "@/lib/api";
 import SchemaInjector from "@/components/seo/SchemaInjector";
 import { buildWebSiteSchema } from "@/lib/schema";
 import HomeSearchBar from "@/components/home/HomeSearchBar";
@@ -27,11 +27,26 @@ const trustStats = [
 ];
 
 export default async function Home() {
-  const [trekList, cmsTrekPages] = await Promise.all([
+  const [trekList, cmsTrekPages, cmsOverrides] = await Promise.all([
     fetchTreks(),
     fetchCMSPages({ page_type: "trek_guide", status: "published", limit: 50 }).catch(() => []),
+    fetchTrekCMSOverrides().catch((): Record<string, import("@/lib/api").CMSTrekOverride> => ({})),
   ]);
-  const trending = trekList.slice(0, 4);
+  // Apply CMS overrides (image, name, difficulty, season etc.) to trending static list
+  const trending = trekList.slice(0, 4).map(t => {
+    const ov = cmsOverrides[t.slug];
+    if (!ov) return t;
+    return {
+      ...t,
+      image:      ov.image       ?? t.image,
+      name:       ov.title       ?? t.name,
+      difficulty: ov.difficulty  ?? t.difficulty,
+      duration:   ov.duration    ?? t.duration,
+      season:     ov.season      ?? t.season,
+      altitude:   ov.altitude    ?? t.altitude,
+      suitability: ov.suitability,
+    };
+  });
 
   return (
     <>
