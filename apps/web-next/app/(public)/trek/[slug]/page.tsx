@@ -18,7 +18,7 @@ import AffiliateRail from "@/components/monetization/AffiliateRail";
 import TrustSignals from "@/components/trust/TrustSignals";
 import StickyMobileCTA from "@/components/trust/StickyMobileCTA";
 import type { AffiliateCardItem } from "@/components/monetization/AffiliateCard";
-import { buildArticleSchema, buildFAQSchema, buildBreadcrumbSchema } from "@/lib/schema";
+import { buildArticleSchema, buildFAQSchema, buildBreadcrumbSchema, buildTrekSchema } from "@/lib/schema";
 import {
   Clock, TrendingUp, Calendar,
   Shield, FileCheck, Backpack, Wallet, ChevronRight, Star, MapPin,
@@ -192,6 +192,26 @@ export default async function TrekDetailPage({ params }: { params: { slug: strin
     updatedAt: cmsPage?.updated_at ?? undefined,
     imageUrl: cmsPage?.hero_image_url ?? trek.image ?? undefined,
   });
+
+  // TouristTrip schema — enriches Article with trek-specific structured data
+  // following Schema.org/TouristTrip + Google structured data guidelines.
+  const trekSchema = buildTrekSchema({
+    name:        cmsPage?.trek_name ?? cmsDisplayName ?? trek.name,
+    description: cmsPage?.seo_description ?? trek.description ?? "",
+    url:         pageUrl,
+    imageUrl:    cmsPage?.hero_image_url ?? trek.image ?? undefined,
+    publishedAt: cmsPage?.published_at ?? undefined,
+    updatedAt:   cmsPage?.updated_at ?? undefined,
+    duration:    tf.duration    || trek.duration    || null,
+    altitude:    tf.altitude    || trek.altitude    || null,
+    difficulty:  cmsPage?.trek_difficulty || tf.difficulty  || trek.difficulty || null,
+    season:      cmsPage?.trek_season     || tf.season      || trek.season     || null,
+    permits:     tf.permits     || null,
+    base:        tf.base        || null,
+    trekState:   cmsPage?.trek_state || trek.state || null,
+    suitability: cmsPage?.trek_suitability || null,
+  });
+
   const faqSchema = faqItems.length ? buildFAQSchema(faqItems) : null;
   // Map canonical state names to the region slug used in /regions/[slug].
   // This prevents wrong-page links when trek_state has an LLM misspelling
@@ -223,7 +243,7 @@ export default async function TrekDetailPage({ params }: { params: { slug: strin
         difficulty={trek.difficulty}
         season={trek.season}
       />
-      <SchemaInjector schemas={[articleSchema, faqSchema, breadcrumbSchema]} />
+      <SchemaInjector schemas={[articleSchema, trekSchema, faqSchema, breadcrumbSchema]} />
       {/* Hero */}
       <section className="relative h-[78vh] min-h-[600px] flex items-end overflow-hidden">
         <div className="absolute inset-0">
@@ -245,18 +265,25 @@ export default async function TrekDetailPage({ params }: { params: { slug: strin
         </div>
         <div className="container-wide relative pb-12 text-surface">
           <div className="flex items-center gap-2 mt-3 mb-3 flex-wrap">
-            {/* Difficulty badge — show full value (e.g. "Very Difficult", "Easy–Moderate") */}
+            {/* Difficulty badge — full value from CMS column or trek_facts */}
             {(cmsPage?.trek_difficulty || tf.difficulty) && (
               <span className="px-3 py-1 rounded-full bg-accent text-accent-foreground text-xs font-semibold uppercase tracking-widest">
                 {cmsPage?.trek_difficulty || tf.difficulty}
               </span>
             )}
-            {/* Suitability badge — from CMS trek_suitability column or static beginner flag */}
-            {(cmsPage?.trek_suitability || trek.beginner) && (
-              <span className="px-3 py-1 rounded-full glass-dark text-xs uppercase tracking-widest">
-                {cmsPage?.trek_suitability || "Beginner-friendly"}
-              </span>
-            )}
+            {/* Suitability badge — only shown when it adds NEW information not already shown
+                by the difficulty badge (case-insensitive dedup) */}
+            {(() => {
+              const diff = (cmsPage?.trek_difficulty || tf.difficulty || "").toLowerCase().trim();
+              const suit = (cmsPage?.trek_suitability || (trek.beginner ? "Beginner-friendly" : "")).toLowerCase().trim();
+              const label = cmsPage?.trek_suitability || (trek.beginner ? "Beginner-friendly" : "");
+              if (!label || suit === diff) return null;
+              return (
+                <span className="px-3 py-1 rounded-full glass-dark text-xs uppercase tracking-widest">
+                  {label}
+                </span>
+              );
+            })()}
             <span className="px-3 py-1 rounded-full glass-dark text-xs uppercase tracking-widest flex items-center gap-1.5">
               <Star className="h-3 w-3 text-accent fill-accent" /> {formatUpdatedAt(cmsPage?.published_at ?? cmsPage?.updated_at)}
             </span>

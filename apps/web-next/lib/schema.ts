@@ -117,6 +117,113 @@ export function buildItemListSchema(items: string[], url: string) {
 }
 
 // ---------------------------------------------------------------------------
+// TouristTrip schema for trek guide pages
+// Follows Schema.org/TouristTrip and Google's structured data guidelines.
+// Surfaces duration, altitude, difficulty, season, permits, base in rich results.
+// ---------------------------------------------------------------------------
+export interface TrekSchemaProps {
+  name: string;
+  description: string;
+  url: string;
+  imageUrl?: string | null;
+  publishedAt?: string | null;
+  updatedAt?: string | null;
+  // Facts strip fields
+  duration?: string | null;
+  altitude?: string | null;
+  difficulty?: string | null;
+  season?: string | null;
+  permits?: string | null;
+  base?: string | null;
+  // Metadata columns
+  trekState?: string | null;
+  suitability?: string | null;
+}
+
+function parseDurationISO(duration: string): string | null {
+  // "6 days" → "P6D", "15 days" → "P15D" per ISO 8601
+  const match = duration.match(/(\d+)\s*day/i);
+  return match ? `P${match[1]}D` : null;
+}
+
+export function buildTrekSchema({
+  name, description, url, imageUrl, publishedAt, updatedAt,
+  duration, altitude, difficulty, season, permits, base, trekState, suitability,
+}: TrekSchemaProps) {
+  const fullUrl = `${SITE_URL}${url}`;
+
+  // additionalProperty: PropertyValue items for each fact strip element
+  // Schema.org/PropertyValue is the recommended way to attach custom facts
+  const additionalProperty = [
+    duration  && { "@type": "PropertyValue", name: "Duration", value: duration },
+    altitude  && { "@type": "PropertyValue", name: "Maximum Altitude", value: altitude },
+    difficulty && { "@type": "PropertyValue", name: "Difficulty Level", value: difficulty },
+    season    && { "@type": "PropertyValue", name: "Best Season", value: season },
+    permits   && { "@type": "PropertyValue", name: "Permits Required", value: permits },
+    base      && { "@type": "PropertyValue", name: "Base Village / Trailhead", value: base },
+    suitability && { "@type": "PropertyValue", name: "Suitable For", value: suitability },
+  ].filter(Boolean);
+
+  const isoDuration = duration ? parseDurationISO(duration) : null;
+
+  return {
+    "@context": "https://schema.org",
+    "@type": "TouristTrip",
+    name,
+    description,
+    url: fullUrl,
+    ...(imageUrl
+      ? { image: { "@type": "ImageObject", url: imageUrl, width: 1200, height: 630 } }
+      : {}),
+    ...(publishedAt ? { datePublished: publishedAt } : {}),
+    ...(updatedAt   ? { dateModified: updatedAt } : {}),
+    ...(isoDuration ? { duration: isoDuration } : {}),
+
+    // Audience — suitability level (e.g. "Beginners", "Advanced / Experienced")
+    ...(suitability
+      ? { touristType: { "@type": "Audience", audienceType: suitability } }
+      : {}),
+
+    // Publisher / tour operator attribution
+    offers: {
+      "@type": "Offer",
+      url: fullUrl,
+      seller: {
+        "@type": "Organization",
+        name: SITE_NAME,
+        url: SITE_URL,
+        logo: { "@type": "ImageObject", url: LOGO_URL },
+      },
+    },
+
+    // Location — state/region as Place
+    ...(trekState
+      ? {
+          location: {
+            "@type": "Place",
+            name: trekState,
+            address: {
+              "@type": "PostalAddress",
+              addressRegion: trekState,
+              addressCountry: "IN",
+            },
+          },
+        }
+      : {}),
+
+    // All facts strip elements as PropertyValue pairs
+    ...(additionalProperty.length > 0 ? { additionalProperty } : {}),
+
+    // Author / curator
+    creator: {
+      "@type": "Organization",
+      name: SITE_NAME,
+      url: SITE_URL,
+    },
+  };
+}
+
+// ---------------------------------------------------------------------------
 // WebSite + Organization schema (homepage)
 // ---------------------------------------------------------------------------
 export function buildWebSiteSchema() {

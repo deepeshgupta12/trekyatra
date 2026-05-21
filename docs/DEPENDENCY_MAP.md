@@ -846,6 +846,10 @@ Before editing any backend file:
 - `apps/web-next/components/layout/Header.tsx` — UPDATED: Logo compact, search functional (onClick+⌘K→/search), mobile search functional, nav px-2.5, useEffect import; blast radius: MEDIUM (header on every public page — visual + functional fix only)
 - `apps/web-next/app/(public)/page.tsx` — UPDATED: compare section fully responsive (heading text-2xl→sm:text-3xl→md:text-4xl, card p-3 md:p-4, text-sm md:text-base, no overflow); blast radius: LOW (leaf homepage)
 
+### fix: badge dedup + TouristTrip schema (2026-05-21) blast radius
+- `apps/web-next/lib/schema.ts` — ADDED: buildTrekSchema() — new TouristTrip JSON-LD schema function; blast radius: LOW (additive, doesn't touch buildArticleSchema)
+- `apps/web-next/app/(public)/trek/[slug]/page.tsx` — UPDATED: badge dedup IIFE prevents suitability badge when identical to difficulty (case-insensitive); trekSchema injected alongside articleSchema; blast radius: LOW (trek detail pages only)
+
 ### fix: trek detail page difficulty + suitability badges (2026-05-21) blast radius
 - `apps/web-next/app/(public)/trek/[slug]/page.tsx` — FIXED: difficulty badge no longer uses .split(" ")[0] (was showing "VERY" instead of "Very Difficult"); now reads cmsPage.trek_difficulty first, falls back to trek_facts.difficulty; suitability badge reads cmsPage.trek_suitability so "Advanced / Experienced", "Intermediate" etc. display correctly; blast radius: LOW (trek detail pages only)
 
