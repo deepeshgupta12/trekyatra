@@ -245,10 +245,18 @@ export default async function TrekDetailPage({ params }: { params: { slug: strin
         </div>
         <div className="container-wide relative pb-12 text-surface">
           <div className="flex items-center gap-2 mt-3 mb-3 flex-wrap">
-            {tf.difficulty && (
-              <span className="px-3 py-1 rounded-full bg-accent text-accent-foreground text-xs font-semibold uppercase tracking-widest">{tf.difficulty.split(" ")[0]}</span>
+            {/* Difficulty badge — show full value (e.g. "Very Difficult", "Easy–Moderate") */}
+            {(cmsPage?.trek_difficulty || tf.difficulty) && (
+              <span className="px-3 py-1 rounded-full bg-accent text-accent-foreground text-xs font-semibold uppercase tracking-widest">
+                {cmsPage?.trek_difficulty || tf.difficulty}
+              </span>
             )}
-            {trek.beginner && <span className="px-3 py-1 rounded-full glass-dark text-xs uppercase tracking-widest">Beginner-friendly</span>}
+            {/* Suitability badge — from CMS trek_suitability column or static beginner flag */}
+            {(cmsPage?.trek_suitability || trek.beginner) && (
+              <span className="px-3 py-1 rounded-full glass-dark text-xs uppercase tracking-widest">
+                {cmsPage?.trek_suitability || "Beginner-friendly"}
+              </span>
+            )}
             <span className="px-3 py-1 rounded-full glass-dark text-xs uppercase tracking-widest flex items-center gap-1.5">
               <Star className="h-3 w-3 text-accent fill-accent" /> {formatUpdatedAt(cmsPage?.published_at ?? cmsPage?.updated_at)}
             </span>
