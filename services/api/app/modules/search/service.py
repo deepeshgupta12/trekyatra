@@ -98,14 +98,21 @@ def record_page_view(
 
 
 def get_trending_queries(db: Session, limit: int = 10) -> list[str]:
-    """Return the most frequently searched queries from the last 7 days."""
+    """Return the most frequently searched queries from the last 7 days.
+
+    Filters applied:
+    - Query must be at least 3 characters (excludes partial keystrokes like 'ut')
+    - Query must have been searched at least 2 times (excludes one-off accidents)
+    """
     from sqlalchemy import text
 
     rows = db.execute(
         text(
             "SELECT query, COUNT(*) as cnt FROM search_events "
             "WHERE created_at > NOW() - INTERVAL '7 days' "
-            "GROUP BY query ORDER BY cnt DESC LIMIT :lim"
+            "AND LENGTH(TRIM(query)) >= 3 "
+            "GROUP BY query HAVING COUNT(*) >= 2 "
+            "ORDER BY cnt DESC LIMIT :lim"
         ),
         {"lim": limit},
     ).fetchall()

@@ -3,13 +3,13 @@
 import { useState, useMemo, useEffect, useRef, useCallback } from "react";
 import Link from "next/link";
 import Fuse from "fuse.js";
-import { TrekCard } from "@/components/trek/TrekCard";
+import { TrekCard, type Trek } from "@/components/trek/TrekCard";
 import { treks } from "@/data/treks";
 import {
   Search, X, TrendingUp, Clock, ArrowRight, Mountain, MapPin,
   Calendar, GitCompare, Backpack, FileCheck, Sparkles, ChevronRight,
 } from "lucide-react";
-import { RecommendationItem, fetchSearchSuggestions, logSearchEvent, SearchSuggestion, fetchTrekCMSOverrides, type CMSTrekOverride } from "@/lib/api";
+import { RecommendationItem, fetchSearchSuggestions, logSearchEvent, SearchSuggestion, fetchTrekCMSOverrides, fetchAllCMSTreks, type CMSTrekOverride } from "@/lib/api";
 
 const API = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000";
 
@@ -60,19 +60,83 @@ function getPageHref(slug: string, pageType: string): string {
   return fn ? fn(slug) : `/guides/${slug}`;
 }
 
-// ── Fuse.js instances ──────────────────────────────────────────────────────────
-const trekFuse = new Fuse(treks, {
+// ── Search tag computation ─────────────────────────────────────────────────────
+// Builds a string of semantic keywords from trek metadata so Fuse.js can match
+// natural queries like "Summer treks", "Beginner treks", "March treks", etc.
+type TrekWithTags = Trek & { suitability?: string; tags: string };
+
+const MONTH_MAP: Record<string, string> = {
+  Jan: "January winter", Feb: "February winter", Mar: "March spring winter",
+  Apr: "April summer spring", May: "May summer spring",
+  Jun: "June summer monsoon", Jul: "July monsoon summer",
+  Aug: "August monsoon summer", Sep: "September monsoon autumn",
+  Oct: "October autumn fall", Nov: "November autumn fall winter",
+  Dec: "December winter",
+};
+const SEASON_BUCKETS: [string, string][] = [
+  ["winter",  "Dec Jan Feb Mar Apr Nov"],
+  ["summer",  "Apr May Jun"],
+  ["monsoon", "Jun Jul Aug Sep"],
+  ["autumn",  "Sep Oct Nov"],
+  ["spring",  "Mar Apr May"],
+];
+
+function buildSearchTags(trek: Trek & { suitability?: string }): string {
+  const tags: string[] = [];
+  const s = trek.season ?? "";
+  // Month → full name + bucket names
+  for (const [abbr, expanded] of Object.entries(MONTH_MAP)) {
+    if (s.includes(abbr)) tags.push(expanded);
+  }
+  // Explicit season bucket labels
+  for (const [bucket, months] of SEASON_BUCKETS) {
+    if (months.split(" ").some(m => s.includes(m))) tags.push(bucket);
+  }
+  // Difficulty/suitability → human labels
+  const suit = (trek.suitability ?? "").toLowerCase();
+  const diff = (trek.difficulty ?? "").toLowerCase();
+  if (suit.includes("begin") || diff === "easy" || diff.startsWith("easy")) {
+    tags.push("beginner easy first-time first trek");
+  }
+  if (suit.includes("intermediate") || diff.includes("moderate")) {
+    tags.push("intermediate moderate");
+  }
+  if (suit.includes("experienced") || diff.includes("difficult") || diff.includes("challenging")) {
+    tags.push("challenging difficult experienced expert advanced");
+  }
+  // State synonyms for common misspellings/abbreviations
+  const st = (trek.state ?? "").toLowerCase();
+  if (st.includes("uttarakhand") || st.includes("uttrakhand")) tags.push("uttarakhand kumaon garhwal uk");
+  if (st.includes("himachal")) tags.push("himachal hp himachal pradesh");
+  if (st.includes("kashmir") || st.includes("j&k")) tags.push("kashmir j&k jk jammu");
+  if (st.includes("ladakh")) tags.push("ladakh leh");
+  if (st.includes("sikkim")) tags.push("sikkim northeast north east");
+  return tags.join(" ");
+}
+
+const TREK_FUSE_CONFIG = {
   keys: [
-    { name: "name", weight: 3 },
-    { name: "region", weight: 2 },
-    { name: "state", weight: 2 },
-    { name: "season", weight: 1.5 },
-    { name: "difficulty", weight: 1 },
-    { name: "description", weight: 1 },
+    { name: "name",       weight: 4.0 },
+    { name: "state",      weight: 3.0 },
+    { name: "region",     weight: 2.0 },
+    { name: "tags",       weight: 2.5 },
+    { name: "difficulty", weight: 1.5 },
+    { name: "season",     weight: 1.5 },
+    { name: "suitability", weight: 1.5 },
+    { name: "description", weight: 1.0 },
   ],
-  threshold: 0.35,
+  threshold: 0.4,
   includeScore: true,
   minMatchCharLength: 2,
+};
+
+// Module-level static instances (12 treks) — used as initial fallback until CMS data loads
+const _staticTreksWithTags: TrekWithTags[] = (treks as (Trek & { suitability?: string })[])
+  .map(t => ({ ...t, tags: buildSearchTags(t) }));
+let _trekFuse = new Fuse(_staticTreksWithTags, TREK_FUSE_CONFIG);
+let _didYouMeanFuse = new Fuse(_staticTreksWithTags, {
+  keys: [{ name: "name", weight: 1 }, { name: "tags", weight: 0.5 }],
+  threshold: 0.55, includeScore: true, minMatchCharLength: 3,
 });
 
 const guideFuse = new Fuse(guides, {
@@ -80,15 +144,6 @@ const guideFuse = new Fuse(guides, {
   threshold: 0.4,
   includeScore: true,
   minMatchCharLength: 2,
-});
-
-// Separate name-only instance for "Did you mean?" — higher threshold, single field,
-// so multi-field weighting doesn't compress scores below detection range.
-const didYouMeanFuse = new Fuse(treks, {
-  keys: [{ name: "name", weight: 1 }],
-  threshold: 0.55,
-  includeScore: true,
-  minMatchCharLength: 3,
 });
 
 // ── localStorage helpers ───────────────────────────────────────────────────────
@@ -111,6 +166,8 @@ export default function SearchResults() {
   const [recent, setRecent] = useState<string[]>([]);
   const [trending, setTrending] = useState<string[]>(STATIC_TRENDING);
   const [cmsOverrides, setCmsOverrides] = useState<Record<string, CMSTrekOverride>>({});
+  // fuseVersion increments when the Fuse index is rebuilt, forcing useMemo to re-run
+  const [fuseVersion, setFuseVersion] = useState(0);
   const inputRef = useRef<HTMLInputElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -118,13 +175,40 @@ export default function SearchResults() {
   useEffect(() => {
     inputRef.current?.focus();
     setRecent(readRecent());
-    // Fetch real trending queries from API (falls back to static on error)
-    fetch(`${API_BASE}/api/v1/search/trending?limit=5`)
+
+    // Fetch real trending queries (falls back to static if API unavailable)
+    fetch(`${API_BASE}/api/v1/search/trending?limit=6`)
       .then(r => r.ok ? r.json() : null)
-      .then(data => { if (Array.isArray(data) && data.length > 0) setTrending(data); })
+      .then((data: string[] | null) => {
+        if (Array.isArray(data) && data.length > 0) {
+          // Client-side safety: skip any very short entries that slipped through
+          const clean = data.filter(q => q.trim().length >= 3);
+          if (clean.length > 0) setTrending(clean);
+        }
+      })
       .catch(() => {});
-    // Fetch CMS overrides so trek cards in search results show real images/data
-    fetchTrekCMSOverrides().then(setCmsOverrides).catch(() => {});
+
+    // Fetch ALL CMS trek_guide pages and rebuild Fuse with full dataset + tags.
+    // This is the key fix: replaces the 12-trek static index with 100+ CMS treks.
+    Promise.all([fetchAllCMSTreks(), fetchTrekCMSOverrides()]).then(([cmsAll, ov]) => {
+      setCmsOverrides(ov);
+      // Merge: CMS treks first, then static treks not already in CMS (by slug)
+      const cmsSlugSet = new Set(cmsAll.map(t => t.slug));
+      const staticFallbacks = (treks as (Trek & { suitability?: string })[])
+        .filter(t => !cmsSlugSet.has(t.slug))
+        .map(t => { const o = ov[t.slug]; return o ? { ...t, image: o.image ?? t.image, difficulty: o.difficulty ?? t.difficulty, season: o.season ?? t.season, suitability: o.suitability } : t; });
+      const merged: TrekWithTags[] = [
+        ...cmsAll.map(t => ({ ...t, tags: buildSearchTags(t as Trek & { suitability?: string }) })),
+        ...staticFallbacks.map(t => ({ ...t, tags: buildSearchTags(t) })),
+      ];
+      // Rebuild both Fuse instances from the full merged dataset
+      _trekFuse = new Fuse(merged, TREK_FUSE_CONFIG);
+      _didYouMeanFuse = new Fuse(merged, {
+        keys: [{ name: "name", weight: 1 }, { name: "tags", weight: 0.5 }],
+        threshold: 0.55, includeScore: true, minMatchCharLength: 3,
+      });
+      setFuseVersion(v => v + 1);  // triggers useMemo re-run
+    }).catch(() => {});
   }, []);
 
   // Close dropdown on outside click
@@ -167,27 +251,15 @@ export default function SearchResults() {
   }, [q]);
 
   // Fuzzy results (with scores for "did you mean?")
+  // fuseVersion in deps ensures results re-compute when CMS data finishes loading
   const trekResults = useMemo(() => {
     if (!q.trim()) return [];
-    return trekFuse.search(q);
-  }, [q]);
+    return _trekFuse.search(q);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [q, fuseVersion]);
 
-  // Apply CMS overrides (real images, names, difficulty) to static trek results
-  const matchingTreks = useMemo(() => trekResults.map(r => {
-    const t = r.item;
-    const ov = cmsOverrides[t.slug];
-    if (!ov) return t;
-    return {
-      ...t,
-      image:      ov.image      ?? t.image,
-      name:       ov.title      ?? t.name,
-      difficulty: ov.difficulty ?? t.difficulty,
-      duration:   ov.duration   ?? t.duration,
-      season:     ov.season     ?? t.season,
-      altitude:   ov.altitude   ?? t.altitude,
-      suitability: ov.suitability,
-    };
-  }), [trekResults, cmsOverrides]);
+  // trekResults already include full CMS data (from _trekFuse built from fetchAllCMSTreks)
+  const matchingTreks = useMemo(() => trekResults.map(r => r.item), [trekResults]);
 
   const matchingGuides = useMemo(() => {
     if (!q.trim()) return [];
@@ -199,7 +271,8 @@ export default function SearchResults() {
   const didYouMeanTrek = useMemo(() => {
     const trimmed = q.trim();
     if (!trimmed || trimmed.length < 3) return null;
-    const results = didYouMeanFuse.search(trimmed, { limit: 1 });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    const results = _didYouMeanFuse.search(trimmed, { limit: 1 });
     if (!results.length) return null;
     const { item, score = 1 } = results[0];
     // Don't suggest when the user already typed the exact trek name

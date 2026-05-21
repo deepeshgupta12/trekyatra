@@ -90,6 +90,7 @@ All V0 foundations are shipped. The stack is live locally with:
 | 53 | UX bug fixes: regions page shows all CMS state treks (not just 3 static), season chart removed, home trending CMS overrides, DifficultyTabs state+difficulty fix | done |
 | 54 | Explore/home completeness: all CMS treks in baseList, is_featured flag, trending API, pagination, empty state, seasonal CMS data, remove hardcoded sections | done |
 | 55 | Site-wide fixes batch: double TrekYatra titles, sitemap trek_guide exclusion, difficulty emoji removal, home editorial link, auth 24h session, password eye icon, Google/email conflict, nav hover delay, search trending API, search CMS trek cards | done |
+| 58 | Search engine overhaul: dynamic Fuse from all CMS treks, computed tags (season/difficulty/state), trending min-length+count filter, "Phulara Ridge" / "uttarakhand" / "Summer" / "Beginner" all now work | done |
 | 56 | Weekly news agent + /news/[slug] pages | pending — step doc created |
 | 57 | Plan My Trek revamp | pending — awaiting requirements |
 
