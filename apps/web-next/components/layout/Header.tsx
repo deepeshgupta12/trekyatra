@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { Search, Bookmark, User, Menu, X, ChevronDown, Mountain, Compass, Calendar, GitCompare, Backpack, FileCheck, Wallet, ShoppingBag, MapPin, Sparkles, LogOut, LayoutDashboard } from "lucide-react";
@@ -77,6 +77,10 @@ export const Header = () => {
   const [megaOpen, setMegaOpen] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
   const [userMenuOpen, setUserMenuOpen] = useState(false);
+  // Delay timer so cursor can move from nav item to mega panel without closing it
+  const megaCloseTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const openMega  = () => { if (megaCloseTimer.current) clearTimeout(megaCloseTimer.current); setMegaOpen(true); };
+  const closeMega = () => { megaCloseTimer.current = setTimeout(() => setMegaOpen(false), 180); };
   const pathname = usePathname();
   const { user, logout } = useAuth();
   const router = useRouter();
@@ -111,8 +115,8 @@ export const Header = () => {
               {primaryLinks.map((link) => (
                 <div
                   key={link.to}
-                  onMouseEnter={() => link.hasMega && setMegaOpen(true)}
-                  onMouseLeave={() => link.hasMega && setMegaOpen(false)}
+                  onMouseEnter={() => link.hasMega && openMega()}
+                  onMouseLeave={() => link.hasMega && closeMega()}
                 >
                   <Link
                     href={link.to}
@@ -203,8 +207,8 @@ export const Header = () => {
 
           {megaOpen && (
             <div
-              onMouseEnter={() => setMegaOpen(true)}
-              onMouseLeave={() => setMegaOpen(false)}
+              onMouseEnter={() => openMega()}
+              onMouseLeave={() => closeMega()}
               className="absolute left-0 right-0 top-16 bg-surface border-b border-border shadow-elevated animate-fade-up"
             >
               <div className="container-wide py-8 grid grid-cols-4 gap-8">

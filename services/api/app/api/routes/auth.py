@@ -132,11 +132,15 @@ def login_email(
     request: Request,
     db: Session = Depends(get_db),
 ) -> AuthResponse:
-    user = authenticate_email_user(
-        db,
-        email=payload.email,
-        password=payload.password,
-    )
+    try:
+        user = authenticate_email_user(
+            db,
+            email=payload.email,
+            password=payload.password,
+        )
+    except ValueError as exc:
+        # Specific case: account exists but has no password (e.g. registered via Google)
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(exc)) from exc
     if not user:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,

@@ -9,7 +9,7 @@ import {
   Search, X, TrendingUp, Clock, ArrowRight, Mountain, MapPin,
   Calendar, GitCompare, Backpack, FileCheck, Sparkles, ChevronRight,
 } from "lucide-react";
-import { RecommendationItem, fetchSearchSuggestions, logSearchEvent, SearchSuggestion } from "@/lib/api";
+import { RecommendationItem, fetchSearchSuggestions, logSearchEvent, SearchSuggestion, fetchTrekCMSOverrides, type CMSTrekOverride } from "@/lib/api";
 
 const API = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000";
 
@@ -20,6 +20,8 @@ const STATIC_TRENDING = [
   "Hampta Pass", "Winter treks December", "Kedarkantha vs Brahmatal",
   "Monsoon Sahyadri", "Valley of Flowers permit",
 ];
+
+const API_BASE = process.env.NEXT_PUBLIC_API_BASE ?? "http://localhost:8000";
 
 const guides = [
   { t: "Hampta Pass complete guide", type: "Trek detail", to: "/trek/hampta-pass", icon: Mountain },
@@ -107,6 +109,8 @@ export default function SearchResults() {
   const [showSuggestions, setShowSuggestions] = useState(false);
   const [cmssuggestions, setCmsSuggestions] = useState<SearchSuggestion[]>([]);
   const [recent, setRecent] = useState<string[]>([]);
+  const [trending, setTrending] = useState<string[]>(STATIC_TRENDING);
+  const [cmsOverrides, setCmsOverrides] = useState<Record<string, CMSTrekOverride>>({});
   const inputRef = useRef<HTMLInputElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -114,6 +118,13 @@ export default function SearchResults() {
   useEffect(() => {
     inputRef.current?.focus();
     setRecent(readRecent());
+    // Fetch real trending queries from API (falls back to static on error)
+    fetch(`${API_BASE}/api/v1/search/trending?limit=5`)
+      .then(r => r.ok ? r.json() : null)
+      .then(data => { if (Array.isArray(data) && data.length > 0) setTrending(data); })
+      .catch(() => {});
+    // Fetch CMS overrides so trek cards in search results show real images/data
+    fetchTrekCMSOverrides().then(setCmsOverrides).catch(() => {});
   }, []);
 
   // Close dropdown on outside click
@@ -161,7 +172,22 @@ export default function SearchResults() {
     return trekFuse.search(q);
   }, [q]);
 
-  const matchingTreks = useMemo(() => trekResults.map(r => r.item), [trekResults]);
+  // Apply CMS overrides (real images, names, difficulty) to static trek results
+  const matchingTreks = useMemo(() => trekResults.map(r => {
+    const t = r.item;
+    const ov = cmsOverrides[t.slug];
+    if (!ov) return t;
+    return {
+      ...t,
+      image:      ov.image      ?? t.image,
+      name:       ov.title      ?? t.name,
+      difficulty: ov.difficulty ?? t.difficulty,
+      duration:   ov.duration   ?? t.duration,
+      season:     ov.season     ?? t.season,
+      altitude:   ov.altitude   ?? t.altitude,
+      suitability: ov.suitability,
+    };
+  }), [trekResults, cmsOverrides]);
 
   const matchingGuides = useMemo(() => {
     if (!q.trim()) return [];
@@ -311,7 +337,7 @@ export default function SearchResults() {
                 <TrendingUp className="h-4 w-4 text-accent" /> Trending
               </h3>
               <div className="flex flex-wrap gap-2">
-                {STATIC_TRENDING.map(t => (
+                {trending.map(t => (
                   <button key={t} onClick={() => { setQ(t); setShowSuggestions(true); }} className="px-3 py-1.5 rounded-full border border-border bg-card text-sm hover:border-accent hover:bg-accent/5 transition-colors">{t}</button>
                 ))}
               </div>

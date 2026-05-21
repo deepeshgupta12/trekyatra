@@ -35,7 +35,7 @@ export async function generateMetadata({ params }: { params: { slug: string } })
   const page = await findPackingPage(params.slug);
   const trekName = trekDisplayName(params.slug);
   const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? "https://trekyatra.com";
-  const title = page?.seo_title ? `${page.seo_title} | TrekYatra` : `${trekName} Packing List | TrekYatra`;
+  const title = (page?.seo_title?.replace(/\s*\|\s*TrekYatra\s*$/i, "").trim()) || `${trekName} Packing List`;
   const description = page?.seo_description ?? `Complete packing list and gear guide for the ${trekName}.`;
   const canonical = `${siteUrl}/trek/${params.slug}/packing`;
   return {

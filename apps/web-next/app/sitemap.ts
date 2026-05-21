@@ -104,9 +104,11 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     }
   } catch { /* static data unavailable */ }
 
-  // Published CMS pages — use dedicated lightweight endpoint with 20s timeout
+  // Published CMS pages — trek_guide pages are excluded from the root sitemap;
+  // they are already listed in state-specific sitemaps (/uttarakhand-treks-sitemap.xml etc.)
   const PAGE_PREFIX: Record<string, string | undefined> = {
-    trek_guide: "/trek", packing_list: "/packing", packing_guide: "/packing",
+    trek_guide: undefined, // excluded — covered by state-specific sitemaps
+    packing_list: "/packing", packing_guide: "/packing",
     permit_guide: "/permits", beginner_guide: "/guides", beginner_roundup: "/guides",
     cost_guide: "/guides", gear_guide: "/guides", safety_guide: "/guides",
     itinerary: "/guides", expert_guide: "/guides", premium_compendium: "/guides",

@@ -23,7 +23,7 @@ export async function generateMetadata({ params }: { params: { slug: string } })
   } catch { /* not found */ }
   const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? "https://trekyatra.com";
   const title = cmsPage?.seo_title
-    ? `${cmsPage.seo_title} | TrekYatra`
+    ? cmsPage.seo_title.replace(/\s*\|\s*TrekYatra\s*$/i, '').trim()
     : `Permit Guide — ${params.slug.replace(/-/g, " ")} | TrekYatra`;
   const description = cmsPage?.seo_description ?? "Official permit requirements and how to obtain them.";
   const canonical = `${siteUrl}/permits/${params.slug}`;

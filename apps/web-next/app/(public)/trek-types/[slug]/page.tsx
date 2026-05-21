@@ -18,7 +18,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   try {
     const page = await fetchCMSPage(`trek-types/${params.slug}`);
     return {
-      title: page.seo_title ?? `${page.title} | TrekYatra`,
+      title: page.seo_title?.replace(/\s*\|\s*TrekYatra\s*$/i, '').trim() ?? page.title,
       description: page.seo_description ?? `Discover the best ${params.slug.replace(/-/g, " ")} treks in India.`,
       alternates: { canonical: `${siteUrl}/trek-types/${params.slug}` },
       openGraph: { title: page.title, images: page.hero_image_url ? [page.hero_image_url] : [] },
@@ -26,7 +26,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   } catch {
     const label = params.slug.replace(/-/g, " ");
     return {
-      title: `${label} Treks in India | TrekYatra`,
+      title: `${label} Treks in India`,
       description: `Explore the best ${label} trekking routes in India with TrekYatra.`,
     };
   }

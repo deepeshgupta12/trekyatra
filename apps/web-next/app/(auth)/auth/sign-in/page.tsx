@@ -5,7 +5,7 @@ import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useGoogleLogin } from "@react-oauth/google";
 import { Button } from "@/components/ui/button";
-import { Mail, Lock, Smartphone, ArrowRight, Check, AlertCircle } from "lucide-react";
+import { Mail, Lock, Smartphone, ArrowRight, Check, AlertCircle, Eye, EyeOff } from "lucide-react";
 import { Logo } from "@/components/brand/Logo";
 import { useAuth } from "@/lib/auth-context";
 
@@ -42,6 +42,7 @@ function AuthLayout({ children, title, sub }: { children: React.ReactNode; title
 function SignInForm() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const { login, loginWithGoogle } = useAuth();
@@ -109,13 +110,22 @@ function SignInForm() {
         <div className="relative">
           <Lock className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
           <input
-            type="password"
+            type={showPassword ? "text" : "password"}
             placeholder="Password"
             value={password}
             onChange={e => setPassword(e.target.value)}
             required
-            className="w-full h-12 pl-11 pr-4 rounded-xl border border-border bg-surface focus:border-accent outline-none transition-colors"
+            className="w-full h-12 pl-11 pr-11 rounded-xl border border-border bg-surface focus:border-accent outline-none transition-colors"
           />
+          <button
+            type="button"
+            onClick={() => setShowPassword(p => !p)}
+            className="absolute right-4 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
+            tabIndex={-1}
+            aria-label={showPassword ? "Hide password" : "Show password"}
+          >
+            {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+          </button>
         </div>
         <div className="flex justify-end">
           <Link href="/auth/forgot-password" className="text-xs text-muted-foreground hover:text-accent transition-colors">Forgot password?</Link>

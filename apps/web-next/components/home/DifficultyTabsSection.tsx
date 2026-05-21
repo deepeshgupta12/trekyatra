@@ -40,7 +40,7 @@ type Difficulty = "Easy" | "Moderate" | "Challenging";
 
 const DIFF_CONFIG: {
   label: Difficulty;
-  emoji: string;
+  dot: string;
   desc: string;
   page: string;
   cta: string;
@@ -48,7 +48,7 @@ const DIFF_CONFIG: {
 }[] = [
   {
     label: "Easy",
-    emoji: "🟢",
+    dot: "bg-emerald-500",
     desc: "First-time trekkers",
     page: "/beginner",
     cta: "All beginner treks",
@@ -56,7 +56,7 @@ const DIFF_CONFIG: {
   },
   {
     label: "Moderate",
-    emoji: "🟡",
+    dot: "bg-amber-400",
     desc: "Some experience needed",
     page: "/moderate",
     cta: "All moderate treks",
@@ -64,7 +64,7 @@ const DIFF_CONFIG: {
   },
   {
     label: "Challenging",
-    emoji: "🔴",
+    dot: "bg-red-500",
     desc: "Experienced trekkers",
     page: "/challenging",
     cta: "All challenging treks",
@@ -122,7 +122,7 @@ export function DifficultyTabsSection({ treks, cmsPages = [] }: Props) {
                   : "bg-card border-border text-muted-foreground hover:text-foreground hover:border-accent/40"
               }`}
             >
-              <span aria-hidden="true">{d.emoji}</span>
+              <span className={`h-2.5 w-2.5 rounded-full flex-shrink-0 ${d.dot}`} />
               {d.label}
               <span className="text-[10px] opacity-60 hidden sm:inline">{d.desc}</span>
             </button>

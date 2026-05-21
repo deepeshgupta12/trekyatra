@@ -12,7 +12,7 @@ export async function generateMetadata({ params }: { params: { slug: string } })
   try {
     const op = await fetchPublicOperator(params.slug);
     const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? "https://trekyatra.com";
-    const title = `${op.name} — Trek Operator | TrekYatra`;
+    const title = `${op.name} — Trek Operator`;
     const description = op.description_long?.slice(0, 160) ?? `${op.name} is a vetted trekking operator on TrekYatra.`;
     const canonical = `${siteUrl}/operators/${op.slug}`;
     return {
@@ -22,7 +22,7 @@ export async function generateMetadata({ params }: { params: { slug: string } })
       openGraph: { title, description, url: canonical, type: "profile" },
     };
   } catch {
-    return { title: "Operator | TrekYatra" };
+    return { title: "Operator" };
   }
 }
 

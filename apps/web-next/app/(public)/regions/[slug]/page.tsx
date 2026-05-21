@@ -33,14 +33,14 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   try {
     const page = await fetchCMSPage(`regions/${params.slug}`);
     return {
-      title: page.seo_title ?? `${r.name} Treks | TrekYatra`,
+      title: page.seo_title?.replace(/\s*\|\s*TrekYatra\s*$/i, '').trim() ?? `${r.name} Treks`,
       description: page.seo_description ?? r.blurb,
       alternates: { canonical: `${siteUrl}/regions/${params.slug}` },
       openGraph: { title: page.title, images: page.hero_image_url ? [page.hero_image_url] : [r.image] },
     };
   } catch {
     return {
-      title: `${r.name} Treks | TrekYatra`,
+      title: `${r.name} Treks`,
       description: r.blurb,
       alternates: { canonical: `${siteUrl}/regions/${params.slug}` },
     };

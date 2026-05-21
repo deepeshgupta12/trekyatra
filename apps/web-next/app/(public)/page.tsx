@@ -188,8 +188,9 @@ export default async function Home() {
                 <span className="flex items-center gap-1.5"><Clock className="h-3.5 w-3.5" /> 12 min read</span>
                 <span className="flex items-center gap-1.5"><Star className="h-3.5 w-3.5 text-accent fill-accent" /> Updated last week</span>
               </div>
-              <Link href="/trek/kedarkantha">
-                <Button variant="default" size="lg">Read the guide <ArrowRight className="h-4 w-4" /></Button>
+              {/* Static editorial — links to beginner guide hub, not a specific trek */}
+              <Link href="/beginner">
+                <Button variant="default" size="lg">Explore beginner treks <ArrowRight className="h-4 w-4" /></Button>
               </Link>
             </div>
           </div>

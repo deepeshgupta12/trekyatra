@@ -32,7 +32,7 @@ class Settings(BaseSettings):
 
     auth_jwt_secret: str = "trekyatra-dev-secret-key-at-least-32-bytes-long"
     auth_jwt_algorithm: str = "HS256"
-    auth_access_token_expire_minutes: int = 60
+    auth_access_token_expire_minutes: int = 1440  # 24 hours — user stays logged in for 1 day
     auth_cookie_name: str = "trekyatra_access_token"
     auth_cookie_secure: bool = False
     auth_cookie_samesite: str = "lax"

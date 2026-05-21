@@ -86,6 +86,15 @@ def authenticate_email_user(db: Session, *, email: str, password: str) -> User |
     if not user.is_active:
         return None
 
+    # User registered via Google OAuth — no password is set.
+    # Return a descriptive error so the frontend can show a helpful message.
+    if user.password_hash is None:
+        raise ValueError(
+            "This account was created with Google sign-in. "
+            "Please click 'Continue with Google' to sign in, "
+            "or use 'Forgot password?' to set a password."
+        )
+
     if not verify_password(password, user.password_hash):
         return None
 

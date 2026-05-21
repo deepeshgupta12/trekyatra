@@ -46,13 +46,11 @@ export async function generateMetadata({ params }: { params: { slug: string } })
 
   const trekRaw = await fetchTrekBySlug(params.slug).catch(() => null);
   const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? "https://trekyatra.com";
-  // Strip any trailing "| TrekYatra" the LLM wrote into seo_title before appending our own suffix.
+  // Strip trailing "| TrekYatra" the LLM may have written into seo_title.
+  // Do NOT append "| TrekYatra" here — the root layout template: "%s | TrekYatra" adds it.
   const rawSeoTitle = cmsPage?.seo_title?.replace(/\s*\|\s*TrekYatra\s*$/i, "").trim();
   const title = rawSeoTitle
-    ? `${rawSeoTitle} | TrekYatra`
-    : trekRaw?.name
-    ? `${trekRaw.name} — Trek Guide | TrekYatra`
-    : `${params.slug.replace(/-/g, " ")} | TrekYatra`;
+    || (trekRaw?.name ? `${trekRaw.name} — Trek Guide` : params.slug.replace(/-/g, " "));
   const description = cmsPage?.seo_description ?? trekRaw?.description ?? "";
   const canonicalUrl = `${siteUrl}/treks/${params.slug}`;
   const ogImage = cmsPage?.hero_image_url ?? trekRaw?.image ?? null;
