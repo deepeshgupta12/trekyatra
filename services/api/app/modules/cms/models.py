@@ -39,7 +39,8 @@ class CMSPage(UUIDPrimaryKeyMixin, TimestampMixin, Base):
     embedding: Mapped[list[float] | None] = mapped_column(Vector(1536), nullable=True)
 
     # Editorial feature flag — admin marks a trek as "featured" for the explore sort
-    is_featured: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
+    # nullable=True so SQLAlchemy SELECT doesn't fail if migration 0035 not yet applied
+    is_featured: Mapped[bool | None] = mapped_column(Boolean, nullable=True, default=False)
 
     # Trek guide metadata — first-class columns (only populated for page_type = "trek_guide")
     trek_name: Mapped[str | None] = mapped_column(String(255), nullable=True)

@@ -1832,13 +1832,11 @@ export async function fetchAllCMSTreks(): Promise<CMSTrekCard[]> {
 
 /**
  * Fetch trending trek_guide CMS pages (ranked by views + saves + recency + is_featured).
- * Used by the home page "Treks Indians are obsessing over" section.
+ * Uses apiFetch so it works in both server components (full URL) and client components.
  */
 export async function fetchTrendingTreks(limit = 4): Promise<CMSTrekCard[]> {
   try {
-    const res = await fetch(`/api/v1/cms/pages/trending?limit=${limit}`);
-    if (!res.ok) return [];
-    const pages: CMSPage[] = await res.json();
+    const pages = await apiFetch<CMSPage[]>(`/cms/pages/trending?limit=${limit}`);
     return pages.map(p => ({
       slug:        p.slug,
       name:        p.trek_name ?? p.title,

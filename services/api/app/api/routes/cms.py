@@ -35,37 +35,53 @@ def trending_trek_pages(
     """Return published trek_guide pages ranked by popularity.
 
     Score = (page_views last 30d × 0.5) + (bookmark count × 0.3) + (recency × 0.2).
-    Falls back to is_featured=true first, then most-recently-published when no analytics data.
+    is_featured ordering is applied if migration 0035 has been applied; gracefully
+    skipped if the column doesn't exist yet.
     """
-    from sqlalchemy import text
-    rows = db.execute(
-        text(
-            "SELECT c.id, c.slug, "
-            "COALESCE(v.view_count, 0) * 0.5 + COALESCE(b.bookmark_count, 0) * 0.3 + "
-            "EXTRACT(EPOCH FROM COALESCE(c.published_at, NOW() - INTERVAL '365 days')) / 1e9 * 0.2 "
-            "  AS score "
-            "FROM cms_pages c "
-            "LEFT JOIN ( "
-            "  SELECT page_slug, COUNT(*) AS view_count FROM page_views "
-            "  WHERE viewed_at > NOW() - INTERVAL '30 days' GROUP BY page_slug "
-            ") v ON v.page_slug = c.slug "
-            "LEFT JOIN ( "
-            "  SELECT trek_slug, COUNT(*) AS bookmark_count FROM user_bookmarks "
-            "  WHERE trek_slug IS NOT NULL GROUP BY trek_slug "
-            ") b ON b.trek_slug = c.slug "
-            "WHERE c.page_type = 'trek_guide' AND c.status = 'published' "
-            "ORDER BY c.is_featured DESC, score DESC "
-            "LIMIT :lim"
-        ),
-        {"lim": limit},
-    ).fetchall()
+    from sqlalchemy import text, select
+
+    # Check whether is_featured column exists (migration 0035 may not be applied yet)
+    try:
+        _has_featured = db.execute(
+            text("SELECT 1 FROM information_schema.columns "
+                 "WHERE table_name='cms_pages' AND column_name='is_featured' LIMIT 1")
+        ).fetchone() is not None
+    except Exception:
+        _has_featured = False
+
+    featured_order = "c.is_featured DESC, " if _has_featured else ""
+
+    try:
+        rows = db.execute(
+            text(
+                "SELECT c.id, c.slug, "
+                "COALESCE(v.view_count, 0) * 0.5 + COALESCE(b.bookmark_count, 0) * 0.3 + "
+                "EXTRACT(EPOCH FROM COALESCE(c.published_at, NOW() - INTERVAL '365 days')) / 1e9 * 0.2 "
+                "  AS score "
+                "FROM cms_pages c "
+                "LEFT JOIN ( "
+                "  SELECT page_slug, COUNT(*) AS view_count FROM page_views "
+                "  WHERE viewed_at > NOW() - INTERVAL '30 days' GROUP BY page_slug "
+                ") v ON v.page_slug = c.slug "
+                "LEFT JOIN ( "
+                "  SELECT trek_slug, COUNT(*) AS bookmark_count FROM user_bookmarks "
+                "  WHERE trek_slug IS NOT NULL GROUP BY trek_slug "
+                ") b ON b.trek_slug = c.slug "
+                "WHERE c.page_type = 'trek_guide' AND c.status = 'published' "
+                f"ORDER BY {featured_order}score DESC "
+                "LIMIT :lim"
+            ),
+            {"lim": limit},
+        ).fetchall()
+    except Exception:
+        # Raw SQL failed — fall back to published_at sort via ORM
+        rows = []
+
     slugs = [r[1] for r in rows]
     if not slugs:
-        # Absolute fallback — no published trek guides yet
         pages = cms_service.list_pages(db, status="published", page_type="trek_guide", limit=limit)
         return [CMSPageResponse.model_validate(p) for p in pages]
-    from sqlalchemy import select
-    slug_to_pos = {s: i for i, s in enumerate(slugs)}
+
     pages_map = {
         p.slug: p
         for p in db.scalars(select(CMSPage).where(CMSPage.slug.in_(slugs))).all()

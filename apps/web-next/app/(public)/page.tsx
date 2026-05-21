@@ -3,7 +3,7 @@ import { Mountain, Sparkles, ArrowRight, Star, Shield, FileCheck, Backpack, Wall
 import { Button } from "@/components/ui/button";
 import { TrekCard } from "@/components/trek/TrekCard";
 import { fetchTreks } from "@/lib/trekApi";
-import { fetchCMSPages, fetchTrendingTreks, type CMSTrekCard } from "@/lib/api";
+import { fetchCMSPages, fetchTrendingTreks, fetchTrekCMSOverrides, type CMSTrekCard, type CMSTrekOverride } from "@/lib/api";
 import SchemaInjector from "@/components/seo/SchemaInjector";
 import { buildWebSiteSchema } from "@/lib/schema";
 import HomeSearchBar from "@/components/home/HomeSearchBar";
@@ -27,18 +27,36 @@ const trustStats = [
 ];
 
 export default async function Home() {
-  const [trekList, cmsTrekPages, trendingCMS] = await Promise.all([
+  const [trekList, cmsTrekPages, trendingCMS, cmsOverrides] = await Promise.all([
     fetchTreks(),
     fetchCMSPages({ page_type: "trek_guide", status: "published", limit: 50 }).catch(() => []),
     fetchTrendingTreks(4).catch((): CMSTrekCard[] => []),
+    fetchTrekCMSOverrides().catch((): Record<string, CMSTrekOverride> => ({})),
   ]);
-  // trending: prefer CMS trending API (popularity-ranked); fall back to static slice
+
+  // Robust fallback: apply CMS overrides to static list so images/names are always real
+  const staticEnhanced = trekList.slice(0, 4).map(t => {
+    const ov = cmsOverrides[t.slug];
+    if (!ov) return t;
+    return {
+      ...t,
+      image:       ov.image       ?? t.image,
+      name:        ov.title       ?? t.name,
+      difficulty:  ov.difficulty  ?? t.difficulty,
+      duration:    ov.duration    ?? t.duration,
+      season:      ov.season      ?? t.season,
+      altitude:    ov.altitude    ?? t.altitude,
+      suitability: ov.suitability,
+    };
+  });
+
+  // trending: prefer CMS trending API (popularity-ranked); fall back to CMS-enhanced static
   const trending = trendingCMS.length > 0
     ? trendingCMS.map(t => ({
         ...t, name: t.name, difficulty: t.difficulty ?? "Moderate",
         region: t.region ?? t.state, description: t.description,
       }))
-    : trekList.slice(0, 4);
+    : staticEnhanced;
 
   return (
     <>
