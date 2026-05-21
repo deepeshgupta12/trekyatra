@@ -38,6 +38,8 @@ class CMSPagePatch(BaseModel):
     language: str | None = None
     translations: dict[str, Any] | None = None
     is_premium: bool | None = None
+    # Featured flag (Step 54) — marks trek as "Featured" on explore page
+    is_featured: bool | None = None
     # Trek guide metadata columns (Step 46) — editable by admin
     trek_name: str | None = None
     trek_state: str | None = None

@@ -75,6 +75,7 @@ export interface CMSPage {
   trek_duration: string | null;
   trek_season: string | null;
   trek_suitability: string | null;
+  is_featured: boolean;
 }
 
 // ---------------------------------------------------------------------------
@@ -304,6 +305,7 @@ export interface CMSPagePayload {
   trek_duration?: string | null;
   trek_season?: string | null;
   trek_suitability?: string | null;
+  is_featured?: boolean;
 }
 
 export async function createCMSPage(data: CMSPagePayload & { slug: string; title: string; page_type: string }): Promise<CMSPage> {
@@ -1801,6 +1803,61 @@ export interface CMSTrekCard {
  * Used by the regions page to show ALL pipeline-published treks for a state,
  * not just the 3-12 entries in the static treks.ts file.
  */
+/**
+ * Fetch ALL published trek_guide CMS pages and convert to Trek-card objects.
+ * Used by the Explore page to show every pipeline-published trek, not just the
+ * 12 entries in the static treks.ts file.
+ */
+export async function fetchAllCMSTreks(): Promise<CMSTrekCard[]> {
+  try {
+    const pages = await fetchCMSPages({ page_type: "trek_guide", status: "published", limit: 200 });
+    return pages.map(p => ({
+      slug:        p.slug,
+      name:        p.trek_name ?? p.title,
+      image:       p.hero_image_url ?? "/images/trek-forest.jpg",
+      difficulty:  p.trek_difficulty ?? "Moderate",
+      duration:    p.trek_duration   ?? "—",
+      season:      p.trek_season     ?? "—",
+      suitability: p.trek_suitability ?? undefined,
+      altitude:    (p.content_json?.trek_facts as Record<string, string> | undefined)?.altitude ?? "—",
+      description: p.seo_description ?? "",
+      state:       p.trek_state ?? "",
+      region:      p.trek_state ?? "",
+      beginner:    p.trek_suitability?.toLowerCase().includes("begin") ?? false,
+    } satisfies CMSTrekCard));
+  } catch {
+    return [];
+  }
+}
+
+/**
+ * Fetch trending trek_guide CMS pages (ranked by views + saves + recency + is_featured).
+ * Used by the home page "Treks Indians are obsessing over" section.
+ */
+export async function fetchTrendingTreks(limit = 4): Promise<CMSTrekCard[]> {
+  try {
+    const res = await fetch(`/api/v1/cms/pages/trending?limit=${limit}`);
+    if (!res.ok) return [];
+    const pages: CMSPage[] = await res.json();
+    return pages.map(p => ({
+      slug:        p.slug,
+      name:        p.trek_name ?? p.title,
+      image:       p.hero_image_url ?? "/images/trek-forest.jpg",
+      difficulty:  p.trek_difficulty ?? "Moderate",
+      duration:    p.trek_duration   ?? "—",
+      season:      p.trek_season     ?? "—",
+      suitability: p.trek_suitability ?? undefined,
+      altitude:    (p.content_json?.trek_facts as Record<string, string> | undefined)?.altitude ?? "—",
+      description: p.seo_description ?? "",
+      state:       p.trek_state ?? "",
+      region:      p.trek_state ?? "",
+      beginner:    p.trek_suitability?.toLowerCase().includes("begin") ?? false,
+    } satisfies CMSTrekCard));
+  } catch {
+    return [];
+  }
+}
+
 export async function fetchCMSTreksByState(stateName: string): Promise<CMSTrekCard[]> {
   try {
     const pages = await fetchCMSPages({ page_type: "trek_guide", status: "published", limit: 100 });

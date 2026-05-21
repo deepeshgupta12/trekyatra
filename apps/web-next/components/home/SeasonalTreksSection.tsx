@@ -4,6 +4,7 @@ import { useEffect, useState, useMemo } from "react";
 import Link from "next/link";
 import { ArrowRight } from "lucide-react";
 import { TrekCard, type Trek } from "@/components/trek/TrekCard";
+import type { CMSPage, TrekFacts } from "@/lib/api";
 
 type Season = "Summer" | "Monsoon" | "Autumn" | "Winter";
 
@@ -30,12 +31,64 @@ const SEASON_PAGES: Record<Season, string> = {
   Winter:  "/seasons/winter",
 };
 
-function trekMatchesSeason(trek: Trek, season: Season): boolean {
-  const months = SEASONS.find((s) => s.label === season)?.months ?? [];
-  return months.some((m) => trek.season.includes(m));
+// Month abbreviation → numeric month (1-based)
+const MONTH_NUM: Record<string, number> = {
+  Jan: 1, Feb: 2, Mar: 3, Apr: 4, May: 5, Jun: 6,
+  Jul: 7, Aug: 8, Sep: 9, Oct: 10, Nov: 11, Dec: 12,
+};
+
+function seasonStringToMonths(season: string): number[] {
+  // Handles both "Apr, May" (short month names) and "Dec – Apr" (range notation)
+  const abbrs = season.match(/[A-Z][a-z]{2}/g) ?? [];
+  if (abbrs.length === 0) return [];
+  if (abbrs.length === 1) return [MONTH_NUM[abbrs[0]] ?? 0].filter(Boolean);
+  // Range: expand "Dec – Apr" → [12, 1, 2, 3, 4]
+  if (abbrs.length === 2 && (season.includes("–") || season.includes("-") || season.includes("to"))) {
+    const start = MONTH_NUM[abbrs[0]] ?? 1;
+    const end   = MONTH_NUM[abbrs[1]] ?? 12;
+    const months: number[] = [];
+    let m = start;
+    for (let i = 0; i < 12; i++) {
+      months.push(m);
+      if (m === end) break;
+      m = (m % 12) + 1;
+    }
+    return months;
+  }
+  return abbrs.map(a => MONTH_NUM[a] ?? 0).filter(Boolean);
 }
 
-export function SeasonalTreksSection({ treks }: { treks: Trek[] }) {
+function trekMatchesSeason(trek: Trek, season: Season): boolean {
+  const seasonMonthNums = SEASONS.find((s) => s.label === season)?.months.map(m => MONTH_NUM[m] ?? 0) ?? [];
+  const trekMonths = seasonStringToMonths(trek.season ?? "");
+  return trekMonths.some(m => seasonMonthNums.includes(m));
+}
+
+/** Convert a CMS page to a Trek card for SeasonalTreksSection */
+function cmsToTrek(p: CMSPage): Trek {
+  const tf = (p.content_json?.trek_facts ?? {}) as TrekFacts;
+  return {
+    slug:        p.slug,
+    name:        p.trek_name ?? p.title,
+    region:      tf.base ?? p.trek_state ?? "",
+    state:       p.trek_state ?? "",
+    image:       p.hero_image_url ?? "/images/trek-forest.jpg",
+    duration:    p.trek_duration  ?? tf.duration ?? "—",
+    altitude:    (tf as Record<string, string>).altitude ?? "—",
+    difficulty:  p.trek_difficulty ?? tf.difficulty ?? "Moderate",
+    season:      p.trek_season ?? tf.season ?? "—",
+    description: p.seo_description ?? "",
+    beginner:    p.trek_suitability?.toLowerCase().includes("begin") ?? false,
+    suitability: p.trek_suitability ?? undefined,
+  };
+}
+
+interface Props {
+  treks: Trek[];
+  cmsPages?: CMSPage[];
+}
+
+export function SeasonalTreksSection({ treks, cmsPages = [] }: Props) {
   // Use a static default to prevent SSR/client hydration mismatch.
   // useEffect updates to the correct season after client-side mount.
   const [active, setActive] = useState<Season>("Monsoon");
@@ -43,9 +96,16 @@ export function SeasonalTreksSection({ treks }: { treks: Trek[] }) {
     setActive(MONTH_TO_SEASON[new Date().getMonth()] ?? "Monsoon");
   }, []);
 
+  // Convert CMS pages to Trek objects, prefer these over static treks
+  const cmsTreks = useMemo(() => cmsPages.map(cmsToTrek), [cmsPages]);
+  const allTreks = useMemo(() => {
+    const cmsSlugSet = new Set(cmsTreks.map(t => t.slug));
+    return [...cmsTreks, ...treks.filter(t => !cmsSlugSet.has(t.slug))];
+  }, [cmsTreks, treks]);
+
   const filtered = useMemo(
-    () => treks.filter((t) => trekMatchesSeason(t, active)).slice(0, 3),
-    [treks, active],
+    () => allTreks.filter((t) => trekMatchesSeason(t, active)).slice(0, 3),
+    [allTreks, active],
   );
 
   return (

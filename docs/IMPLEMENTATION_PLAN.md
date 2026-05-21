@@ -357,6 +357,18 @@
 - trek/[slug]/page.tsx: STATE_TO_REGION_SLUG mapping for breadcrumb — even if trek_state has a variant spelling, the /regions/[correct-slug] URL is generated; breadcrumb no longer falls through to Himachal Pradesh fallback
 - CMSPageForm.tsx: trek_state → state dropdown (Uttarakhand, Himachal Pradesh, J&K, Ladakh, etc.); trek_difficulty → difficulty dropdown (Easy–Expert Only); trek_season → season dropdown (Dec–Apr, Jun–Sep, etc.); trek_suitability → suitability dropdown; trek_name/duration remain free-text
 
+### Step 54 — Explore + Home Page Completeness [DONE — 2026-05-21]
+- migration 0035: is_featured BOOLEAN DEFAULT FALSE on cms_pages
+- cms/models.py: is_featured Mapped column
+- schemas/cms.py: CMSPagePatch + CMSPageResponse include is_featured
+- cms.py routes: GET /cms/pages/trending — ranks by page_views×0.5 + bookmarks×0.3 + recency×0.2, featured first
+- lib/api.ts: fetchAllCMSTreks() + fetchTrendingTreks() + is_featured in CMSPage + CMSPagePayload
+- explore/page.tsx: fetchAllCMSTreks() as baseList (all CMS treks, not just 12 static); "Featured" sort puts is_featured=true first; PAGE_SIZE=12 pagination with "Load more"; empty state "No treks match your filters"; removed 3 hardcoded stub sections
+- page.tsx (home): fetchTrendingTreks(4) as trending section source (popularity-ranked)
+- SeasonalTreksSection.tsx: accepts cmsPages prop; improved seasonStringToMonths() handles "Dec – Apr" range notation; cmsToTrek() converts CMSPage to Trek; CMS treks preferred over static
+- CMSPageForm.tsx: isFeatured state + Featured checkbox in Trek metadata panel + is_featured in buildPayload
+- Step doc: docs/steps/STEP-54-explore-home-completeness.md
+
 ### Step 53 — UX Bug Fixes: Home + Regions + Explore [DONE — 2026-05-20]
 - lib/api.ts: CMSTrekCard interface + fetchCMSTreksByState() — fetches CMS trek_guide pages by trek_state; CMSTrekOverride extended; FilterFacets + fetchFilterFacets() + STATIC_FILTER_FACETS fallback
 - regions/[slug]/page.tsx: fetchCMSTreksByState() merges CMS treks + static treks (de-duped by slug, most-recent 6 shown); season chart replaced with per-trek season summary list

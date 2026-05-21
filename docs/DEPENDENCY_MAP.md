@@ -846,6 +846,17 @@ Before editing any backend file:
 - `apps/web-next/components/layout/Header.tsx` — UPDATED: Logo compact, search functional (onClick+⌘K→/search), mobile search functional, nav px-2.5, useEffect import; blast radius: MEDIUM (header on every public page — visual + functional fix only)
 - `apps/web-next/app/(public)/page.tsx` — UPDATED: compare section fully responsive (heading text-2xl→sm:text-3xl→md:text-4xl, card p-3 md:p-4, text-sm md:text-base, no overflow); blast radius: LOW (leaf homepage)
 
+### Step 54 — Explore + Home Completeness (2026-05-21) blast radius
+- `services/api/alembic/versions/20260521_0035_cms_is_featured.py` — NEW: is_featured column; blast radius: LOW
+- `services/api/app/modules/cms/models.py` — UPDATED: is_featured mapped column; blast radius: LOW (additive)
+- `services/api/app/schemas/cms.py` — UPDATED: CMSPagePatch + Response include is_featured; blast radius: LOW
+- `services/api/app/api/routes/cms.py` — ADDED: GET /cms/pages/trending endpoint; blast radius: LOW
+- `apps/web-next/lib/api.ts` — ADDED: fetchAllCMSTreks() + fetchTrendingTreks() + is_featured fields; blast radius: LOW
+- `apps/web-next/app/(public)/explore/page.tsx` — UPDATED: fetchAllCMSTreks() as baseList, is_featured sort, PAGE_SIZE pagination, empty state, removed hardcoded stub sections; blast radius: HIGH (explore page)
+- `apps/web-next/app/(public)/page.tsx` — UPDATED: fetchTrendingTreks(4) for trending section; blast radius: MEDIUM (homepage)
+- `apps/web-next/components/home/SeasonalTreksSection.tsx` — UPDATED: cmsPages prop + cmsToTrek() + improved season range matching; blast radius: MEDIUM (homepage seasonal section)
+- `apps/web-next/components/admin/CMSPageForm.tsx` — UPDATED: isFeatured state + checkbox in Trek metadata; blast radius: LOW (admin-only)
+
 ### Step 53 — UX Bug Fixes (2026-05-20) blast radius
 - `apps/web-next/lib/api.ts` — ADDED: CMSTrekCard interface + fetchCMSTreksByState() + FilterFacets + fetchFilterFacets() + STATIC_FILTER_FACETS; blast radius: LOW (additive)
 - `apps/web-next/app/(public)/regions/[slug]/page.tsx` — UPDATED: CMS state treks merge, season chart replaced, CMSTrekCard typed import; blast radius: MEDIUM (regions pages)

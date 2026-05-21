@@ -27,6 +27,53 @@ router = APIRouter(prefix="/cms", tags=["cms"])
 _admin = Depends(get_current_admin)
 
 
+@router.get("/pages/trending", response_model=list[CMSPageResponse])
+def trending_trek_pages(
+    limit: int = Query(default=6, ge=1, le=20),
+    db: Session = Depends(get_db),
+) -> list[CMSPageResponse]:
+    """Return published trek_guide pages ranked by popularity.
+
+    Score = (page_views last 30d × 0.5) + (bookmark count × 0.3) + (recency × 0.2).
+    Falls back to is_featured=true first, then most-recently-published when no analytics data.
+    """
+    from sqlalchemy import text
+    rows = db.execute(
+        text(
+            "SELECT c.id, c.slug, "
+            "COALESCE(v.view_count, 0) * 0.5 + COALESCE(b.bookmark_count, 0) * 0.3 + "
+            "EXTRACT(EPOCH FROM COALESCE(c.published_at, NOW() - INTERVAL '365 days')) / 1e9 * 0.2 "
+            "  AS score "
+            "FROM cms_pages c "
+            "LEFT JOIN ( "
+            "  SELECT page_slug, COUNT(*) AS view_count FROM page_views "
+            "  WHERE viewed_at > NOW() - INTERVAL '30 days' GROUP BY page_slug "
+            ") v ON v.page_slug = c.slug "
+            "LEFT JOIN ( "
+            "  SELECT trek_slug, COUNT(*) AS bookmark_count FROM user_bookmarks "
+            "  WHERE trek_slug IS NOT NULL GROUP BY trek_slug "
+            ") b ON b.trek_slug = c.slug "
+            "WHERE c.page_type = 'trek_guide' AND c.status = 'published' "
+            "ORDER BY c.is_featured DESC, score DESC "
+            "LIMIT :lim"
+        ),
+        {"lim": limit},
+    ).fetchall()
+    slugs = [r[1] for r in rows]
+    if not slugs:
+        # Absolute fallback — no published trek guides yet
+        pages = cms_service.list_pages(db, status="published", page_type="trek_guide", limit=limit)
+        return [CMSPageResponse.model_validate(p) for p in pages]
+    from sqlalchemy import select
+    slug_to_pos = {s: i for i, s in enumerate(slugs)}
+    pages_map = {
+        p.slug: p
+        for p in db.scalars(select(CMSPage).where(CMSPage.slug.in_(slugs))).all()
+    }
+    ordered = [pages_map[s] for s in slugs if s in pages_map]
+    return [CMSPageResponse.model_validate(p) for p in ordered]
+
+
 @router.get("/pages", response_model=list[CMSPageResponse])
 def list_cms_pages(
     status: str | None = Query(default=None),

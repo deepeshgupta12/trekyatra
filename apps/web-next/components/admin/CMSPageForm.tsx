@@ -71,6 +71,8 @@ export default function CMSPageForm({ mode, existing }: Props) {
   const [seoTitle, setSeoTitle] = useState(existing?.seo_title ?? "");
   const [seoDesc, setSeoDesc] = useState(existing?.seo_description ?? "");
   const [heroImageUrl, setHeroImageUrl] = useState(existing?.hero_image_url ?? "");
+  // Featured flag — marks trek as "Featured" in explore sort
+  const [isFeatured, setIsFeatured] = useState(existing?.is_featured ?? false);
   // Trek metadata DB columns — editable, saved via PATCH
   const [trekMeta, setTrekMeta] = useState({
     trek_name:        existing?.trek_name        ?? "",
@@ -169,6 +171,7 @@ export default function CMSPageForm({ mode, existing }: Props) {
       trek_duration:    trekMeta.trek_duration.trim()    || null,
       trek_season:      trekMeta.trek_season.trim()      || null,
       trek_suitability: trekMeta.trek_suitability.trim() || null,
+      is_featured: isFeatured,
     } : {};
 
     return {
@@ -345,9 +348,21 @@ export default function CMSPageForm({ mode, existing }: Props) {
       {/* Trek metadata DB columns — editable, saved on Save / Publish */}
       {pageType === "trek_guide" && (
         <div className="bg-[#14161f] rounded-2xl border border-white/10 p-5 space-y-4">
-          <div>
-            <h2 className="text-white font-semibold text-sm">Trek metadata</h2>
-            <p className="text-white/40 text-xs mt-0.5">Used in breadcrumbs, SEO, filters, and discovery. Auto-populated by pipeline — edit here to override.</p>
+          <div className="flex items-start justify-between gap-4">
+            <div>
+              <h2 className="text-white font-semibold text-sm">Trek metadata</h2>
+              <p className="text-white/40 text-xs mt-0.5">Used in breadcrumbs, SEO, filters, and discovery. Auto-populated by pipeline — edit here to override.</p>
+            </div>
+            {/* Featured toggle — marks trek as "Featured" in the explore sort */}
+            <label className="flex items-center gap-2 cursor-pointer flex-shrink-0 mt-0.5">
+              <input
+                type="checkbox"
+                checked={isFeatured}
+                onChange={(e) => setIsFeatured(e.target.checked)}
+                className="accent-accent h-4 w-4 rounded"
+              />
+              <span className="text-white/70 text-xs font-medium">Featured</span>
+            </label>
           </div>
           <div className="grid sm:grid-cols-3 gap-4">
             {/* Trek name — free text */}

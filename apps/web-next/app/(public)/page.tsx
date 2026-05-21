@@ -3,7 +3,7 @@ import { Mountain, Sparkles, ArrowRight, Star, Shield, FileCheck, Backpack, Wall
 import { Button } from "@/components/ui/button";
 import { TrekCard } from "@/components/trek/TrekCard";
 import { fetchTreks } from "@/lib/trekApi";
-import { fetchCMSPages, fetchTrekCMSOverrides } from "@/lib/api";
+import { fetchCMSPages, fetchTrendingTreks, type CMSTrekCard } from "@/lib/api";
 import SchemaInjector from "@/components/seo/SchemaInjector";
 import { buildWebSiteSchema } from "@/lib/schema";
 import HomeSearchBar from "@/components/home/HomeSearchBar";
@@ -27,26 +27,18 @@ const trustStats = [
 ];
 
 export default async function Home() {
-  const [trekList, cmsTrekPages, cmsOverrides] = await Promise.all([
+  const [trekList, cmsTrekPages, trendingCMS] = await Promise.all([
     fetchTreks(),
     fetchCMSPages({ page_type: "trek_guide", status: "published", limit: 50 }).catch(() => []),
-    fetchTrekCMSOverrides().catch((): Record<string, import("@/lib/api").CMSTrekOverride> => ({})),
+    fetchTrendingTreks(4).catch((): CMSTrekCard[] => []),
   ]);
-  // Apply CMS overrides (image, name, difficulty, season etc.) to trending static list
-  const trending = trekList.slice(0, 4).map(t => {
-    const ov = cmsOverrides[t.slug];
-    if (!ov) return t;
-    return {
-      ...t,
-      image:      ov.image       ?? t.image,
-      name:       ov.title       ?? t.name,
-      difficulty: ov.difficulty  ?? t.difficulty,
-      duration:   ov.duration    ?? t.duration,
-      season:     ov.season      ?? t.season,
-      altitude:   ov.altitude    ?? t.altitude,
-      suitability: ov.suitability,
-    };
-  });
+  // trending: prefer CMS trending API (popularity-ranked); fall back to static slice
+  const trending = trendingCMS.length > 0
+    ? trendingCMS.map(t => ({
+        ...t, name: t.name, difficulty: t.difficulty ?? "Moderate",
+        region: t.region ?? t.state, description: t.description,
+      }))
+    : trekList.slice(0, 4);
 
   return (
     <>
@@ -187,7 +179,7 @@ export default async function Home() {
       </section>
 
       {/* SEASONAL TABS — auto-select based on current month, shows state tags */}
-      <SeasonalTreksSection treks={trekList} />
+      <SeasonalTreksSection treks={trekList} cmsPages={cmsTrekPages} />
 
       {/* PERSONALISED FEED */}
       <Section eyebrow="For you" title="Treks matched to your interests">

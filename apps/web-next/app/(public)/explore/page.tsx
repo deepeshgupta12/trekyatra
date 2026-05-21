@@ -8,11 +8,13 @@ import { treks as staticTreks } from "@/data/treks";
 import { Button } from "@/components/ui/button";
 import { Search, SlidersHorizontal, X } from "lucide-react";
 import { fetchTreks } from "@/lib/trekApi";
-import { fetchTrekCMSOverrides, fetchFilterFacets, STATIC_FILTER_FACETS, type CMSTrekOverride, type FilterFacets } from "@/lib/api";
+import { fetchAllCMSTreks, fetchTrekCMSOverrides, fetchFilterFacets, STATIC_FILTER_FACETS, type CMSTrekOverride, type FilterFacets } from "@/lib/api";
 import PersonalisedFeed from "@/components/content/PersonalisedFeed";
 import Breadcrumb from "@/components/content/Breadcrumb";
 
-// ── Sort helpers ───────────────────────────────────────────────────────────────
+// ── Sort + pagination ─────────────────────────────────────────────────────────
+const PAGE_SIZE = 12;
+
 const DIFFICULTY_RANK: Record<string, number> = {
   Easy: 1, "Easy–Moderate": 2, Moderate: 3,
   "Moderate–Difficult": 4, Difficult: 5, "Very Difficult": 6, Challenging: 7,
@@ -22,7 +24,13 @@ const parseFt   = (a: string) => parseInt(a.replace(/[^\d]/g, "")) || 0;
 const diffRank  = (d: string) => DIFFICULTY_RANK[d] ?? 3;
 
 function sortTreks(list: Trek[], sortBy: string): Trek[] {
-  if (sortBy === "featured") return list;
+  if (sortBy === "featured") {
+    // Featured-flagged treks first; remaining by insertion order (= published_at desc from CMS)
+    return [
+      ...list.filter(t => (t as Trek & { is_featured?: boolean }).is_featured),
+      ...list.filter(t => !(t as Trek & { is_featured?: boolean }).is_featured),
+    ];
+  }
   return [...list].sort((a, b) => {
     if (sortBy === "difficulty")
       return diffRank(a.difficulty) - diffRank(b.difficulty)
@@ -142,6 +150,7 @@ function ExploreContent() {
   const [active, setActive] = useState<string[]>(stateParam ? [stateParam] : []);
   const [showMobileFilters, setShowMobileFilters] = useState(false);
   const [facets, setFacets] = useState<FilterFacets>(STATIC_FILTER_FACETS);
+  const [page, setPage] = useState(1);
 
   const filterGroups = [
     { name: "State",       options: facets.states },
@@ -152,11 +161,25 @@ function ExploreContent() {
   ];
 
   useEffect(() => {
-    // Fetch trek list, CMS overrides, and dynamic filter facets in parallel
-    Promise.all([fetchTreks(), fetchTrekCMSOverrides(), fetchFilterFacets()]).then(([list, cmsOv, f]) => {
-      setBaseList(list.map(t => mergeCMSOverride(t as unknown as Trek, cmsOv[t.slug] ?? {})));
-      setFacets(f);
-    }).catch(() => { fetchTreks().then(l => setBaseList(l as unknown as Trek[])).catch(() => {}); });
+    // Fetch ALL CMS trek_guide pages as the primary source (not just 12 static treks).
+    // Static treks are used as fallback for treks not yet pipeline-published.
+    Promise.all([fetchAllCMSTreks(), fetchTreks(), fetchTrekCMSOverrides(), fetchFilterFacets()])
+      .then(([cmsAll, staticList, cmsOv, f]) => {
+        const cmsSlugSet = new Set(cmsAll.map(t => t.slug));
+        // CMS-first: all CMS treks + static treks not yet in CMS (de-duped)
+        const staticFallbacks = staticList
+          .filter(t => !cmsSlugSet.has(t.slug))
+          .map(t => mergeCMSOverride(t as unknown as Trek, cmsOv[t.slug] ?? {}));
+        const merged: Trek[] = [
+          ...cmsAll.map(t => ({ ...t, is_featured: undefined } as unknown as Trek)),
+          ...staticFallbacks,
+        ];
+        setBaseList(merged);
+        setFacets(f);
+      })
+      .catch(() => {
+        fetchTreks().then(l => setBaseList(l as unknown as Trek[])).catch(() => {});
+      });
   }, []);
 
   // Apply state pre-filter from ?state= URL param
@@ -168,12 +191,24 @@ function ExploreContent() {
   }, [stateParam]);
 
   // Sort THEN filter: AND across groups, OR within each group
-  const trekList = useMemo(
+  const filteredList = useMemo(
     () => applyFilters(sortTreks(baseList, sortBy), active, facets),
     [baseList, sortBy, active, facets]
   );
 
-  const toggle = (v: string) => setActive(p => p.includes(v) ? p.filter(x => x !== v) : [...p, v]);
+  // Reset to page 1 whenever filters or sort change
+  useEffect(() => { setPage(1); }, [active, sortBy]);
+
+  // Paginate: show PAGE_SIZE items per page
+  const trekList = useMemo(
+    () => filteredList.slice(0, page * PAGE_SIZE),
+    [filteredList, page]
+  );
+  const hasMore = trekList.length < filteredList.length;
+
+  const toggle = (v: string) => {
+    setActive(p => p.includes(v) ? p.filter(x => x !== v) : [...p, v]);
+  };
 
   return (
     <>
@@ -236,7 +271,9 @@ function ExploreContent() {
                     {a} <button onClick={() => toggle(a)}><X className="h-3 w-3" /></button>
                   </span>
                 ))}
-                <span className="text-sm text-muted-foreground ml-2">Showing {trekList.length} treks</span>
+                <span className="text-sm text-muted-foreground ml-2">
+                  Showing {Math.min(trekList.length, filteredList.length)} of {filteredList.length} trek{filteredList.length !== 1 ? "s" : ""}
+                </span>
               </div>
               <select
                 className="h-9 px-3 rounded-full border border-border bg-surface text-sm w-auto"
@@ -250,34 +287,40 @@ function ExploreContent() {
               </select>
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-5">
-              {trekList.map(t => <TrekCard key={t.slug} trek={t} />)}
-            </div>
-
-            <div className="mt-16 space-y-12">
-              {[
-                { title: "Best winter treks in India", desc: "Snow-line treks for December – April." },
-                { title: "Weekend treks near Mumbai", desc: "Reachable in under 4 hours from Mumbai or Pune." },
-                { title: "Beginner Himalayan treks", desc: "Gentler routes under 14,000 ft to start with." },
-              ].map((rail) => (
-                <div key={rail.title} className="min-w-0">
-                  <div className="flex items-end justify-between mb-5 gap-3">
-                    <div className="min-w-0">
-                      <h3 className="font-display text-2xl font-semibold">{rail.title}</h3>
-                      <p className="text-sm text-muted-foreground">{rail.desc}</p>
-                    </div>
-                    <button className="text-sm text-accent font-medium whitespace-nowrap flex-shrink-0">View all →</button>
-                  </div>
-                  <div className="flex gap-4 overflow-x-auto scrollbar-hide pb-2">
-                    {trekList.slice(0, 5).map(t => (
-                      <div key={t.slug} className="w-[280px] flex-shrink-0">
-                        <TrekCard trek={t} />
-                      </div>
-                    ))}
-                  </div>
+            {/* Trek grid or empty state */}
+            {filteredList.length === 0 ? (
+              <div className="py-20 text-center">
+                <div className="inline-flex items-center justify-center h-16 w-16 rounded-full bg-muted mb-5">
+                  <Search className="h-7 w-7 text-muted-foreground" />
                 </div>
-              ))}
-            </div>
+                <h3 className="font-display text-xl font-semibold mb-2">No treks match your filters</h3>
+                <p className="text-muted-foreground text-sm mb-5">Try removing some filters to see more results.</p>
+                <button
+                  onClick={() => setActive([])}
+                  className="px-4 py-2 rounded-full border border-border bg-surface text-sm hover:border-accent transition-colors"
+                >
+                  Clear all filters
+                </button>
+              </div>
+            ) : (
+              <>
+                <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-5">
+                  {trekList.map(t => <TrekCard key={t.slug} trek={t} />)}
+                </div>
+
+                {/* Pagination — Load more */}
+                {hasMore && (
+                  <div className="mt-10 text-center">
+                    <button
+                      onClick={() => setPage(p => p + 1)}
+                      className="px-6 py-3 rounded-full border border-border bg-surface text-sm font-medium hover:border-accent hover:bg-accent/5 transition-colors"
+                    >
+                      Load more treks ({filteredList.length - trekList.length} remaining)
+                    </button>
+                  </div>
+                )}
+              </>
+            )}
           </div>
         </div>
       </section>

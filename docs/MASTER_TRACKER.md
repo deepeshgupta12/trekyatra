@@ -88,6 +88,7 @@ All V0 foundations are shipped. The stack is live locally with:
 | 51 | Trek entity wiring (full CMS data merge into cards), regions page dedup + View all link, explore sort + state URL filter, state-specific sitemaps | done |
 | 52 | Dynamic explore filters — filter facets endpoint (/api/v1/treks/filter-facets), fetchFilterFacets, wired AND-across/OR-within filter logic, explore sidebar scroll fix | done |
 | 53 | UX bug fixes: regions page shows all CMS state treks (not just 3 static), season chart removed, home trending CMS overrides, DifficultyTabs state+difficulty fix | done |
+| 54 | Explore/home completeness: all CMS treks in baseList, is_featured flag, trending API, pagination, empty state, seasonal CMS data, remove hardcoded sections | done |
 
 ## V5 — Mobile App Roadmap
 | Item | Status |
