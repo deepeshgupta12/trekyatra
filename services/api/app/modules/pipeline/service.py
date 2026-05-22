@@ -220,22 +220,53 @@ class PipelineOrchestrator:
 
             stage_record = _create_stage(self.db, run_id=run.id, stage_name=stage_name)
 
-            try:
-                context = self._get_context()
-                stage_output = self._dispatch_stage(stage_name, context)
-            except Exception as exc:
+            # Stage-level retry for Anthropic 529 overloaded errors.
+            # The SDK already retries internally (max_retries=10, ~4 min backoff).
+            # This adds a second layer: if the SDK retries are exhausted, wait 60/120/180 s
+            # and try the entire stage again (max 3 stage-level retries).
+            _STAGE_RETRY_WAITS = [60, 120, 180]  # seconds between stage retries
+            stage_output = None
+            last_exc: Exception | None = None
+
+            for attempt_idx in range(1 + len(_STAGE_RETRY_WAITS)):
+                try:
+                    context = self._get_context()
+                    stage_output = self._dispatch_stage(stage_name, context)
+                    last_exc = None
+                    break  # success — exit retry loop
+                except Exception as exc:
+                    last_exc = exc
+                    exc_str = str(exc)
+                    # Only retry on Anthropic overloaded (529) errors
+                    is_overloaded = "overloaded_error" in exc_str or "529" in exc_str
+                    if is_overloaded and attempt_idx < len(_STAGE_RETRY_WAITS):
+                        wait_s = _STAGE_RETRY_WAITS[attempt_idx]
+                        import logging as _log
+                        _log.getLogger(__name__).warning(
+                            "Stage '%s' hit Anthropic 529 overloaded (attempt %d/%d). "
+                            "Waiting %ds before retry.",
+                            stage_name, attempt_idx + 1,
+                            1 + len(_STAGE_RETRY_WAITS), wait_s,
+                        )
+                        import time as _time
+                        _time.sleep(wait_s)
+                        continue
+                    # Non-retryable error or retries exhausted — fall through
+                    break
+
+            if last_exc is not None:
                 _update_stage(
                     self.db,
                     stage_record,
                     status="failed",
-                    error_detail=str(exc),
+                    error_detail=str(last_exc),
                     completed_at=datetime.now(timezone.utc),
                 )
                 _update_run(
                     self.db,
                     run,
                     status="failed",
-                    error_detail=f"Stage '{stage_name}' failed: {exc}",
+                    error_detail=f"Stage '{stage_name}' failed: {last_exc}",
                     completed_at=datetime.now(timezone.utc),
                 )
                 return
