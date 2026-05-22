@@ -8,7 +8,7 @@ from sqlalchemy.orm import Session
 
 from app.core.config import settings
 from app.db.session import get_db
-from app.modules.auth.dependencies import get_optional_user
+from app.modules.auth.dependencies import get_current_user, get_optional_user
 from app.modules.auth.models import User
 from app.modules.plan import service as plan_service
 from app.schemas.plan import PlanEmailRequest, PlanGenerateRequest, PlanRecommendRequest, PlanRecommendResponse, TripPlanResponse
@@ -84,14 +84,58 @@ def get_plan(
     return TripPlanResponse.model_validate(plan)
 
 
+_RECOMMEND_LIMIT = 2        # max Plan My Trek uses per user per 24 hours
+_RECOMMEND_WINDOW = 86400   # 24 hours in seconds
+
+
+def _check_recommend_rate_limit(user_id: uuid.UUID) -> None:
+    """Allow max 2 Plan My Trek recommendations per user per 24 hours.
+    Uses Redis INCR/EXPIRE. Raises 429 with a helpful message if exceeded.
+    Gracefully skips if Redis is unavailable.
+    """
+    key = f"rate:plan:recommend:{user_id}"
+    try:
+        r = redis_lib.Redis(
+            host=settings.redis_host,
+            port=settings.redis_port,
+            db=0,
+            decode_responses=True,
+            **({} if not settings.redis_password else {
+                "password": settings.redis_password,
+                "username": getattr(settings, "redis_username", None) or "default",
+                "ssl": getattr(settings, "redis_ssl", False),
+            }),
+        )
+        current = r.incr(key)
+        if current == 1:
+            r.expire(key, _RECOMMEND_WINDOW)
+        if current > _RECOMMEND_LIMIT:
+            remaining_ttl = r.ttl(key)
+            hours_left = max(1, remaining_ttl // 3600)
+            raise HTTPException(
+                status_code=status.HTTP_429_TOO_MANY_REQUESTS,
+                detail=(
+                    f"You have used Plan My Trek {_RECOMMEND_LIMIT} times in the last 24 hours. "
+                    f"Please try again in approximately {hours_left} hour(s). "
+                    "This limit helps us keep recommendations fast and accurate for all users."
+                ),
+            )
+    except HTTPException:
+        raise
+    except Exception:
+        pass  # Redis unavailable — allow the request
+
+
 @router.post("/recommend", response_model=PlanRecommendResponse, status_code=200)
 def recommend_treks(
     payload: PlanRecommendRequest,
+    current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ) -> PlanRecommendResponse:
     """Step 57 — Score all published trek_guide CMS pages against wizard inputs.
     Returns top 5 recommendations with match scores, explanations, and categories.
-    No auth required — anonymous users can get recommendations."""
+    Requires authentication. Limited to 2 uses per user per 24 hours."""
+    _check_recommend_rate_limit(current_user.id)
     return plan_service.recommend_treks(db, payload)
 
 

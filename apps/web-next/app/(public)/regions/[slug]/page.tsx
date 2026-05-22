@@ -4,7 +4,7 @@ import { TrekCard } from "@/components/trek/TrekCard";
 import { Button } from "@/components/ui/button";
 import { MapPin, Sparkles, ArrowRight } from "lucide-react";
 import { treks } from "@/data/treks";
-import { fetchCMSPage, fetchTrekCMSOverrides, fetchCMSTreksByState, type CMSTrekOverride, type CMSTrekCard } from "@/lib/api";
+import { fetchCMSPage, fetchTrekCMSOverrides, fetchCMSTreksByState, fetchAllCMSTreks, type CMSTrekOverride, type CMSTrekCard } from "@/lib/api";
 import SchemaInjector from "@/components/seo/SchemaInjector";
 import { buildBreadcrumbSchema } from "@/lib/schema";
 import FAQAccordion from "@/components/content/FAQAccordion";
@@ -65,14 +65,34 @@ export default async function Region({ params }: Props) {
 
   // Fetch CMS trek_guide pages for this state (primary — includes pipeline-published treks)
   // AND static trek data (fallback for treks not yet in CMS)
-  const [cmsStateTreks, cmsOverrides] = await Promise.all([
+  // AND ALL CMS treks to build a state map — so we can exclude static treks whose
+  // CMS-registered state differs from the current region (e.g. Rupin Pass is static
+  // Himachal Pradesh but CMS has it as Uttarakhand — must not show on Himachal page)
+  const [cmsStateTreks, cmsOverrides, allCMSTreks] = await Promise.all([
     fetchCMSTreksByState(r.name).catch((): CMSTrekCard[] => []),
     fetchTrekCMSOverrides().catch((): Record<string, CMSTrekOverride> => ({})),
+    fetchAllCMSTreks().catch((): CMSTrekCard[] => []),
   ]);
 
-  // Static treks for this state (enriched with CMS overrides)
+  // Build a slug → CMS state map so we can honour CMS state over static state
+  const cmsStateMap: Record<string, string> = {};
+  for (const trek of allCMSTreks) {
+    if (trek.slug && trek.state) cmsStateMap[trek.slug] = trek.state;
+  }
+
+  // Static treks for this state — ONLY include if:
+  // 1. Static state matches the current region AND
+  // 2. CMS either has no entry for this slug OR agrees it belongs to this region
+  const regionWord = r.name.toLowerCase().split(" ")[0]; // "himachal" | "uttarakhand" etc.
   const staticFiltered = treks
-    .filter((t) => t.state.toLowerCase().includes(r.name.toLowerCase().split(" ")[0]))
+    .filter((t) => {
+      const staticStateMatch = t.state.toLowerCase().includes(regionWord);
+      if (!staticStateMatch) return false;
+      // If CMS has registered a different state for this trek, exclude it
+      const cmsState = cmsStateMap[t.slug];
+      if (cmsState && !cmsState.toLowerCase().includes(regionWord)) return false;
+      return true;
+    })
     .map(t => {
       const ov = cmsOverrides[t.slug] ?? {};
       return {

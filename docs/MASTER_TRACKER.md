@@ -93,6 +93,7 @@ All V0 foundations are shipped. The stack is live locally with:
 | 58 | Search engine overhaul — Phase 1 (dynamic Fuse + tags) + Phase 2 (POST /search/semantic: pgvector + BM25 hybrid + intent detection) | done |
 | 56 | Weekly news agent + /news/[slug] pages | pending — step doc created |
 | 57 | Plan My Trek revamp — 6-step wizard, weighted scoring engine (7 factors, CMS trek data), top-5 results with categories, lead capture | done |
+| 59 | Bug fixes: Rupin Pass region filter (CMS state overrides static), /plan auth gate + 2/24h rate limit, static treks removed from root sitemap, 301→410 deleted URL middleware | done |
 
 ## V5 — Mobile App Roadmap
 | Item | Status |

@@ -1,5 +1,5 @@
 import type { MetadataRoute } from "next";
-import { fetchTreks } from "@/lib/trekApi";
+// fetchTreks removed — static trek pages are covered by state-specific sitemaps
 
 // Always fetch fresh CMS pages so newly published pages appear immediately
 export const dynamic = "force-dynamic";
@@ -96,13 +96,10 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     url("/safety-disclaimer", 0.4, "monthly"),
   ];
 
-  // Trek detail pages from static data — /trek/{slug} (singular, matches the actual route)
-  try {
-    const treks = await fetchTreks();
-    for (const t of treks) {
-      entries.push(url(`/trek/${t.slug}`, 0.85, "weekly"));
-    }
-  } catch { /* static data unavailable */ }
+  // NOTE: Static trek detail pages (/trek/{slug}) are intentionally excluded from the
+  // root sitemap. They are covered by state-specific sitemaps:
+  //   /uttarakhand-treks-sitemap.xml, /himachal-treks-sitemap.xml, etc.
+  // This prevents duplicate indexing and keeps the root sitemap focused on hub pages.
 
   // Published CMS pages — trek_guide pages are excluded from the root sitemap;
   // they are already listed in state-specific sitemaps (/uttarakhand-treks-sitemap.xml etc.)

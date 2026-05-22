@@ -1,0 +1,7 @@
+[
+  {
+    "_comment": "Format: { path, deletedAt (ISO), redirectTo (for 301 phase) }",
+    "_note": "301 redirect applied for 7 days after deletedAt, then 410 Gone",
+    "_instructions": "Add entries here when removing pages from the sitemap. Path must start with /."
+  }
+]
