@@ -52,10 +52,14 @@ export async function generateMetadata({ params }: { params: { slug: string } })
   const title = rawSeoTitle
     || (trekRaw?.name ? `${trekRaw.name} — Trek Guide` : params.slug.replace(/-/g, " "));
   const description = cmsPage?.seo_description ?? trekRaw?.description ?? "";
-  const canonicalUrl = `${siteUrl}/treks/${params.slug}`;
+  const canonicalUrl = `${siteUrl}/trek/${params.slug}`;
   const ogImage = cmsPage?.hero_image_url ?? trekRaw?.image ?? null;
 
   const hasHiTranslation = !!(cmsPage?.translations?.hi);
+
+  // Resolve OG image: prefer CMS hero, fallback to static trek image, then site default
+  const ogImageUrl = ogImage ?? `${siteUrl}/images/og-default.jpg`;
+  const ogImages = [{ url: ogImageUrl, width: 1200, height: 630, alt: title }];
 
   return {
     title,
@@ -72,9 +76,16 @@ export async function generateMetadata({ params }: { params: { slug: string } })
       description,
       type: "article",
       url: canonicalUrl,
-      ...(ogImage ? { images: [{ url: ogImage, width: 1200, height: 630 }] } : {}),
+      siteName: "TrekYatra",
+      locale: "en_IN",
+      images: ogImages,
     },
-    twitter: { card: "summary_large_image", title, description },
+    twitter: {
+      card: "summary_large_image",
+      title,
+      description,
+      images: [ogImageUrl],
+    },
   };
 }
 
@@ -181,7 +192,7 @@ export default async function TrekDetailPage({ params }: { params: { slug: strin
   ];
 
   // JSON-LD schemas
-  const pageUrl = `/treks/${params.slug}`;
+  const pageUrl = `/trek/${params.slug}`;
   const articleSchema = buildArticleSchema({
     title: cmsPage?.seo_title ?? trek.name,
     description: cmsPage?.seo_description ?? trek.description ?? "",

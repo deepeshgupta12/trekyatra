@@ -36,9 +36,11 @@ export default function FAQAccordion({ items, className = "" }: Props) {
               onClick={() => setOpen(isOpen ? null : i)}
               aria-expanded={isOpen}
             >
-              <span className={`font-semibold text-sm leading-snug ${isOpen ? "text-accent" : "text-foreground"}`}>
+              {/* h3 provides proper SEO heading structure for FAQ sections and
+                  allows Google to extract Q&A pairs for rich results / People Also Ask */}
+              <h3 className={`font-semibold text-sm leading-snug m-0 ${isOpen ? "text-accent" : "text-foreground"}`}>
                 {item.q}
-              </span>
+              </h3>
               <ChevronDown
                 className={`h-4 w-4 flex-shrink-0 mt-0.5 transition-transform duration-200 ${
                   isOpen ? "rotate-180 text-accent" : "text-muted-foreground"

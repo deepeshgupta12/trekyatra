@@ -27,10 +27,22 @@ export const metadata: Metadata = {
     siteName: "TrekYatra",
     type: "website",
     locale: "en_IN",
+    url: SITE_URL,
+    // Default fallback OG image — individual pages override this with hero images
+    images: [
+      {
+        url: `${SITE_URL}/images/og-default.jpg`,
+        width: 1200,
+        height: 630,
+        alt: "TrekYatra — India's Editorial Trekking Companion",
+      },
+    ],
   },
   twitter: {
     card: "summary_large_image",
     site: "@trekyatra",
+    // Default fallback twitter image
+    images: [`${SITE_URL}/images/og-default.jpg`],
   },
   robots: { index: true, follow: true },
   ...(process.env.NEXT_PUBLIC_GOOGLE_SITE_VERIFICATION
