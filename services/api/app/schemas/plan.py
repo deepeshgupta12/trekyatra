@@ -52,3 +52,49 @@ class TripPlanResponse(BaseModel):
 
 class PlanEmailRequest(BaseModel):
     email: str
+
+
+# ── Step 57: Plan My Trek Recommendation Engine ───────────────────────────────
+
+class PlanRecommendRequest(BaseModel):
+    """Input from the 6-step wizard."""
+    intent: list[str] = Field(default_factory=list, description="e.g. ['beginner', 'snow']")
+    months: list[str] = Field(default_factory=list, description="e.g. ['Dec','Jan','Feb']")
+    duration_min: int = Field(default=1, ge=1, le=30)
+    duration_max: int = Field(default=30, ge=1, le=30)
+    experience_level: str = Field(default="moderate", description="never|easy|moderate|experienced|expert")
+    fitness_level: str = Field(default="average", description="low|average|good|very_good")
+    budget_min: int | None = Field(default=None, ge=0)
+    budget_max: int | None = Field(default=None, ge=0)
+    region: str | None = Field(default=None, max_length=100)
+    comfort_preferences: list[str] = Field(default_factory=list)
+    traveller_type: str | None = Field(default=None, description="solo|friends|couple|family|corporate|first-time")
+
+
+class TrekRecommendation(BaseModel):
+    """Single trek recommendation with match score and explanation."""
+    slug: str
+    name: str
+    match_score: int = Field(ge=0, le=100, description="0-100 match percentage")
+    category: str = Field(description="best_match|safer|adventurous|budget|comparison")
+    why_this_matches: str
+    warnings: list[str] = Field(default_factory=list)
+    # Trek metadata from CMS
+    state: str | None = None
+    difficulty: str | None = None
+    duration: str | None = None
+    season: str | None = None
+    altitude: str | None = None
+    permits: str | None = None
+    base: str | None = None
+    hero_image_url: str | None = None
+    seo_description: str | None = None
+    suitability: str | None = None
+
+
+class PlanRecommendResponse(BaseModel):
+    """Top 5 trek recommendations from the scoring engine."""
+    recommendations: list[TrekRecommendation]
+    total_treks_scored: int
+    no_match: bool = False
+    no_match_message: str | None = None

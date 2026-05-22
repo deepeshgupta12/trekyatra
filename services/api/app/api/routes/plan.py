@@ -11,7 +11,7 @@ from app.db.session import get_db
 from app.modules.auth.dependencies import get_optional_user
 from app.modules.auth.models import User
 from app.modules.plan import service as plan_service
-from app.schemas.plan import PlanEmailRequest, PlanGenerateRequest, TripPlanResponse
+from app.schemas.plan import PlanEmailRequest, PlanGenerateRequest, PlanRecommendRequest, PlanRecommendResponse, TripPlanResponse
 
 router = APIRouter(prefix="/plan", tags=["plan"])
 
@@ -82,6 +82,17 @@ def get_plan(
     if not plan:
         raise HTTPException(status_code=404, detail="Plan not found.")
     return TripPlanResponse.model_validate(plan)
+
+
+@router.post("/recommend", response_model=PlanRecommendResponse, status_code=200)
+def recommend_treks(
+    payload: PlanRecommendRequest,
+    db: Session = Depends(get_db),
+) -> PlanRecommendResponse:
+    """Step 57 — Score all published trek_guide CMS pages against wizard inputs.
+    Returns top 5 recommendations with match scores, explanations, and categories.
+    No auth required — anonymous users can get recommendations."""
+    return plan_service.recommend_treks(db, payload)
 
 
 @router.post("/{plan_id}/email", status_code=200)

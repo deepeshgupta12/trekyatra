@@ -90,9 +90,9 @@ All V0 foundations are shipped. The stack is live locally with:
 | 53 | UX bug fixes: regions page shows all CMS state treks (not just 3 static), season chart removed, home trending CMS overrides, DifficultyTabs state+difficulty fix | done |
 | 54 | Explore/home completeness: all CMS treks in baseList, is_featured flag, trending API, pagination, empty state, seasonal CMS data, remove hardcoded sections | done |
 | 55 | Site-wide fixes batch: double TrekYatra titles, sitemap trek_guide exclusion, difficulty emoji removal, home editorial link, auth 24h session, password eye icon, Google/email conflict, nav hover delay, search trending API, search CMS trek cards | done |
-| 58 | Search engine overhaul Phase 1: dynamic Fuse from all CMS treks, computed tags; Phase 2 (pending): pgvector semantic + hybrid ranking + intent detection | Phase 1 done, Phase 2 pending |
+| 58 | Search engine overhaul — Phase 1 (dynamic Fuse + tags) + Phase 2 (POST /search/semantic: pgvector + BM25 hybrid + intent detection) | done |
 | 56 | Weekly news agent + /news/[slug] pages | pending — step doc created |
-| 57 | Plan My Trek revamp — 6-step wizard, scoring engine, CMS trek data, lead capture, edge cases | pending — spec complete, ready for implementation |
+| 57 | Plan My Trek revamp — 6-step wizard, weighted scoring engine (7 factors, CMS trek data), top-5 results with categories, lead capture | done |
 
 ## V5 — Mobile App Roadmap
 | Item | Status |

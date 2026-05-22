@@ -9,7 +9,7 @@ import {
   Search, X, TrendingUp, Clock, ArrowRight, Mountain, MapPin,
   Calendar, GitCompare, Backpack, FileCheck, Sparkles, ChevronRight,
 } from "lucide-react";
-import { RecommendationItem, fetchSearchSuggestions, logSearchEvent, SearchSuggestion, fetchTrekCMSOverrides, fetchAllCMSTreks, type CMSTrekOverride } from "@/lib/api";
+import { RecommendationItem, fetchSearchSuggestions, logSearchEvent, SearchSuggestion, fetchTrekCMSOverrides, fetchAllCMSTreks, semanticSearch, type CMSTrekOverride, type SemanticSearchResult } from "@/lib/api";
 
 const API = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000";
 
@@ -168,6 +168,9 @@ export default function SearchResults() {
   const [cmsOverrides, setCmsOverrides] = useState<Record<string, CMSTrekOverride>>({});
   // fuseVersion increments when the Fuse index is rebuilt, forcing useMemo to re-run
   const [fuseVersion, setFuseVersion] = useState(0);
+  // Step 58: semantic search results from backend (for 5+ char queries)
+  const [semanticResults58, setSemanticResults58] = useState<SemanticSearchResult[]>([]);
+  const semanticDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -236,6 +239,18 @@ export default function SearchResults() {
       setCmsSuggestions(results);
     }, 250);
     return () => { if (debounceRef.current) clearTimeout(debounceRef.current); };
+  }, [q]);
+
+  // Step 58: semantic backend search for queries ≥ 5 chars
+  // Supplements Fuse.js results with pgvector similarity + intent detection
+  useEffect(() => {
+    if (semanticDebounceRef.current) clearTimeout(semanticDebounceRef.current);
+    if (q.trim().length < 5) { setSemanticResults58([]); return; }
+    semanticDebounceRef.current = setTimeout(async () => {
+      const results = await semanticSearch(q.trim(), undefined, 6);
+      setSemanticResults58(results);
+    }, 400);
+    return () => { if (semanticDebounceRef.current) clearTimeout(semanticDebounceRef.current); };
   }, [q]);
 
   // Semantic search for long queries (>3 words)
@@ -309,6 +324,8 @@ export default function SearchResults() {
   }, [q, matchingTreks.length, matchingGuides.length]);
 
   const totalCount = matchingTreks.length + matchingGuides.length;
+  // Total including semantic backend results for the "showing X results" count
+  const totalWithSemantic = totalCount + semanticResults58.filter(r => !matchingTreks.some(t => t.slug === r.slug)).length;
   const showTreks = tab === "All" || tab === "Treks";
   const showGuides = tab !== "Treks";
 
@@ -418,7 +435,7 @@ export default function SearchResults() {
           </div>
         </section>
 
-      ) : totalCount === 0 && semanticResults.length === 0 ? (
+      ) : totalCount === 0 && semanticResults.length === 0 && semanticResults58.length === 0 ? (
         <section className="py-20">
           <div className="container-narrow text-center">
             <div className="inline-flex items-center justify-center h-20 w-20 rounded-full bg-muted mb-6">
@@ -509,7 +526,45 @@ export default function SearchResults() {
                 </div>
               )}
 
-              {semanticResults.length > 0 && (
+              {/* Step 58: Semantic backend results (pgvector + intent detection) */}
+              {semanticResults58.length > 0 && (
+                <div>
+                  <h2 className="font-display text-2xl font-semibold mb-1 flex items-center gap-2">
+                    <Sparkles className="h-5 w-5 text-accent" /> Best matches for &ldquo;{q}&rdquo;
+                  </h2>
+                  <p className="text-sm text-muted-foreground mb-4">Ranked by semantic similarity and relevance</p>
+                  <div className="space-y-2">
+                    {semanticResults58
+                      .filter(r => !matchingTreks.some(t => t.slug === r.slug))
+                      .map(item => {
+                        const href = getPageHref(item.slug, item.page_type);
+                        return (
+                          <Link key={item.slug} href={href} onClick={() => handleResultClick(item.slug, item.page_type)}
+                            className="flex items-center gap-4 p-4 bg-card border border-border rounded-xl hover:border-accent transition-colors group">
+                            {item.hero_image_url
+                              ? <img src={item.hero_image_url} alt={item.title} className="h-10 w-10 rounded-lg object-cover flex-shrink-0" />
+                              : <div className="h-10 w-10 rounded-lg bg-accent/10 flex items-center justify-center flex-shrink-0 text-lg">⛰</div>}
+                            <div className="flex-1 min-w-0">
+                              <div className="font-medium line-clamp-1">{item.title}</div>
+                              <div className="flex items-center gap-2 mt-0.5">
+                                {item.trek_state && <span className="text-xs text-muted-foreground">{item.trek_state}</span>}
+                                {item.trek_difficulty && <span className="text-xs text-muted-foreground">· {item.trek_difficulty}</span>}
+                                {item.trek_duration && <span className="text-xs text-muted-foreground">· {item.trek_duration}</span>}
+                                <span className="text-[10px] font-medium text-accent/80 bg-accent/8 px-1.5 py-0.5 rounded-full flex-shrink-0">
+                                  {PAGE_TYPE_LABELS[item.page_type] ?? item.page_type}
+                                </span>
+                              </div>
+                            </div>
+                            <ArrowRight className="h-4 w-4 text-muted-foreground group-hover:text-accent flex-shrink-0" />
+                          </Link>
+                        );
+                      })}
+                  </div>
+                </div>
+              )}
+
+              {/* Legacy AI results (long queries only — kept for backward compat) */}
+              {semanticResults.length > 0 && semanticResults58.length === 0 && (
                 <div>
                   <h2 className="font-display text-2xl font-semibold mb-1 flex items-center gap-2">
                     <Sparkles className="h-5 w-5 text-accent" /> AI-matched results

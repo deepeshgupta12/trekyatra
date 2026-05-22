@@ -16,8 +16,8 @@ Last updated: 2026-05-19 (Step 47)
 | `/explore` | Trek explorer | — | Full grid with filters |
 | `/search` | Search | — | Fuse.js fuzzy + semantic for long queries |
 | `/compare` | Trek comparison | — | Side-by-side compare tool |
-| `/plan` | Trip planning wizard | — | 6-step intent wizard (Step 57 revamp) |
-| `/plan/results` | Trek recommendation output | — | Top 5 CMS treks with match scores + lead capture; Step 57 |
+| `/plan` | Trip planning wizard | — | 6-step intent wizard — Step 57 (done) |
+| `/plan/results` | Trek recommendation output | — | Top 5 CMS treks with match scores + lead capture — Step 57 (done) |
 | `/trek/[slug]` | Trek detail | `trek_guide` | CMS-first, static fallback |
 | `/trek/[slug]/packing` | Trek-specific packing guide | `packing_list` | Links to the packing guide CMS page for this trek slug; 404 if no packing page exists |
 | `/trek/[slug]/permits` | Trek-specific permit guide | `permit_guide` | Links to the permit guide CMS page for this trek slug; 404 if no permit page exists |

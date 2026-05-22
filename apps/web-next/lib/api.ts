@@ -1947,6 +1947,90 @@ export async function fetchSearchSuggestions(q: string, limit = 6): Promise<Sear
   return res.json();
 }
 
+// ── Step 57: Plan My Trek Recommendation Engine ──────────────────────────────
+
+export interface PlanRecommendRequest {
+  intent: string[];
+  months: string[];
+  duration_min: number;
+  duration_max: number;
+  experience_level: string;
+  fitness_level: string;
+  budget_min?: number;
+  budget_max?: number;
+  region?: string;
+  comfort_preferences: string[];
+  traveller_type?: string;
+}
+
+export interface TrekRecommendation {
+  slug: string;
+  name: string;
+  match_score: number;
+  category: string;
+  why_this_matches: string;
+  warnings: string[];
+  state?: string;
+  difficulty?: string;
+  duration?: string;
+  season?: string;
+  altitude?: string;
+  permits?: string;
+  base?: string;
+  hero_image_url?: string;
+  seo_description?: string;
+  suitability?: string;
+}
+
+export interface PlanRecommendResponse {
+  recommendations: TrekRecommendation[];
+  total_treks_scored: number;
+  no_match: boolean;
+  no_match_message?: string;
+}
+
+export async function planRecommendTreks(payload: PlanRecommendRequest): Promise<PlanRecommendResponse> {
+  const res = await fetch("/api/v1/plan/recommend", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(payload),
+  });
+  if (!res.ok) throw new Error(`Recommendation failed (${res.status})`);
+  return res.json();
+}
+
+// ── Step 58: Semantic Search ──────────────────────────────────────────────────
+
+export interface SemanticSearchResult {
+  slug: string;
+  title: string;
+  page_type: string;
+  hero_image_url?: string;
+  seo_description?: string;
+  trek_state?: string;
+  trek_difficulty?: string;
+  trek_duration?: string;
+  trek_season?: string;
+  trek_suitability?: string;
+  score: number;
+  matched_by: string;
+}
+
+export async function semanticSearch(
+  q: string,
+  pageType?: string,
+  limit = 8,
+): Promise<SemanticSearchResult[]> {
+  if (q.trim().length < 2) return [];
+  const res = await fetch("/api/v1/search/semantic", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ q: q.trim(), page_type: pageType ?? null, limit }),
+  });
+  if (!res.ok) return [];
+  return res.json();
+}
+
 /** Fire-and-forget: record a public page view for popularity weighting. */
 export async function trackPageView(pageSlug: string, pageType?: string, sessionId?: string): Promise<void> {
   await fetch("/api/v1/track/page-view", {
