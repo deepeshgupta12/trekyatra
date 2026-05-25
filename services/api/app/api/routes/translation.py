@@ -89,7 +89,7 @@ def trigger_translation(
         title=result["title"],
         content_html=result["content_html"],
         content_json=translated_content_json if translated_content_json else source.content_json,
-        status="published",           # auto-publish so /hi/trek/{source_slug} is live immediately
+        status="draft",               # admin reviews and publishes manually from CMS
         seo_title=result.get("seo_title") or source.seo_title,
         seo_description=result.get("seo_description") or source.seo_description,
         seo_meta=source.seo_meta,
@@ -98,6 +98,13 @@ def trigger_translation(
         source_page_id=source.id,
         brief_id=source.brief_id,
         cluster_id=source.cluster_id,
+        # Copy trek metadata from source so CMS filters and public page work correctly
+        trek_name=source.trek_name,
+        trek_state=source.trek_state,
+        trek_difficulty=source.trek_difficulty,
+        trek_duration=source.trek_duration,
+        trek_season=source.trek_season,
+        trek_suitability=source.trek_suitability,
     )
     db.add(new_page)
     db.flush()  # get new_page.id before updating source
@@ -115,8 +122,13 @@ def trigger_translation(
         page_id=str(new_page.id),
         page_slug=new_slug,
         message=(
-            f"Translation published as '{new_slug}'. "
-            + ("Rule-based fallback used — ANTHROPIC_API_KEY not set." if is_fallback else "Live at /hi/trek/" + slug)
+            f"Draft saved as '{new_slug}'. "
+            + (
+                "ANTHROPIC_API_KEY not set — content was NOT translated (saved in English). "
+                "Set the API key in production and re-translate."
+                if is_fallback
+                else f"Review at /admin/cms/{new_slug}/edit — publish when ready."
+            )
         ),
         fallback=is_fallback,
     )

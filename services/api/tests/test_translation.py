@@ -142,10 +142,9 @@ def test_translate_endpoint_unsupported_language(override_admin, cms_page):
 
 
 # ---------------------------------------------------------------------------
-# TC-B08: POST /admin/cms/{slug}/translate — creates PUBLISHED page (fallback mode)
-# Translation auto-publishes so /hi/trek/{slug} is live immediately.
+# TC-B08: POST /admin/cms/{slug}/translate — creates DRAFT page (admin publishes manually)
 # ---------------------------------------------------------------------------
-def test_translate_endpoint_creates_published(override_admin, cms_page, db: Session, monkeypatch):
+def test_translate_endpoint_creates_draft(override_admin, cms_page, db: Session, monkeypatch):
     monkeypatch.setattr("app.modules.agents.translation.agent.settings.anthropic_api_key", None)
     res = client.post(
         f"/api/v1/admin/cms/{cms_page.slug}/translate",
@@ -159,12 +158,12 @@ def test_translate_endpoint_creates_published(override_admin, cms_page, db: Sess
     assert data["fallback"] is True
     assert data["page_id"] is not None
 
-    # Verify new CMSPage created in DB with status=published (not draft)
+    # Verify new CMSPage created in DB with status=draft — admin decides when to publish
     db.expire_all()
     new_page = db.get(CMSPage, uuid.UUID(data["page_id"]))
     assert new_page is not None
     assert new_page.language == "hi"
-    assert new_page.status == "published"   # auto-published so frontend serves it immediately
+    assert new_page.status == "draft"
     assert new_page.source_page_id == cms_page.id
 
 
@@ -338,3 +337,46 @@ def test_translate_page_translates_faqs(monkeypatch):
     assert len(result["faqs"]) == 1
     assert result["faqs"][0]["question"] == "केदारकंठा कब जाएं?"
     assert result["fallback"] == "false"
+
+
+# ---------------------------------------------------------------------------
+# TC-B17: POST translate — copies trek metadata from source page to translated page
+# ---------------------------------------------------------------------------
+def test_translate_copies_trek_metadata(override_admin, db: Session, monkeypatch):
+    monkeypatch.setattr("app.modules.agents.translation.agent.settings.anthropic_api_key", None)
+    # Create source page with full trek metadata
+    source = CMSPage(
+        slug=f"meta-test-{uuid.uuid4().hex[:6]}",
+        page_type="trek_guide",
+        title="Indrahar Pass Trek Guide",
+        content_html="<p>Trek guide content</p>",
+        status="published",
+        language="en",
+        trek_name="Indrahar Pass",
+        trek_state="Himachal Pradesh",
+        trek_difficulty="Moderate-Difficult",
+        trek_duration="4 days",
+        trek_season="Sep - Oct",
+        trek_suitability="Experienced trekkers",
+    )
+    db.add(source)
+    db.commit()
+    db.refresh(source)
+
+    res = client.post(
+        f"/api/v1/admin/cms/{source.slug}/translate",
+        json={"target_language": "hi"},
+    )
+    assert res.status_code == 200
+    data = res.json()
+    assert data["page_id"] is not None
+
+    db.expire_all()
+    new_page = db.get(CMSPage, uuid.UUID(data["page_id"]))
+    assert new_page is not None
+    assert new_page.trek_name == "Indrahar Pass"
+    assert new_page.trek_state == "Himachal Pradesh"
+    assert new_page.trek_difficulty == "Moderate-Difficult"
+    assert new_page.trek_duration == "4 days"
+    assert new_page.trek_season == "Sep - Oct"
+    assert new_page.trek_suitability == "Experienced trekkers"

@@ -64,6 +64,7 @@ interface TranslationState {
   elapsedSec: number;
   hindiUrl: string;
   message: string;
+  fallback?: boolean;
 }
 
 export default function CMSAdminPage() {
@@ -174,6 +175,7 @@ export default function CMSAdminPage() {
         ...prev,
         status: "done",
         message: result.message,
+        fallback: result.fallback,
       } : prev);
 
       await loadPages();
@@ -206,9 +208,14 @@ export default function CMSAdminPage() {
                     <Loader2 className="h-5 w-5 text-amber-400 animate-spin" />
                   </div>
                 )}
-                {translation.status === "done" && (
+                {translation.status === "done" && !translation.fallback && (
                   <div className="h-10 w-10 rounded-xl bg-pine/10 flex items-center justify-center flex-shrink-0">
                     <CheckCircle2 className="h-5 w-5 text-pine" />
+                  </div>
+                )}
+                {translation.status === "done" && translation.fallback && (
+                  <div className="h-10 w-10 rounded-xl bg-amber-400/10 flex items-center justify-center flex-shrink-0">
+                    <AlertCircle className="h-5 w-5 text-amber-400" />
                   </div>
                 )}
                 {translation.status === "error" && (
@@ -219,7 +226,8 @@ export default function CMSAdminPage() {
                 <div>
                   <h3 className="text-white font-semibold text-sm">
                     {translation.status === "in-progress" && "Generating Hindi Translation"}
-                    {translation.status === "done" && "Translation Published"}
+                    {translation.status === "done" && !translation.fallback && "Translation Saved as Draft"}
+                    {translation.status === "done" && translation.fallback && "Draft Saved — Not Translated"}
                     {translation.status === "error" && "Translation Failed"}
                   </h3>
                   <p className="text-white/40 text-xs mt-0.5 font-mono">/{translation.slug}</p>
@@ -253,21 +261,36 @@ export default function CMSAdminPage() {
                 </div>
               )}
 
-              {translation.status === "done" && (
+              {translation.status === "done" && !translation.fallback && (
                 <div className="bg-pine/5 border border-pine/20 rounded-xl p-4">
-                  <p className="text-pine text-xs font-medium mb-1">Published successfully</p>
+                  <p className="text-pine text-xs font-medium mb-1">Translation complete — saved as draft</p>
                   <p className="text-white/60 text-xs">{translation.message}</p>
+                  <p className="text-white/40 text-xs mt-2">Review in CMS and publish when ready.</p>
                   {translation.hindiUrl && (
                     <a
-                      href={translation.hindiUrl}
-                      target="_blank"
-                      rel="noopener noreferrer"
+                      href={`/admin/cms/${translation.slug}-hi/edit`}
                       className="inline-flex items-center gap-1.5 mt-3 text-xs text-accent font-medium hover:underline"
                     >
                       <Globe className="h-3.5 w-3.5" />
-                      View Hindi page →
+                      Review draft in CMS →
                     </a>
                   )}
+                </div>
+              )}
+              {translation.status === "done" && translation.fallback && (
+                <div className="bg-amber-400/5 border border-amber-400/20 rounded-xl p-4">
+                  <p className="text-amber-400 text-xs font-medium mb-1">Draft saved — translation did not run</p>
+                  <p className="text-white/60 text-xs">{translation.message}</p>
+                  <p className="text-amber-400/70 text-xs mt-2 font-medium">
+                    Action required: Set ANTHROPIC_API_KEY in production to enable real Hindi translation.
+                  </p>
+                  <a
+                    href={`/admin/cms/${translation.slug}-hi/edit`}
+                    className="inline-flex items-center gap-1.5 mt-3 text-xs text-white/50 font-medium hover:underline"
+                  >
+                    <Globe className="h-3.5 w-3.5" />
+                    Edit draft in CMS →
+                  </a>
                 </div>
               )}
 
