@@ -142,9 +142,10 @@ def test_translate_endpoint_unsupported_language(override_admin, cms_page):
 
 
 # ---------------------------------------------------------------------------
-# TC-B08: POST /admin/cms/{slug}/translate — creates draft page (fallback mode)
+# TC-B08: POST /admin/cms/{slug}/translate — creates PUBLISHED page (fallback mode)
+# Translation auto-publishes so /hi/trek/{slug} is live immediately.
 # ---------------------------------------------------------------------------
-def test_translate_endpoint_creates_draft(override_admin, cms_page, db: Session, monkeypatch):
+def test_translate_endpoint_creates_published(override_admin, cms_page, db: Session, monkeypatch):
     monkeypatch.setattr("app.modules.agents.translation.agent.settings.anthropic_api_key", None)
     res = client.post(
         f"/api/v1/admin/cms/{cms_page.slug}/translate",
@@ -158,12 +159,12 @@ def test_translate_endpoint_creates_draft(override_admin, cms_page, db: Session,
     assert data["fallback"] is True
     assert data["page_id"] is not None
 
-    # Verify new CMSPage created in DB
+    # Verify new CMSPage created in DB with status=published (not draft)
     db.expire_all()
     new_page = db.get(CMSPage, uuid.UUID(data["page_id"]))
     assert new_page is not None
     assert new_page.language == "hi"
-    assert new_page.status == "draft"
+    assert new_page.status == "published"   # auto-published so frontend serves it immediately
     assert new_page.source_page_id == cms_page.id
 
 
@@ -281,3 +282,59 @@ def test_cms_page_response_has_language_fields(cms_page):
     assert data["language"] == "en"
     assert "translations" in data
     assert "source_page_id" in data
+
+
+# ---------------------------------------------------------------------------
+# TC-B15: translate_page translates seo_title and seo_description
+# ---------------------------------------------------------------------------
+def test_translate_page_translates_seo_fields(monkeypatch):
+    monkeypatch.setattr("app.modules.agents.translation.agent.settings.anthropic_api_key", "sk-test")
+    mock_response = MagicMock()
+    mock_response.content = [MagicMock(text=json.dumps({
+        "title": "केदारकंठा ट्रेक गाइड",
+        "seo_title": "केदारकंठा ट्रेक: सम्पूर्ण गाइड 2026",
+        "seo_description": "केदारकंठा ट्रेक उत्तराखंड का एक सुंदर शीतकालीन ट्रेक है।",
+        "content_html": "<h1>केदारकंठा</h1>",
+    }))]
+    mock_client = MagicMock()
+    mock_client.messages.create.return_value = mock_response
+    with patch.object(translation_mod._anthropic, "Anthropic", return_value=mock_client):
+        result = translate_page(
+            "Kedarkantha Trek Guide",
+            "<h1>Kedarkantha</h1>",
+            "hi",
+            seo_title="Kedarkantha Trek: Complete Guide 2026",
+            seo_description="Kedarkantha is a beautiful winter trek in Uttarakhand.",
+        )
+    assert result["seo_title"] == "केदारकंठा ट्रेक: सम्पूर्ण गाइड 2026"
+    assert result["seo_description"] == "केदारकंठा ट्रेक उत्तराखंड का एक सुंदर शीतकालीन ट्रेक है।"
+    assert result["fallback"] == "false"
+
+
+# ---------------------------------------------------------------------------
+# TC-B16: translate_page translates FAQ items
+# ---------------------------------------------------------------------------
+def test_translate_page_translates_faqs(monkeypatch):
+    monkeypatch.setattr("app.modules.agents.translation.agent.settings.anthropic_api_key", "sk-test")
+    translated_faqs = [
+        {"question": "केदारकंठा कब जाएं?", "answer": "दिसंबर से मार्च तक सर्वोत्तम समय है।"},
+    ]
+    mock_response = MagicMock()
+    mock_response.content = [MagicMock(text=json.dumps({
+        "title": "केदारकंठा ट्रेक गाइड",
+        "content_html": "<h1>केदारकंठा</h1>",
+        "faqs": translated_faqs,
+    }))]
+    mock_client = MagicMock()
+    mock_client.messages.create.return_value = mock_response
+    with patch.object(translation_mod._anthropic, "Anthropic", return_value=mock_client):
+        result = translate_page(
+            "Kedarkantha Trek Guide",
+            "<h1>Kedarkantha</h1>",
+            "hi",
+            faqs=[{"question": "When to visit Kedarkantha?", "answer": "December to March is best."}],
+        )
+    assert isinstance(result["faqs"], list)
+    assert len(result["faqs"]) == 1
+    assert result["faqs"][0]["question"] == "केदारकंठा कब जाएं?"
+    assert result["fallback"] == "false"

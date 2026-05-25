@@ -1,8 +1,8 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import Link from "next/link";
-import { Globe, RefreshCw, Trash2, Pencil, Plus, Languages, Crown, Loader2 } from "lucide-react";
+import { Globe, RefreshCw, Trash2, Pencil, Plus, Languages, Crown, Loader2, X, CheckCircle2, AlertCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { triggerTranslation } from "@/lib/api";
 
@@ -34,6 +34,18 @@ function getLiveUrl(page: CMSPage): string {
   if (base === undefined) return `/trek/${page.slug}`;
   return base === "" ? `/${page.slug}` : `${base}/${page.slug}`;
 }
+function getHindiUrl(page: CMSPage): string {
+  const base = PAGE_PREFIX[page.page_type];
+  if (base === undefined) return `/hi/trek/${page.slug}`;
+  if (base === "" || base === "/compare" || base === "/seasons" || base === "/trek-types" || base === "/regions") return "";
+  // Map /trek → /hi/trek, /packing → /hi/packing, /guides → /hi/guides, /permits → ""
+  const hiBase: Record<string, string> = {
+    "/trek": "/hi/trek",
+    "/packing": "/hi/packing",
+    "/guides": "/hi/guides",
+  };
+  return hiBase[base] ? `${hiBase[base]}/${page.slug}` : "";
+}
 
 // Editorial pages are system pages — protect them from deletion
 const PROTECTED_PAGE_TYPES = new Set(["editorial"]);
@@ -45,12 +57,22 @@ const statusStyle: Record<string, string> = {
   archived: "text-white/40 bg-white/5 border border-white/10",
 };
 
+interface TranslationState {
+  slug: string;
+  title: string;
+  status: "in-progress" | "done" | "error";
+  elapsedSec: number;
+  hindiUrl: string;
+  message: string;
+}
+
 export default function CMSAdminPage() {
   const [pages, setPages] = useState<CMSPage[]>([]);
   const [loading, setLoading] = useState(true);
   const [feedback, setFeedback] = useState<string | null>(null);
   const [invalidating, setInvalidating] = useState(false);
-  const [translatingSlug, setTranslatingSlug] = useState<string | null>(null);
+  const [translation, setTranslation] = useState<TranslationState | null>(null);
+  const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   async function loadPages() {
     setLoading(true);
@@ -63,6 +85,9 @@ export default function CMSAdminPage() {
   }
 
   useEffect(() => { loadPages(); }, []);
+
+  // Cleanup timer on unmount
+  useEffect(() => () => { if (timerRef.current) clearInterval(timerRef.current); }, []);
 
   async function invalidateCache(scope: "all" | "slug", slug?: string) {
     setInvalidating(true);
@@ -122,24 +147,152 @@ export default function CMSAdminPage() {
     }
   }
 
-  async function translatePage(slug: string) {
-    setFeedback(null);
-    setTranslatingSlug(slug);
+  async function translatePage(page: CMSPage) {
+    // Start the progress modal
+    const hindiUrl = getHindiUrl(page);
+    setTranslation({
+      slug: page.slug,
+      title: page.title,
+      status: "in-progress",
+      elapsedSec: 0,
+      hindiUrl,
+      message: "Calling Claude AI for translation…",
+    });
+
+    // Elapsed timer
+    let elapsed = 0;
+    timerRef.current = setInterval(() => {
+      elapsed += 1;
+      setTranslation((prev) => prev ? { ...prev, elapsedSec: elapsed } : prev);
+    }, 1000);
+
     try {
-      const result = await triggerTranslation(slug, "hi");
-      setFeedback(result.message);
+      const result = await triggerTranslation(page.slug, "hi");
+      clearInterval(timerRef.current!);
+
+      setTranslation((prev) => prev ? {
+        ...prev,
+        status: "done",
+        message: result.message,
+      } : prev);
+
       await loadPages();
     } catch (err: unknown) {
+      clearInterval(timerRef.current!);
       const msg = err instanceof Error ? err.message : "Translation request failed.";
-      setFeedback(`Translation failed: ${msg}`);
-    } finally {
-      setTranslatingSlug(null);
-      setTimeout(() => setFeedback(null), 8000);
+      setTranslation((prev) => prev ? {
+        ...prev,
+        status: "error",
+        message: msg,
+      } : prev);
     }
+  }
+
+  function closeTranslationModal() {
+    if (timerRef.current) clearInterval(timerRef.current);
+    setTranslation(null);
   }
 
   return (
     <div className="p-6 max-w-6xl">
+      {/* Translation Progress Modal */}
+      {translation && (
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className="bg-[#14161f] border border-white/10 rounded-2xl p-8 max-w-md w-full shadow-2xl">
+            <div className="flex items-start justify-between mb-6">
+              <div className="flex items-center gap-3">
+                {translation.status === "in-progress" && (
+                  <div className="h-10 w-10 rounded-xl bg-amber-400/10 flex items-center justify-center flex-shrink-0">
+                    <Loader2 className="h-5 w-5 text-amber-400 animate-spin" />
+                  </div>
+                )}
+                {translation.status === "done" && (
+                  <div className="h-10 w-10 rounded-xl bg-pine/10 flex items-center justify-center flex-shrink-0">
+                    <CheckCircle2 className="h-5 w-5 text-pine" />
+                  </div>
+                )}
+                {translation.status === "error" && (
+                  <div className="h-10 w-10 rounded-xl bg-red-400/10 flex items-center justify-center flex-shrink-0">
+                    <AlertCircle className="h-5 w-5 text-red-400" />
+                  </div>
+                )}
+                <div>
+                  <h3 className="text-white font-semibold text-sm">
+                    {translation.status === "in-progress" && "Generating Hindi Translation"}
+                    {translation.status === "done" && "Translation Published"}
+                    {translation.status === "error" && "Translation Failed"}
+                  </h3>
+                  <p className="text-white/40 text-xs mt-0.5 font-mono">/{translation.slug}</p>
+                </div>
+              </div>
+              {translation.status !== "in-progress" && (
+                <button onClick={closeTranslationModal} className="text-white/30 hover:text-white transition-colors">
+                  <X className="h-4 w-4" />
+                </button>
+              )}
+            </div>
+
+            {/* Progress details */}
+            <div className="space-y-3">
+              <div className="bg-[#0c0e14] rounded-xl p-4">
+                <p className="text-white/70 text-xs font-medium mb-1">Page</p>
+                <p className="text-white text-sm">{translation.title}</p>
+              </div>
+
+              {translation.status === "in-progress" && (
+                <div className="bg-[#0c0e14] rounded-xl p-4">
+                  <div className="flex items-center justify-between">
+                    <p className="text-white/70 text-xs font-medium">Elapsed</p>
+                    <p className="text-amber-400 font-mono text-sm">{translation.elapsedSec}s</p>
+                  </div>
+                  <p className="text-white/40 text-xs mt-2">{translation.message}</p>
+                  <div className="mt-3 h-1 bg-white/5 rounded-full overflow-hidden">
+                    <div className="h-full bg-amber-400/60 rounded-full animate-pulse" style={{ width: "60%" }} />
+                  </div>
+                  <p className="text-white/25 text-xs mt-2">Translation can take 15–30 seconds. Please wait…</p>
+                </div>
+              )}
+
+              {translation.status === "done" && (
+                <div className="bg-pine/5 border border-pine/20 rounded-xl p-4">
+                  <p className="text-pine text-xs font-medium mb-1">Published successfully</p>
+                  <p className="text-white/60 text-xs">{translation.message}</p>
+                  {translation.hindiUrl && (
+                    <a
+                      href={translation.hindiUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex items-center gap-1.5 mt-3 text-xs text-accent font-medium hover:underline"
+                    >
+                      <Globe className="h-3.5 w-3.5" />
+                      View Hindi page →
+                    </a>
+                  )}
+                </div>
+              )}
+
+              {translation.status === "error" && (
+                <div className="bg-red-400/5 border border-red-400/20 rounded-xl p-4">
+                  <p className="text-red-400 text-xs font-medium mb-1">Error</p>
+                  <p className="text-white/60 text-xs">{translation.message}</p>
+                </div>
+              )}
+            </div>
+
+            {translation.status !== "in-progress" && (
+              <Button
+                variant="outline"
+                size="sm"
+                className="w-full mt-5 border-white/20 text-white/60 hover:text-white"
+                onClick={closeTranslationModal}
+              >
+                Close
+              </Button>
+            )}
+          </div>
+        </div>
+      )}
+
       {/* Header */}
       <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between mb-6">
         <div>
@@ -274,18 +427,22 @@ export default function CMSAdminPage() {
                         >
                           <Crown className="h-3.5 w-3.5" />
                         </button>
-                        {/* Only show translate button for English source pages */}
-                        {(page.language === "en" || !page.language) && (
+                        {/* Translate button: only for English source pages without an existing HI translation */}
+                        {(page.language === "en" || !page.language) && !page.translations?.hi && (
                           <button
-                            onClick={() => translatePage(page.slug)}
-                            disabled={translatingSlug === page.slug}
-                            className={`transition-colors ${translatingSlug === page.slug ? "text-amber-400 cursor-wait" : "text-white/40 hover:text-amber-400"}`}
-                            title={translatingSlug === page.slug ? "Generating Hindi translation…" : "Generate Hindi translation"}
+                            onClick={() => translatePage(page)}
+                            disabled={!!translation}
+                            className={`transition-colors ${translation ? "text-white/20 cursor-wait" : "text-white/40 hover:text-amber-400"}`}
+                            title="Generate Hindi translation"
                           >
-                            {translatingSlug === page.slug
-                              ? <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                              : <Languages className="h-3.5 w-3.5" />}
+                            <Languages className="h-3.5 w-3.5" />
                           </button>
+                        )}
+                        {/* Re-translate button: shown when HI translation already exists */}
+                        {(page.language === "en" || !page.language) && page.translations?.hi && (
+                          <span className="text-pine/60" title="Hindi translation exists">
+                            <Languages className="h-3.5 w-3.5" />
+                          </span>
                         )}
                         <a
                           href={getLiveUrl(page)}

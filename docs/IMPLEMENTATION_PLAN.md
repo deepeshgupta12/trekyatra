@@ -467,6 +467,18 @@
 - Header: search button `onClick → router.push("/search")` (was decorative); ⌘K/Ctrl+K keyboard shortcut via useEffect; mobile drawer search also navigates; nav px-3→px-2.5, gap-6→gap-4
 - Compare section: heading text-2xl sm:text-3xl md:text-4xl (prevents mobile overflow); card p-3 md:p-4; text-sm md:text-base; gap-2 md:gap-3; a/b as separate divs (no text wrapping overflow)
 
+### Step 63 — Hindi CMS translation fix + SEO [DONE]
+- `translation/agent.py`: translate_page() extended — seo_title, seo_description, faqs now translated; max_tokens 12000; fallback returns all fields
+- `routes/translation.py`: passes SEO + FAQ fields to agent; status="published" (auto-publish, was draft); stores translated seo_title, seo_description, content_json; response includes `/hi/trek/{slug}` link
+- `routes/sitemap_data.py`: sitemap_pages() filters `language='en'` only; new `GET /public/sitemap-pages/hindi` endpoint with source_slug join
+- `tests/test_translation.py`: TC-B08 updated (published status), TC-B15 (seo fields translated), TC-B16 (faqs translated); 16/16 pass; suite 520/522
+- `hi/trek/[slug]/page.tsx`, `hi/guides/[slug]/page.tsx`, `hi/packing/[slug]/page.tsx`: robots index=true, x-default hreflang, og:locale hi_IN, JSON-LD Article + FAQPage schemas
+- NEW `app/hi-trek-sitemap.xml/route.ts`: Hindi trek sitemap with xhtml:link hreflang alternates (hi, en, x-default)
+- `app/sitemap.ts`: /hi-trek-sitemap.xml entry added
+- `app/robots.ts`: sitemap now array including hi-trek-sitemap.xml
+- `admin/cms/page.tsx`: full translation progress modal (elapsed timer, progress bar, success/error with "View Hindi page →" link); HI-translated pages show green Languages icon; translate button hidden if HI already exists
+- next build clean; 520/522 backend tests pass
+
 ### Step 62 — Plan My Trek auth gate modal [DONE]
 - `middleware.ts`: `/plan` removed from PROTECTED_PREFIXES and config.matcher — /plan is now freely accessible; gate moved to in-page modal
 - NEW `components/plan/AuthGateModal.tsx`: Radix Dialog modal with full sign-in + sign-up flows (Google OAuth + email/password), matching site auth UI; `onSuccess` callback fires after any auth method

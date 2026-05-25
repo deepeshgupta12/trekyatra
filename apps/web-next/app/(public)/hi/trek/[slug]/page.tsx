@@ -28,7 +28,7 @@ export async function generateMetadata({ params }: { params: { slug: string } })
 
   const title = cmsPage?.seo_title
     ? `${cmsPage.seo_title} | TrekYatra`
-    : `${params.slug.replace(/-/g, " ")} — Trek Guide | TrekYatra`;
+    : `${params.slug.replace(/-/g, " ")} — ट्रेक गाइड | TrekYatra`;
   const description = cmsPage?.seo_description ?? "";
   const canonicalHi = `${siteUrl}/hi/trek/${params.slug}`;
   const canonicalEn = `${siteUrl}/trek/${params.slug}`;
@@ -36,18 +36,37 @@ export async function generateMetadata({ params }: { params: { slug: string } })
   return {
     title,
     description,
+    robots: { index: true, follow: true },
     alternates: {
       canonical: canonicalHi,
       languages: {
         "en": canonicalEn,
         "hi": canonicalHi,
+        "x-default": canonicalEn,
       },
     },
-    openGraph: { title, description, url: canonicalHi, type: "article" },
+    openGraph: {
+      title,
+      description,
+      url: canonicalHi,
+      type: "article",
+      locale: "hi_IN",
+      alternateLocale: ["en_US"],
+      siteName: "TrekYatra",
+      images: cmsPage?.hero_image_url
+        ? [{ url: cmsPage.hero_image_url, width: 1200, height: 630, alt: title }]
+        : [],
+    },
+    twitter: {
+      card: "summary_large_image",
+      title,
+      description,
+    },
   };
 }
 
 export default async function HiTrekDetailPage({ params }: { params: { slug: string } }) {
+  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? "https://trekyatra.com";
   let cmsPage: CMSPage | null = null;
   try {
     const page = await fetchCMSPage(params.slug, "hi");
@@ -57,13 +76,71 @@ export default async function HiTrekDetailPage({ params }: { params: { slug: str
   if (!cmsPage) notFound();
 
   const faqs: FAQItem[] = cmsPage.content_json?.faqs ?? [];
+  const canonicalHi = `${siteUrl}/hi/trek/${params.slug}`;
+  const canonicalEn = `${siteUrl}/trek/${params.slug}`;
+
+  // JSON-LD: Article schema (Hindi)
+  const articleSchema = {
+    "@context": "https://schema.org",
+    "@type": "Article",
+    "inLanguage": "hi-IN",
+    "headline": cmsPage.title,
+    "description": cmsPage.seo_description ?? "",
+    "url": canonicalHi,
+    "image": cmsPage.hero_image_url ?? undefined,
+    "author": {
+      "@type": "Person",
+      "name": "Deepesh Kumar Gupta",
+      "url": `${siteUrl}/about/authors`,
+    },
+    "publisher": {
+      "@type": "Organization",
+      "name": "TrekYatra",
+      "url": siteUrl,
+    },
+    "isPartOf": {
+      "@type": "WebSite",
+      "name": "TrekYatra",
+      "url": siteUrl,
+    },
+    "sameAs": [canonicalEn],
+  };
+
+  // JSON-LD: FAQPage schema (only when FAQs exist)
+  const faqSchema = faqs.length > 0
+    ? {
+        "@context": "https://schema.org",
+        "@type": "FAQPage",
+        "inLanguage": "hi-IN",
+        "mainEntity": faqs.map((faq) => ({
+          "@type": "Question",
+          "name": faq.q,
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": faq.a,
+          },
+        })),
+      }
+    : null;
 
   return (
     <>
+      {/* Structured data */}
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(articleSchema) }}
+      />
+      {faqSchema && (
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(faqSchema) }}
+        />
+      )}
+
       <Breadcrumb
         items={[
-          { label: "Home", href: "/" },
-          { label: "Treks", href: "/explore" },
+          { label: "होम", href: "/" },
+          { label: "ट्रेक्स", href: "/explore" },
           { label: cmsPage.title, href: `/hi/trek/${params.slug}` },
         ]}
       />
@@ -71,7 +148,7 @@ export default async function HiTrekDetailPage({ params }: { params: { slug: str
       {/* Language switcher banner */}
       <div className="bg-accent/10 border-b border-accent/20 py-2 px-4 text-center text-sm text-accent">
         यह पृष्ठ हिंदी में है।{" "}
-        <Link href={`/trek/${params.slug}`} className="underline font-medium">
+        <Link href={canonicalEn} className="underline font-medium">
           Read in English →
         </Link>
       </div>
@@ -104,7 +181,7 @@ export default async function HiTrekDetailPage({ params }: { params: { slug: str
         <div className="mt-10"><AuthorBlock /></div>
 
         <div className="mt-8 pt-6 border-t border-border text-sm text-muted-foreground">
-          <Link href={`/trek/${params.slug}`} className="text-accent hover:underline">
+          <Link href={canonicalEn} className="text-accent hover:underline">
             ← Read full guide in English
           </Link>
         </div>

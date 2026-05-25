@@ -222,6 +222,13 @@ trekyatra/
 | Sign-in/sign-up ?next= pass-through for Plan My Trek redirect-back after auth | Done |
 | Plan My Trek auth gate modal — inline sign-in/sign-up popup at wizard step 6 submit | Done |
 | Non-overlapping cluster sidebar + "Similar treks" sections on trek detail page | Done |
+| Hindi translation auto-publish (was draft → now published on creation) | Done |
+| TranslationAgent: seo_title, seo_description, FAQs translated + stored | Done |
+| Hindi pages: JSON-LD Article + FAQPage schemas, og:locale hi_IN, x-default hreflang | Done |
+| Translation progress modal: elapsed timer, progress bar, success/error state with View link | Done |
+| /hi-trek-sitemap.xml: dedicated Hindi trek sitemap with xhtml:link hreflang alternates | Done |
+| GET /public/sitemap-pages/hindi: source_slug join for correct /hi/trek/{slug} URLs | Done |
+| Main sitemap: Hindi pages (language=hi) excluded — no more sitemap contamination | Done |
 
 ### Pre-Launch Polish
 | Feature | Status |
@@ -388,6 +395,7 @@ cd apps/web-next && npm run build
 | Trip planning | `/api/v1/plan/generate`, `/api/v1/plan/{id}`, `/api/v1/plan/{id}/email` | Public + optional user auth |
 | Subscriptions | `/api/v1/subscriptions/create-checkout`, `/status`, `/cancel`, `/webhook` | User auth (webhook: no auth) |
 | Translation | `/api/v1/admin/cms/{slug}/translate` | Admin auth required |
+| Hindi sitemap data | `GET /api/v1/public/sitemap-pages/hindi` | Public |
 | Admin pipeline | `/api/v1/admin/pipeline/*` | Admin auth required |
 | Admin agents | `/api/v1/admin/agent-runs` | Admin auth required |
 | Admin content | `/api/v1/admin/topics`, `/briefs`, `/drafts`, `/clusters` | Admin auth required |

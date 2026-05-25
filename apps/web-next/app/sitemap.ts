@@ -81,6 +81,8 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     url("/maharashtra-treks-sitemap.xml", 0.8, "weekly"),
     url("/sikkim-treks-sitemap.xml",      0.8, "weekly"),
     url("/karnataka-treks-sitemap.xml",   0.8, "weekly"),
+    // Hindi trek pages — separate sitemap with hreflang alternates
+    url("/hi-trek-sitemap.xml",           0.6, "weekly"),
     // Difficulty category pages
     url("/beginner", 0.8, "weekly"),
     url("/moderate", 0.8, "weekly"),

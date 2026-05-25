@@ -959,6 +959,18 @@ Before editing any backend file:
 - `apps/web-next/app/(public)/trek/[slug]/page.tsx` — UPDATED: server-side cluster pages fetch + "In this cluster" sidebar; blast radius: MEDIUM (every trek guide page, graceful fallback)
 - `apps/web-next/components/trek/TrekViewTracker.tsx` — UPDATED: title prop + writes ty_recently_viewed localStorage; blast radius: LOW
 
+### Step 63 — Hindi CMS translation fix + SEO blast radius
+- `services/api/app/modules/agents/translation/agent.py` — UPDATED: translate_page() signature extended (seo_title, seo_description, faqs params); max_tokens 12000; returns dict with all translated fields + fallback flag; blast radius: LOW (only called by translation.py route)
+- `services/api/app/api/routes/translation.py` — UPDATED: extracts source FAQs from content_json; passes SEO + FAQ fields to agent; status="published" (was draft); stores translated seo_title, seo_description, content_json; blast radius: LOW (POST /admin/cms/{slug}/translate admin-only endpoint)
+- `services/api/app/api/routes/sitemap_data.py` — UPDATED: sitemap_pages() language filter added (en only); new GET /public/sitemap-pages/hindi endpoint; blast radius: MEDIUM (sitemap_pages used by apps/web-next/app/sitemap.ts — any change affects Google indexing of all CMS pages)
+- `apps/web-next/app/(public)/hi/trek/[slug]/page.tsx` — UPDATED: JSON-LD schemas, og:locale, x-default hreflang, robots index; blast radius: LOW (Hindi trek detail page, no downstream callers)
+- `apps/web-next/app/(public)/hi/guides/[slug]/page.tsx` — UPDATED: same SEO improvements; blast radius: LOW
+- `apps/web-next/app/(public)/hi/packing/[slug]/page.tsx` — UPDATED: same SEO improvements; blast radius: LOW
+- NEW `apps/web-next/app/hi-trek-sitemap.xml/route.ts` — NEW: dynamic sitemap for Hindi trek pages with xhtml:link hreflang alternates; blast radius: LOW (new leaf route)
+- `apps/web-next/app/sitemap.ts` — UPDATED: /hi-trek-sitemap.xml added to entries; blast radius: LOW (additive entry, no existing URLs changed)
+- `apps/web-next/app/robots.ts` — UPDATED: sitemap property changed from string to array; blast radius: LOW (additive change)
+- `apps/web-next/app/(admin)/admin/cms/page.tsx` — UPDATED: full translation progress modal with timer, progress bar, success/error states; translate button logic extended; blast radius: LOW (admin-only leaf page)
+
 ### Step 62 — Plan My Trek inline auth gate modal blast radius
 - `apps/web-next/middleware.ts` — UPDATED: `/plan` removed from PROTECTED_PREFIXES + config.matcher; blast radius: LOW (plan is now fully public; auth enforcement moves to UI layer)
 - NEW `apps/web-next/components/plan/AuthGateModal.tsx` — NEW: Radix Dialog modal; consumes `useAuth()`, `useGoogleLogin`; blast radius: LOW (leaf component, only rendered from plan/page.tsx)

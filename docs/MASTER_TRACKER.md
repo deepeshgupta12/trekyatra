@@ -271,6 +271,23 @@ All V0 foundations are shipped. The stack is live locally with:
 | Header nav — compact Logo (tagline hidden); search bar functional (onClick + ⌘K → /search); px-2.5 nav items; gap-4 | done |
 | Compare section — responsive: heading text-2xl sm:text-3xl; card p-3 md:p-4; text-sm md:text-base; no mobile overflow | done |
 
+### Step 63 — Hindi CMS translation fix + SEO (hreflang, JSON-LD, sitemap)
+Status: done
+What is done:
+- `services/api/app/modules/agents/translation/agent.py` — `translate_page()` extended to translate `seo_title`, `seo_description`, and `faqs` list; max_tokens raised to 12000; fallback returns all fields with original values when no API key
+- `services/api/app/api/routes/translation.py` — passes `seo_title`, `seo_description`, `faqs` to agent; changed `status="draft"` → `status="published"` so Hindi pages are live immediately; stores translated SEO + content_json fields; response includes `/hi/trek/{slug}` link
+- `services/api/app/api/routes/sitemap_data.py` — `sitemap_pages()` filters `language='en'` only (Hindi pages excluded from main sitemap); new `GET /public/sitemap-pages/hindi` endpoint returns `HindiSitemapEntry` with `source_slug` (via join with source English page)
+- `services/api/tests/test_translation.py` — TC-B08 updated: asserts `status=="published"`; TC-B15 added: verifies seo_title/seo_description translated; TC-B16 added: verifies FAQ list translated; 16/16 translation tests pass; full suite 520/522 pass (2 pre-existing flaky failures unrelated)
+- `apps/web-next/app/(public)/hi/trek/[slug]/page.tsx` — `robots: { index: true, follow: true }`, `x-default` hreflang to EN, `og:locale: hi_IN`, `alternateLocale`, JSON-LD Article + FAQPage schemas; Hindi breadcrumb labels
+- `apps/web-next/app/(public)/hi/guides/[slug]/page.tsx` — same SEO improvements as hi/trek
+- `apps/web-next/app/(public)/hi/packing/[slug]/page.tsx` — same SEO improvements as hi/trek
+- NEW `apps/web-next/app/hi-trek-sitemap.xml/route.ts` — Hindi trek sitemap with `<xhtml:link>` hreflang alternates (hi, en, x-default); fetches from `/public/sitemap-pages/hindi` with fallback to `api.trekyatra.co.in`
+- `apps/web-next/app/sitemap.ts` — added `/hi-trek-sitemap.xml` entry
+- `apps/web-next/app/robots.ts` — `sitemap:` changed from string to array: `[sitemap.xml, hi-trek-sitemap.xml]`
+- `apps/web-next/app/(admin)/admin/cms/page.tsx` — full translation progress modal (elapsed timer, progress bar, success/error states with "View Hindi page →" link); translate button only shows for EN pages without existing HI translation; green Languages icon when HI translation already exists
+- 520/522 backend tests pass; `next build` clean (zero TypeScript errors)
+What remains: ANTHROPIC_API_KEY must be set in DO production for real AI translation (currently uses rule-based fallback)
+
 ### Step 62 — Plan My Trek inline auth gate modal
 Status: done
 What is done:

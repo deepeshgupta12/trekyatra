@@ -53,13 +53,29 @@ def trigger_translation(
                 fallback=False,
             )
 
-    # Run translation agent (guard against pages with no content yet)
-    result = translate_page(source.title, source.content_html or "", body.target_language)
+    # Extract faqs from content_json for translation
+    source_faqs: list[dict] = []
+    if source.content_json and isinstance(source.content_json, dict):
+        source_faqs = source.content_json.get("faqs", [])
+
+    # Run translation agent — translates title, content_html, seo_title, seo_description, faqs
+    result = translate_page(
+        title=source.title,
+        content_html=source.content_html or "",
+        target_language=body.target_language,
+        seo_title=source.seo_title,
+        seo_description=source.seo_description,
+        faqs=source_faqs if source_faqs else None,
+    )
     is_fallback = result.get("fallback") == "true"
 
-    # Create translated CMSPage (draft status — requires admin review before publish)
+    # Build translated content_json: preserve original structure, replace faqs if translated
+    translated_content_json = dict(source.content_json) if source.content_json else {}
+    if result.get("faqs"):
+        translated_content_json["faqs"] = result["faqs"]
+
+    # Create translated CMSPage — status=published so it is live immediately
     new_slug = f"{slug}-{body.target_language}"
-    # If slug already exists, make unique
     candidate = new_slug
     counter = 2
     while cms_service.get_page_by_slug(db, candidate):
@@ -72,10 +88,10 @@ def trigger_translation(
         page_type=source.page_type,
         title=result["title"],
         content_html=result["content_html"],
-        content_json=source.content_json,
-        status="draft",
-        seo_title=source.seo_title,
-        seo_description=source.seo_description,
+        content_json=translated_content_json if translated_content_json else source.content_json,
+        status="published",           # auto-publish so /hi/trek/{source_slug} is live immediately
+        seo_title=result.get("seo_title") or source.seo_title,
+        seo_description=result.get("seo_description") or source.seo_description,
         seo_meta=source.seo_meta,
         hero_image_url=source.hero_image_url,
         language=body.target_language,
@@ -99,8 +115,8 @@ def trigger_translation(
         page_id=str(new_page.id),
         page_slug=new_slug,
         message=(
-            f"Translation draft created as '{new_slug}'. "
-            + ("Rule-based fallback used — ANTHROPIC_API_KEY not set." if is_fallback else "Review and publish via /admin/cms.")
+            f"Translation published as '{new_slug}'. "
+            + ("Rule-based fallback used — ANTHROPIC_API_KEY not set." if is_fallback else "Live at /hi/trek/" + slug)
         ),
         fallback=is_fallback,
     )

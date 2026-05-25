@@ -36,15 +36,33 @@ export async function generateMetadata({ params }: { params: { slug: string } })
   return {
     title,
     description,
+    robots: { index: true, follow: true },
     alternates: {
       canonical: canonicalHi,
-      languages: { "en": canonicalEn, "hi": canonicalHi },
+      languages: {
+        "en": canonicalEn,
+        "hi": canonicalHi,
+        "x-default": canonicalEn,
+      },
     },
-    openGraph: { title, description, url: canonicalHi, type: "article" },
+    openGraph: {
+      title,
+      description,
+      url: canonicalHi,
+      type: "article",
+      locale: "hi_IN",
+      alternateLocale: ["en_US"],
+      siteName: "TrekYatra",
+      images: cmsPage?.hero_image_url
+        ? [{ url: cmsPage.hero_image_url, width: 1200, height: 630, alt: title }]
+        : [],
+    },
+    twitter: { card: "summary_large_image", title, description },
   };
 }
 
 export default async function HiGuidePage({ params }: { params: { slug: string } }) {
+  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? "https://trekyatra.com";
   let cmsPage: CMSPage | null = null;
   try {
     const page = await fetchCMSPage(params.slug, "hi");
@@ -54,22 +72,53 @@ export default async function HiGuidePage({ params }: { params: { slug: string }
   if (!cmsPage) notFound();
 
   const faqs: FAQItem[] = cmsPage.content_json?.faqs ?? [];
+  const canonicalEn = `${siteUrl}/guides/${params.slug}`;
+  const canonicalHi = `${siteUrl}/hi/guides/${params.slug}`;
+
+  const articleSchema = {
+    "@context": "https://schema.org",
+    "@type": "Article",
+    "inLanguage": "hi-IN",
+    "headline": cmsPage.title,
+    "description": cmsPage.seo_description ?? "",
+    "url": canonicalHi,
+    "image": cmsPage.hero_image_url ?? undefined,
+    "author": { "@type": "Person", "name": "Deepesh Kumar Gupta", "url": `${siteUrl}/about/authors` },
+    "publisher": { "@type": "Organization", "name": "TrekYatra", "url": siteUrl },
+    "sameAs": [canonicalEn],
+  };
+
+  const faqSchema = faqs.length > 0
+    ? {
+        "@context": "https://schema.org",
+        "@type": "FAQPage",
+        "inLanguage": "hi-IN",
+        "mainEntity": faqs.map((faq) => ({
+          "@type": "Question",
+          "name": faq.q,
+          "acceptedAnswer": { "@type": "Answer", "text": faq.a },
+        })),
+      }
+    : null;
 
   return (
     <>
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(articleSchema) }} />
+      {faqSchema && (
+        <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(faqSchema) }} />
+      )}
+
       <Breadcrumb
         items={[
-          { label: "Home", href: "/" },
-          { label: "Guides", href: "/guides" },
+          { label: "होम", href: "/" },
+          { label: "गाइड्स", href: "/guides" },
           { label: cmsPage.title, href: `/hi/guides/${params.slug}` },
         ]}
       />
 
       <div className="bg-accent/10 border-b border-accent/20 py-2 px-4 text-center text-sm text-accent">
         यह पृष्ठ हिंदी में है।{" "}
-        <Link href={`/guides/${params.slug}`} className="underline font-medium">
-          Read in English →
-        </Link>
+        <Link href={canonicalEn} className="underline font-medium">Read in English →</Link>
       </div>
 
       <article className="container-wide py-10 max-w-3xl mx-auto">
@@ -78,17 +127,11 @@ export default async function HiGuidePage({ params }: { params: { slug: string }
         </h1>
 
         {cmsPage.hero_image_url && (
-          <img
-            src={cmsPage.hero_image_url}
-            alt={cmsPage.title}
-            className="w-full rounded-2xl mb-8 object-cover max-h-80"
-          />
+          <img src={cmsPage.hero_image_url} alt={cmsPage.title}
+            className="w-full rounded-2xl mb-8 object-cover max-h-80" />
         )}
 
-        <div
-          className="prose prose-lg max-w-none"
-          dangerouslySetInnerHTML={{ __html: cmsPage.content_html }}
-        />
+        <div className="prose prose-lg max-w-none" dangerouslySetInnerHTML={{ __html: cmsPage.content_html }} />
 
         {faqs.length > 0 && (
           <section className="mt-10">
@@ -100,9 +143,7 @@ export default async function HiGuidePage({ params }: { params: { slug: string }
         <div className="mt-10"><AuthorBlock /></div>
 
         <div className="mt-8 pt-6 border-t border-border text-sm text-muted-foreground">
-          <Link href={`/guides/${params.slug}`} className="text-accent hover:underline">
-            ← Read full guide in English
-          </Link>
+          <Link href={canonicalEn} className="text-accent hover:underline">← Read full guide in English</Link>
         </div>
       </article>
     </>
