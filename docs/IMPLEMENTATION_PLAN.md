@@ -467,6 +467,12 @@
 - Header: search button `onClick → router.push("/search")` (was decorative); ⌘K/Ctrl+K keyboard shortcut via useEffect; mobile drawer search also navigates; nav px-3→px-2.5, gap-6→gap-4
 - Compare section: heading text-2xl sm:text-3xl md:text-4xl (prevents mobile overflow); card p-3 md:p-4; text-sm md:text-base; gap-2 md:gap-3; a/b as separate divs (no text wrapping overflow)
 
+### Step 61 — Plan My Trek auth gate [DONE]
+- `middleware.ts`: `/plan` and `/plan/:path*` added to `config.matcher` — PROTECTED_PREFIXES already correct but matcher was missing, so guard never fired
+- `sign-in/page.tsx`: "Create account" link passes `?next=` through to sign-up
+- `sign-up/page.tsx`: Suspense + useSearchParams; Google login respects `?next=`; email signup still goes to onboarding
+- All entry points covered: homepage "Plan My Trek" card, direct URL, /plan/results — all redirect to /auth/sign-in?next=/plan for guests
+
 ### Step 60 — CMS translation UX + search quality fixes [DONE]
 - `translation.py`: null guard for `content_html=None` on manually-created CMS pages
 - `admin/cms/page.tsx`: per-row translation loading state (Loader2 spinner, disabled button, real error message, 8s feedback timeout)

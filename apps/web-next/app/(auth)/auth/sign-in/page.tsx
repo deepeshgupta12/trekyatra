@@ -136,7 +136,7 @@ function SignInForm() {
       </form>
       <div className="flex items-center gap-3 my-5"><div className="flex-1 h-px bg-border" /><span className="text-xs text-muted-foreground">or</span><div className="flex-1 h-px bg-border" /></div>
       <Button variant="outline" size="lg" className="w-full"><Smartphone className="h-4 w-4" /> Sign in with mobile OTP</Button>
-      <p className="text-sm text-muted-foreground mt-6 text-center">New to TrekYatra? <Link href="/auth/sign-up" className="text-accent font-medium">Create account</Link></p>
+      <p className="text-sm text-muted-foreground mt-6 text-center">New to TrekYatra? <Link href={searchParams.get("next") ? `/auth/sign-up?next=${encodeURIComponent(searchParams.get("next")!)}` : "/auth/sign-up"} className="text-accent font-medium">Create account</Link></p>
     </>
   );
 }

@@ -99,5 +99,7 @@ export const config = {
     "/admin/:path*",
     "/auth/sign-in",
     "/auth/sign-up",
+    "/plan",
+    "/plan/:path*",
   ],
 };

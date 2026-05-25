@@ -959,6 +959,11 @@ Before editing any backend file:
 - `apps/web-next/app/(public)/trek/[slug]/page.tsx` — UPDATED: server-side cluster pages fetch + "In this cluster" sidebar; blast radius: MEDIUM (every trek guide page, graceful fallback)
 - `apps/web-next/components/trek/TrekViewTracker.tsx` — UPDATED: title prop + writes ty_recently_viewed localStorage; blast radius: LOW
 
+### Step 61 — Plan My Trek auth gate blast radius
+- `apps/web-next/middleware.ts` — UPDATED: `/plan` and `/plan/:path*` added to `config.matcher`; blast radius: LOW (additive matcher entries — unauthenticated /plan users now redirect to sign-in, authenticated users unaffected; no logic change)
+- `apps/web-next/app/(auth)/auth/sign-in/page.tsx` — UPDATED: "Create account" link passes `?next=` param through to sign-up URL; blast radius: LOW (1-line change, leaf component)
+- `apps/web-next/app/(auth)/auth/sign-up/page.tsx` — REFACTORED: split into `SignUpForm` + `Suspense` wrapper; `useSearchParams` added; Google login redirects to `?next=` param; blast radius: LOW (auth-only page, no downstream callers)
+
 ### Step 60 — Enhancement batch: CMS translation UX + search quality fixes blast radius
 - `services/api/app/api/routes/translation.py` — UPDATED: `content_html or ""` guard before calling translate_page; blast radius: LOW (additive null-safety, same callers)
 - `apps/web-next/app/(admin)/admin/cms/page.tsx` — UPDATED: `translatingSlug` loading state; spinner replaces Languages icon while in-flight; button disabled during request; real API error surfaced in feedback; blast radius: LOW (admin-only leaf page)
