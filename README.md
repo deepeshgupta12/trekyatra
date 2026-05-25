@@ -220,6 +220,7 @@ trekyatra/
 | Translation loading state (per-row spinner, disabled button, real error feedback) | Done |
 | Plan My Trek auth gate — /plan and /plan/results require login (middleware matcher fix) | Done |
 | Sign-in/sign-up ?next= pass-through for Plan My Trek redirect-back after auth | Done |
+| Plan My Trek auth gate modal — inline sign-in/sign-up popup at wizard step 6 submit | Done |
 | Non-overlapping cluster sidebar + "Similar treks" sections on trek detail page | Done |
 
 ### Pre-Launch Polish

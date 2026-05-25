@@ -271,6 +271,15 @@ All V0 foundations are shipped. The stack is live locally with:
 | Header nav — compact Logo (tagline hidden); search bar functional (onClick + ⌘K → /search); px-2.5 nav items; gap-4 | done |
 | Compare section — responsive: heading text-2xl sm:text-3xl; card p-3 md:p-4; text-sm md:text-base; no mobile overflow | done |
 
+### Step 62 — Plan My Trek inline auth gate modal
+Status: done
+What is done:
+- `apps/web-next/middleware.ts` — `/plan` removed from `PROTECTED_PREFIXES` and `config.matcher`; plan wizard is now freely accessible; auth gate moves to in-page modal at submit
+- NEW `apps/web-next/components/plan/AuthGateModal.tsx` — Radix Dialog modal containing full sign-in + sign-up flows (Google OAuth + email/password + show/hide password); matches existing site auth UI exactly; `onSuccess` callback fires immediately after any successful auth method; sign-up in modal skips onboarding so user lands on results without delay; mode toggle (sign-in ↔ sign-up) within modal
+- `apps/web-next/app/(public)/plan/page.tsx` — `useAuth()` imported; `pendingPayload` ref stores wizard state before auth; `handleSubmit()` intercepts if `!user` and shows modal; `handleAuthSuccess()` closes modal and fires `callApi(pendingPayload)` immediately; step 6 shows hint "You'll be asked to sign in…" when guest; logged-in users submit directly without seeing modal
+- 518/520 backend tests pass (2 pre-existing flaky test_refresh isolation failures, unrelated); `next build` clean (180 pages, 0 errors)
+What remains: nothing — auth gate via modal is fully implemented end-to-end
+
 ### Step 61 — Plan My Trek auth gate + TC-F05 full ?next= chain fix
 Status: done
 What is done:

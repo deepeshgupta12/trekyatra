@@ -3,8 +3,8 @@ import { NextRequest, NextResponse } from "next/server";
 const USER_COOKIE = "trekyatra_access_token";
 const ADMIN_COOKIE = "trekyatra_admin_token";
 
-// /plan and /plan/results require login — users must be authenticated to use Plan My Trek
-const PROTECTED_PREFIXES = ["/account", "/plan"];
+// /account requires login — /plan is freely accessible; auth gate is shown as modal at submit
+const PROTECTED_PREFIXES = ["/account"];
 
 // ── Deleted URL handling ───────────────────────────────────────────────────────
 // URLs removed from sitemaps follow a 2-phase lifecycle:
@@ -106,7 +106,5 @@ export const config = {
     "/admin/:path*",
     "/auth/sign-in",
     "/auth/sign-up",
-    "/plan",
-    "/plan/:path*",
   ],
 };

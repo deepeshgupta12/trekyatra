@@ -467,6 +467,13 @@
 - Header: search button `onClick → router.push("/search")` (was decorative); ⌘K/Ctrl+K keyboard shortcut via useEffect; mobile drawer search also navigates; nav px-3→px-2.5, gap-6→gap-4
 - Compare section: heading text-2xl sm:text-3xl md:text-4xl (prevents mobile overflow); card p-3 md:p-4; text-sm md:text-base; gap-2 md:gap-3; a/b as separate divs (no text wrapping overflow)
 
+### Step 62 — Plan My Trek auth gate modal [DONE]
+- `middleware.ts`: `/plan` removed from PROTECTED_PREFIXES and config.matcher — /plan is now freely accessible; gate moved to in-page modal
+- NEW `components/plan/AuthGateModal.tsx`: Radix Dialog modal with full sign-in + sign-up flows (Google OAuth + email/password), matching site auth UI; `onSuccess` callback fires after any auth method
+- `app/(public)/plan/page.tsx`: `useAuth()` added; `handleSubmit()` checks `user` — if not logged in, shows `AuthGateModal` and stores pending payload in a ref; `handleAuthSuccess()` closes modal and fires the API call immediately; step 6 hint shown when logged out
+- No backend changes — `POST /api/v1/plan/recommend` auth enforcement unchanged
+- `next build` clean (180 pages, 0 errors)
+
 ### Step 61 — Plan My Trek auth gate [DONE]
 - `middleware.ts`: `/plan` and `/plan/:path*` added to `config.matcher` — PROTECTED_PREFIXES already correct but matcher was missing, so guard never fired
 - `sign-in/page.tsx`: "Create account" link passes `?next=` through to sign-up

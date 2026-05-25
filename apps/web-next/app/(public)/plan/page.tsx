@@ -1,11 +1,13 @@
 "use client";
 
-import { useState, useCallback } from "react";
+import { useState, useCallback, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { ArrowRight, ArrowLeft, Mountain, Sparkles } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import WizardStep from "@/components/plan/WizardStep";
+import AuthGateModal from "@/components/plan/AuthGateModal";
 import { planRecommendTreks, type PlanRecommendRequest } from "@/lib/api";
+import { useAuth } from "@/lib/auth-context";
 import Link from "next/link";
 
 // ── Wizard data ──────────────────────────────────────────────────────────────
@@ -78,9 +80,12 @@ const pillCls = (active: boolean) =>
 
 export default function PlanPage() {
   const router = useRouter();
+  const { user } = useAuth();
+
   const [step, setStep] = useState(0); // 0 = welcome
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const [showAuthModal, setShowAuthModal] = useState(false);
 
   // Wizard state
   const [intents, setIntents] = useState<string[]>([]);
@@ -93,30 +98,36 @@ export default function PlanPage() {
 
   const TOTAL_STEPS = 6;
 
+  // Keep a ref to the pending payload so auth-success can fire it immediately
+  const pendingPayload = useRef<PlanRecommendRequest | null>(null);
+
   function toggleIntent(v: string) {
     setIntents(prev => prev.includes(v) ? prev.filter(x => x !== v) : [...prev, v]);
   }
 
-  async function handleSubmit() {
+  function buildPayload(): PlanRecommendRequest {
+    const months = monthChunk ? monthChunk.split(",") : [];
+    const [dur_min, dur_max] = durationChunk.split(",").map(Number);
+    const [bud_min, bud_max] = budget.split(",").map(Number);
+    return {
+      intent: intents,
+      months,
+      duration_min: dur_min || 1,
+      duration_max: dur_max || 30,
+      experience_level: experience,
+      fitness_level: fitness,
+      region: region || undefined,
+      budget_min: bud_min || undefined,
+      budget_max: bud_max || undefined,
+      comfort_preferences: [],
+    };
+  }
+
+  // Calls the API and navigates to results — always has a valid session when reached
+  const callApi = useCallback(async (payload: PlanRecommendRequest) => {
     setLoading(true);
     setError("");
     try {
-      const months = monthChunk ? monthChunk.split(",") : [];
-      const [dur_min, dur_max] = durationChunk.split(",").map(Number);
-      const [bud_min, bud_max] = budget.split(",").map(Number);
-      const payload: PlanRecommendRequest = {
-        intent: intents,
-        months,
-        duration_min: dur_min || 1,
-        duration_max: dur_max || 30,
-        experience_level: experience,
-        fitness_level: fitness,
-        region: region || undefined,
-        budget_min: bud_min || undefined,
-        budget_max: bud_max || undefined,
-        comfort_preferences: [],
-      };
-      // Store payload + run recommendation, then navigate to results
       sessionStorage.setItem("plan_request", JSON.stringify(payload));
       const result = await planRecommendTreks(payload);
       sessionStorage.setItem("plan_results", JSON.stringify(result));
@@ -125,7 +136,29 @@ export default function PlanPage() {
       setError("Something went wrong. Please try again.");
       setLoading(false);
     }
+  }, [router]);
+
+  // Called when user clicks "Show My Trek Recommendations"
+  async function handleSubmit() {
+    const payload = buildPayload();
+    pendingPayload.current = payload;
+
+    if (!user) {
+      // Not logged in — show the auth gate modal; API call deferred to handleAuthSuccess
+      setShowAuthModal(true);
+      return;
+    }
+
+    await callApi(payload);
   }
+
+  // Called by AuthGateModal after successful sign-in or sign-up
+  const handleAuthSuccess = useCallback(async () => {
+    setShowAuthModal(false);
+    if (pendingPayload.current) {
+      await callApi(pendingPayload.current);
+    }
+  }, [callApi]);
 
   // Welcome screen
   if (step === 0) {
@@ -156,153 +189,167 @@ export default function PlanPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-background to-accent/5 flex items-center justify-center p-6">
-      <div className="max-w-xl w-full">
-        <WizardStep step={step} totalSteps={TOTAL_STEPS} title={[
-          "", // 0 = welcome
-          "What kind of trek are you looking for?",
-          "When are you planning to go?",
-          "How many days do you have?",
-          "What is your trekking experience and fitness?",
-          "What is your budget and preferred region?",
-          "Almost done — confirm your preferences",
-        ][step]}>
-          {/* Step 1: Trek Intent */}
-          {step === 1 && (
-            <div className="space-y-3">
-              <p className="text-sm text-muted-foreground">Select all that apply.</p>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                {INTENT_OPTIONS.map(opt => (
-                  <button key={opt.value} className={pillCls(intents.includes(opt.value))} onClick={() => toggleIntent(opt.value)}>
-                    <span className="mr-2">{opt.emoji}</span>{opt.label}
-                  </button>
-                ))}
-                <button className={pillCls(intents.length === 0)} onClick={() => setIntents([])}>
-                  🎲 Not sure — recommend for me
-                </button>
-              </div>
-            </div>
-          )}
-
-          {/* Step 2: Month / Season */}
-          {step === 2 && (
-            <div className="space-y-2">
-              <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
-                {MONTH_OPTIONS.map(opt => (
-                  <button key={opt.value} className={pillCls(monthChunk === opt.value)} onClick={() => setMonthChunk(opt.value)}>
-                    <div className="font-medium">{opt.label}</div>
-                    <div className="text-[10px] opacity-60">{opt.hint}</div>
-                  </button>
-                ))}
-                <button className={pillCls(!monthChunk)} onClick={() => setMonthChunk("")}>
-                  <div className="font-medium">Not decided</div>
-                  <div className="text-[10px] opacity-60">Show all</div>
-                </button>
-              </div>
-            </div>
-          )}
-
-          {/* Step 3: Duration */}
-          {step === 3 && (
-            <div className="grid grid-cols-2 gap-2">
-              {DURATION_OPTIONS.map(opt => (
-                <button key={opt.value} className={pillCls(durationChunk === opt.value)} onClick={() => setDurationChunk(opt.value)}>
-                  <div className="font-medium">{opt.label}</div>
-                  <div className="text-[10px] opacity-60">{opt.hint}</div>
-                </button>
-              ))}
-            </div>
-          )}
-
-          {/* Step 4: Experience + Fitness */}
-          {step === 4 && (
-            <div className="space-y-5">
-              <div>
-                <p className="text-sm font-medium mb-2">Trekking experience</p>
-                <div className="space-y-2">
-                  {EXPERIENCE_OPTIONS.map(opt => (
-                    <button key={opt.value} onClick={() => setExperience(opt.value)}
-                      className={`w-full text-left px-4 py-2.5 rounded-xl border text-sm transition-all ${experience === opt.value ? "border-accent bg-accent/5" : "border-border hover:border-accent/40"}`}>
-                      <span className="font-medium">{opt.label}</span>
-                      <span className="text-muted-foreground ml-2 text-xs">→ {opt.diff}</span>
+    <>
+      <div className="min-h-screen bg-gradient-to-br from-background to-accent/5 flex items-center justify-center p-6">
+        <div className="max-w-xl w-full">
+          <WizardStep step={step} totalSteps={TOTAL_STEPS} title={[
+            "", // 0 = welcome
+            "What kind of trek are you looking for?",
+            "When are you planning to go?",
+            "How many days do you have?",
+            "What is your trekking experience and fitness?",
+            "What is your budget and preferred region?",
+            "Almost done — confirm your preferences",
+          ][step]}>
+            {/* Step 1: Trek Intent */}
+            {step === 1 && (
+              <div className="space-y-3">
+                <p className="text-sm text-muted-foreground">Select all that apply.</p>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                  {INTENT_OPTIONS.map(opt => (
+                    <button key={opt.value} className={pillCls(intents.includes(opt.value))} onClick={() => toggleIntent(opt.value)}>
+                      <span className="mr-2">{opt.emoji}</span>{opt.label}
                     </button>
                   ))}
+                  <button className={pillCls(intents.length === 0)} onClick={() => setIntents([])}>
+                    🎲 Not sure — recommend for me
+                  </button>
                 </div>
               </div>
-              <div>
-                <p className="text-sm font-medium mb-2">Fitness level</p>
-                <div className="grid grid-cols-2 gap-2">
-                  {FITNESS_OPTIONS.map(opt => (
-                    <button key={opt.value} className={pillCls(fitness === opt.value)} onClick={() => setFitness(opt.value)}>
+            )}
+
+            {/* Step 2: Month / Season */}
+            {step === 2 && (
+              <div className="space-y-2">
+                <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                  {MONTH_OPTIONS.map(opt => (
+                    <button key={opt.value} className={pillCls(monthChunk === opt.value)} onClick={() => setMonthChunk(opt.value)}>
                       <div className="font-medium">{opt.label}</div>
                       <div className="text-[10px] opacity-60">{opt.hint}</div>
                     </button>
                   ))}
-                </div>
-              </div>
-            </div>
-          )}
-
-          {/* Step 5: Budget + Region */}
-          {step === 5 && (
-            <div className="space-y-5">
-              <div>
-                <p className="text-sm font-medium mb-2">Estimated budget (per person)</p>
-                <div className="grid grid-cols-2 gap-2">
-                  {BUDGET_OPTIONS.map(opt => (
-                    <button key={opt.value} className={pillCls(budget === opt.value)} onClick={() => setBudget(opt.value)}>
-                      {opt.label}
-                    </button>
-                  ))}
-                </div>
-              </div>
-              <div>
-                <p className="text-sm font-medium mb-2">Preferred region <span className="text-muted-foreground font-normal">(optional)</span></p>
-                <div className="grid grid-cols-2 gap-2">
-                  {REGION_OPTIONS.map(r => (
-                    <button key={r} className={pillCls(region === r)} onClick={() => setRegion(region === r ? "" : r)}>
-                      {r}
-                    </button>
-                  ))}
-                  <button className={pillCls(!region)} onClick={() => setRegion("")}>
-                    No preference
+                  <button className={pillCls(!monthChunk)} onClick={() => setMonthChunk("")}>
+                    <div className="font-medium">Not decided</div>
+                    <div className="text-[10px] opacity-60">Show all</div>
                   </button>
                 </div>
               </div>
-            </div>
-          )}
-
-          {/* Step 6: Confirm */}
-          {step === 6 && (
-            <div className="space-y-3">
-              <div className="bg-muted rounded-xl p-4 space-y-2 text-sm">
-                <div className="flex justify-between"><span className="text-muted-foreground">Trek type</span><span className="font-medium">{intents.length > 0 ? intents.join(", ") : "Any"}</span></div>
-                <div className="flex justify-between"><span className="text-muted-foreground">Season</span><span className="font-medium">{monthChunk || "Any"}</span></div>
-                <div className="flex justify-between"><span className="text-muted-foreground">Duration</span><span className="font-medium">{durationChunk.replace(",", "–")} days</span></div>
-                <div className="flex justify-between"><span className="text-muted-foreground">Experience</span><span className="font-medium">{experience}</span></div>
-                <div className="flex justify-between"><span className="text-muted-foreground">Region</span><span className="font-medium">{region || "No preference"}</span></div>
-                <div className="flex justify-between"><span className="text-muted-foreground">Budget</span><span className="font-medium">₹{budget.replace(",", "–₹")}</span></div>
-              </div>
-              {error && <p className="text-xs text-destructive bg-destructive/5 rounded-lg px-3 py-2">{error}</p>}
-              <Button variant="hero" size="lg" className="w-full" onClick={handleSubmit} disabled={loading}>
-                {loading ? "Finding your best treks…" : <><Sparkles className="h-4 w-4 mr-2" /> Show My Trek Recommendations</>}
-              </Button>
-            </div>
-          )}
-
-          {/* Navigation */}
-          <div className="flex justify-between mt-6">
-            <Button variant="outline" size="sm" onClick={() => setStep(s => s - 1)} className="gap-1">
-              <ArrowLeft className="h-3.5 w-3.5" /> Back
-            </Button>
-            {step < 6 && (
-              <Button variant="default" size="sm" onClick={() => setStep(s => s + 1)} className="gap-1">
-                Next <ArrowRight className="h-3.5 w-3.5" />
-              </Button>
             )}
-          </div>
-        </WizardStep>
+
+            {/* Step 3: Duration */}
+            {step === 3 && (
+              <div className="grid grid-cols-2 gap-2">
+                {DURATION_OPTIONS.map(opt => (
+                  <button key={opt.value} className={pillCls(durationChunk === opt.value)} onClick={() => setDurationChunk(opt.value)}>
+                    <div className="font-medium">{opt.label}</div>
+                    <div className="text-[10px] opacity-60">{opt.hint}</div>
+                  </button>
+                ))}
+              </div>
+            )}
+
+            {/* Step 4: Experience + Fitness */}
+            {step === 4 && (
+              <div className="space-y-5">
+                <div>
+                  <p className="text-sm font-medium mb-2">Trekking experience</p>
+                  <div className="space-y-2">
+                    {EXPERIENCE_OPTIONS.map(opt => (
+                      <button key={opt.value} onClick={() => setExperience(opt.value)}
+                        className={`w-full text-left px-4 py-2.5 rounded-xl border text-sm transition-all ${experience === opt.value ? "border-accent bg-accent/5" : "border-border hover:border-accent/40"}`}>
+                        <span className="font-medium">{opt.label}</span>
+                        <span className="text-muted-foreground ml-2 text-xs">→ {opt.diff}</span>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+                <div>
+                  <p className="text-sm font-medium mb-2">Fitness level</p>
+                  <div className="grid grid-cols-2 gap-2">
+                    {FITNESS_OPTIONS.map(opt => (
+                      <button key={opt.value} className={pillCls(fitness === opt.value)} onClick={() => setFitness(opt.value)}>
+                        <div className="font-medium">{opt.label}</div>
+                        <div className="text-[10px] opacity-60">{opt.hint}</div>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Step 5: Budget + Region */}
+            {step === 5 && (
+              <div className="space-y-5">
+                <div>
+                  <p className="text-sm font-medium mb-2">Estimated budget (per person)</p>
+                  <div className="grid grid-cols-2 gap-2">
+                    {BUDGET_OPTIONS.map(opt => (
+                      <button key={opt.value} className={pillCls(budget === opt.value)} onClick={() => setBudget(opt.value)}>
+                        {opt.label}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+                <div>
+                  <p className="text-sm font-medium mb-2">Preferred region <span className="text-muted-foreground font-normal">(optional)</span></p>
+                  <div className="grid grid-cols-2 gap-2">
+                    {REGION_OPTIONS.map(r => (
+                      <button key={r} className={pillCls(region === r)} onClick={() => setRegion(region === r ? "" : r)}>
+                        {r}
+                      </button>
+                    ))}
+                    <button className={pillCls(!region)} onClick={() => setRegion("")}>
+                      No preference
+                    </button>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Step 6: Confirm */}
+            {step === 6 && (
+              <div className="space-y-3">
+                <div className="bg-muted rounded-xl p-4 space-y-2 text-sm">
+                  <div className="flex justify-between"><span className="text-muted-foreground">Trek type</span><span className="font-medium">{intents.length > 0 ? intents.join(", ") : "Any"}</span></div>
+                  <div className="flex justify-between"><span className="text-muted-foreground">Season</span><span className="font-medium">{monthChunk || "Any"}</span></div>
+                  <div className="flex justify-between"><span className="text-muted-foreground">Duration</span><span className="font-medium">{durationChunk.replace(",", "–")} days</span></div>
+                  <div className="flex justify-between"><span className="text-muted-foreground">Experience</span><span className="font-medium">{experience}</span></div>
+                  <div className="flex justify-between"><span className="text-muted-foreground">Region</span><span className="font-medium">{region || "No preference"}</span></div>
+                  <div className="flex justify-between"><span className="text-muted-foreground">Budget</span><span className="font-medium">₹{budget.replace(",", "–₹")}</span></div>
+                </div>
+                {!user && (
+                  <p className="text-xs text-muted-foreground text-center bg-accent/5 border border-accent/20 rounded-lg px-3 py-2">
+                    You&apos;ll be asked to sign in or create a free account to view your results.
+                  </p>
+                )}
+                {error && <p className="text-xs text-destructive bg-destructive/5 rounded-lg px-3 py-2">{error}</p>}
+                <Button variant="hero" size="lg" className="w-full" onClick={handleSubmit} disabled={loading}>
+                  {loading ? "Finding your best treks…" : <><Sparkles className="h-4 w-4 mr-2" /> Show My Trek Recommendations</>}
+                </Button>
+              </div>
+            )}
+
+            {/* Navigation */}
+            <div className="flex justify-between mt-6">
+              <Button variant="outline" size="sm" onClick={() => setStep(s => s - 1)} className="gap-1">
+                <ArrowLeft className="h-3.5 w-3.5" /> Back
+              </Button>
+              {step < 6 && (
+                <Button variant="default" size="sm" onClick={() => setStep(s => s + 1)} className="gap-1">
+                  Next <ArrowRight className="h-3.5 w-3.5" />
+                </Button>
+              )}
+            </div>
+          </WizardStep>
+        </div>
       </div>
-    </div>
+
+      {/* Auth gate — shown only when user is not logged in and tries to submit */}
+      <AuthGateModal
+        open={showAuthModal}
+        onClose={() => setShowAuthModal(false)}
+        onSuccess={handleAuthSuccess}
+      />
+    </>
   );
 }

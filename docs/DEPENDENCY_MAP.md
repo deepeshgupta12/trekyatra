@@ -959,6 +959,11 @@ Before editing any backend file:
 - `apps/web-next/app/(public)/trek/[slug]/page.tsx` — UPDATED: server-side cluster pages fetch + "In this cluster" sidebar; blast radius: MEDIUM (every trek guide page, graceful fallback)
 - `apps/web-next/components/trek/TrekViewTracker.tsx` — UPDATED: title prop + writes ty_recently_viewed localStorage; blast radius: LOW
 
+### Step 62 — Plan My Trek inline auth gate modal blast radius
+- `apps/web-next/middleware.ts` — UPDATED: `/plan` removed from PROTECTED_PREFIXES + config.matcher; blast radius: LOW (plan is now fully public; auth enforcement moves to UI layer)
+- NEW `apps/web-next/components/plan/AuthGateModal.tsx` — NEW: Radix Dialog modal; consumes `useAuth()`, `useGoogleLogin`; blast radius: LOW (leaf component, only rendered from plan/page.tsx)
+- `apps/web-next/app/(public)/plan/page.tsx` — UPDATED: `useAuth()` + `AuthGateModal` wired; `pendingPayload` ref + `handleAuthSuccess` callback; blast radius: MEDIUM (primary plan wizard page; consumers: homepage trust pillar card `/`, any Link to /plan)
+
 ### Step 61 — Plan My Trek auth gate + TC-F05 full ?next= chain blast radius
 - `apps/web-next/middleware.ts` — UPDATED: `/plan` and `/plan/:path*` added to `config.matcher`; GUEST_ONLY redirect now honours `?next=` with open-redirect safety; blast radius: LOW (additive matcher entries — unauthenticated /plan users now redirect to sign-in, authenticated users unaffected)
 - `apps/web-next/app/(auth)/auth/sign-in/page.tsx` — UPDATED: "Create account" link passes `?next=` param through to sign-up URL; blast radius: LOW (1-line change, leaf component)
