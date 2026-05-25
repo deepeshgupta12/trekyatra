@@ -476,10 +476,15 @@ export default async function TrekDetailPage({ params }: { params: { slug: strin
               )}
             </Block>
 
-            {/* Alternatives — vector similarity if available, static fallback */}
+            {/* Alternatives — vector similarity if available, static fallback.
+                Slugs from the cluster sidebar are excluded so the two sections
+                never show the same link twice. */}
             <section id="alternatives" className="mb-12 scroll-mt-44">
-              <RecommendedContent slug={params.slug} limit={3} />
-              {/* Static fallback shown only when RecommendedContent returns nothing */}
+              <RecommendedContent
+                slug={params.slug}
+                limit={3}
+                excludeSlugs={clusterPages.map((p) => p.slug)}
+              />
             </section>
 
             {/* FAQs — structured accordion when CMS data available, fallback HTML otherwise */}

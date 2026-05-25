@@ -254,15 +254,45 @@ def semantic_search(
 
     results = sorted(merged.values(), key=lambda x: x["score"], reverse=True)
 
-    # ── Apply intent filters ─────────────────────────────────────────────────
+    # ── Apply intent filters (graceful: if a filter removes all results, it is skipped) ──
+    all_results = list(results)  # keep unfiltered copy for fallback
+
+    if intent.get("season_months"):
+        season_months = [m.lower() for m in intent["season_months"]]
+        season_filtered = [
+            r for r in results
+            if r.get("trek_season") and any(
+                m in (r["trek_season"] or "").lower() for m in season_months
+            )
+        ]
+        if season_filtered:
+            results = season_filtered
+        # else: no CMS pages have trek_season set — skip filter gracefully
+
     if intent.get("region"):
-        results = [r for r in results
-                   if r.get("trek_state") and intent["region"].lower() in r["trek_state"].lower()]
+        region_filtered = [
+            r for r in results
+            if r.get("trek_state") and intent["region"].lower() in r["trek_state"].lower()
+        ]
+        if region_filtered:
+            results = region_filtered
+
     if intent.get("difficulty"):
-        results = [r for r in results
-                   if not r.get("trek_difficulty") or intent["difficulty"].lower() in r["trek_difficulty"].lower()]
-        # If no results after filter, drop filter (graceful fallback)
-        if not results:
-            results = sorted(merged.values(), key=lambda x: x["score"], reverse=True)
+        diff_filtered = [
+            r for r in results
+            if not r.get("trek_difficulty")
+            or intent["difficulty"].lower() in r["trek_difficulty"].lower()
+        ]
+        if diff_filtered:
+            results = diff_filtered
+
+    if intent.get("duration_days"):
+        target = int(intent["duration_days"])
+        dur_filtered = [
+            r for r in results
+            if r.get("trek_duration") and str(target) in (r["trek_duration"] or "")
+        ]
+        if dur_filtered:
+            results = dur_filtered
 
     return [SemanticSearchResult(**r) for r in results[:limit]]

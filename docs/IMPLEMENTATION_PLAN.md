@@ -467,6 +467,16 @@
 - Header: search button `onClick → router.push("/search")` (was decorative); ⌘K/Ctrl+K keyboard shortcut via useEffect; mobile drawer search also navigates; nav px-3→px-2.5, gap-6→gap-4
 - Compare section: heading text-2xl sm:text-3xl md:text-4xl (prevents mobile overflow); card p-3 md:p-4; text-sm md:text-base; gap-2 md:gap-3; a/b as separate divs (no text wrapping overflow)
 
+### Step 60 — CMS translation UX + search quality fixes [DONE]
+- `translation.py`: null guard for `content_html=None` on manually-created CMS pages
+- `admin/cms/page.tsx`: per-row translation loading state (Loader2 spinner, disabled button, real error message, 8s feedback timeout)
+- `RecommendedContent.tsx`: `excludeSlugs` prop; over-fetches + filters so displayed count is always correct after dedup
+- `trek/[slug]/page.tsx`: passes cluster page slugs as `excludeSlugs` to RecommendedContent (cluster sidebar and "Similar treks" guaranteed non-overlapping)
+- `search/service.py`: trending query threshold 2→1; `_CURATED_TRENDING` fallback list supplements when real data sparse
+- `routes/search.py`: season_months intent filter applied in semantic_search (graceful skip if no trek_season data)
+- `search/page.tsx`: SEASON_BUCKETS winter fixed (April removed); exact/fuzzy split by Fuse score (< 0.05); semantic section moved above fuzzy; "Ranked by…" subtitle removed; user-friendly section headers
+- 518/520 backend tests pass (2 pre-existing flaky test_refresh isolation issues); next build clean (180 pages)
+
 ### Deferred to Production Sprint
 - Step 41 (B2B / API extensions)
 - Production hosting, CI/CD, CDN, secrets manager

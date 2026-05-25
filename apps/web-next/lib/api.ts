@@ -208,9 +208,16 @@ export async function triggerTranslation(slug: string, target_language: string):
   const res = await fetch(`/api/v1/admin/cms/${slug}/translate`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
+    // credentials: "include" ensures admin cookie is sent (required for _admin dependency)
+    credentials: "include",
     body: JSON.stringify({ target_language }),
   });
-  if (!res.ok) throw new Error(`Translation failed: ${res.status}`);
+  if (!res.ok) {
+    // Extract meaningful error detail from API response
+    const errBody = await res.json().catch(() => ({})) as { detail?: string };
+    const detail = errBody?.detail ?? `HTTP ${res.status}`;
+    throw new Error(detail);
+  }
   return res.json() as Promise<TranslateResult>;
 }
 

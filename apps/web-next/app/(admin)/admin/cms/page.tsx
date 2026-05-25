@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { Globe, RefreshCw, Trash2, Pencil, Plus, Languages, Crown } from "lucide-react";
+import { Globe, RefreshCw, Trash2, Pencil, Plus, Languages, Crown, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { triggerTranslation } from "@/lib/api";
 
@@ -50,6 +50,7 @@ export default function CMSAdminPage() {
   const [loading, setLoading] = useState(true);
   const [feedback, setFeedback] = useState<string | null>(null);
   const [invalidating, setInvalidating] = useState(false);
+  const [translatingSlug, setTranslatingSlug] = useState<string | null>(null);
 
   async function loadPages() {
     setLoading(true);
@@ -123,14 +124,17 @@ export default function CMSAdminPage() {
 
   async function translatePage(slug: string) {
     setFeedback(null);
+    setTranslatingSlug(slug);
     try {
       const result = await triggerTranslation(slug, "hi");
       setFeedback(result.message);
       await loadPages();
-    } catch {
-      setFeedback("Translation request failed.");
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : "Translation request failed.";
+      setFeedback(`Translation failed: ${msg}`);
     } finally {
-      setTimeout(() => setFeedback(null), 5000);
+      setTranslatingSlug(null);
+      setTimeout(() => setFeedback(null), 8000);
     }
   }
 
@@ -274,10 +278,13 @@ export default function CMSAdminPage() {
                         {(page.language === "en" || !page.language) && (
                           <button
                             onClick={() => translatePage(page.slug)}
-                            className="text-white/40 hover:text-amber-400 transition-colors"
-                            title="Generate Hindi translation"
+                            disabled={translatingSlug === page.slug}
+                            className={`transition-colors ${translatingSlug === page.slug ? "text-amber-400 cursor-wait" : "text-white/40 hover:text-amber-400"}`}
+                            title={translatingSlug === page.slug ? "Generating Hindi translation…" : "Generate Hindi translation"}
                           >
-                            <Languages className="h-3.5 w-3.5" />
+                            {translatingSlug === page.slug
+                              ? <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                              : <Languages className="h-3.5 w-3.5" />}
                           </button>
                         )}
                         <a

@@ -50,28 +50,45 @@ function RecommendCard({ item }: { item: RecommendationItem }) {
   );
 }
 
-export default async function RecommendedContent({ slug, limit = 3 }: { slug: string; limit?: number }) {
+export default async function RecommendedContent({
+  slug,
+  limit = 3,
+  excludeSlugs = [],
+}: {
+  slug: string;
+  limit?: number;
+  excludeSlugs?: string[];
+}) {
+  // Build a set for fast O(1) exclusion lookup (current slug always excluded)
+  const excludeSet = new Set([slug, ...excludeSlugs]);
+
   let items: RecommendationItem[] = [];
   try {
-    const data = await fetchSimilarPages(slug, limit);
+    // Fetch more than needed so we have enough after exclusions
+    const data = await fetchSimilarPages(slug, limit + excludeSlugs.length + 2);
     items = data.items;
   } catch {
     // API unavailable — fall through to static fallback below
   }
 
+  // Exclude slugs already shown in other sections (cluster sidebar, current page)
+  items = items.filter((item) => !excludeSet.has(item.slug));
+
   // Enrich API-returned CMS items with static trek images when hero_image_url is null.
   // CMS pages published by the pipeline may not have a hero image set yet.
   if (items.length > 0) {
-    items = items.map((item) => ({
-      ...item,
-      hero_image_url: item.hero_image_url || staticImageMap.get(item.slug) || null,
-    }));
+    items = items
+      .slice(0, limit)
+      .map((item) => ({
+        ...item,
+        hero_image_url: item.hero_image_url || staticImageMap.get(item.slug) || null,
+      }));
   }
 
   // Static fallback: show other treks from the local dataset when API returns nothing
   if (items.length === 0) {
     items = treks
-      .filter((t) => t.slug !== slug)
+      .filter((t) => !excludeSet.has(t.slug))
       .slice(0, limit)
       .map(trekToItem);
   }

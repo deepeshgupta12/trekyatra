@@ -53,8 +53,8 @@ def trigger_translation(
                 fallback=False,
             )
 
-    # Run translation agent
-    result = translate_page(source.title, source.content_html, body.target_language)
+    # Run translation agent (guard against pages with no content yet)
+    result = translate_page(source.title, source.content_html or "", body.target_language)
     is_fallback = result.get("fallback") == "true"
 
     # Create translated CMSPage (draft status — requires admin review before publish)

@@ -958,4 +958,13 @@ Before editing any backend file:
 - `apps/web-next/app/(public)/account/page.tsx` — UPDATED: "Recently viewed" section from localStorage; blast radius: LOW
 - `apps/web-next/app/(public)/trek/[slug]/page.tsx` — UPDATED: server-side cluster pages fetch + "In this cluster" sidebar; blast radius: MEDIUM (every trek guide page, graceful fallback)
 - `apps/web-next/components/trek/TrekViewTracker.tsx` — UPDATED: title prop + writes ty_recently_viewed localStorage; blast radius: LOW
+
+### Step 60 — Enhancement batch: CMS translation UX + search quality fixes blast radius
+- `services/api/app/api/routes/translation.py` — UPDATED: `content_html or ""` guard before calling translate_page; blast radius: LOW (additive null-safety, same callers)
+- `apps/web-next/app/(admin)/admin/cms/page.tsx` — UPDATED: `translatingSlug` loading state; spinner replaces Languages icon while in-flight; button disabled during request; real API error surfaced in feedback; blast radius: LOW (admin-only leaf page)
+- `apps/web-next/components/content/RecommendedContent.tsx` — UPDATED: `excludeSlugs` prop added; over-fetches by excludeSlugs.length+2 then filters; static fallback also respects excludeSet; blast radius: MEDIUM (imported by trek/[slug]/page.tsx — every trek guide page)
+- `apps/web-next/app/(public)/trek/[slug]/page.tsx` — UPDATED: passes `clusterPages.map(p => p.slug)` as `excludeSlugs` to RecommendedContent; cluster sidebar and "Similar treks" sections guaranteed non-overlapping; blast radius: LOW (leaf page, no downstream callers)
+- `services/api/app/modules/search/service.py:get_trending_queries` — UPDATED: COUNT threshold lowered 2→1; `_CURATED_TRENDING` fallback list added (10 terms); real queries ranked first, curated supplement; blast radius: LOW (called only by GET /search/trending endpoint)
+- `services/api/app/api/routes/search.py:semantic_search` — UPDATED: season_months intent filter applied (graceful skip when no trek_season data); `all_results` fallback copy retained; blast radius: LOW (POST /search/semantic endpoint only)
+- `apps/web-next/app/(public)/search/page.tsx` — UPDATED: SEASON_BUCKETS winter bucket fixed (April removed from winter); `exactTreks`/`fuzzyTreks` split by Fuse score (< 0.05 = exact); `semanticUniq` deduped against exact; `fuzzyNotInSemantic` deduped against semantic; result sections reordered (exact → semantic → fuzzy → guides); semantic section moved above trek grid; "Ranked by…" subtitle removed; section headers user-friendly; blast radius: LOW (leaf page)
 - `apps/web-next/app/(admin)/admin/linking/page.tsx` — UPDATED: quality score badge per anchor suggestion; blast radius: LOW

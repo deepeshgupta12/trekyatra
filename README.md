@@ -136,7 +136,9 @@ trekyatra/
 | Seasonal hub landing pages | Done |
 | Cluster hub landing pages | Done |
 | Explore / search pages | Done |
-| Semantic search (>3-word queries, pgvector) | Done |
+| Semantic search (>3-word queries, pgvector) + intent filters (season/difficulty/region/duration) | Done |
+| Exact vs fuzzy result segregation (Fuse score < 0.05 = exact match, ranked above fuzzy) | Done |
+| Trending queries (real search_events data + curated fallback) | Done |
 | Personalised recommendations (logged-in + anonymous) | Done |
 | FAQ accordion + table of contents (scroll spy) | Done |
 
@@ -215,6 +217,8 @@ trekyatra/
 | Hindi public routes (/hi/trek, /hi/guides, /hi/packing) | Done |
 | hreflang alternates on trek + guides pages | Done |
 | Admin CMS language badge + translate button | Done |
+| Translation loading state (per-row spinner, disabled button, real error feedback) | Done |
+| Non-overlapping cluster sidebar + "Similar treks" sections on trek detail page | Done |
 
 ### Pre-Launch Polish
 | Feature | Status |

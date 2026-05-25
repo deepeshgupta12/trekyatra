@@ -97,12 +97,30 @@ def record_page_view(
     return view
 
 
+# Curated popular queries shown when real search-event data is insufficient.
+# These represent TrekYatra's core content pillars and real user intents.
+_CURATED_TRENDING = [
+    "Kedarkantha trek",
+    "Hampta Pass",
+    "Valley of Flowers",
+    "Chandrashila summit",
+    "Roopkund trek",
+    "Brahmatal trek",
+    "Rupin Pass",
+    "Kuari Pass",
+    "Winter treks India",
+    "Beginner treks Uttarakhand",
+]
+
+
 def get_trending_queries(db: Session, limit: int = 10) -> list[str]:
     """Return the most frequently searched queries from the last 7 days.
 
     Filters applied:
     - Query must be at least 3 characters (excludes partial keystrokes like 'ut')
-    - Query must have been searched at least 2 times (excludes one-off accidents)
+    - Any query searched at least once is included (threshold lowered from 2→1
+      so real user data surfaces immediately after launch)
+    - When real data is sparse (< 3 results), curated popular queries fill the gap.
     """
     from sqlalchemy import text
 
@@ -111,9 +129,23 @@ def get_trending_queries(db: Session, limit: int = 10) -> list[str]:
             "SELECT query, COUNT(*) as cnt FROM search_events "
             "WHERE created_at > NOW() - INTERVAL '7 days' "
             "AND LENGTH(TRIM(query)) >= 3 "
-            "GROUP BY query HAVING COUNT(*) >= 2 "
+            "GROUP BY query HAVING COUNT(*) >= 1 "
             "ORDER BY cnt DESC LIMIT :lim"
         ),
         {"lim": limit},
     ).fetchall()
-    return [r[0] for r in rows]
+    real_queries = [r[0] for r in rows]
+
+    if len(real_queries) >= limit:
+        return real_queries
+
+    # Supplement with curated list when real data is sparse
+    seen = set(q.lower() for q in real_queries)
+    for curated in _CURATED_TRENDING:
+        if curated.lower() not in seen:
+            real_queries.append(curated)
+            seen.add(curated.lower())
+        if len(real_queries) >= limit:
+            break
+
+    return real_queries

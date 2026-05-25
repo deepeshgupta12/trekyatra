@@ -74,11 +74,11 @@ const MONTH_MAP: Record<string, string> = {
   Dec: "December winter",
 };
 const SEASON_BUCKETS: [string, string][] = [
-  ["winter",  "Dec Jan Feb Mar Apr Nov"],
+  ["winter",  "Nov Dec Jan Feb Mar"],
+  ["spring",  "Mar Apr May"],
   ["summer",  "Apr May Jun"],
   ["monsoon", "Jun Jul Aug Sep"],
   ["autumn",  "Sep Oct Nov"],
-  ["spring",  "Mar Apr May"],
 ];
 
 function buildSearchTags(trek: Trek & { suitability?: string }): string {
@@ -323,9 +323,23 @@ export default function SearchResults() {
     }).catch(() => {});
   }, [q, matchingTreks.length, matchingGuides.length]);
 
+  // ── Exact vs fuzzy segregation (#5) ─────────────────────────────────────
+  // Score < 0.05 = essentially exact match; ≥ 0.05 = fuzzy/partial match.
+  const exactTreks  = useMemo(() => trekResults.filter(r => (r.score ?? 1) < 0.05).map(r => r.item),  [trekResults]);
+  const fuzzyTreks  = useMemo(() => trekResults.filter(r => (r.score ?? 1) >= 0.05).map(r => r.item), [trekResults]);
+
+  // Semantic results deduplicated against Fuse exact matches so nothing repeats (#6)
+  const semanticUniq = useMemo(
+    () => semanticResults58.filter(r => !exactTreks.some(t => t.slug === r.slug)),
+    [semanticResults58, exactTreks],
+  );
+  // Fuse fuzzy results deduplicated against semantic results
+  const fuzzyNotInSemantic = useMemo(
+    () => fuzzyTreks.filter(t => !semanticUniq.some(r => r.slug === t.slug)),
+    [fuzzyTreks, semanticUniq],
+  );
+
   const totalCount = matchingTreks.length + matchingGuides.length;
-  // Total including semantic backend results for the "showing X results" count
-  const totalWithSemantic = totalCount + semanticResults58.filter(r => !matchingTreks.some(t => t.slug === r.slug)).length;
   const showTreks = tab === "All" || tab === "Treks";
   const showGuides = tab !== "Treks";
 
@@ -490,11 +504,65 @@ export default function SearchResults() {
                 </p>
               )}
 
-              {showTreks && matchingTreks.length > 0 && (
+              {/* ── Exact match (#5) — shown first when score is near-perfect ── */}
+              {showTreks && exactTreks.length > 0 && (
                 <div>
-                  <h2 className="font-display text-2xl font-semibold mb-4">Treks</h2>
+                  <h2 className="font-display text-2xl font-semibold mb-4">
+                    {exactTreks.length === 1 ? "Top result" : "Top results"}
+                  </h2>
                   <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-5">
-                    {matchingTreks.map(t => (
+                    {exactTreks.map(t => (
+                      <div key={t.slug} onClick={() => handleResultClick(t.slug, "trek_guide")}>
+                        <TrekCard trek={t} />
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* ── Semantic results (#6) — moved to top, right after exact match ── */}
+              {semanticUniq.length > 0 && (
+                <div>
+                  <h2 className="font-display text-2xl font-semibold mb-4 flex items-center gap-2">
+                    <Sparkles className="h-5 w-5 text-accent" />
+                    {exactTreks.length > 0 ? "Related results" : `Results for "${q}"`}
+                  </h2>
+                  <div className="space-y-2">
+                    {semanticUniq.map(item => {
+                      const href = getPageHref(item.slug, item.page_type);
+                      return (
+                        <Link key={item.slug} href={href} onClick={() => handleResultClick(item.slug, item.page_type)}
+                          className="flex items-center gap-4 p-4 bg-card border border-border rounded-xl hover:border-accent transition-colors group">
+                          {item.hero_image_url
+                            ? <img src={item.hero_image_url} alt={item.title} className="h-10 w-10 rounded-lg object-cover flex-shrink-0" />
+                            : <div className="h-10 w-10 rounded-lg bg-accent/10 flex items-center justify-center flex-shrink-0 text-lg">⛰</div>}
+                          <div className="flex-1 min-w-0">
+                            <div className="font-medium line-clamp-1">{item.title}</div>
+                            <div className="flex items-center gap-2 mt-0.5">
+                              {item.trek_state && <span className="text-xs text-muted-foreground">{item.trek_state}</span>}
+                              {item.trek_difficulty && <span className="text-xs text-muted-foreground">· {item.trek_difficulty}</span>}
+                              {item.trek_duration && <span className="text-xs text-muted-foreground">· {item.trek_duration}</span>}
+                              <span className="text-[10px] font-medium text-accent/80 bg-accent/8 px-1.5 py-0.5 rounded-full flex-shrink-0">
+                                {PAGE_TYPE_LABELS[item.page_type] ?? item.page_type}
+                              </span>
+                            </div>
+                          </div>
+                          <ArrowRight className="h-4 w-4 text-muted-foreground group-hover:text-accent flex-shrink-0" />
+                        </Link>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
+
+              {/* ── Fuzzy Fuse.js results — only those not already in semantic ── */}
+              {showTreks && fuzzyNotInSemantic.length > 0 && (
+                <div>
+                  <h2 className="font-display text-2xl font-semibold mb-4">
+                    {exactTreks.length > 0 || semanticUniq.length > 0 ? "More treks" : "Treks"}
+                  </h2>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-5">
+                    {fuzzyNotInSemantic.map(t => (
                       <div key={t.slug} onClick={() => handleResultClick(t.slug, "trek_guide")}>
                         <TrekCard trek={t} />
                       </div>
@@ -526,50 +594,12 @@ export default function SearchResults() {
                 </div>
               )}
 
-              {/* Step 58: Semantic backend results (pgvector + intent detection) */}
-              {semanticResults58.length > 0 && (
-                <div>
-                  <h2 className="font-display text-2xl font-semibold mb-1 flex items-center gap-2">
-                    <Sparkles className="h-5 w-5 text-accent" /> Best matches for &ldquo;{q}&rdquo;
-                  </h2>
-                  <p className="text-sm text-muted-foreground mb-4">Ranked by semantic similarity and relevance</p>
-                  <div className="space-y-2">
-                    {semanticResults58
-                      .filter(r => !matchingTreks.some(t => t.slug === r.slug))
-                      .map(item => {
-                        const href = getPageHref(item.slug, item.page_type);
-                        return (
-                          <Link key={item.slug} href={href} onClick={() => handleResultClick(item.slug, item.page_type)}
-                            className="flex items-center gap-4 p-4 bg-card border border-border rounded-xl hover:border-accent transition-colors group">
-                            {item.hero_image_url
-                              ? <img src={item.hero_image_url} alt={item.title} className="h-10 w-10 rounded-lg object-cover flex-shrink-0" />
-                              : <div className="h-10 w-10 rounded-lg bg-accent/10 flex items-center justify-center flex-shrink-0 text-lg">⛰</div>}
-                            <div className="flex-1 min-w-0">
-                              <div className="font-medium line-clamp-1">{item.title}</div>
-                              <div className="flex items-center gap-2 mt-0.5">
-                                {item.trek_state && <span className="text-xs text-muted-foreground">{item.trek_state}</span>}
-                                {item.trek_difficulty && <span className="text-xs text-muted-foreground">· {item.trek_difficulty}</span>}
-                                {item.trek_duration && <span className="text-xs text-muted-foreground">· {item.trek_duration}</span>}
-                                <span className="text-[10px] font-medium text-accent/80 bg-accent/8 px-1.5 py-0.5 rounded-full flex-shrink-0">
-                                  {PAGE_TYPE_LABELS[item.page_type] ?? item.page_type}
-                                </span>
-                              </div>
-                            </div>
-                            <ArrowRight className="h-4 w-4 text-muted-foreground group-hover:text-accent flex-shrink-0" />
-                          </Link>
-                        );
-                      })}
-                  </div>
-                </div>
-              )}
-
-              {/* Legacy AI results (long queries only — kept for backward compat) */}
+              {/* Legacy AI results (long queries only, no pgvector results available) */}
               {semanticResults.length > 0 && semanticResults58.length === 0 && (
                 <div>
-                  <h2 className="font-display text-2xl font-semibold mb-1 flex items-center gap-2">
-                    <Sparkles className="h-5 w-5 text-accent" /> AI-matched results
+                  <h2 className="font-display text-2xl font-semibold mb-4 flex items-center gap-2">
+                    <Sparkles className="h-5 w-5 text-accent" /> More results
                   </h2>
-                  <p className="text-sm text-muted-foreground mb-4">Semantic matches for &ldquo;{q}&rdquo;</p>
                   <div className="space-y-2">
                     {semanticResults.map(item => {
                       const href = getPageHref(item.slug, item.page_type);

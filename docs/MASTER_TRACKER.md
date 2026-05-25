@@ -94,6 +94,7 @@ All V0 foundations are shipped. The stack is live locally with:
 | 56 | Weekly news agent + /news/[slug] pages | pending — step doc created |
 | 57 | Plan My Trek revamp — 6-step wizard, weighted scoring engine (7 factors, CMS trek data), top-5 results with categories, lead capture | done |
 | 59 | Bug fixes: Rupin Pass region filter (CMS state overrides static), /plan auth gate + 2/24h rate limit, static treks removed from root sitemap, 301→410 deleted URL middleware | done |
+| 60 | Enhancement batch: CMS Hindi translation loading state + null-content guard; trek detail cluster/similar dedup (excludeSlugs); trending search real data + curated fallback; semantic search season_months filter; SEASON_BUCKETS winter fix; search exact-match segregation; semantic section moved to top; removed "Ranked by..." subtitle | done |
 
 ## V5 — Mobile App Roadmap
 | Item | Status |
@@ -269,6 +270,20 @@ All V0 foundations are shipped. The stack is live locally with:
 | PRELAUNCH_CHECKLIST.md — comprehensive audit: 8 sections, 80+ items across BE/FE/Admin/Gaps/Production/Integrations/Testing | done |
 | Header nav — compact Logo (tagline hidden); search bar functional (onClick + ⌘K → /search); px-2.5 nav items; gap-4 | done |
 | Compare section — responsive: heading text-2xl sm:text-3xl; card p-3 md:p-4; text-sm md:text-base; no mobile overflow | done |
+
+### Step 60 — Enhancement batch: CMS translation UX + search quality fixes
+Status: done
+What is done:
+- `services/api/app/api/routes/translation.py` — guard against `content_html=None`; `content_html or ""` passed to agent so manually-created empty pages don't cause 500
+- `apps/web-next/app/(admin)/admin/cms/page.tsx` — `translatingSlug` state: spinner (Loader2) replaces Languages icon while translating; button disabled during in-flight request; catch block now surfaces actual API error message instead of generic text; feedback timeout extended to 8s
+- `apps/web-next/components/content/RecommendedContent.tsx` — `excludeSlugs` prop added; fetches `limit + excludeSlugs.length + 2` items then filters, so the displayed count is always correct even after dedup; static fallback also respects excludeSet
+- `apps/web-next/app/(public)/trek/[slug]/page.tsx` — passes `clusterPages.map(p => p.slug)` as `excludeSlugs` to `RecommendedContent`; cluster sidebar and "Similar treks" sections are now guaranteed non-overlapping
+- `services/api/app/modules/search/service.py` — `get_trending_queries`: threshold lowered from `COUNT(*) >= 2` → `>= 1`; `_CURATED_TRENDING` fallback (10 terms) supplements when real data < limit; real queries always ranked first
+- `services/api/app/api/routes/search.py` — `semantic_search`: season_months intent filter applied (graceful skip when no trek_season data); region/difficulty/duration filters now all use graceful fallback pattern; separate `all_results` copy retained for fallback
+- `apps/web-next/app/(public)/search/page.tsx` — `SEASON_BUCKETS` winter bucket fixed (April removed from winter, was causing May-Jun treks to appear for "winter trek" queries); `exactTreks`/`fuzzyTreks` memos split by Fuse score (< 0.05 = exact); `semanticUniq` deduped against exact treks; `fuzzyNotInSemantic` deduped against semantic; result sections reordered: exact match → semantic → fuzzy → guides; "Best matches for..." moved above trek grid; "Ranked by semantic similarity and relevance" subtitle removed; section headers are user-friendly ("Top result", "Results for X", "More treks", "More results")
+- 518/520 backend tests pass (2 pre-existing flaky test_refresh isolation failures, unrelated to these changes); `next build` clean (180 pages)
+What remains:
+- ANTHROPIC_API_KEY must be set in production for real Hindi translation (currently rule-based fallback)
 
 ### Pre-Launch Sprint — Nav + Compare responsive (current commit)
 Status: done
