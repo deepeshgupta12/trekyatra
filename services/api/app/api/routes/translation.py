@@ -38,27 +38,29 @@ def trigger_translation(
     if not source:
         raise HTTPException(status_code=404, detail=f"CMS page '{slug}' not found.")
 
-    # Return existing translation if already done
+    # Check for existing translation
     existing_translations: dict = source.translations or {}
     existing_id = existing_translations.get(body.target_language)
+    existing_page: CMSPage | None = None
     if existing_id:
         existing_page = db.get(CMSPage, uuid.UUID(existing_id))
-        if existing_page:
-            return TranslateResponse(
-                source_slug=slug,
-                target_language=body.target_language,
-                page_id=str(existing_page.id),
-                page_slug=existing_page.slug,
-                message=f"Translation already exists as '{existing_page.slug}'.",
-                fallback=False,
-            )
 
-    # Extract faqs from content_json for translation
+    # Return existing without re-running unless force=True
+    if existing_page and not body.force:
+        return TranslateResponse(
+            source_slug=slug,
+            target_language=body.target_language,
+            page_id=str(existing_page.id),
+            page_slug=existing_page.slug,
+            message=f"Translation already exists as '{existing_page.slug}'. Use Re-translate to refresh it.",
+            fallback=False,
+        )
+
+    # --- Run translation agent ---
     source_faqs: list[dict] = []
     if source.content_json and isinstance(source.content_json, dict):
         source_faqs = source.content_json.get("faqs", [])
 
-    # Run translation agent — translates title, content_html, seo_title, seo_description, faqs
     result = translate_page(
         title=source.title,
         content_html=source.content_html or "",
@@ -69,12 +71,45 @@ def trigger_translation(
     )
     is_fallback = result.get("fallback") == "true"
 
-    # Build translated content_json: preserve original structure, replace faqs if translated
     translated_content_json = dict(source.content_json) if source.content_json else {}
     if result.get("faqs"):
         translated_content_json["faqs"] = result["faqs"]
 
-    # Create translated CMSPage — status=published so it is live immediately
+    def _success_msg(page_slug: str) -> str:
+        if is_fallback:
+            return (
+                f"Draft saved as '{page_slug}'. "
+                "ANTHROPIC_API_KEY not set — content NOT translated (saved in English). "
+                "Set the key and use Re-translate."
+            )
+        return f"Draft saved as '{page_slug}'. Review at /admin/cms/{page_slug}/edit — publish when ready."
+
+    if existing_page and body.force:
+        # UPDATE existing page in-place (re-translate)
+        existing_page.title = result["title"]
+        existing_page.content_html = result["content_html"]
+        existing_page.content_json = translated_content_json if translated_content_json else source.content_json
+        existing_page.seo_title = result.get("seo_title") or source.seo_title
+        existing_page.seo_description = result.get("seo_description") or source.seo_description
+        existing_page.hero_image_url = source.hero_image_url
+        existing_page.trek_name = source.trek_name
+        existing_page.trek_state = source.trek_state
+        existing_page.trek_difficulty = source.trek_difficulty
+        existing_page.trek_duration = source.trek_duration
+        existing_page.trek_season = source.trek_season
+        existing_page.trek_suitability = source.trek_suitability
+        db.commit()
+        db.refresh(existing_page)
+        return TranslateResponse(
+            source_slug=slug,
+            target_language=body.target_language,
+            page_id=str(existing_page.id),
+            page_slug=existing_page.slug,
+            message=_success_msg(existing_page.slug),
+            fallback=is_fallback,
+        )
+
+    # CREATE new translated CMSPage (first time)
     new_slug = f"{slug}-{body.target_language}"
     candidate = new_slug
     counter = 2
@@ -89,7 +124,7 @@ def trigger_translation(
         title=result["title"],
         content_html=result["content_html"],
         content_json=translated_content_json if translated_content_json else source.content_json,
-        status="draft",               # admin reviews and publishes manually from CMS
+        status="draft",
         seo_title=result.get("seo_title") or source.seo_title,
         seo_description=result.get("seo_description") or source.seo_description,
         seo_meta=source.seo_meta,
@@ -98,7 +133,6 @@ def trigger_translation(
         source_page_id=source.id,
         brief_id=source.brief_id,
         cluster_id=source.cluster_id,
-        # Copy trek metadata from source so CMS filters and public page work correctly
         trek_name=source.trek_name,
         trek_state=source.trek_state,
         trek_difficulty=source.trek_difficulty,
@@ -107,12 +141,10 @@ def trigger_translation(
         trek_suitability=source.trek_suitability,
     )
     db.add(new_page)
-    db.flush()  # get new_page.id before updating source
+    db.flush()
 
-    # Update source page translations map
     existing_translations[body.target_language] = str(new_page.id)
     source.translations = existing_translations
-
     db.commit()
     db.refresh(new_page)
 
@@ -121,14 +153,6 @@ def trigger_translation(
         target_language=body.target_language,
         page_id=str(new_page.id),
         page_slug=new_slug,
-        message=(
-            f"Draft saved as '{new_slug}'. "
-            + (
-                "ANTHROPIC_API_KEY not set — content was NOT translated (saved in English). "
-                "Set the API key in production and re-translate."
-                if is_fallback
-                else f"Review at /admin/cms/{new_slug}/edit — publish when ready."
-            )
-        ),
+        message=_success_msg(new_slug),
         fallback=is_fallback,
     )

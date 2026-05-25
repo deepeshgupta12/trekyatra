@@ -380,3 +380,38 @@ def test_translate_copies_trek_metadata(override_admin, db: Session, monkeypatch
     assert new_page.trek_duration == "4 days"
     assert new_page.trek_season == "Sep - Oct"
     assert new_page.trek_suitability == "Experienced trekkers"
+
+
+# ---------------------------------------------------------------------------
+# TC-B18: POST translate with force=True — updates existing translation in-place
+# ---------------------------------------------------------------------------
+def test_translate_force_retranslates(override_admin, cms_page, db: Session, monkeypatch):
+    monkeypatch.setattr("app.modules.agents.translation.agent.settings.anthropic_api_key", None)
+
+    # First translation
+    res1 = client.post(
+        f"/api/v1/admin/cms/{cms_page.slug}/translate",
+        json={"target_language": "hi"},
+    )
+    assert res1.status_code == 200
+    first_page_id = res1.json()["page_id"]
+
+    # Without force=True, second call returns existing
+    res2 = client.post(
+        f"/api/v1/admin/cms/{cms_page.slug}/translate",
+        json={"target_language": "hi", "force": False},
+    )
+    assert res2.status_code == 200
+    assert res2.json()["page_id"] == first_page_id
+    assert "already exists" in res2.json()["message"]
+
+    # With force=True, re-runs translation and updates existing page
+    res3 = client.post(
+        f"/api/v1/admin/cms/{cms_page.slug}/translate",
+        json={"target_language": "hi", "force": True},
+    )
+    assert res3.status_code == 200
+    data3 = res3.json()
+    assert data3["page_id"] == first_page_id   # same page updated, not a new one
+    assert data3["fallback"] is True            # still fallback (no API key in test)
+    assert "Re-translated" in data3["message"] or "Draft saved" in data3["message"]

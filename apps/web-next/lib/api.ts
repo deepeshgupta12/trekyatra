@@ -204,13 +204,12 @@ export interface TranslateResult {
   fallback: boolean;
 }
 
-export async function triggerTranslation(slug: string, target_language: string): Promise<TranslateResult> {
+export async function triggerTranslation(slug: string, target_language: string, force = false): Promise<TranslateResult> {
   const res = await fetch(`/api/v1/admin/cms/${slug}/translate`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    // credentials: "include" ensures admin cookie is sent (required for _admin dependency)
     credentials: "include",
-    body: JSON.stringify({ target_language }),
+    body: JSON.stringify({ target_language, force }),
   });
   if (!res.ok) {
     // Extract meaningful error detail from API response

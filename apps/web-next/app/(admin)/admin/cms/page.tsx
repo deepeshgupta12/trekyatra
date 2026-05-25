@@ -2,7 +2,7 @@
 
 import { useEffect, useState, useRef } from "react";
 import Link from "next/link";
-import { Globe, RefreshCw, Trash2, Pencil, Plus, Languages, Crown, Loader2, X, CheckCircle2, AlertCircle } from "lucide-react";
+import { Globe, RefreshCw, Trash2, Pencil, Plus, Languages, Crown, Loader2, X, CheckCircle2, AlertCircle, RotateCcw } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { triggerTranslation } from "@/lib/api";
 
@@ -148,8 +148,7 @@ export default function CMSAdminPage() {
     }
   }
 
-  async function translatePage(page: CMSPage) {
-    // Start the progress modal
+  async function translatePage(page: CMSPage, force = false) {
     const hindiUrl = getHindiUrl(page);
     setTranslation({
       slug: page.slug,
@@ -157,10 +156,9 @@ export default function CMSAdminPage() {
       status: "in-progress",
       elapsedSec: 0,
       hindiUrl,
-      message: "Calling Claude AI for translation…",
+      message: force ? "Re-translating with Claude AI…" : "Calling Claude AI for translation…",
     });
 
-    // Elapsed timer
     let elapsed = 0;
     timerRef.current = setInterval(() => {
       elapsed += 1;
@@ -168,7 +166,7 @@ export default function CMSAdminPage() {
     }, 1000);
 
     try {
-      const result = await triggerTranslation(page.slug, "hi");
+      const result = await triggerTranslation(page.slug, "hi", force);
       clearInterval(timerRef.current!);
 
       setTranslation((prev) => prev ? {
@@ -225,7 +223,8 @@ export default function CMSAdminPage() {
                 )}
                 <div>
                   <h3 className="text-white font-semibold text-sm">
-                    {translation.status === "in-progress" && "Generating Hindi Translation"}
+                    {translation.status === "in-progress" && translation.message.startsWith("Re-") && "Re-translating Hindi Page"}
+                    {translation.status === "in-progress" && !translation.message.startsWith("Re-") && "Generating Hindi Translation"}
                     {translation.status === "done" && !translation.fallback && "Translation Saved as Draft"}
                     {translation.status === "done" && translation.fallback && "Draft Saved — Not Translated"}
                     {translation.status === "error" && "Translation Failed"}
@@ -450,10 +449,10 @@ export default function CMSAdminPage() {
                         >
                           <Crown className="h-3.5 w-3.5" />
                         </button>
-                        {/* Translate button: only for English source pages without an existing HI translation */}
+                        {/* Translate: first time */}
                         {(page.language === "en" || !page.language) && !page.translations?.hi && (
                           <button
-                            onClick={() => translatePage(page)}
+                            onClick={() => translatePage(page, false)}
                             disabled={!!translation}
                             className={`transition-colors ${translation ? "text-white/20 cursor-wait" : "text-white/40 hover:text-amber-400"}`}
                             title="Generate Hindi translation"
@@ -461,11 +460,21 @@ export default function CMSAdminPage() {
                             <Languages className="h-3.5 w-3.5" />
                           </button>
                         )}
-                        {/* Re-translate button: shown when HI translation already exists */}
+                        {/* Re-translate: HI translation exists — green icon + refresh button */}
                         {(page.language === "en" || !page.language) && page.translations?.hi && (
-                          <span className="text-pine/60" title="Hindi translation exists">
-                            <Languages className="h-3.5 w-3.5" />
-                          </span>
+                          <>
+                            <span className="text-pine/70" title="Hindi translation exists">
+                              <Languages className="h-3.5 w-3.5" />
+                            </span>
+                            <button
+                              onClick={() => translatePage(page, true)}
+                              disabled={!!translation}
+                              className={`transition-colors ${translation ? "text-white/20 cursor-wait" : "text-white/40 hover:text-amber-400"}`}
+                              title="Re-translate Hindi page (replaces existing content)"
+                            >
+                              <RotateCcw className="h-3.5 w-3.5" />
+                            </button>
+                          </>
                         )}
                         <a
                           href={getLiveUrl(page)}

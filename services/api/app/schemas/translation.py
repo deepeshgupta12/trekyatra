@@ -7,6 +7,7 @@ from pydantic import BaseModel
 
 class TranslateRequest(BaseModel):
     target_language: str  # "hi" or "mr"
+    force: bool = False   # when True: re-run translation even if one already exists
 
 
 class TranslateResponse(BaseModel):
