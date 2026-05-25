@@ -1,7 +1,7 @@
 "use client";
 
-import { useState } from "react";
-import { useRouter } from "next/navigation";
+import { Suspense, useState } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import { Logo } from "@/components/brand/Logo";
 import { Button } from "@/components/ui/button";
 import { ArrowRight, Check } from "lucide-react";
@@ -19,13 +19,21 @@ const INTERESTS = [
   "Desert landscapes", "Coastal treks", "Beginner-friendly", "Camping",
 ];
 
-export default function Onboarding() {
+function OnboardingContent() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const [step, setStep] = useState(1);
   const [experience, setExperience] = useState("");
   const [interests, setInterests] = useState<string[]>([]);
   const [name, setName] = useState("");
   const [submitting, setSubmitting] = useState(false);
+
+  // Honour ?next= so post-signup deep-links (e.g. /plan) are respected after onboarding
+  const nextParam = searchParams.get("next");
+  const redirectTo =
+    nextParam && nextParam.startsWith("/") && !nextParam.startsWith("//")
+      ? nextParam
+      : "/explore";
 
   const toggleInterest = (i: string) =>
     setInterests(prev => prev.includes(i) ? prev.filter(x => x !== i) : [...prev, i]);
@@ -41,7 +49,7 @@ export default function Onboarding() {
       // Profile save is best-effort — don't block navigation
     } finally {
       setSubmitting(false);
-      router.push("/explore");
+      router.push(redirectTo);
     }
   }
 
@@ -125,5 +133,13 @@ export default function Onboarding() {
         )}
       </div>
     </div>
+  );
+}
+
+export default function Onboarding() {
+  return (
+    <Suspense>
+      <OnboardingContent />
+    </Suspense>
   );
 }

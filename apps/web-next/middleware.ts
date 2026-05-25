@@ -82,11 +82,18 @@ export function middleware(request: NextRequest) {
     return NextResponse.redirect(url);
   }
 
-  // Bounce authenticated public users away from sign-in/sign-up
+  // Bounce authenticated public users away from sign-in/sign-up.
+  // Honour ?next= if present so post-auth deep-links (e.g. /plan) are respected.
   if (isGuestOnly && userToken) {
     const url = request.nextUrl.clone();
-    url.pathname = "/account";
-    url.searchParams.delete("next");
+    const nextParam = request.nextUrl.searchParams.get("next");
+    // Only allow safe internal redirects — must start with / but not //
+    const destination =
+      nextParam && nextParam.startsWith("/") && !nextParam.startsWith("//")
+        ? nextParam
+        : "/account";
+    url.pathname = destination;
+    url.search = "";
     return NextResponse.redirect(url);
   }
 

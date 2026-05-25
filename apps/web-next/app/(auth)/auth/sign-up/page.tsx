@@ -79,8 +79,11 @@ function SignUpForm() {
         full_name: fullName || undefined,
         display_name: fullName ? fullName.split(" ")[0] : undefined,
       });
-      // New email users go through onboarding first — onboarding redirects to /account afterwards
-      router.push("/auth/onboarding");
+      // New email users go through onboarding — carry ?next= so onboarding lands on the intended page
+      const onboardingUrl = (next && next !== "/account")
+        ? `/auth/onboarding?next=${encodeURIComponent(next)}`
+        : "/auth/onboarding";
+      router.push(onboardingUrl);
       router.refresh();
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : "Sign up failed. Please try again.");

@@ -271,14 +271,15 @@ All V0 foundations are shipped. The stack is live locally with:
 | Header nav — compact Logo (tagline hidden); search bar functional (onClick + ⌘K → /search); px-2.5 nav items; gap-4 | done |
 | Compare section — responsive: heading text-2xl sm:text-3xl; card p-3 md:p-4; text-sm md:text-base; no mobile overflow | done |
 
-### Step 61 — Plan My Trek auth gate
+### Step 61 — Plan My Trek auth gate + TC-F05 full ?next= chain fix
 Status: done
 What is done:
-- `apps/web-next/middleware.ts` — `/plan` and `/plan/:path*` added to `config.matcher`; `PROTECTED_PREFIXES` already included `/plan` but the guard never fired because the matcher was missing those routes; now any unauthenticated access to `/plan` or `/plan/results` immediately redirects to `/auth/sign-in?next=/plan`
+- `apps/web-next/middleware.ts` — `/plan` and `/plan/:path*` added to `config.matcher`; `PROTECTED_PREFIXES` already included `/plan` but the guard never fired because the matcher was missing those routes; now any unauthenticated access to `/plan` or `/plan/results` immediately redirects to `/auth/sign-in?next=/plan`; GUEST_ONLY redirect now honours `?next=` (with open-redirect safety check) instead of hardcoding `/account`
 - `apps/web-next/app/(auth)/auth/sign-in/page.tsx` — "Create account" link now passes `?next=` through: `/auth/sign-up?next=/plan` so users who choose to sign up from the plan gate keep the post-auth destination
-- `apps/web-next/app/(auth)/auth/sign-up/page.tsx` — refactored to `SignUpForm` + `Suspense` (required for `useSearchParams`); Google login now redirects to `?next=` param instead of hardcoded `/account`; email signup still goes to `/auth/onboarding` (correct for new users)
+- `apps/web-next/app/(auth)/auth/sign-up/page.tsx` — refactored to `SignUpForm` + `Suspense` (required for `useSearchParams`); Google login redirects to `?next=` instead of hardcoded `/account`; email signup now passes `?next=` to onboarding URL (`/auth/onboarding?next=%2Fplan`) so the redirect chain is unbroken
+- `apps/web-next/app/(auth)/auth/onboarding/page.tsx` — refactored to `OnboardingContent` + `Suspense` wrapper (required for `useSearchParams`); `handleFinish()` now redirects to `?next=` param instead of hardcoded `/explore`; safe open-redirect check applied
 - 518/520 backend tests pass (2 pre-existing flaky test_refresh isolation failures, unrelated); `next build` clean (180 pages)
-What remains: nothing — auth gate is fully enforced at middleware level for all entry points
+What remains: nothing — full ?next= chain (plan → sign-in → sign-up → onboarding → plan) is enforced end-to-end
 
 ### Step 60 — Enhancement batch: CMS translation UX + search quality fixes
 Status: done
