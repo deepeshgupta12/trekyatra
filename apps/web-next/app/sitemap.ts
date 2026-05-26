@@ -83,6 +83,10 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     url("/karnataka-treks-sitemap.xml",   0.8, "weekly"),
     // Hindi trek pages — separate sitemap with hreflang alternates
     url("/hi-trek-sitemap.xml",           0.6, "weekly"),
+    // News articles — separate Google News sitemap
+    url("/news-sitemap.xml",              0.8, "daily"),
+    // News hub page
+    url("/news",                          0.8, "daily"),
     // Difficulty category pages
     url("/beginner", 0.8, "weekly"),
     url("/moderate", 0.8, "weekly"),
@@ -107,6 +111,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   // they are already listed in state-specific sitemaps (/uttarakhand-treks-sitemap.xml etc.)
   const PAGE_PREFIX: Record<string, string | undefined> = {
     trek_guide: undefined, // excluded — covered by state-specific sitemaps
+    news_article: "/news",
     packing_list: "/packing", packing_guide: "/packing",
     permit_guide: "/permits", beginner_guide: "/guides", beginner_roundup: "/guides",
     cost_guide: "/guides", gear_guide: "/guides", safety_guide: "/guides",

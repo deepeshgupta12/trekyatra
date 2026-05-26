@@ -4,7 +4,7 @@ import { notFound, permanentRedirect } from "next/navigation";
 import { TrekCard } from "@/components/trek/TrekCard";
 import { Button } from "@/components/ui/button";
 import { fetchTreks, fetchTrekBySlug } from "@/lib/trekApi";
-import { fetchCMSPage, fetchCMSPages, fetchRelatedPages, type CMSPage, type FAQItem, type RelatedPage } from "@/lib/api";
+import { fetchCMSPage, fetchCMSPages, fetchRelatedPages, fetchNewsByTrek, type CMSPage, type FAQItem, type RelatedPage, type NewsArticle } from "@/lib/api";
 import { TrekViewTracker } from "@/components/trek/TrekViewTracker";
 import TableOfContents from "@/components/content/TableOfContents";
 import RecommendedContent from "@/components/content/RecommendedContent";
@@ -22,7 +22,7 @@ import { buildArticleSchema, buildFAQSchema, buildBreadcrumbSchema, buildTrekSch
 import {
   Clock, TrendingUp, Calendar,
   Shield, FileCheck, Backpack, Wallet, ChevronRight, Star, MapPin,
-  Check, Mountain, Info,
+  Check, Mountain, Info, Newspaper, ExternalLink,
 } from "lucide-react";
 import { TrekCTAs } from "@/components/trek/TrekCTAs";
 import type { Trek } from "@/components/trek/TrekCard";
@@ -153,6 +153,12 @@ export default async function TrekDetailPage({ params }: { params: { slug: strin
   try {
     clusterPages = await fetchRelatedPages(params.slug, 5);
   } catch { /* sidebar degrades gracefully */ }
+
+  // Fetch related news articles for this trek
+  let trekNewsArticles: NewsArticle[] = [];
+  try {
+    trekNewsArticles = await fetchNewsByTrek(params.slug, 3);
+  } catch { /* news section degrades gracefully */ }
   const facts = [
     { icon: Clock,      label: "Duration",    value: tf.duration    || trek.duration    || "—" },
     { icon: TrendingUp, label: "Max altitude", value: tf.altitude    || trek.altitude    || "—" },
@@ -242,6 +248,30 @@ export default async function TrekDetailPage({ params }: { params: { slug: strin
     { label: cmsPage?.trek_name || cmsDisplayName || trek.name },
   ]);
 
+  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? "https://trekyatra.com";
+  const trekUrl = `${siteUrl}/trek/${params.slug}`;
+  // SiteNavigation schema — all interlinking for this trek
+  const siteNavSchema = {
+    "@context": "https://schema.org",
+    "@type": "SiteNavigationElement",
+    name: `${cmsPage?.trek_name || trek.name} Trek — Navigation`,
+    url: trekUrl,
+    hasPart: [
+      { "@type": "WebPage", name: "Trek Guide", url: trekUrl },
+      { "@type": "WebPage", name: "Packing Checklist", url: `${trekUrl}/packing` },
+      { "@type": "WebPage", name: "Permit Guide", url: `${trekUrl}/permits` },
+      { "@type": "WebPage", name: "Cost Guide", url: `${trekUrl}/costs` },
+      ...(trekNewsArticles.length > 0
+        ? trekNewsArticles.map((n) => ({
+            "@type": "WebPage",
+            name: n.title,
+            url: `${siteUrl}/news/${n.slug}`,
+          }))
+        : [{ "@type": "WebPage", name: "Latest News", url: `${siteUrl}/news` }]
+      ),
+    ],
+  };
+
   return (
     <>
       {/* Invisible behavior tracker — records this trek visit for cookie-based personalisation */}
@@ -252,7 +282,7 @@ export default async function TrekDetailPage({ params }: { params: { slug: strin
         difficulty={trek.difficulty}
         season={trek.season}
       />
-      <SchemaInjector schemas={[articleSchema, trekSchema, faqSchema, breadcrumbSchema]} />
+      <SchemaInjector schemas={[articleSchema, trekSchema, faqSchema, breadcrumbSchema, siteNavSchema]} />
       {/* Hero */}
       <section className="relative h-[78vh] min-h-[600px] flex items-end overflow-hidden">
         <div className="absolute inset-0">
@@ -499,6 +529,55 @@ export default async function TrekDetailPage({ params }: { params: { slug: strin
                 <p className="text-muted-foreground italic text-sm">No FAQs available yet. <Link href="/contact" className="text-accent underline">Ask us a question</Link>.</p>
               )}
             </Block>
+
+            {/* Latest News — shows when news articles exist for this trek */}
+            {trekNewsArticles.length > 0 && (
+              <section id="trek-news" className="mb-12 scroll-mt-44">
+                <div className="text-xs uppercase tracking-[0.25em] text-accent mb-2">Latest News</div>
+                <h2 className="font-display text-3xl md:text-4xl font-semibold leading-tight mb-5">
+                  {trek.name} Trek — Recent Updates
+                </h2>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 not-prose">
+                  {trekNewsArticles.map((article) => (
+                    <a
+                      key={article.id}
+                      href={`/news/${article.slug}`}
+                      className="group block bg-surface-muted rounded-2xl border border-border hover:border-accent/40 p-4 transition-colors"
+                    >
+                      {/* News thumbnail — fallback to accent gradient when no image */}
+                      <div className="relative h-36 rounded-xl overflow-hidden mb-3 bg-gradient-to-br from-accent/20 to-accent/5 flex items-center justify-center">
+                        {article.hero_image_url ? (
+                          <img
+                            src={article.hero_image_url}
+                            alt={article.title}
+                            className="w-full h-full object-cover"
+                          />
+                        ) : (
+                          <Newspaper className="h-10 w-10 text-accent/40" />
+                        )}
+                        <span className="absolute top-2 left-2 bg-accent text-accent-foreground text-xs font-semibold px-2 py-0.5 rounded-full">
+                          News
+                        </span>
+                      </div>
+                      <h3 className="text-sm font-semibold leading-snug line-clamp-2 group-hover:text-accent transition-colors mb-1">
+                        {article.title}
+                      </h3>
+                      {article.seo_description && (
+                        <p className="text-muted-foreground text-xs line-clamp-2">{article.seo_description}</p>
+                      )}
+                      <div className="flex items-center gap-1 mt-2 text-accent text-xs font-medium">
+                        Read update <ExternalLink className="h-3 w-3" />
+                      </div>
+                    </a>
+                  ))}
+                </div>
+                <div className="mt-4">
+                  <Link href="/news" className="text-accent text-sm font-medium hover:underline flex items-center gap-1">
+                    View all trek news <ChevronRight className="h-3.5 w-3.5" />
+                  </Link>
+                </div>
+              </section>
+            )}
 
             <TrustSignals
               publishedAt={cmsPage?.published_at}

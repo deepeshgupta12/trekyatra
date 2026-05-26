@@ -80,6 +80,9 @@ Last updated: 2026-05-19 (Step 47)
 
 | URL Pattern | Page | Notes |
 |-------------|------|-------|
+| `/news` | Trek news hub | Lists all news_article pages grouped by trek — Step 56 |
+| `/news/[slug]` | Trek news article | `news_article` | Auto-generated weekly; slug `{trek_slug}-news-{YYYY-WW}` — Step 56 |
+| `/news-sitemap.xml` | Google News sitemap | Dynamic XML; includes `<news:news>` elements — Step 56 |
 | `/newsletter` | Subscribe | Trail Letter |
 
 ## Editorial / Trust Pages (CMS-driven, editorial page_type)

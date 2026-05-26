@@ -126,6 +126,10 @@ trekyatra/
 | Sitemap.xml + robots.txt | Done |
 | JSON-LD schema injection (Article, FAQ, Breadcrumb) | Done |
 | Canonical tags + OG metadata | Done |
+| Weekly news agent (Google News RSS → CMS news_article pages) | Done |
+| /news hub + /news/[slug] article pages with NewsArticle JSON-LD | Done |
+| Google News sitemap (/news-sitemap.xml) with `<news:news>` elements | Done |
+| SiteNavigation schema on trek detail pages (all interlinks + news) | Done |
 
 ### Frontend
 | Feature | Status |
@@ -141,6 +145,8 @@ trekyatra/
 | Trending queries (real search_events data + curated fallback) | Done |
 | Personalised recommendations (logged-in + anonymous) | Done |
 | FAQ accordion + table of contents (scroll spy) | Done |
+| Trek news section on trek detail pages (cards with thumbnail, title, href links) | Done |
+| Admin CMS: Generate News button per trek_guide row (queues weekly news Celery task) | Done |
 
 ### User Accounts
 | Feature | Status |
@@ -405,6 +411,8 @@ cd apps/web-next && npm run build
 | Search analytics | `POST /api/v1/search/log`, `GET /api/v1/search/suggestions`, `GET /api/v1/search/trending` | Public |
 | Page view tracking | `POST /api/v1/track/page-view` | Public (fire-and-forget) |
 | Saved comparisons | `GET/POST /api/v1/account/comparisons`, `DELETE /api/v1/account/comparisons/{id}` | User auth required |
+| News (public) | `GET /api/v1/public/news`, `GET /api/v1/public/news/{slug}`, `GET /api/v1/public/news/by-trek/{trek_slug}` | Public |
+| News (admin) | `POST /api/v1/admin/news/generate/{trek_slug}` | Admin auth required |
 
 Full API docs available at http://localhost:8000/docs when the backend is running.
 

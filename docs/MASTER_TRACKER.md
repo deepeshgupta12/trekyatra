@@ -91,7 +91,7 @@ All V0 foundations are shipped. The stack is live locally with:
 | 54 | Explore/home completeness: all CMS treks in baseList, is_featured flag, trending API, pagination, empty state, seasonal CMS data, remove hardcoded sections | done |
 | 55 | Site-wide fixes batch: double TrekYatra titles, sitemap trek_guide exclusion, difficulty emoji removal, home editorial link, auth 24h session, password eye icon, Google/email conflict, nav hover delay, search trending API, search CMS trek cards | done |
 | 58 | Search engine overhaul — Phase 1 (dynamic Fuse + tags) + Phase 2 (POST /search/semantic: pgvector + BM25 hybrid + intent detection) | done |
-| 56 | Weekly news agent + /news/[slug] pages | pending — step doc created |
+| 56 | Weekly news agent + /news/[slug] pages | done |
 | 57 | Plan My Trek revamp — 6-step wizard, weighted scoring engine (7 factors, CMS trek data), top-5 results with categories, lead capture | done |
 | 59 | Bug fixes: Rupin Pass region filter (CMS state overrides static), /plan auth gate + 2/24h rate limit, static treks removed from root sitemap, 301→410 deleted URL middleware | done |
 | 60 | Enhancement batch: CMS Hindi translation loading state + null-content guard; trek detail cluster/similar dedup (excludeSlugs); trending search real data + curated fallback; semantic search season_months filter; SEASON_BUCKETS winter fix; search exact-match segregation; semantic section moved to top; removed "Ranked by..." subtitle | done |
@@ -160,6 +160,7 @@ All V0 foundations are shipped. The stack is live locally with:
 | GitNexus re-indexed (75b3f53): 9,685 nodes, 13,450 edges, 368 clusters, 107 flows | done |
 | GitNexus re-indexed (9a2db42): 9,704 nodes, 13,470 edges, 368 clusters, 107 flows | done |
 | GitNexus re-indexed (6e3dd9d): 9,848 nodes, 13,652 edges, 371 clusters, 106 flows | done |
+| GitNexus re-indexed (9a37908): 10,902 nodes, 15,018 edges, 403 clusters, 106 flows | done |
 | Security: ADMIN_EMAIL + ADMIN_PASSWORD are plaintext in App Spec — must encrypt via DO dashboard | pending |
 | NEXT_PUBLIC_API_BASE + NEXT_PUBLIC_SITE_URL confirmed plaintext in web component ✅ | done |
 | Google Analytics 4 — property created, Measurement ID: G-XM61V2PPDK, NEXT_PUBLIC_GA4_ID set in DO web component | done |

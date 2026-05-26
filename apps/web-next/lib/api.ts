@@ -2081,3 +2081,62 @@ export async function deleteComparison(id: string): Promise<void> {
     credentials: "include",
   });
 }
+
+// ---------------------------------------------------------------------------
+// News (Step 56)
+// ---------------------------------------------------------------------------
+
+export interface NewsArticle {
+  id: string;
+  slug: string;
+  page_type: string;
+  title: string;
+  content_html: string;
+  content_json: {
+    trek_slug?: string;
+    week_label?: string;
+    faqs?: FAQItem[];
+    news_items?: Array<{ title: string; link: string; published: string; summary: string; source: string }>;
+    [key: string]: unknown;
+  } | null;
+  status: string;
+  seo_title: string | null;
+  seo_description: string | null;
+  hero_image_url: string | null;
+  published_at: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+/** List all published news articles (newest first). */
+export async function fetchNewsArticles(limit = 20): Promise<NewsArticle[]> {
+  return apiFetch<NewsArticle[]>(`/public/news?limit=${limit}`);
+}
+
+/** Fetch news articles for a specific trek. */
+export async function fetchNewsByTrek(trekSlug: string, limit = 5): Promise<NewsArticle[]> {
+  return apiFetch<NewsArticle[]>(`/public/news/by-trek/${trekSlug}?limit=${limit}`);
+}
+
+/** Fetch a single news article by slug. */
+export async function fetchNewsArticle(slug: string): Promise<NewsArticle> {
+  return apiFetch<NewsArticle>(`/public/news/${slug}`);
+}
+
+/** Admin: queue news generation for a trek (returns task ID). */
+export async function generateTrekNews(trekSlug: string): Promise<{
+  status: string;
+  task_id: string;
+  trek_slug: string;
+  trek_name: string;
+}> {
+  const res = await fetch(`/api/v1/admin/news/generate/${trekSlug}`, {
+    method: "POST",
+    credentials: "include",
+  });
+  if (!res.ok) {
+    const body = await res.json().catch(() => ({}));
+    throw new Error((body as { detail?: string }).detail ?? `Failed (${res.status})`);
+  }
+  return res.json();
+}

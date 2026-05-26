@@ -2,9 +2,9 @@
 
 import { useEffect, useState, useRef } from "react";
 import Link from "next/link";
-import { Globe, RefreshCw, Trash2, Pencil, Plus, Languages, Crown, Loader2, X, CheckCircle2, AlertCircle, RotateCcw } from "lucide-react";
+import { Globe, RefreshCw, Trash2, Pencil, Plus, Languages, Crown, Loader2, X, CheckCircle2, AlertCircle, RotateCcw, Newspaper } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { triggerTranslation } from "@/lib/api";
+import { triggerTranslation, generateTrekNews } from "@/lib/api";
 
 interface CMSPage {
   id: string;
@@ -73,6 +73,7 @@ export default function CMSAdminPage() {
   const [feedback, setFeedback] = useState<string | null>(null);
   const [invalidating, setInvalidating] = useState(false);
   const [translation, setTranslation] = useState<TranslationState | null>(null);
+  const [newsGenerating, setNewsGenerating] = useState<string | null>(null);
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   async function loadPages() {
@@ -185,6 +186,20 @@ export default function CMSAdminPage() {
         status: "error",
         message: msg,
       } : prev);
+    }
+  }
+
+  async function generateNews(page: CMSPage) {
+    setNewsGenerating(page.slug);
+    setFeedback(null);
+    try {
+      const result = await generateTrekNews(page.slug);
+      setFeedback(`News generation queued for "${result.trek_name}" (task: ${result.task_id.slice(0, 8)}…)`);
+    } catch {
+      setFeedback(`Failed to queue news generation for ${page.slug}.`);
+    } finally {
+      setNewsGenerating(null);
+      setTimeout(() => setFeedback(null), 6000);
     }
   }
 
@@ -475,6 +490,20 @@ export default function CMSAdminPage() {
                               <RotateCcw className="h-3.5 w-3.5" />
                             </button>
                           </>
+                        )}
+                        {/* Generate News: only for published EN trek_guide pages */}
+                        {page.page_type === "trek_guide" && (page.language === "en" || !page.language) && (
+                          <button
+                            onClick={() => generateNews(page)}
+                            disabled={newsGenerating === page.slug}
+                            className={`transition-colors ${newsGenerating === page.slug ? "text-white/20 cursor-wait" : "text-white/40 hover:text-pine"}`}
+                            title="Generate weekly news article for this trek"
+                          >
+                            {newsGenerating === page.slug
+                              ? <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                              : <Newspaper className="h-3.5 w-3.5" />
+                            }
+                          </button>
                         )}
                         <a
                           href={getLiveUrl(page)}

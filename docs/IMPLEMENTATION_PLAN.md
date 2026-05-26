@@ -502,6 +502,17 @@
 - `search/page.tsx`: SEASON_BUCKETS winter fixed (April removed); exact/fuzzy split by Fuse score (< 0.05); semantic section moved above fuzzy; "Ranked by…" subtitle removed; user-friendly section headers
 - 518/520 backend tests pass (2 pre-existing flaky test_refresh isolation issues); next build clean (180 pages)
 
+### Step 56 — Weekly News Agent + /news/[slug] Pages [DONE]
+- `modules/agents/news/agent.py`: LangGraph 4-node agent (fetch_news → filter_relevant → write_article → store_cms); Google News RSS; Claude Haiku article generation with `|||` HTML/JSON separator; idempotent weekly upsert to `cms_pages` (page_type=news_article)
+- `worker/tasks/news.py`: `news.generate_for_trek` Celery task + `news.weekly_all_treks` cron (604800s)
+- `api/routes/news.py`: GET /public/news, GET /public/news/by-trek/{trek_slug}, GET /public/news/{slug}, POST /admin/news/generate/{trek_slug}
+- `app/(public)/news/page.tsx`: news hub grouped by trek
+- `app/(public)/news/[slug]/page.tsx`: article page with NewsArticle JSON-LD (speakable, about, hasPart), FAQ accordion, news_keywords meta
+- `app/news-sitemap.xml/route.ts`: Google News sitemap with `<news:news>` elements
+- `trek/[slug]/page.tsx`: related news cards (thumbnail, title, href links) + SiteNavigation schema
+- `admin/cms/page.tsx`: "Generate News" button per EN trek_guide row
+- 18/18 backend tests pass; next build clean
+
 ### Deferred to Production Sprint
 - Step 41 (B2B / API extensions)
 - Production hosting, CI/CD, CDN, secrets manager

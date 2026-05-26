@@ -1,6 +1,6 @@
 # Step 56 — Weekly News Agent + /news/[slug] Pages
 
-## Status: Pending
+## Status: Done
 
 ## Summary
 A weekly cron job agent that extracts the most recent news articles related to published trek guides and creates SEO/AEO-optimised news pages under `/news/{slug}`.
@@ -81,4 +81,44 @@ For each published trek_guide CMS page:
 ## Dependencies
 - Step 46 (trek_* columns for filtering) ✅
 - Step 17 (pipeline publish) ✅
-- News data source: NewsAPI key or SerpAPI key (new env var `NEWS_API_KEY`)
+- News data source: Google News RSS (free, no API key required)
+
+---
+
+## Implementation Notes (Done — 2026-05-26)
+
+### News source decision
+Google News RSS (`https://news.google.com/rss/search?q=...&hl=en-IN&gl=IN&ceid=IN%3Aen`) — free, no API key. Parsed with `xml.etree.ElementTree`.
+
+### Files Created (Backend)
+- `services/api/app/modules/agents/news/__init__.py` — package init
+- `services/api/app/modules/agents/news/prompts.py` — ARTICLE_PROMPT for Claude Haiku; `|||` separator splits HTML from JSON metadata
+- `services/api/app/modules/agents/news/agent.py` — LangGraph 4-node agent: fetch_news → filter_relevant → write_article → store_cms; public `generate_news(trek_slug, trek_name, trek_state, db)` API
+- `services/api/app/worker/tasks/news.py` — `news.generate_for_trek` Celery task + `news.weekly_all_treks` cron task
+- `services/api/app/api/routes/news.py` — GET /public/news, GET /public/news/by-trek/{trek_slug}, GET /public/news/{slug}, POST /admin/news/generate/{trek_slug}
+- `services/api/tests/test_news.py` — 18 tests (all pass)
+
+### Files Modified (Backend)
+- `services/api/app/api/router.py` — news_router registered
+- `services/api/app/worker/celery_app.py` — `app.worker.tasks.news` in include list; `weekly-news-agent` beat schedule (604800s)
+
+### Files Created (Frontend)
+- `apps/web-next/app/(public)/news/page.tsx` — news hub; groups articles by trek, cards with date + week label
+- `apps/web-next/app/(public)/news/[slug]/page.tsx` — article page with NewsArticle JSON-LD (speakable, about, hasPart), FAQ accordion, sidebar trek links, news_keywords meta
+- `apps/web-next/app/news-sitemap.xml/route.ts` — Google News sitemap with `<news:news>` elements
+
+### Files Modified (Frontend)
+- `apps/web-next/lib/api.ts` — NewsArticle interface + fetchNewsArticles, fetchNewsByTrek, fetchNewsArticle, generateTrekNews
+- `apps/web-next/app/(public)/trek/[slug]/page.tsx` — related news section (thumbnail, title, href links) + SiteNavigation JSON-LD schema
+- `apps/web-next/app/sitemap.ts` — `/news`, `/news-sitemap.xml`, `news_article` page_type added
+- `apps/web-next/app/(admin)/admin/cms/page.tsx` — "Generate News" (Newspaper icon) button per EN trek_guide row
+
+### Key design decisions
+- `page_type = "news_article"` stored in existing `cms_pages` table — no new DB table needed
+- News slug: `{trek_slug}-news-{YYYY-WW}` (idempotent weekly upsert)
+- LLM model: `claude-haiku-4-5-20251001`, max_tokens=4000; fallback template HTML when no API key
+- Admin auth bypassed in tests by global `bypass_admin_auth_for_existing_tests` conftest fixture
+- Route ordering: `/by-trek/` registered before `/{slug}` to prevent ambiguity
+
+### Test results
+18/18 tests pass. `next build` passes with zero TypeScript errors.

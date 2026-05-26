@@ -17,6 +17,7 @@ celery_app = Celery(
         "app.modules.hubs.tasks",
         "app.modules.email_sequences.tasks",
         "app.modules.revenue.tasks",
+        "app.worker.tasks.news",
     ],
 )
 
@@ -65,6 +66,10 @@ celery_app.conf.update(
         "weekly-executive-summary": {
             "task": "revenue.generate_executive_summary_task",
             "schedule": 604800,
+        },
+        "weekly-news-agent": {
+            "task": "news.weekly_all_treks",
+            "schedule": 604800,  # every 7 days
         },
     },
 )
