@@ -48,3 +48,32 @@ Fix: Merge `fetchTrekCMSOverrides()` into matchingTreks before rendering cards.
 ## Step docs (new features)
 - STEP-56-news-agent.md — weekly news agent + /news/[slug] pages
 - STEP-57-plan-my-trek-revamp.md — revamp of Plan My Trek feature
+
+---
+
+## Search Page Bug Fixes — 2026-05-26
+
+Fixed 3 bugs that caused trending searches to show destination page titles and recent searches to not update.
+
+### Issues Fixed
+
+**11. Trending searches show destination page titles instead of user queries**
+Root cause: `handleSuggestionClick` called `logSearchEvent({ query: label, ... })` where `label` is the CMS page title clicked (e.g., "Kedarkantha Trek Guide"). These destination titles accumulated in `search_events` and surfaced as trending instead of what users actually typed (e.g., "kedar"). Also: `q` was not in the `useCallback` dep array, causing a stale closure.
+Fix: Changed to use `searchQuery = q.trim() || label` — saves and logs the actual typed query. Added `q` to deps array.
+
+**12. Recent searches not updating when clicking TrekCard results**
+Root cause: `handleResultClick` called `logSearchEvent` (backend log) but never called `handleQueryCommit`, so `localStorage` was never written and the `recent` state never updated.
+Fix: Added `handleQueryCommit(q)` call in `handleResultClick` before the backend log.
+
+**13. Recent searches not saved for passive browsing**
+Root cause: No auto-save path for users who type a query, read results, and navigate away without pressing Enter or clicking any result.
+Fix: Added a debounced `useEffect` that saves to `localStorage` after 1.5s of inactivity on a 3+ char query.
+
+### Files Modified
+- `apps/web-next/app/(public)/search/page.tsx`
+  - `handleSuggestionClick`: use `q.trim() || label` as search query; add `q` to deps array
+  - `handleResultClick`: call `handleQueryCommit(q)` to save recent; add `handleQueryCommit` to deps
+  - Added auto-save `useEffect` (1.5s debounce, 3+ char threshold)
+
+### Test results
+`next build` passes with zero TypeScript errors.

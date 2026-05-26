@@ -230,6 +230,19 @@ export default function SearchResults() {
     if (!q.trim()) setRecent(readRecent());
   }, [q]);
 
+  // Auto-save to recent after 1.5s of inactivity on a 3+ char query.
+  // Covers passive browsing: user types, reads results, then navigates away
+  // without pressing Enter or clicking a result.
+  useEffect(() => {
+    const trimmed = q.trim();
+    if (trimmed.length < 3) return;
+    const timer = setTimeout(() => {
+      saveRecent(trimmed);
+      setRecent(readRecent());
+    }, 1500);
+    return () => clearTimeout(timer);
+  }, [q]);
+
   // Debounced CMS suggestions fetch
   useEffect(() => {
     if (debounceRef.current) clearTimeout(debounceRef.current);
@@ -305,23 +318,28 @@ export default function SearchResults() {
   }, []);
 
   const handleSuggestionClick = useCallback((href: string, label: string, slug?: string, pageType?: string) => {
+    // Log and save the ACTUAL query the user typed (not the destination page title).
+    // Without this, destination titles like "Kedarkantha Trek Guide" would accumulate
+    // in search_events and surface as trending instead of real user queries.
+    const searchQuery = q.trim() || label;
     setQ(label);
     setShowSuggestions(false);
-    handleQueryCommit(label);
+    handleQueryCommit(searchQuery);
     if (slug && pageType) {
-      logSearchEvent({ query: label, clicked_slug: slug, clicked_page_type: pageType }).catch(() => {});
+      logSearchEvent({ query: searchQuery, clicked_slug: slug, clicked_page_type: pageType }).catch(() => {});
     }
     window.location.href = href;
-  }, [handleQueryCommit]);
+  }, [q, handleQueryCommit]);
 
   const handleResultClick = useCallback((slug: string, pageType: string) => {
+    handleQueryCommit(q);  // save to recent searches on any result click
     logSearchEvent({
       query: q,
       results_count: matchingTreks.length + matchingGuides.length,
       clicked_slug: slug,
       clicked_page_type: pageType,
     }).catch(() => {});
-  }, [q, matchingTreks.length, matchingGuides.length]);
+  }, [q, matchingTreks.length, matchingGuides.length, handleQueryCommit]);
 
   // ── Exact vs fuzzy segregation (#5) ─────────────────────────────────────
   // Score < 0.05 = essentially exact match; ≥ 0.05 = fuzzy/partial match.

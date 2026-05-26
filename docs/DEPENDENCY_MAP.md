@@ -1016,3 +1016,6 @@ Before editing any backend file:
 - `services/api/app/api/routes/search.py:semantic_search` — UPDATED: season_months intent filter applied (graceful skip when no trek_season data); `all_results` fallback copy retained; blast radius: LOW (POST /search/semantic endpoint only)
 - `apps/web-next/app/(public)/search/page.tsx` — UPDATED: SEASON_BUCKETS winter bucket fixed (April removed from winter); `exactTreks`/`fuzzyTreks` split by Fuse score (< 0.05 = exact); `semanticUniq` deduped against exact; `fuzzyNotInSemantic` deduped against semantic; result sections reordered (exact → semantic → fuzzy → guides); semantic section moved above trek grid; "Ranked by…" subtitle removed; section headers user-friendly; blast radius: LOW (leaf page)
 - `apps/web-next/app/(admin)/admin/linking/page.tsx` — UPDATED: quality score badge per anchor suggestion; blast radius: LOW
+
+#### Search Page Personalization Bug Fixes (2026-05-26)
+- `apps/web-next/app/(public)/search/page.tsx` — UPDATED (Prod Fix): `handleSuggestionClick` now logs `q.trim() || label` (actual typed query) instead of destination page title; `q` added to useCallback deps (stale closure fix); `handleResultClick` now calls `handleQueryCommit(q)` to save recent on TrekCard click; added debounced (1.5s) auto-save useEffect for passive browsing sessions; blast radius: LOW (leaf page, no upstream callers)
