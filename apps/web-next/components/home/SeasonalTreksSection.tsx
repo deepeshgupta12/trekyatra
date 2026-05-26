@@ -4,7 +4,8 @@ import { useEffect, useState, useMemo } from "react";
 import Link from "next/link";
 import { ArrowRight } from "lucide-react";
 import { TrekCard, type Trek } from "@/components/trek/TrekCard";
-import type { CMSPage, TrekFacts } from "@/lib/api";
+import type { CMSPage } from "@/lib/api";
+import { cmsPageToTrek } from "@/lib/trek-utils";
 
 type Season = "Summer" | "Monsoon" | "Autumn" | "Winter";
 
@@ -64,24 +65,6 @@ function trekMatchesSeason(trek: Trek, season: Season): boolean {
   return trekMonths.some(m => seasonMonthNums.includes(m));
 }
 
-/** Convert a CMS page to a Trek card for SeasonalTreksSection */
-function cmsToTrek(p: CMSPage): Trek {
-  const tf = (p.content_json?.trek_facts ?? {}) as TrekFacts;
-  return {
-    slug:        p.slug,
-    name:        p.trek_name ?? p.title,
-    region:      tf.base ?? p.trek_state ?? "",
-    state:       p.trek_state ?? "",
-    image:       p.hero_image_url ?? "/images/trek-forest.jpg",
-    duration:    p.trek_duration  ?? tf.duration ?? "—",
-    altitude:    (tf as Record<string, string>).altitude ?? "—",
-    difficulty:  p.trek_difficulty ?? tf.difficulty ?? "Moderate",
-    season:      p.trek_season ?? tf.season ?? "—",
-    description: p.seo_description ?? "",
-    beginner:    p.trek_suitability?.toLowerCase().includes("begin") ?? false,
-    suitability: p.trek_suitability ?? undefined,
-  };
-}
 
 interface Props {
   treks: Trek[];
@@ -97,7 +80,7 @@ export function SeasonalTreksSection({ treks, cmsPages = [] }: Props) {
   }, []);
 
   // Convert CMS pages to Trek objects, prefer these over static treks
-  const cmsTreks = useMemo(() => cmsPages.map(cmsToTrek), [cmsPages]);
+  const cmsTreks = useMemo(() => cmsPages.map(cmsPageToTrek), [cmsPages]);
   const allTreks = useMemo(() => {
     const cmsSlugSet = new Set(cmsTreks.map(t => t.slug));
     return [...cmsTreks, ...treks.filter(t => !cmsSlugSet.has(t.slug))];

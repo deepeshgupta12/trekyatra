@@ -4,15 +4,32 @@ import { notFound } from "next/navigation";
 import { fetchNewsArticle, type NewsArticle, type FAQItem } from "@/lib/api";
 import SchemaInjector from "@/components/seo/SchemaInjector";
 import FAQAccordion from "@/components/content/FAQAccordion";
+import TableOfContents from "@/components/content/TableOfContents";
 import Breadcrumb from "@/components/content/Breadcrumb";
 import AuthorBlock from "@/components/content/AuthorBlock";
-import { buildBreadcrumbSchema, buildFAQSchema, buildArticleSchema } from "@/lib/schema";
-import { Calendar, Newspaper, ChevronRight, ExternalLink } from "lucide-react";
+import { buildBreadcrumbSchema, buildFAQSchema } from "@/lib/schema";
+import { Calendar, Newspaper, ChevronRight, ExternalLink, MapPin } from "lucide-react";
 
 export const dynamic = "force-dynamic";
 export const revalidate = 60;
 
 const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? "https://trekyatra.com";
+
+function extractTocItems(html: string): { id: string; label: string }[] {
+  const re = /<h2[^>]+id="([^"]+)"[^>]*>([^<]*(?:<(?!\/h2>)[^<]*)*)<\/h2>/gi;
+  const matches = Array.from(html.matchAll(re));
+  return matches.map((m) => ({
+    id: m[1],
+    label: m[2].replace(/<[^>]+>/g, "").trim(),
+  }));
+}
+
+function formatDate(dateStr: string | null): string {
+  if (!dateStr) return "";
+  return new Date(dateStr).toLocaleDateString("en-IN", {
+    day: "numeric", month: "long", year: "numeric",
+  });
+}
 
 export async function generateMetadata({ params }: { params: { slug: string } }): Promise<Metadata> {
   let article: NewsArticle | null = null;
@@ -20,9 +37,7 @@ export async function generateMetadata({ params }: { params: { slug: string } })
     article = await fetchNewsArticle(params.slug);
   } catch { /* not found */ }
 
-  if (!article) {
-    return { title: "News Article Not Found" };
-  }
+  if (!article) return { title: "News Article Not Found" };
 
   const title = article.seo_title ?? article.title;
   const description = article.seo_description ?? "";
@@ -32,7 +47,9 @@ export async function generateMetadata({ params }: { params: { slug: string } })
   return {
     title,
     description,
-    keywords: trekSlug ? [trekSlug.replace(/-/g, " "), "trek news", "India trekking"] : ["India trek news"],
+    keywords: trekSlug
+      ? [trekSlug.replace(/-/g, " "), "trek news", "India trekking"]
+      : ["India trek news"],
     alternates: { canonical: canonicalUrl },
     openGraph: {
       title,
@@ -46,24 +63,15 @@ export async function generateMetadata({ params }: { params: { slug: string } })
       authors: ["TrekYatra Editorial"],
       section: "Trekking News",
       tags: trekSlug ? [trekSlug.replace(/-/g, " "), "trekking", "India"] : ["trekking", "India"],
+      images: [{ url: article.hero_image_url ?? `${SITE_URL}/images/og-default.jpg` }],
     },
-    twitter: {
-      card: "summary_large_image",
-      title,
-      description,
-    },
-    // Google News: news_keywords meta
+    twitter: { card: "summary_large_image", title, description },
     other: {
       "news_keywords": trekSlug
         ? `${trekSlug.replace(/-/g, " ")}, trek news, India trekking, ${trekSlug} trail`
         : "trek news, India trekking",
     },
   };
-}
-
-function formatDate(dateStr: string | null): string {
-  if (!dateStr) return "";
-  return new Date(dateStr).toLocaleDateString("en-IN", { day: "numeric", month: "long", year: "numeric" });
 }
 
 export default async function NewsArticlePage({ params }: { params: { slug: string } }) {
@@ -75,14 +83,16 @@ export default async function NewsArticlePage({ params }: { params: { slug: stri
   if (!article) notFound();
 
   const trekSlug = article.content_json?.trek_slug ?? null;
-  const weekLabel = article.content_json?.week_label ?? null;
-  const newsItems = article.content_json?.news_items ?? [];
+  // Per-item (new) or legacy aggregated (old) — prefer new format
+  const newsItem = article.content_json?.news_item ?? null;
   const faqItems: FAQItem[] = article.content_json?.faqs ?? [];
+  const tocItems = extractTocItems(article.content_html);
 
   const canonicalUrl = `${SITE_URL}/news/${params.slug}`;
-  const trekName = trekSlug ? trekSlug.replace(/-/g, " ").replace(/\b\w/g, (c) => c.toUpperCase()) : "Trek";
+  const trekName = trekSlug
+    ? trekSlug.replace(/-/g, " ").replace(/\b\w/g, (c) => c.toUpperCase())
+    : "Trek";
 
-  // JSON-LD schemas
   const articleSchema = {
     "@context": "https://schema.org",
     "@type": "NewsArticle",
@@ -100,32 +110,25 @@ export default async function NewsArticlePage({ params }: { params: { slug: stri
     },
     image: article.hero_image_url ?? `${SITE_URL}/images/og-default.jpg`,
     mainEntityOfPage: { "@type": "WebPage", "@id": canonicalUrl },
-    // Speakable for voice search (Google AEO)
     speakable: {
       "@type": "SpeakableSpecification",
-      cssSelector: ["h1", "h2", "#latest-updates"],
+      cssSelector: ["h1", "h2", "#what-happened"],
     },
-    // Link to the source trek guide
     about: trekSlug
       ? { "@type": "Thing", name: trekName, url: `${SITE_URL}/trek/${trekSlug}` }
-      : undefined,
-    // hasPart: links to source content
-    hasPart: trekSlug
-      ? {
-          "@type": "WebPage",
-          name: `${trekName} Trek Guide`,
-          url: `${SITE_URL}/trek/${trekSlug}`,
-        }
       : undefined,
     isPartOf: { "@type": "WebSite", name: "TrekYatra", url: SITE_URL },
   };
 
   const faqSchema = faqItems.length ? buildFAQSchema(faqItems) : null;
+  const shortTitle = article.title.length > 60
+    ? `${article.title.slice(0, 57)}…`
+    : article.title;
   const breadcrumbSchema = buildBreadcrumbSchema([
     { label: "Home", href: "/" },
     { label: "Trek News", href: "/news" },
     ...(trekSlug ? [{ label: trekName, href: `/trek/${trekSlug}` }] : []),
-    { label: "This Week's News" },
+    { label: shortTitle },
   ]);
 
   return (
@@ -133,39 +136,82 @@ export default async function NewsArticlePage({ params }: { params: { slug: stri
       <SchemaInjector schemas={[articleSchema, faqSchema, breadcrumbSchema]} />
 
       {/* Hero banner */}
-      <section className="bg-gradient-to-b from-foreground/95 to-foreground/80 text-surface pt-24 pb-10">
-        <div className="container-wide">
-          <div className="inline-flex items-center bg-black/30 backdrop-blur-sm rounded-full px-3 py-1.5 mb-4">
+      <section className="relative bg-gradient-to-b from-foreground/96 to-foreground/82 text-surface pt-24 pb-12 overflow-hidden">
+        <div className="absolute inset-0 bg-gradient-to-br from-accent/8 via-transparent to-transparent pointer-events-none" />
+        <div className="container-wide relative z-10">
+
+          {/* Breadcrumb pill */}
+          <div className="inline-flex items-center bg-black/30 backdrop-blur-sm rounded-full px-3 py-1.5 mb-5">
             <Breadcrumb
               items={[
                 { label: "Home", href: "/" },
                 { label: "Trek News", href: "/news" },
                 ...(trekSlug ? [{ label: trekName, href: `/trek/${trekSlug}` }] : []),
-                { label: "This Week" },
+                { label: shortTitle },
               ]}
               className="!text-white/80 [&>span>a]:!text-white/70 [&>span>a:hover]:!text-white [&>span>span]:!text-white/90"
             />
           </div>
 
-          <div className="flex items-center gap-2 text-accent text-xs font-semibold uppercase tracking-widest mb-3">
-            <Newspaper className="h-3.5 w-3.5" />
-            {weekLabel ? `Week ${weekLabel.split("-")[1]}, ${weekLabel.split("-")[0]}` : "Latest News"}
+          {/* Category + Trek badge row */}
+          <div className="flex flex-wrap items-center gap-2 mb-4">
+            <span className="flex items-center gap-1.5 text-accent text-xs font-semibold uppercase tracking-widest">
+              <Newspaper className="h-3.5 w-3.5" />
+              Trekking News
+            </span>
+            {trekSlug && (
+              <Link
+                href={`/trek/${trekSlug}`}
+                className="flex items-center gap-1 text-xs text-surface/60 bg-white/10 px-2.5 py-1 rounded-full hover:bg-white/20 hover:text-surface transition-colors"
+              >
+                <MapPin className="h-3 w-3" />
+                {trekName}
+              </Link>
+            )}
           </div>
-          <h1 className="font-display text-3xl md:text-4xl font-bold leading-tight mb-4 max-w-3xl">
+
+          {/* H1 headline */}
+          <h1 className="font-display text-3xl md:text-4xl lg:text-5xl font-bold leading-tight mb-4 max-w-3xl">
             {article.title}
           </h1>
+
+          {/* Description */}
           {article.seo_description && (
-            <p className="text-surface/70 text-base max-w-2xl">{article.seo_description}</p>
+            <p className="text-surface/70 text-base md:text-lg max-w-2xl mb-6 leading-relaxed">
+              {article.seo_description}
+            </p>
           )}
-          <div className="flex flex-wrap items-center gap-4 mt-5 text-surface/60 text-xs">
+
+          {/* Byline */}
+          <div className="flex flex-wrap items-center gap-x-4 gap-y-2 text-surface/50 text-xs">
             <span className="flex items-center gap-1.5">
               <Calendar className="h-3.5 w-3.5" />
-              Published {formatDate(article.published_at ?? article.created_at)}
+              {formatDate(article.published_at ?? article.created_at)}
             </span>
             {article.updated_at !== article.created_at && (
               <span>Updated {formatDate(article.updated_at)}</span>
             )}
             <span>By TrekYatra Editorial</span>
+            {newsItem?.source && (
+              <>
+                <span className="text-surface/25">·</span>
+                <span className="flex items-center gap-1">
+                  Source:{" "}
+                  {newsItem.link ? (
+                    <a
+                      href={newsItem.link}
+                      target="_blank"
+                      rel="noopener noreferrer nofollow"
+                      className="text-surface/70 hover:text-surface transition-colors underline underline-offset-2"
+                    >
+                      {newsItem.source}
+                    </a>
+                  ) : (
+                    newsItem.source
+                  )}
+                </span>
+              </>
+            )}
           </div>
         </div>
       </section>
@@ -173,15 +219,15 @@ export default async function NewsArticlePage({ params }: { params: { slug: stri
       {/* Main content */}
       <section className="container-wide py-10">
         <div className="grid grid-cols-1 lg:grid-cols-[1fr_300px] gap-10">
+
           {/* Article body */}
           <article className="min-w-0">
-            {/* CMS-generated article HTML */}
             <div
               className="prose prose-neutral dark:prose-invert max-w-none cms-section"
               dangerouslySetInnerHTML={{ __html: article.content_html }}
             />
 
-            {/* FAQ accordion (from content_json.faqs) */}
+            {/* FAQ accordion */}
             {faqItems.length > 0 && (
               <div className="mt-10 not-prose" id="faqs">
                 <h2 className="text-xl font-semibold mb-4">Frequently Asked Questions</h2>
@@ -198,7 +244,15 @@ export default async function NewsArticlePage({ params }: { params: { slug: stri
           {/* Sidebar */}
           <aside className="hidden lg:block">
             <div className="sticky top-28 space-y-5">
-              {/* Trek guide link */}
+
+              {/* Table of Contents */}
+              {tocItems.length > 0 && (
+                <div className="bg-card border border-border rounded-2xl p-5">
+                  <TableOfContents items={tocItems} />
+                </div>
+              )}
+
+              {/* Trek guide links */}
               {trekSlug && (
                 <div className="bg-card border border-border rounded-2xl p-5">
                   <p className="text-xs uppercase tracking-widest text-muted-foreground mb-3">
@@ -234,37 +288,47 @@ export default async function NewsArticlePage({ params }: { params: { slug: stri
                 </div>
               )}
 
-              {/* Sources */}
-              {newsItems.length > 0 && (
+              {/* Original source */}
+              {newsItem?.link && (
                 <div className="bg-card border border-border rounded-2xl p-5">
                   <p className="text-xs uppercase tracking-widest text-muted-foreground mb-3">
-                    News Sources
+                    Original Source
                   </p>
-                  <div className="space-y-2">
-                    {newsItems.slice(0, 5).map((item, i) => (
-                      <a
-                        key={i}
-                        href={item.link}
-                        target="_blank"
-                        rel="noopener noreferrer nofollow"
-                        className="flex items-start gap-2 text-xs text-muted-foreground hover:text-accent transition-colors p-2 rounded-xl hover:bg-muted"
-                      >
-                        <ExternalLink className="h-3 w-3 flex-shrink-0 mt-0.5" />
-                        <span className="line-clamp-2">{item.title}</span>
-                      </a>
-                    ))}
-                  </div>
+                  <a
+                    href={newsItem.link}
+                    target="_blank"
+                    rel="noopener noreferrer nofollow"
+                    className="flex items-start gap-2 text-sm text-muted-foreground hover:text-accent transition-colors p-2 rounded-xl hover:bg-muted"
+                  >
+                    <ExternalLink className="h-4 w-4 flex-shrink-0 mt-0.5 text-accent" />
+                    <span className="line-clamp-2 leading-snug">
+                      {newsItem.source || "Read original article"}
+                    </span>
+                  </a>
                 </div>
               )}
 
-              {/* More news link */}
+              {/* More news */}
               <div className="bg-card border border-border rounded-2xl p-5">
                 <p className="text-xs uppercase tracking-widest text-muted-foreground mb-3">More News</p>
-                <Link href="/news" className="flex items-center gap-2 text-sm font-medium hover:text-accent transition-colors">
+                <Link
+                  href="/news"
+                  className="flex items-center gap-2 text-sm font-medium hover:text-accent transition-colors"
+                >
                   <Newspaper className="h-4 w-4 text-accent" />
                   All trek news updates
                   <ChevronRight className="h-4 w-4 text-muted-foreground ml-auto" />
                 </Link>
+                {trekSlug && (
+                  <Link
+                    href={`/trek/${trekSlug}#trek-news`}
+                    className="flex items-center gap-2 text-sm font-medium hover:text-accent transition-colors mt-2"
+                  >
+                    <MapPin className="h-4 w-4 text-accent" />
+                    {trekName} news
+                    <ChevronRight className="h-4 w-4 text-muted-foreground ml-auto" />
+                  </Link>
+                )}
               </div>
             </div>
           </aside>

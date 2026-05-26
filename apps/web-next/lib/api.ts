@@ -2096,7 +2096,10 @@ export interface NewsArticle {
     trek_slug?: string;
     week_label?: string;
     faqs?: FAQItem[];
+    /** Legacy aggregated format (one digest page per week). */
     news_items?: Array<{ title: string; link: string; published: string; summary: string; source: string }>;
+    /** New per-item format (one CMS page per RSS article). */
+    news_item?: { title: string; link: string; published: string; summary: string; source: string };
     [key: string]: unknown;
   } | null;
   status: string;

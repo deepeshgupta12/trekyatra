@@ -1,12 +1,11 @@
 """Tests for Step 56 — News Agent + /news API routes.
 
-Note: admin auth enforcement is globally bypassed by conftest.py for all non-rbac tests.
-Admin-protected routes are tested for functionality (correct response shape, 404 etc.)
-rather than auth enforcement (which lives in test_rbac.py).
+Rewritten for per-item article architecture: one CMS page per RSS item.
 """
 from __future__ import annotations
 
 import uuid
+from datetime import datetime, timezone
 from unittest.mock import MagicMock, patch
 
 import pytest
@@ -19,11 +18,12 @@ from app.modules.agents.news import agent as news_mod
 from app.modules.agents.news.agent import (
     fetch_news,
     filter_relevant,
-    write_article,
-    store_cms,
+    write_and_store_articles,
     generate_news,
-    _fallback_article,
+    _fallback_for_item,
     _current_week_label,
+    _slug_from_title,
+    _clean_title,
     _fetch_rss,
     NewsState,
 )
@@ -67,18 +67,31 @@ def trek_guide_page(db: Session) -> CMSPage:
 
 @pytest.fixture()
 def news_page(db: Session) -> CMSPage:
-    # Always use a unique slug so parallel or repeated test runs don't conflict.
-    week = _current_week_label()
-    slug = f"kedarkantha-news-{week}-{uuid.uuid4().hex[:8]}"
+    uid = uuid.uuid4().hex[:8]
+    slug = f"kedarkantha-trail-opens-{uid}-2026-05"
     page = CMSPage(
         slug=slug,
         page_type="news_article",
-        title=f"Kedarkantha Trek News — Week {week}",
-        content_html="<article><h1>News</h1></article>",
+        title="Kedarkantha Trail Opens for Winter Season",
+        content_html=(
+            '<article><h1>Kedarkantha Trail Opens</h1>'
+            '<h2 id="what-happened">What Happened</h2>'
+            '<p>The trail opened.</p></article>'
+        ),
         status="published",
-        seo_title="Kedarkantha Trek Latest News",
-        seo_description="Latest news for Kedarkantha trek.",
-        content_json={"trek_slug": "kedarkantha", "week_label": week, "faqs": [], "news_items": []},
+        seo_title="Kedarkantha Trail Opens | Kedarkantha News",
+        seo_description="The trail is open for winter season.",
+        content_json={
+            "trek_slug": "kedarkantha",
+            "news_item": {
+                "title": "Kedarkantha Trail Opens — Hiking India",
+                "link": "http://x.com",
+                "published": "",
+                "summary": "Trail open for winter.",
+                "source": "Hiking India",
+            },
+            "faqs": [],
+        },
     )
     db.add(page)
     db.commit()
@@ -149,14 +162,7 @@ def test_filter_relevant_filters():
             {"title": "Unrelated Cricket News", "link": "", "published": "", "summary": "India wins match", "source": ""},
         ],
         "relevant_items": [],
-        "article_html": "",
-        "article_title": "",
-        "week_label": "2026-22",
-        "news_slug": "kedarkantha-news-2026-22",
-        "seo_title": "",
-        "seo_description": "",
-        "faqs": [],
-        "result": None,
+        "articles": [],
         "error": None,
     }
     result = filter_relevant(state)
@@ -177,156 +183,120 @@ def test_filter_relevant_fallback_to_raw():
             {"title": "Generic News Article", "link": "", "published": "", "summary": "No mention of the trek.", "source": ""},
         ],
         "relevant_items": [],
-        "article_html": "",
-        "article_title": "",
-        "week_label": "2026-22",
-        "news_slug": "kedarkantha-news-2026-22",
-        "seo_title": "",
-        "seo_description": "",
-        "faqs": [],
-        "result": None,
+        "articles": [],
         "error": None,
     }
     result = filter_relevant(state)
-    # Falls back to raw items when nothing passes keyword filter
     assert len(result["relevant_items"]) == 1
 
 
 # ---------------------------------------------------------------------------
-# TC-B05: write_article generates fallback when no ANTHROPIC_API_KEY
+# TC-B05: _fallback_for_item returns valid HTML with h1 and article tags
 # ---------------------------------------------------------------------------
-def test_write_article_fallback_no_api_key():
-    items = [{"title": "Kedarkantha Opens", "link": "http://x.com", "published": "", "summary": "Trail open.", "source": "HikingIndia"}]
+def test_fallback_for_item_structure():
+    item = {
+        "title": "Kedarkantha Opens — Hiking India",
+        "link": "http://x.com",
+        "published": "",
+        "summary": "Trail open for winter.",
+        "source": "Hiking India",
+    }
+    html = _fallback_for_item("Kedarkantha", item)
+    assert "<article>" in html
+    assert "<h1>" in html
+    assert "Kedarkantha" in html
+    assert "nofollow" in html
+    assert 'id="what-happened"' in html
+    assert 'id="impact-on-trekkers"' in html
+
+
+# ---------------------------------------------------------------------------
+# TC-B06: _slug_from_title strips source attribution and appends YYYY-MM
+# ---------------------------------------------------------------------------
+def test_slug_from_title_strips_attribution():
+    ym = datetime.now(timezone.utc).strftime("%Y-%m")
+    slug = _slug_from_title("kedarkantha", "Kedarkantha Trail Opens — Hiking India")
+    assert "hiking-india" not in slug
+    assert slug.endswith(f"-{ym}")
+    assert "kedarkantha" in slug
+
+
+def test_slug_from_title_dash_source():
+    ym = datetime.now(timezone.utc).strftime("%Y-%m")
+    slug = _slug_from_title("triund", "Triund Trek News - Times of India")
+    assert "times-of-india" not in slug
+    assert slug.endswith(f"-{ym}")
+
+
+# ---------------------------------------------------------------------------
+# TC-B07: _clean_title removes source attribution suffix
+# ---------------------------------------------------------------------------
+def test_clean_title_strips_attribution():
+    assert _clean_title("Kedarkantha Opens — Hiking India") == "Kedarkantha Opens"
+    assert _clean_title("Triund Trek News - Times of India") == "Triund Trek News"
+    assert _clean_title("No attribution here") == "No attribution here"
+
+
+# ---------------------------------------------------------------------------
+# TC-B08: write_and_store_articles creates one CMS page per item (no LLM key)
+# ---------------------------------------------------------------------------
+def test_write_and_store_articles_creates_per_item(db: Session):
+    uid = uuid.uuid4().hex[:8]
+    items = [
+        {"title": f"Trail Opens {uid} — Hiking India", "link": "http://x.com/1", "published": "", "summary": "Trail open.", "source": "HikingIndia"},
+        {"title": f"Permits Required {uid} — News", "link": "http://x.com/2", "published": "", "summary": "Permit update.", "source": "News"},
+    ]
     state: NewsState = {
-        "trek_slug": "kedarkantha",
+        "trek_slug": f"kedarkantha-{uid}",
         "trek_name": "Kedarkantha",
         "trek_state": "Uttarakhand",
-        "db": None,
+        "db": db,
         "raw_items": items,
         "relevant_items": items,
-        "article_html": "",
-        "article_title": "",
-        "week_label": "2026-22",
-        "news_slug": "kedarkantha-news-2026-22",
-        "seo_title": "",
-        "seo_description": "",
-        "faqs": [],
-        "result": None,
+        "articles": [],
         "error": None,
     }
     with patch.object(news_mod.settings, "anthropic_api_key", None):
-        result = write_article(state)
+        result = write_and_store_articles(state)
 
-    assert "<h1>" in result["article_html"]
-    assert "Kedarkantha" in result["article_title"]
-    assert result["seo_title"]
-    assert result["seo_description"]
-    assert isinstance(result["faqs"], list) and len(result["faqs"]) >= 3
-
-
-# ---------------------------------------------------------------------------
-# TC-B06: write_article calls LLM and parses response when API key is set
-# ---------------------------------------------------------------------------
-def test_write_article_llm_called():
-    items = [{"title": "Kedarkantha Opens", "link": "http://x.com", "published": "", "summary": "Trail open.", "source": "X"}]
-    state: NewsState = {
-        "trek_slug": "kedarkantha",
-        "trek_name": "Kedarkantha",
-        "trek_state": "Uttarakhand",
-        "db": None,
-        "raw_items": items,
-        "relevant_items": items,
-        "article_html": "",
-        "article_title": "",
-        "week_label": "2026-22",
-        "news_slug": "kedarkantha-news-2026-22",
-        "seo_title": "",
-        "seo_description": "",
-        "faqs": [],
-        "result": None,
-        "error": None,
-    }
-
-    mock_content = MagicMock()
-    mock_content.text = (
-        "<article><h1>Kedarkantha Trek News — Week 22, 2026</h1><p>Test content.</p></article>\n"
-        "|||\n"
-        '{"seo_title": "Kedarkantha Latest News", "seo_description": "Latest Kedarkantha news this week.", "faqs": [{"q": "Is it open?", "a": "Yes."}]}'
-    )
-    mock_response = MagicMock()
-    mock_response.content = [mock_content]
-
-    with patch.object(news_mod.settings, "anthropic_api_key", "test-key"):
-        with patch("anthropic.Anthropic") as mock_anthropic:
-            mock_anthropic.return_value.messages.create.return_value = mock_response
-            result = write_article(state)
-
-    assert "<article>" in result["article_html"]
-    assert result["seo_title"] == "Kedarkantha Latest News"
-    assert result["faqs"] == [{"q": "Is it open?", "a": "Yes."}]
-
-
-# ---------------------------------------------------------------------------
-# TC-B07: store_cms creates a new CMSPage when slug doesn't exist
-# ---------------------------------------------------------------------------
-def test_store_cms_creates_page(db: Session):
-    week = _current_week_label()
-    unique_slug = f"test-store-{uuid.uuid4().hex[:10]}-news-{week}"
-    state: NewsState = {
-        "trek_slug": "test-trek",
-        "trek_name": "Test Trek",
-        "trek_state": "Uttarakhand",
-        "db": db,
-        "raw_items": [],
-        "relevant_items": [{"title": "Trail open", "link": "http://x.com", "published": "", "summary": "", "source": ""}],
-        "article_html": "<article><h1>Test Trek News</h1></article>",
-        "article_title": "Test Trek News",
-        "week_label": week,
-        "news_slug": unique_slug,
-        "seo_title": "Test Trek Latest News",
-        "seo_description": "Latest news for Test Trek.",
-        "faqs": [{"q": "Is it open?", "a": "Yes."}],
-        "result": None,
-        "error": None,
-    }
-    result = store_cms(state)
     assert result["error"] is None
-    assert result["result"] is not None
-    assert result["result"]["slug"] == unique_slug
-    assert result["result"]["updated"] is False
-    assert result["result"]["items_count"] == 1
+    assert len(result["articles"]) == 2
+    created = [a for a in result["articles"] if not a.get("skipped") and "error" not in a]
+    assert len(created) == 2
+    # Each article gets a distinct slug
+    slugs = {a["slug"] for a in result["articles"]}
+    assert len(slugs) == 2
 
 
 # ---------------------------------------------------------------------------
-# TC-B08: store_cms updates an existing page when slug exists (idempotent)
+# TC-B09: write_and_store_articles skips existing slugs (idempotent)
 # ---------------------------------------------------------------------------
-def test_store_cms_updates_existing(db: Session, news_page: CMSPage):
-    week = _current_week_label()
+def test_write_and_store_articles_skips_existing(db: Session):
+    uid = uuid.uuid4().hex[:8]
+    item = {"title": f"Trail Opens {uid} — HikingIndia", "link": "http://x.com", "published": "", "summary": "Trail open.", "source": "HikingIndia"}
     state: NewsState = {
-        "trek_slug": "kedarkantha",
+        "trek_slug": f"kedarkantha-{uid}",
         "trek_name": "Kedarkantha",
         "trek_state": "Uttarakhand",
         "db": db,
-        "raw_items": [],
-        "relevant_items": [],
-        "article_html": "<article><h1>Updated News</h1></article>",
-        "article_title": "Updated Title",
-        "week_label": week,
-        "news_slug": news_page.slug,
-        "seo_title": "Updated SEO Title",
-        "seo_description": "Updated description.",
-        "faqs": [],
-        "result": None,
+        "raw_items": [item],
+        "relevant_items": [item],
+        "articles": [],
         "error": None,
     }
-    result = store_cms(state)
-    assert result["error"] is None
-    assert result["result"]["updated"] is True
-    assert result["result"]["slug"] == news_page.slug
+    with patch.object(news_mod.settings, "anthropic_api_key", None):
+        write_and_store_articles(state)
+    # Run again — same item should be skipped
+    state2: NewsState = {**state, "articles": []}  # type: ignore[misc]
+    with patch.object(news_mod.settings, "anthropic_api_key", None):
+        result2 = write_and_store_articles(state2)
+
+    skipped = [a for a in result2["articles"] if a.get("skipped")]
+    assert len(skipped) == 1
 
 
 # ---------------------------------------------------------------------------
-# TC-B09: generate_news end-to-end (mocked httpx + no LLM key)
+# TC-B10: generate_news returns articles_created / articles_skipped / articles
 # ---------------------------------------------------------------------------
 def test_generate_news_end_to_end(db: Session):
     mock_resp = MagicMock()
@@ -341,11 +311,14 @@ def test_generate_news_end_to_end(db: Session):
                 trek_state="Uttarakhand",
                 db=db,
             )
-    assert "slug" in result
+    assert "articles_created" in result
+    assert "articles_skipped" in result
+    assert "articles" in result
+    assert isinstance(result["articles"], list)
 
 
 # ---------------------------------------------------------------------------
-# TC-B10: GET /public/news returns list including our fixture page
+# TC-B11: GET /public/news returns list including our fixture page
 # ---------------------------------------------------------------------------
 def test_api_list_news(news_page: CMSPage):
     resp = client.get("/api/v1/public/news")
@@ -357,7 +330,7 @@ def test_api_list_news(news_page: CMSPage):
 
 
 # ---------------------------------------------------------------------------
-# TC-B11: GET /public/news/{slug} returns the article
+# TC-B12: GET /public/news/{slug} returns the article
 # ---------------------------------------------------------------------------
 def test_api_get_news_article(news_page: CMSPage):
     resp = client.get(f"/api/v1/public/news/{news_page.slug}")
@@ -369,7 +342,7 @@ def test_api_get_news_article(news_page: CMSPage):
 
 
 # ---------------------------------------------------------------------------
-# TC-B12: GET /public/news/{slug} — 404 for unknown slug
+# TC-B13: GET /public/news/{slug} — 404 for unknown slug
 # ---------------------------------------------------------------------------
 def test_api_get_news_article_404():
     resp = client.get("/api/v1/public/news/definitely-not-a-real-slug-xyz")
@@ -377,21 +350,18 @@ def test_api_get_news_article_404():
 
 
 # ---------------------------------------------------------------------------
-# TC-B13: GET /public/news/by-trek/{trek_slug} returns only that trek's news
+# TC-B14: GET /public/news/by-trek/{trek_slug} returns that trek's news
 # ---------------------------------------------------------------------------
 def test_api_get_news_by_trek(news_page: CMSPage):
-    # news_page.slug starts with "kedarkantha-news-"
     resp = client.get("/api/v1/public/news/by-trek/kedarkantha")
     assert resp.status_code == 200
     data = resp.json()
     assert isinstance(data, list)
-    # All returned items must match the trek prefix
-    for item in data:
-        assert item["slug"].startswith("kedarkantha-news-")
+    assert any(item["slug"] == news_page.slug for item in data)
 
 
 # ---------------------------------------------------------------------------
-# TC-B14: GET /public/news/by-trek/{trek_slug} — empty list for unknown trek
+# TC-B15: GET /public/news/by-trek/{trek_slug} — empty list for unknown trek
 # ---------------------------------------------------------------------------
 def test_api_get_news_by_trek_empty():
     resp = client.get("/api/v1/public/news/by-trek/nonexistent-trek-zzz")
@@ -400,7 +370,7 @@ def test_api_get_news_by_trek_empty():
 
 
 # ---------------------------------------------------------------------------
-# TC-B15: POST /admin/news/generate/{trek_slug} — 404 when trek_guide not found
+# TC-B16: POST /admin/news/generate/{trek_slug} — 404 when trek_guide not found
 # ---------------------------------------------------------------------------
 def test_api_generate_news_trek_not_found():
     resp = client.post(
@@ -411,7 +381,7 @@ def test_api_generate_news_trek_not_found():
 
 
 # ---------------------------------------------------------------------------
-# TC-B16: POST /admin/news/generate/{trek_slug} — queues task for valid trek
+# TC-B17: POST /admin/news/generate/{trek_slug} — queues task for valid trek
 # ---------------------------------------------------------------------------
 def test_api_generate_news_queues_task(trek_guide_page: CMSPage):
     with patch("app.worker.tasks.news.generate_news_for_trek") as mock_task:
@@ -426,19 +396,6 @@ def test_api_generate_news_queues_task(trek_guide_page: CMSPage):
     assert data["trek_slug"] == trek_guide_page.slug
     assert data["trek_name"] == "Kedarkantha"
     assert "task_id" in data
-
-
-# ---------------------------------------------------------------------------
-# TC-B17: _fallback_article returns valid HTML with h1 and article tags
-# ---------------------------------------------------------------------------
-def test_fallback_article_structure():
-    html = _fallback_article("Kedarkantha", "Week 22, 2026", [
-        {"title": "Test News", "link": "http://x.com", "published": "", "summary": "Summary text.", "source": "Source"},
-    ])
-    assert "<h1>" in html
-    assert "Kedarkantha" in html
-    assert "<article>" in html
-    assert "nofollow" in html  # outbound links should have nofollow
 
 
 # ---------------------------------------------------------------------------

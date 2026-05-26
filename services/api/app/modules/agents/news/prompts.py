@@ -1,44 +1,37 @@
-ARTICLE_PROMPT = """You are an expert Indian trekking journalist writing for TrekYatra, India's leading trekking guide.
+INDIVIDUAL_ARTICLE_PROMPT = """You are an expert Indian trekking journalist writing for TrekYatra.
 
-Write a comprehensive news roundup about {trek_name} trek based on these recent news items:
+Write a 300-word news article about this specific trekking development:
 
-{items_json}
+Trek: {trek_name} ({trek_state})
+Headline: {headline}
+Summary: {summary}
+Source: {source}
+Source link: {link}
 
-Week: {week_label} ({week_display})
-Trek State/Region: {trek_state}
-
-Write the article as valid HTML (no markdown, no code fences anywhere). Use this exact structure:
+Write the article as valid HTML (no <!DOCTYPE>, no <body>, no markdown, no code fences). Structure:
 
 <article>
-<h1>{trek_name} Trek News — {week_display}</h1>
-<nav><ul>
-  <li><a href="#latest-updates">Latest Updates</a></li>
-  <li><a href="#detailed-breakdown">Detailed Breakdown</a></li>
-  <li><a href="#what-this-means">What This Means for Trekkers</a></li>
-  <li><a href="#faqs">Frequently Asked Questions</a></li>
-</ul></nav>
-<h2 id="latest-updates">Latest Updates</h2>
-[2-3 paragraphs summarising the key developments this week for {trek_name} trekkers]
-<h2 id="detailed-breakdown">Detailed Breakdown</h2>
-[Cover each news item with a short paragraph and link to the source: <a href="LINK" target="_blank" rel="noopener noreferrer nofollow">Source Name</a>]
-<h2 id="what-this-means">What This Means for Trekkers</h2>
-[Practical implications for people planning to trek {trek_name} — permits, trail access, costs, safety]
-<h2 id="faqs">Frequently Asked Questions</h2>
-<dl>
-  <dt>[Trek-specific question based on the news]</dt>
-  <dd>[Practical, helpful answer — 2-3 sentences]</dd>
-  [... 3 to 5 Q&A pairs total ...]
-</dl>
+<h1>[Clean headline — remove the " - Source Name" attribution at the end; do NOT add "Trek" if the trek name already ends with "Trek"]</h1>
+<h2 id="what-happened">What Happened</h2>
+[2 paragraphs with context for Indian trekkers. Expand on the headline using the summary.]
+<h2 id="impact-on-trekkers">Impact on Trekkers</h2>
+[1-2 paragraphs: how does this specifically affect people planning to trek {trek_name}?]
+<h2 id="what-to-do">What Trekkers Should Do</h2>
+<ul>
+  [3-4 concrete, actionable bullet points trekkers should take right now]
+</ul>
+<p>Source: <a href="{link}" target="_blank" rel="noopener noreferrer nofollow">{source}</a></p>
 </article>
 
 Rules:
-- Write in clear, informative British English
-- Keep trek names, mountain names, place names exactly as they appear
-- Always include attribution links with target="_blank" rel="noopener noreferrer nofollow"
-- Never use markdown, bullet points with *, or code fences
-- If news items are sparse, focus on general seasonal/permit/trail info for {trek_name}
+- h1 must be the clean headline, not the full RSS title with source attribution
+- Never add "Trek" after a name that already ends in "Trek" (e.g. "Triund Trek" not "Triund Trek Trek")
+- Write in clear British English, informative tone
+- All source links must have target="_blank" rel="noopener noreferrer nofollow"
+- No placeholder text — if summary is sparse, extrapolate from the headline alone
+- Do not include the FAQ section in the HTML; FAQs go in the JSON below
 
 After all the HTML, append exactly this separator on its own line:
 |||
-Then on the next line return ONLY this JSON object (no markdown fences, no extra text):
-{{"seo_title": "{trek_name} Trek Latest News {week_display}", "seo_description": "150-160 character description including trek name and a key news update this week", "faqs": [{{"q": "question text", "a": "answer text"}}]}}"""
+Then return ONLY this JSON (no markdown, no code fences, no extra text):
+{{"seo_title": "[max 60 chars: key fact + trek name]", "seo_description": "[max 155 chars: what happened and why it matters for trekkers]", "faqs": [{{"q": "[specific question about this news item]", "a": "[practical 2-sentence answer for trekkers]"}}, {{"q": "[second question]", "a": "[answer]"}}]}}"""

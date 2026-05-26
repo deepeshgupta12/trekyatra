@@ -1,8 +1,11 @@
 "use client";
 
-import { useEffect, useState, useRef } from "react";
+import { useEffect, useState, useRef, useMemo } from "react";
 import Link from "next/link";
-import { Globe, RefreshCw, Trash2, Pencil, Plus, Languages, Crown, Loader2, X, CheckCircle2, AlertCircle, RotateCcw, Newspaper } from "lucide-react";
+import {
+  Globe, RefreshCw, Trash2, Pencil, Plus, Languages, Crown, Loader2, X,
+  CheckCircle2, AlertCircle, RotateCcw, Newspaper,
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { triggerTranslation, generateTrekNews } from "@/lib/api";
 
@@ -17,9 +20,9 @@ interface CMSPage {
   language: string;
   translations: Record<string, string> | null;
   is_premium: boolean;
+  trek_name: string | null;
 }
 
-// Maps page_type to its public URL prefix. Editorial pages use empty prefix (/{slug}).
 const PAGE_PREFIX: Record<string, string> = {
   trek_guide: "/trek", packing_list: "/packing", packing_guide: "/packing",
   permit_guide: "/permits", beginner_guide: "/guides", beginner_roundup: "/guides",
@@ -27,18 +30,20 @@ const PAGE_PREFIX: Record<string, string> = {
   itinerary: "/guides", expert_guide: "/guides", premium_compendium: "/guides",
   comparison: "/compare", seasonal: "/seasons", seasonal_hub: "/seasons",
   cluster_hub: "/trek-types", regional_hub: "/regions",
+  news_article: "/news",
   editorial: "",
 };
+
 function getLiveUrl(page: CMSPage): string {
   const base = PAGE_PREFIX[page.page_type];
   if (base === undefined) return `/trek/${page.slug}`;
   return base === "" ? `/${page.slug}` : `${base}/${page.slug}`;
 }
+
 function getHindiUrl(page: CMSPage): string {
   const base = PAGE_PREFIX[page.page_type];
   if (base === undefined) return `/hi/trek/${page.slug}`;
   if (base === "" || base === "/compare" || base === "/seasons" || base === "/trek-types" || base === "/regions") return "";
-  // Map /trek → /hi/trek, /packing → /hi/packing, /guides → /hi/guides, /permits → ""
   const hiBase: Record<string, string> = {
     "/trek": "/hi/trek",
     "/packing": "/hi/packing",
@@ -47,7 +52,6 @@ function getHindiUrl(page: CMSPage): string {
   return hiBase[base] ? `${hiBase[base]}/${page.slug}` : "";
 }
 
-// Editorial pages are system pages — protect them from deletion
 const PROTECTED_PAGE_TYPES = new Set(["editorial"]);
 
 const statusStyle: Record<string, string> = {
@@ -67,13 +71,33 @@ interface TranslationState {
   fallback?: boolean;
 }
 
+interface NewsModalState {
+  slug: string;
+  trek_name: string;
+  status: "queuing" | "done" | "error";
+  task_id?: string;
+  message?: string;
+}
+
+type TabType = "all" | "trek_guide" | "news_article" | "other";
+
+const TABS: { id: TabType; label: string }[] = [
+  { id: "all", label: "All" },
+  { id: "trek_guide", label: "Trek Guides" },
+  { id: "news_article", label: "News" },
+  { id: "other", label: "Other" },
+];
+
 export default function CMSAdminPage() {
   const [pages, setPages] = useState<CMSPage[]>([]);
   const [loading, setLoading] = useState(true);
   const [feedback, setFeedback] = useState<string | null>(null);
   const [invalidating, setInvalidating] = useState(false);
   const [translation, setTranslation] = useState<TranslationState | null>(null);
-  const [newsGenerating, setNewsGenerating] = useState<string | null>(null);
+  const [newsModal, setNewsModal] = useState<NewsModalState | null>(null);
+  const [activeTab, setActiveTab] = useState<TabType>("all");
+  const [statusFilter, setStatusFilter] = useState("all");
+  const [languageFilter, setLanguageFilter] = useState("all");
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   async function loadPages() {
@@ -87,9 +111,17 @@ export default function CMSAdminPage() {
   }
 
   useEffect(() => { loadPages(); }, []);
-
-  // Cleanup timer on unmount
   useEffect(() => () => { if (timerRef.current) clearInterval(timerRef.current); }, []);
+
+  const visiblePages = useMemo(() => {
+    let result = pages;
+    if (activeTab === "trek_guide") result = result.filter((p) => p.page_type === "trek_guide");
+    else if (activeTab === "news_article") result = result.filter((p) => p.page_type === "news_article");
+    else if (activeTab === "other") result = result.filter((p) => p.page_type !== "trek_guide" && p.page_type !== "news_article");
+    if (statusFilter !== "all") result = result.filter((p) => p.status === statusFilter);
+    if (languageFilter !== "all") result = result.filter((p) => (p.language ?? "en") === languageFilter);
+    return result;
+  }, [pages, activeTab, statusFilter, languageFilter]);
 
   async function invalidateCache(scope: "all" | "slug", slug?: string) {
     setInvalidating(true);
@@ -121,7 +153,7 @@ export default function CMSAdminPage() {
 
   async function deletePage(slug: string, pageType: string) {
     if (PROTECTED_PAGE_TYPES.has(pageType)) {
-      setFeedback("Editorial pages are protected and cannot be deleted. Edit their content instead.");
+      setFeedback("Editorial pages are protected and cannot be deleted.");
       setTimeout(() => setFeedback(null), 4000);
       return;
     }
@@ -169,37 +201,32 @@ export default function CMSAdminPage() {
     try {
       const result = await triggerTranslation(page.slug, "hi", force);
       clearInterval(timerRef.current!);
-
-      setTranslation((prev) => prev ? {
-        ...prev,
-        status: "done",
-        message: result.message,
-        fallback: result.fallback,
-      } : prev);
-
+      setTranslation((prev) => prev ? { ...prev, status: "done", message: result.message, fallback: result.fallback } : prev);
       await loadPages();
     } catch (err: unknown) {
       clearInterval(timerRef.current!);
       const msg = err instanceof Error ? err.message : "Translation request failed.";
-      setTranslation((prev) => prev ? {
-        ...prev,
-        status: "error",
-        message: msg,
-      } : prev);
+      setTranslation((prev) => prev ? { ...prev, status: "error", message: msg } : prev);
     }
   }
 
   async function generateNews(page: CMSPage) {
-    setNewsGenerating(page.slug);
-    setFeedback(null);
+    setNewsModal({
+      slug: page.slug,
+      trek_name: page.trek_name ?? page.title,
+      status: "queuing",
+    });
     try {
       const result = await generateTrekNews(page.slug);
-      setFeedback(`News generation queued for "${result.trek_name}" (task: ${result.task_id.slice(0, 8)}…)`);
-    } catch {
-      setFeedback(`Failed to queue news generation for ${page.slug}.`);
-    } finally {
-      setNewsGenerating(null);
-      setTimeout(() => setFeedback(null), 6000);
+      setNewsModal((prev) => prev ? {
+        ...prev,
+        status: "done",
+        task_id: result.task_id,
+        message: `Queued for "${result.trek_name}"`,
+      } : null);
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : "Failed to queue news generation.";
+      setNewsModal((prev) => prev ? { ...prev, status: "error", message: msg } : null);
     }
   }
 
@@ -208,8 +235,16 @@ export default function CMSAdminPage() {
     setTranslation(null);
   }
 
+  const tabCounts: Record<TabType, number> = {
+    all: pages.length,
+    trek_guide: pages.filter((p) => p.page_type === "trek_guide").length,
+    news_article: pages.filter((p) => p.page_type === "news_article").length,
+    other: pages.filter((p) => p.page_type !== "trek_guide" && p.page_type !== "news_article").length,
+  };
+
   return (
     <div className="p-6 max-w-6xl">
+
       {/* Translation Progress Modal */}
       {translation && (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
@@ -254,7 +289,6 @@ export default function CMSAdminPage() {
               )}
             </div>
 
-            {/* Progress details */}
             <div className="space-y-3">
               <div className="bg-[#0c0e14] rounded-xl p-4">
                 <p className="text-white/70 text-xs font-medium mb-1">Page</p>
@@ -281,10 +315,7 @@ export default function CMSAdminPage() {
                   <p className="text-white/60 text-xs">{translation.message}</p>
                   <p className="text-white/40 text-xs mt-2">Review in CMS and publish when ready.</p>
                   {translation.hindiUrl && (
-                    <a
-                      href={`/admin/cms/${translation.slug}-hi/edit`}
-                      className="inline-flex items-center gap-1.5 mt-3 text-xs text-accent font-medium hover:underline"
-                    >
+                    <a href={`/admin/cms/${translation.slug}-hi/edit`} className="inline-flex items-center gap-1.5 mt-3 text-xs text-accent font-medium hover:underline">
                       <Globe className="h-3.5 w-3.5" />
                       Review draft in CMS →
                     </a>
@@ -298,16 +329,12 @@ export default function CMSAdminPage() {
                   <p className="text-amber-400/70 text-xs mt-2 font-medium">
                     Action required: Set ANTHROPIC_API_KEY in production to enable real Hindi translation.
                   </p>
-                  <a
-                    href={`/admin/cms/${translation.slug}-hi/edit`}
-                    className="inline-flex items-center gap-1.5 mt-3 text-xs text-white/50 font-medium hover:underline"
-                  >
+                  <a href={`/admin/cms/${translation.slug}-hi/edit`} className="inline-flex items-center gap-1.5 mt-3 text-xs text-white/50 font-medium hover:underline">
                     <Globe className="h-3.5 w-3.5" />
                     Edit draft in CMS →
                   </a>
                 </div>
               )}
-
               {translation.status === "error" && (
                 <div className="bg-red-400/5 border border-red-400/20 rounded-xl p-4">
                   <p className="text-red-400 text-xs font-medium mb-1">Error</p>
@@ -317,14 +344,104 @@ export default function CMSAdminPage() {
             </div>
 
             {translation.status !== "in-progress" && (
-              <Button
-                variant="outline"
-                size="sm"
-                className="w-full mt-5 border-white/20 text-white/60 hover:text-white"
-                onClick={closeTranslationModal}
-              >
+              <Button variant="outline" size="sm" className="w-full mt-5 border-white/20 text-white/60 hover:text-white" onClick={closeTranslationModal}>
                 Close
               </Button>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* News Generation Modal */}
+      {newsModal && (
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className="bg-[#14161f] border border-white/10 rounded-2xl p-8 max-w-md w-full shadow-2xl">
+            <div className="flex items-start justify-between mb-6">
+              <div className="flex items-center gap-3">
+                {newsModal.status === "queuing" && (
+                  <div className="h-10 w-10 rounded-xl bg-blue-400/10 flex items-center justify-center flex-shrink-0">
+                    <Loader2 className="h-5 w-5 text-blue-400 animate-spin" />
+                  </div>
+                )}
+                {newsModal.status === "done" && (
+                  <div className="h-10 w-10 rounded-xl bg-pine/10 flex items-center justify-center flex-shrink-0">
+                    <CheckCircle2 className="h-5 w-5 text-pine" />
+                  </div>
+                )}
+                {newsModal.status === "error" && (
+                  <div className="h-10 w-10 rounded-xl bg-red-400/10 flex items-center justify-center flex-shrink-0">
+                    <AlertCircle className="h-5 w-5 text-red-400" />
+                  </div>
+                )}
+                <div>
+                  <h3 className="text-white font-semibold text-sm">
+                    {newsModal.status === "queuing" && "Queuing News Generation…"}
+                    {newsModal.status === "done" && "News Generation Queued"}
+                    {newsModal.status === "error" && "News Generation Failed"}
+                  </h3>
+                  <p className="text-white/40 text-xs mt-0.5 font-mono">/{newsModal.slug}</p>
+                </div>
+              </div>
+              {newsModal.status !== "queuing" && (
+                <button onClick={() => setNewsModal(null)} className="text-white/30 hover:text-white transition-colors">
+                  <X className="h-4 w-4" />
+                </button>
+              )}
+            </div>
+
+            <div className="space-y-3">
+              <div className="bg-[#0c0e14] rounded-xl p-4">
+                <p className="text-white/70 text-xs font-medium mb-1">Trek</p>
+                <p className="text-white text-sm">{newsModal.trek_name}</p>
+              </div>
+
+              {newsModal.status === "queuing" && (
+                <div className="bg-[#0c0e14] rounded-xl p-4">
+                  <div className="flex items-center gap-2">
+                    <div className="h-1.5 flex-1 bg-white/5 rounded-full overflow-hidden">
+                      <div className="h-full bg-blue-400/60 rounded-full animate-pulse" style={{ width: "45%" }} />
+                    </div>
+                  </div>
+                  <p className="text-white/40 text-xs mt-2">
+                    Fetching Google News RSS and queuing article generation…
+                  </p>
+                </div>
+              )}
+
+              {newsModal.status === "done" && (
+                <div className="bg-pine/5 border border-pine/20 rounded-xl p-4">
+                  <p className="text-pine text-xs font-medium mb-1">Queued successfully</p>
+                  <p className="text-white/60 text-xs">{newsModal.message}</p>
+                  {newsModal.task_id && (
+                    <p className="text-white/30 text-xs mt-2 font-mono">
+                      Task ID: {newsModal.task_id.slice(0, 16)}…
+                    </p>
+                  )}
+                  <p className="text-white/40 text-xs mt-3">
+                    The Celery worker will fetch news, generate articles with Claude AI, and publish them. Check the News tab in a minute.
+                  </p>
+                </div>
+              )}
+
+              {newsModal.status === "error" && (
+                <div className="bg-red-400/5 border border-red-400/20 rounded-xl p-4">
+                  <p className="text-red-400 text-xs font-medium mb-1">Error</p>
+                  <p className="text-white/60 text-xs">{newsModal.message}</p>
+                </div>
+              )}
+            </div>
+
+            {newsModal.status !== "queuing" && (
+              <div className="flex gap-2 mt-5">
+                <Button variant="outline" size="sm" className="flex-1 border-white/20 text-white/60 hover:text-white" onClick={() => setNewsModal(null)}>
+                  Close
+                </Button>
+                {newsModal.status === "done" && (
+                  <Button variant="outline" size="sm" className="flex-1 border-white/20 text-white/60 hover:text-white" onClick={() => { setNewsModal(null); setActiveTab("news_article"); }}>
+                    View News tab
+                  </Button>
+                )}
+              </div>
             )}
           </div>
         </div>
@@ -343,20 +460,12 @@ export default function CMSAdminPage() {
                 <Plus className="h-4 w-4" /> New page
               </Button>
             </Link>
-            <Button
-              variant="hero"
-              size="sm"
-              className="w-fit"
-              onClick={() => invalidateCache("all")}
-              disabled={invalidating}
-            >
+            <Button variant="hero" size="sm" className="w-fit" onClick={() => invalidateCache("all")} disabled={invalidating}>
               <RefreshCw className={`h-4 w-4 ${invalidating ? "animate-spin" : ""}`} />
               Clear all caches
             </Button>
           </div>
-          {feedback && (
-            <span className="text-xs text-pine">{feedback}</span>
-          )}
+          {feedback && <span className="text-xs text-pine">{feedback}</span>}
         </div>
       </div>
 
@@ -364,9 +473,9 @@ export default function CMSAdminPage() {
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-6">
         {[
           { label: "Total pages", value: pages.length },
+          { label: "Trek Guides", value: tabCounts.trek_guide },
+          { label: "News Articles", value: tabCounts.news_article },
           { label: "Published", value: pages.filter((p) => p.status === "published").length },
-          { label: "Drafts", value: pages.filter((p) => p.status === "draft").length },
-          { label: "In review", value: pages.filter((p) => p.status === "review").length },
         ].map((kpi) => (
           <div key={kpi.label} className="bg-[#14161f] rounded-2xl border border-white/10 p-5">
             <p className="text-white font-display text-2xl font-semibold leading-none mb-1">{kpi.value}</p>
@@ -375,18 +484,67 @@ export default function CMSAdminPage() {
         ))}
       </div>
 
-      {/* Pages table */}
+      {/* Tabs + Filters */}
       <div className="bg-[#14161f] rounded-2xl border border-white/10 overflow-hidden">
-        <div className="flex items-center justify-between px-5 py-3.5 border-b border-white/8">
-          <h2 className="text-white font-semibold text-sm">Content pages</h2>
-          <button
-            onClick={loadPages}
-            className="text-white/40 hover:text-white transition-colors"
-            title="Refresh"
-          >
+
+        {/* Tab row */}
+        <div className="flex items-center gap-1 px-4 pt-3 pb-0 border-b border-white/8 overflow-x-auto">
+          {TABS.map((tab) => (
+            <button
+              key={tab.id}
+              onClick={() => setActiveTab(tab.id)}
+              className={`flex items-center gap-1.5 px-3 py-2 text-sm font-medium whitespace-nowrap border-b-2 transition-colors -mb-px ${
+                activeTab === tab.id
+                  ? "border-accent text-white"
+                  : "border-transparent text-white/50 hover:text-white/80"
+              }`}
+            >
+              {tab.label}
+              <span className="text-[10px] text-white/30 ml-0.5">{tabCounts[tab.id]}</span>
+            </button>
+          ))}
+          <div className="flex-1" />
+          <button onClick={loadPages} className="text-white/40 hover:text-white transition-colors pb-2" title="Refresh">
             <RefreshCw className="h-4 w-4" />
           </button>
         </div>
+
+        {/* Filter row */}
+        <div className="flex flex-wrap items-center gap-2 px-4 py-3 border-b border-white/5">
+          <select
+            value={statusFilter}
+            onChange={(e) => setStatusFilter(e.target.value)}
+            className="bg-[#0c0e14] border border-white/10 rounded-lg px-3 py-1.5 text-white/70 text-xs focus:outline-none focus:border-accent/40"
+          >
+            <option value="all">All statuses</option>
+            <option value="published">Published</option>
+            <option value="draft">Draft</option>
+            <option value="review">In Review</option>
+            <option value="archived">Archived</option>
+          </select>
+          <select
+            value={languageFilter}
+            onChange={(e) => setLanguageFilter(e.target.value)}
+            className="bg-[#0c0e14] border border-white/10 rounded-lg px-3 py-1.5 text-white/70 text-xs focus:outline-none focus:border-accent/40"
+          >
+            <option value="all">All languages</option>
+            <option value="en">EN only</option>
+            <option value="hi">HI only</option>
+          </select>
+          {(statusFilter !== "all" || languageFilter !== "all") && (
+            <button
+              onClick={() => { setStatusFilter("all"); setLanguageFilter("all"); }}
+              className="text-xs text-white/40 hover:text-white transition-colors flex items-center gap-1"
+            >
+              <X className="h-3 w-3" /> Clear filters
+            </button>
+          )}
+          <span className="text-white/25 text-xs ml-auto">
+            {visiblePages.length} of {pages.length} pages
+          </span>
+        </div>
+
+        {/* Table */}
         <div className="overflow-x-auto">
           <table className="w-full text-sm min-w-[640px]">
             <thead>
@@ -401,22 +559,17 @@ export default function CMSAdminPage() {
             <tbody>
               {loading ? (
                 <tr>
-                  <td colSpan={5} className="px-4 py-8 text-center text-white/30 text-sm">
-                    Loading…
-                  </td>
+                  <td colSpan={5} className="px-4 py-8 text-center text-white/30 text-sm">Loading…</td>
                 </tr>
-              ) : pages.length === 0 ? (
+              ) : visiblePages.length === 0 ? (
                 <tr>
                   <td colSpan={5} className="px-4 py-8 text-center text-white/30 text-sm">
-                    No CMS pages yet. Publish a draft to create one.
+                    No pages match the current filters.
                   </td>
                 </tr>
               ) : (
-                pages.map((page) => (
-                  <tr
-                    key={page.id}
-                    className="border-b border-white/5 last:border-0 hover:bg-white/3 transition-colors"
-                  >
+                visiblePages.map((page) => (
+                  <tr key={page.id} className="border-b border-white/5 last:border-0 hover:bg-white/3 transition-colors">
                     <td className="px-4 py-3.5">
                       <div className="font-medium text-white/90 text-sm">{page.title}</div>
                       <div className="flex items-center gap-2 mt-0.5">
@@ -442,21 +595,12 @@ export default function CMSAdminPage() {
                     </td>
                     <td className="px-4 py-3.5">
                       <div className="flex items-center gap-2">
-                        <Link
-                          href={`/admin/cms/${page.slug}/edit`}
-                          className="text-white/40 hover:text-white transition-colors"
-                          title="Edit page"
-                        >
+                        <Link href={`/admin/cms/${page.slug}/edit`} className="text-white/40 hover:text-white transition-colors" title="Edit page">
                           <Pencil className="h-3.5 w-3.5" />
                         </Link>
-                        <button
-                          onClick={() => invalidateCache("slug", page.slug)}
-                          className="text-white/40 hover:text-accent transition-colors"
-                          title="Clear cache"
-                        >
+                        <button onClick={() => invalidateCache("slug", page.slug)} className="text-white/40 hover:text-accent transition-colors" title="Clear cache">
                           <RefreshCw className="h-3.5 w-3.5" />
                         </button>
-                        {/* Premium toggle */}
                         <button
                           onClick={() => togglePremium(page.slug, page.is_premium)}
                           className={`transition-colors ${page.is_premium ? "text-amber-400 hover:text-white/40" : "text-white/40 hover:text-amber-400"}`}
@@ -475,7 +619,7 @@ export default function CMSAdminPage() {
                             <Languages className="h-3.5 w-3.5" />
                           </button>
                         )}
-                        {/* Re-translate: HI translation exists — green icon + refresh button */}
+                        {/* Re-translate */}
                         {(page.language === "en" || !page.language) && page.translations?.hi && (
                           <>
                             <span className="text-pine/70" title="Hindi translation exists">
@@ -485,33 +629,24 @@ export default function CMSAdminPage() {
                               onClick={() => translatePage(page, true)}
                               disabled={!!translation}
                               className={`transition-colors ${translation ? "text-white/20 cursor-wait" : "text-white/40 hover:text-amber-400"}`}
-                              title="Re-translate Hindi page (replaces existing content)"
+                              title="Re-translate Hindi page"
                             >
                               <RotateCcw className="h-3.5 w-3.5" />
                             </button>
                           </>
                         )}
-                        {/* Generate News: only for published EN trek_guide pages */}
+                        {/* Generate News — only for EN trek_guide pages */}
                         {page.page_type === "trek_guide" && (page.language === "en" || !page.language) && (
                           <button
                             onClick={() => generateNews(page)}
-                            disabled={newsGenerating === page.slug}
-                            className={`transition-colors ${newsGenerating === page.slug ? "text-white/20 cursor-wait" : "text-white/40 hover:text-pine"}`}
-                            title="Generate weekly news article for this trek"
+                            disabled={newsModal?.status === "queuing"}
+                            className={`transition-colors ${newsModal?.status === "queuing" ? "text-white/20 cursor-wait" : "text-white/40 hover:text-pine"}`}
+                            title="Generate news articles for this trek"
                           >
-                            {newsGenerating === page.slug
-                              ? <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                              : <Newspaper className="h-3.5 w-3.5" />
-                            }
+                            <Newspaper className="h-3.5 w-3.5" />
                           </button>
                         )}
-                        <a
-                          href={getLiveUrl(page)}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="text-white/40 hover:text-white transition-colors"
-                          title="View live page"
-                        >
+                        <a href={getLiveUrl(page)} target="_blank" rel="noopener noreferrer" className="text-white/40 hover:text-white transition-colors" title="View live page">
                           <Globe className="h-3.5 w-3.5" />
                         </a>
                         {PROTECTED_PAGE_TYPES.has(page.page_type) ? (
@@ -519,11 +654,7 @@ export default function CMSAdminPage() {
                             <Trash2 className="h-3.5 w-3.5" />
                           </span>
                         ) : (
-                          <button
-                            onClick={() => deletePage(page.slug, page.page_type)}
-                            className="text-white/40 hover:text-red-400 transition-colors"
-                            title="Delete page"
-                          >
+                          <button onClick={() => deletePage(page.slug, page.page_type)} className="text-white/40 hover:text-red-400 transition-colors" title="Delete page">
                             <Trash2 className="h-3.5 w-3.5" />
                           </button>
                         )}

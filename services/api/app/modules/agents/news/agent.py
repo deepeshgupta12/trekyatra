@@ -1,10 +1,11 @@
-"""NewsAgent — 4-node LangGraph.
+"""NewsAgent — LangGraph pipeline: one CMS page per RSS news item.
 
-Nodes: fetch_news → filter_relevant → write_article → store_cms
+Nodes: fetch_news → filter_relevant → write_and_store_articles
 
-Uses Google News RSS (free, no API key) to fetch trek-related news items,
-then generates a structured HTML article. Falls back to a template-based
-article when ANTHROPIC_API_KEY is unset or the LLM call fails.
+For each relevant RSS item, generates a focused 300-word news article and
+stores it as a separate CMS page (page_type=news_article).
+Slug is derived from the article headline for SEO-friendliness.
+Falls back to template HTML when ANTHROPIC_API_KEY is unset or LLM fails.
 """
 from __future__ import annotations
 
@@ -21,15 +22,15 @@ from sqlalchemy.orm import Session
 
 from app.core.config import settings
 from app.modules.cms.models import CMSPage
-from app.modules.cms.service import create_page, get_page_by_slug, update_page
-from app.schemas.cms import CMSPageCreate, CMSPagePatch
+from app.modules.cms.service import create_page, get_page_by_slug
+from app.schemas.cms import CMSPageCreate
 
 log = logging.getLogger(__name__)
 
 MODEL = "claude-haiku-4-5-20251001"
 
 _NEWS_RSS = "https://news.google.com/rss/search?q={query}&hl=en-IN&gl=IN&ceid=IN%3Aen"
-_MAX_RAW = 10
+_MAX_RAW = 12
 _MAX_RELEVANT = 6
 
 
@@ -40,14 +41,7 @@ class NewsState(TypedDict):
     db: object  # Session
     raw_items: list[dict]
     relevant_items: list[dict]
-    article_html: str
-    article_title: str
-    week_label: str  # YYYY-WW  e.g. 2026-22
-    news_slug: str
-    seo_title: str
-    seo_description: str
-    faqs: list[dict]
-    result: dict[str, Any] | None
+    articles: list[dict]  # one entry per CMS page created/skipped
     error: str | None
 
 
@@ -58,6 +52,27 @@ class NewsState(TypedDict):
 def _current_week_label() -> str:
     now = datetime.now(timezone.utc)
     return f"{now.year}-{now.isocalendar()[1]:02d}"
+
+
+def _slug_from_title(trek_slug: str, title: str) -> str:
+    """Generate SEO-friendly slug from a news headline.
+
+    Strips source attribution (everything after ` - ` or ` — `),
+    slugifies the remainder, caps at 60 chars, appends YYYY-MM to prevent
+    collisions between identical headlines in different months.
+    """
+    # Remove source attribution suffix common in Google News titles
+    clean = re.split(r"\s*[-—]\s+", title)[0]
+    slug = re.sub(r"[^a-z0-9]+", "-", clean.lower()).strip("-")
+    if len(slug) > 60:
+        slug = slug[:60].rsplit("-", 1)[0]
+    ym = datetime.now(timezone.utc).strftime("%Y-%m")
+    return f"{slug}-{ym}"
+
+
+def _clean_title(title: str) -> str:
+    """Return headline without the source attribution suffix."""
+    return re.split(r"\s*[-—]\s+", title)[0].strip()
 
 
 def _fetch_rss(query: str) -> list[dict]:
@@ -89,52 +104,79 @@ def _fetch_rss(query: str) -> list[dict]:
         return []
 
 
-def _fallback_article(trek_name: str, week_display: str, items: list[dict]) -> str:
-    if not items:
-        return (
-            f"<article>\n"
-            f"<h1>{trek_name} Trek News — {week_display}</h1>\n"
-            f"<p>No recent news found for {trek_name} trek this week. "
-            f"Check our full trek guide for the latest trail information.</p>\n"
-            f"</article>"
+def _fallback_for_item(trek_name: str, item: dict) -> str:
+    """Template HTML article for a single news item (no LLM required)."""
+    clean_title = _clean_title(item["title"])
+    summary = item.get("summary", "")
+    source = item.get("source", "")
+    link = item.get("link", "")
+
+    source_html = ""
+    if link:
+        src_label = source or "Read original"
+        source_html = (
+            f'<p>Source: <a href="{link}" target="_blank"'
+            f' rel="noopener noreferrer nofollow">{src_label}</a></p>\n'
         )
-    items_html = "\n".join(
-        f'<li><a href="{i["link"]}" target="_blank" rel="noopener noreferrer nofollow">'
-        f'{i["title"]}</a>'
-        + (f' <span>— {i["source"]}</span>' if i.get("source") else "")
-        + (f'<p>{i["summary"]}</p>' if i.get("summary") else "")
-        + "</li>"
-        for i in items
-    )
-    slug_name = trek_name.lower().replace(" ", "-")
+
     return (
         f"<article>\n"
-        f"<h1>{trek_name} Trek News — {week_display}</h1>\n"
-        f"<nav><ul>\n"
-        f"<li><a href=\"#latest-updates\">Latest Updates</a></li>\n"
-        f"<li><a href=\"#what-this-means\">What This Means for Trekkers</a></li>\n"
-        f"<li><a href=\"#faqs\">Frequently Asked Questions</a></li>\n"
-        f"</ul></nav>\n"
-        f"<h2 id=\"latest-updates\">Latest Updates</h2>\n"
-        f"<ul class=\"news-list\">\n{items_html}\n</ul>\n"
-        f"<h2 id=\"what-this-means\">What This Means for Trekkers</h2>\n"
-        f"<p>Stay updated with the latest news from {trek_name} trek. Always verify trail "
-        f"conditions, permit requirements, and weather forecasts before your trek. "
-        f"Check with local operators and the forest department for real-time information.</p>\n"
-        f"<h2 id=\"faqs\">Frequently Asked Questions</h2>\n"
-        f"<dl>\n"
-        f"<dt>Is {trek_name} trek open this week?</dt>\n"
-        f"<dd>Trail status changes with season and weather. Check with local authorities "
-        f"or registered operators for the most current updates.</dd>\n"
-        f"<dt>What permits are required for {trek_name}?</dt>\n"
-        f"<dd>Permit requirements vary by season and route. "
-        f'Consult our <a href="/trek/{slug_name}">full trek guide</a> for permit details.</dd>\n'
-        f"<dt>How do I stay updated on {trek_name} trek news?</dt>\n"
-        f"<dd>Bookmark this page. We publish weekly updates every Monday with the latest "
-        f"news from verified trekking sources.</dd>\n"
-        f"</dl>\n"
+        f"<h1>{clean_title}</h1>\n"
+        f'<h2 id="what-happened">What Happened</h2>\n'
+        f"<p>{summary}</p>\n"
+        f'<h2 id="impact-on-trekkers">Impact on Trekkers</h2>\n'
+        f"<p>This development may affect your {trek_name} trek plans. "
+        f"Verify current trail conditions, permit requirements, and safety advisories "
+        f"with local authorities before your trek.</p>\n"
+        f'<h2 id="what-to-do">What Trekkers Should Do</h2>\n'
+        f"<ul>\n"
+        f"<li>Check with the local forest department for the latest rules and closures</li>\n"
+        f"<li>Contact a registered trek operator for real-time trail updates</li>\n"
+        f"<li>Carry all required permits and valid photo identification</li>\n"
+        f"<li>Register with local authorities before starting the trek</li>\n"
+        f"</ul>\n"
+        f"{source_html}"
         f"</article>"
     )
+
+
+def _llm_article_for_item(trek_name: str, trek_state: str, item: dict) -> tuple[str, dict]:
+    """Use Claude Haiku to write a focused news article for a single RSS item."""
+    import anthropic as _anthropic
+    from app.modules.agents.news.prompts import INDIVIDUAL_ARTICLE_PROMPT
+
+    prompt = INDIVIDUAL_ARTICLE_PROMPT.format(
+        trek_name=trek_name,
+        trek_state=trek_state,
+        headline=item["title"],
+        summary=item.get("summary", ""),
+        source=item.get("source", ""),
+        link=item.get("link", "#"),
+    )
+
+    client = _anthropic.Anthropic(api_key=settings.anthropic_api_key)
+    response = client.messages.create(
+        model=MODEL,
+        max_tokens=1500,
+        messages=[{"role": "user", "content": prompt}],
+    )
+    raw = response.content[0].text.strip()
+
+    if "|||" in raw:
+        html_part, meta_part = raw.split("|||", 1)
+        html = html_part.strip()
+        meta_part = meta_part.strip()
+        if meta_part.startswith("```"):
+            meta_part = meta_part.split("\n", 1)[1].rsplit("```", 1)[0].strip()
+        try:
+            meta = json.loads(meta_part)
+        except json.JSONDecodeError:
+            meta = {}
+    else:
+        html = raw
+        meta = {}
+
+    return html, meta
 
 
 # ---------------------------------------------------------------------------
@@ -167,7 +209,10 @@ def filter_relevant(state: NewsState) -> NewsState:
 
     relevant = [
         item for item in raw
-        if any(w in (item["title"] + " " + item["summary"]).lower() for w in name_words)
+        if any(
+            w in (item["title"] + " " + item["summary"]).lower()
+            for w in name_words
+        )
         or trek_slug_lower in (item["title"] + " " + item["summary"]).lower()
     ]
 
@@ -178,165 +223,76 @@ def filter_relevant(state: NewsState) -> NewsState:
     return {**state, "relevant_items": relevant[:_MAX_RELEVANT]}
 
 
-def write_article(state: NewsState) -> NewsState:
+def write_and_store_articles(state: NewsState) -> NewsState:
+    """For each relevant RSS item, write and store one CMS page."""
+    db: Session = state["db"]  # type: ignore[assignment]
+    trek_slug = state["trek_slug"]
     trek_name = state["trek_name"]
-    week_label = state["week_label"]
+    trek_state = state.get("trek_state") or "India"
     relevant = state["relevant_items"]
 
-    year, week = week_label.split("-")
-    week_display = f"Week {week}, {year}"
-    article_title = f"{trek_name} Trek News — {week_display}"
+    articles: list[dict] = []
 
-    # No relevant news → minimal article
-    if not relevant:
-        return {
-            **state,
-            "article_html": _fallback_article(trek_name, week_display, []),
-            "article_title": article_title,
-            "seo_title": f"{trek_name} Latest Trek News — {week_display}",
-            "seo_description": (
-                f"No recent news for {trek_name} trek this week. "
-                f"Check our guide for trail conditions and permit updates."
-            )[:160],
-            "faqs": [],
-        }
+    for item in relevant:
+        news_slug = _slug_from_title(trek_slug, item["title"])
+        clean_title = _clean_title(item["title"])
 
-    # No API key → template-based fallback
-    if not settings.anthropic_api_key:
-        return {
-            **state,
-            "article_html": _fallback_article(trek_name, week_display, relevant),
-            "article_title": article_title,
-            "seo_title": f"{trek_name} Latest Trek News — {week_display}",
-            "seo_description": (
-                f"Latest {trek_name} trek news for {week_display}. "
-                f"Trail conditions, permits, and trekking updates."
-            )[:160],
-            "faqs": [
-                {
-                    "q": f"Is {trek_name} safe to trek this week?",
-                    "a": "Check the latest trail conditions and weather before heading out. "
-                         "Always carry permits and register with local authorities.",
-                },
-                {
-                    "q": f"What permits are required for {trek_name}?",
-                    "a": f"Permits for {trek_name} can be obtained from the local forest "
-                         "department. Requirements may change seasonally.",
-                },
-                {
-                    "q": f"What is the best time to trek {trek_name}?",
-                    "a": "The best time varies by elevation and region. Consult our full trek "
-                         "guide for detailed seasonal recommendations.",
-                },
-            ],
-        }
+        # Idempotent — skip if already published this month
+        if get_page_by_slug(db, news_slug):
+            articles.append({"slug": news_slug, "title": clean_title, "skipped": True})
+            continue
 
-    # LLM article generation
-    try:
-        import anthropic as _anthropic
-        from app.modules.agents.news.prompts import ARTICLE_PROMPT
-
-        prompt = ARTICLE_PROMPT.format(
-            trek_name=trek_name,
-            week_display=week_display,
-            week_label=week_label,
-            trek_state=state.get("trek_state") or "India",
-            items_json=json.dumps(relevant, ensure_ascii=False, indent=2),
-        )
-
-        client = _anthropic.Anthropic(api_key=settings.anthropic_api_key)
-        response = client.messages.create(
-            model=MODEL,
-            max_tokens=4000,
-            messages=[{"role": "user", "content": prompt}],
-        )
-        raw_text = response.content[0].text.strip()
-
-        # Parse HTML + metadata separated by |||
-        if "|||" in raw_text:
-            html_part, meta_part = raw_text.split("|||", 1)
-            html = html_part.strip()
-            meta_part = meta_part.strip()
-            if meta_part.startswith("```"):
-                meta_part = meta_part.split("\n", 1)[1].rsplit("```", 1)[0].strip()
-            meta = json.loads(meta_part)
+        # Generate HTML + SEO metadata
+        if settings.anthropic_api_key:
+            try:
+                html, meta = _llm_article_for_item(trek_name, trek_state, item)
+            except Exception as exc:
+                log.error("LLM failed for %r: %s", item["title"][:60], exc)
+                html = _fallback_for_item(trek_name, item)
+                meta = {}
         else:
-            html = raw_text
+            html = _fallback_for_item(trek_name, item)
             meta = {}
 
-        return {
-            **state,
-            "article_html": html,
-            "article_title": article_title,
-            "seo_title": (meta.get("seo_title") or f"{trek_name} Latest Trek News — {week_display}")[:160],
-            "seo_description": (meta.get("seo_description") or f"Latest news for {trek_name} trek — {week_display}.")[:160],
-            "faqs": meta.get("faqs") or [],
-        }
-    except Exception as exc:
-        log.error("write_article LLM failed: %s", exc)
-        return {
-            **state,
-            "article_html": _fallback_article(trek_name, week_display, relevant),
-            "article_title": article_title,
-            "seo_title": f"{trek_name} Latest Trek News — {week_display}",
-            "seo_description": f"Latest {trek_name} trek news for {week_display}."[:160],
-            "faqs": [],
+        seo_title = (meta.get("seo_title") or f"{clean_title} | {trek_name} News")[:160]
+        seo_desc = (meta.get("seo_description") or item.get("summary", ""))[:160]
+        faqs = meta.get("faqs") or []
+
+        content_json: dict[str, Any] = {
+            "trek_slug": trek_slug,
+            "news_item": item,  # single source item — accessed as content_json.news_item
+            "faqs": faqs,
         }
 
-
-def store_cms(state: NewsState) -> NewsState:
-    db: Session = state["db"]  # type: ignore[assignment]
-    news_slug = state["news_slug"]
-
-    content_json: dict[str, Any] = {
-        "trek_slug": state["trek_slug"],
-        "week_label": state["week_label"],
-        "faqs": state["faqs"],
-        "news_items": state["relevant_items"],
-    }
-
-    existing = get_page_by_slug(db, news_slug)
-    try:
-        if existing:
-            patch = CMSPagePatch(
-                title=state["article_title"],
-                content_html=state["article_html"],
-                content_json=content_json,
-                seo_title=state["seo_title"],
-                seo_description=state["seo_description"],
-                status="published",
-            )
-            page = update_page(db, page=existing, patch=patch)
-        else:
-            create_data = CMSPageCreate(
+        try:
+            page = create_page(db, data=CMSPageCreate(
                 slug=news_slug,
                 page_type="news_article",
-                title=state["article_title"],
-                content_html=state["article_html"],
+                title=clean_title,
+                content_html=html,
                 content_json=content_json,
                 status="published",
-                seo_title=state["seo_title"],
-                seo_description=state["seo_description"],
-            )
-            page = create_page(db, data=create_data)
-
-        db.commit()
-        return {
-            **state,
-            "result": {
+                seo_title=seo_title,
+                seo_description=seo_desc,
+            ))
+            db.commit()
+            articles.append({
                 "slug": news_slug,
-                "title": state["article_title"],
+                "title": clean_title,
                 "page_id": str(page.id),
-                "week_label": state["week_label"],
-                "items_count": len(state["relevant_items"]),
-                "updated": existing is not None,
-            },
-            "error": None,
-        }
-    except Exception as exc:
-        log.error("store_cms failed: %s", exc)
-        db.rollback()
-        return {**state, "result": None, "error": str(exc)}
+                "skipped": False,
+            })
+        except Exception as exc:
+            log.error("store failed for %s: %s", news_slug, exc)
+            db.rollback()
+            articles.append({
+                "slug": news_slug,
+                "title": clean_title,
+                "error": str(exc),
+                "skipped": True,
+            })
+
+    return {**state, "articles": articles, "error": None}
 
 
 # ---------------------------------------------------------------------------
@@ -347,23 +303,23 @@ def build_news_agent():
     graph: StateGraph = StateGraph(NewsState)
     graph.add_node("fetch_news", fetch_news)
     graph.add_node("filter_relevant", filter_relevant)
-    graph.add_node("write_article", write_article)
-    graph.add_node("store_cms", store_cms)
+    graph.add_node("write_and_store_articles", write_and_store_articles)
 
     graph.set_entry_point("fetch_news")
     graph.add_edge("fetch_news", "filter_relevant")
-    graph.add_edge("filter_relevant", "write_article")
-    graph.add_edge("write_article", "store_cms")
-    graph.add_edge("store_cms", END)
+    graph.add_edge("filter_relevant", "write_and_store_articles")
+    graph.add_edge("write_and_store_articles", END)
 
     return graph.compile()
 
 
 def generate_news(trek_slug: str, trek_name: str, trek_state: str | None, db: Session) -> dict[str, Any]:
-    """Run the NewsAgent for a single trek. Returns a result dict or raises on catastrophic failure."""
-    week_label = _current_week_label()
-    news_slug = f"{trek_slug}-news-{week_label}"
+    """Run the NewsAgent for a single trek.
 
+    Returns a summary dict with articles_created, articles_skipped, and the
+    full articles list. Each article entry has slug, title, and either
+    page_id (success) or error (failure) or skipped=True (already exists).
+    """
     agent = build_news_agent()
     final_state = agent.invoke({
         "trek_slug": trek_slug,
@@ -372,18 +328,16 @@ def generate_news(trek_slug: str, trek_name: str, trek_state: str | None, db: Se
         "db": db,
         "raw_items": [],
         "relevant_items": [],
-        "article_html": "",
-        "article_title": "",
-        "week_label": week_label,
-        "news_slug": news_slug,
-        "seo_title": "",
-        "seo_description": "",
-        "faqs": [],
-        "result": None,
+        "articles": [],
         "error": None,
     })
 
-    return final_state.get("result") or {
-        "error": final_state.get("error", "Unknown error"),
-        "slug": news_slug,
+    created = [a for a in final_state.get("articles", []) if not a.get("skipped") and "error" not in a]
+    skipped = [a for a in final_state.get("articles", []) if a.get("skipped")]
+
+    return {
+        "articles_created": len(created),
+        "articles_skipped": len(skipped),
+        "articles": final_state.get("articles", []),
+        "error": final_state.get("error"),
     }

@@ -122,3 +122,34 @@ Google News RSS (`https://news.google.com/rss/search?q=...&hl=en-IN&gl=IN&ceid=I
 
 ### Test results
 18/18 tests pass. `next build` passes with zero TypeScript errors.
+
+---
+
+## Architecture Fix — Per-Item Articles (2026-05-26)
+
+Rewrote agent, tests, frontend page, and admin CMS to fix 8 reported issues.
+
+### Core architectural change
+**Old:** One aggregated weekly digest page per trek (`{trek_slug}-news-{YYYY-WW}`) containing all RSS items in a single `content_html`.
+**New:** One separate CMS page per RSS article, slug derived from the news headline + YYYY-MM.
+
+### Files Modified (Backend — Fix)
+- `services/api/app/modules/agents/news/agent.py` — Completely rewritten: `_slug_from_title()` (strips source attribution, appends YYYY-MM), `_clean_title()`, `_fallback_for_item()`, `_llm_article_for_item()`, `write_and_store_articles` node (replaces write_article + store_cms); content_json now `{trek_slug, news_item: {...}, faqs: [...]}` (single item, not list)
+- `services/api/app/modules/agents/news/prompts.py` — Replaced ARTICLE_PROMPT with INDIVIDUAL_ARTICLE_PROMPT; instructs model to strip source attribution from h1, avoid double "Trek", generate per-item 300-word article
+- `services/api/app/worker/tasks/news.py` — Updated log statement for new return format
+- `services/api/app/api/routes/news.py` — `get_news_by_trek` filter changed from slug prefix (`slug.startswith`) to JSON field (`content_json ->> 'trek_slug'`) — works for both old and new articles
+- `services/api/tests/test_news.py` — Completely rewritten: 19 tests (was 18); new tests for `_slug_from_title`, `_clean_title`, `_fallback_for_item`, `write_and_store_articles` (create + skip); all pass
+
+### Files Created (Frontend — Fix)
+- `apps/web-next/lib/trek-utils.ts` — Shared `cmsPageToTrek()` utility; eliminates duplicated logic in DifficultyTabsSection + SeasonalTreksSection
+
+### Files Modified (Frontend — Fix)
+- `apps/web-next/lib/api.ts` — `NewsArticle.content_json` adds `news_item` field (single RSS item, new format); `news_items` kept for legacy backward compat
+- `apps/web-next/app/(public)/news/[slug]/page.tsx` — Rewritten: improved hero (trek badge, source attribution in byline), Table of Contents from `content_json`'s h2 IDs, sidebar shows TOC + trek links + single source attribution; breadcrumb fixed; uses `content_json.news_item` (not legacy `news_items`)
+- `apps/web-next/app/(public)/trek/[slug]/page.tsx` — Fixed "Trek Trek" double heading: `{trek.name} Trek — Recent Updates` → `{trek.name} — Latest News`
+- `apps/web-next/app/(admin)/admin/cms/page.tsx` — Added tabs (All / Trek Guides / News / Other), status filter, language filter, Generate News popup modal (replaces inline feedback message); `news_article` added to PAGE_PREFIX (`/news`)
+- `apps/web-next/components/home/DifficultyTabsSection.tsx` — Replaced local `cmsToTrek` with imported `cmsPageToTrek` from trek-utils
+- `apps/web-next/components/home/SeasonalTreksSection.tsx` — Replaced local `cmsToTrek` with imported `cmsPageToTrek` from trek-utils
+
+### Test results (Fix)
+19/19 backend tests pass. `next build` passes with zero TypeScript errors.

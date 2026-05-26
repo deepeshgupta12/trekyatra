@@ -535,7 +535,7 @@ export default async function TrekDetailPage({ params }: { params: { slug: strin
               <section id="trek-news" className="mb-12 scroll-mt-44">
                 <div className="text-xs uppercase tracking-[0.25em] text-accent mb-2">Latest News</div>
                 <h2 className="font-display text-3xl md:text-4xl font-semibold leading-tight mb-5">
-                  {trek.name} Trek — Recent Updates
+                  {trek.name} — Latest News
                 </h2>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 not-prose">
                   {trekNewsArticles.map((article) => (

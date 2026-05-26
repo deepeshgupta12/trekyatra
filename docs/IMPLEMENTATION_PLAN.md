@@ -503,15 +503,16 @@
 - 518/520 backend tests pass (2 pre-existing flaky test_refresh isolation issues); next build clean (180 pages)
 
 ### Step 56 — Weekly News Agent + /news/[slug] Pages [DONE]
-- `modules/agents/news/agent.py`: LangGraph 4-node agent (fetch_news → filter_relevant → write_article → store_cms); Google News RSS; Claude Haiku article generation with `|||` HTML/JSON separator; idempotent weekly upsert to `cms_pages` (page_type=news_article)
+- `modules/agents/news/agent.py`: LangGraph 3-node agent (fetch_news → filter_relevant → write_and_store_articles); **per-item** design: one CMS page per RSS article; `_slug_from_title` (headline → SEO slug + YYYY-MM), `_clean_title`; Google News RSS; Claude Haiku; `|||` HTML/JSON separator; content_json `{trek_slug, news_item, faqs}`
 - `worker/tasks/news.py`: `news.generate_for_trek` Celery task + `news.weekly_all_treks` cron (604800s)
-- `api/routes/news.py`: GET /public/news, GET /public/news/by-trek/{trek_slug}, GET /public/news/{slug}, POST /admin/news/generate/{trek_slug}
+- `api/routes/news.py`: GET /public/news, GET /public/news/by-trek/{trek_slug} (JSON filter), GET /public/news/{slug}, POST /admin/news/generate/{trek_slug}
+- `lib/trek-utils.ts`: shared `cmsPageToTrek()` (DifficultyTabsSection + SeasonalTreksSection both import this)
 - `app/(public)/news/page.tsx`: news hub grouped by trek
-- `app/(public)/news/[slug]/page.tsx`: article page with NewsArticle JSON-LD (speakable, about, hasPart), FAQ accordion, news_keywords meta
+- `app/(public)/news/[slug]/page.tsx`: improved hero (trek badge, source byline), TableOfContents from h2 IDs, sidebar TOC+trek links+source attribution; uses `content_json.news_item`
 - `app/news-sitemap.xml/route.ts`: Google News sitemap with `<news:news>` elements
-- `trek/[slug]/page.tsx`: related news cards (thumbnail, title, href links) + SiteNavigation schema
-- `admin/cms/page.tsx`: "Generate News" button per EN trek_guide row
-- 18/18 backend tests pass; next build clean
+- `trek/[slug]/page.tsx`: related news cards; heading fixed (`{trek.name} — Latest News`, no double Trek)
+- `admin/cms/page.tsx`: tabs (All/Trek Guides/News/Other), status+language filters, Generate News popup modal
+- 19/19 backend tests pass; next build clean
 
 ### Deferred to Production Sprint
 - Step 41 (B2B / API extensions)

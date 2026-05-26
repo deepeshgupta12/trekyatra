@@ -984,20 +984,23 @@ Before editing any backend file:
 
 ### Step 56 — Weekly News Agent + /news/[slug] Pages blast radius
 - `services/api/app/modules/agents/news/__init__.py` — NEW: package init; blast radius: LOW
-- `services/api/app/modules/agents/news/prompts.py` — NEW: ARTICLE_PROMPT (Claude Haiku, `|||` separator); blast radius: LOW (used only by news/agent.py)
-- `services/api/app/modules/agents/news/agent.py` — NEW: LangGraph 4-node news agent; `generate_news()` public API; blast radius: LOW (called by news Celery task + admin route only)
-- `services/api/app/worker/tasks/news.py` — NEW: `news.generate_for_trek` + `news.weekly_all_treks` Celery tasks; blast radius: LOW (additive tasks)
-- `services/api/app/api/routes/news.py` — NEW: 4 endpoints (public list, by-trek, by-slug, admin generate); blast radius: LOW (new endpoints, no existing callers)
+- `services/api/app/modules/agents/news/prompts.py` — UPDATED (Fix): ARTICLE_PROMPT replaced with INDIVIDUAL_ARTICLE_PROMPT; per-item 300-word article, strips source attribution; blast radius: LOW
+- `services/api/app/modules/agents/news/agent.py` — UPDATED (Fix): rewritten for per-item design; `_slug_from_title`, `_clean_title`, `_fallback_for_item`, `_llm_article_for_item`, `write_and_store_articles`; content_json now `{trek_slug, news_item, faqs}`; blast radius: LOW
+- `services/api/app/worker/tasks/news.py` — UPDATED (Fix): log statement matches new return format; blast radius: LOW
+- `services/api/app/api/routes/news.py` — UPDATED (Fix): `get_news_by_trek` filter changed from slug prefix to `content_json ->> 'trek_slug'` JSON operator; blast radius: LOW
 - `services/api/app/api/router.py` — UPDATED: news_router registered; blast radius: LOW (additive)
 - `services/api/app/worker/celery_app.py` — UPDATED: news task module + weekly beat schedule; blast radius: LOW (additive)
-- `services/api/tests/test_news.py` — NEW: 18 tests; blast radius: LOW
-- `apps/web-next/lib/api.ts` — UPDATED: NewsArticle interface + 4 news fetch functions; blast radius: LOW (additive)
+- `services/api/tests/test_news.py` — UPDATED (Fix): completely rewritten; 19 tests (was 18); tests for new functions + per-item design; blast radius: LOW
+- `apps/web-next/lib/api.ts` — UPDATED (Fix): NewsArticle.content_json adds `news_item` field (new) alongside legacy `news_items`; blast radius: LOW (additive)
+- `apps/web-next/lib/trek-utils.ts` — NEW: shared `cmsPageToTrek()` utility; eliminates duplicate logic in DifficultyTabsSection + SeasonalTreksSection; blast radius: LOW
+- `apps/web-next/components/home/DifficultyTabsSection.tsx` — UPDATED (Fix): imports `cmsPageToTrek` from trek-utils; removed local `cmsToTrek`; blast radius: LOW
+- `apps/web-next/components/home/SeasonalTreksSection.tsx` — UPDATED (Fix): imports `cmsPageToTrek` from trek-utils; removed local `cmsToTrek`; blast radius: LOW
 - `apps/web-next/app/(public)/news/page.tsx` — NEW: news hub page; blast radius: LOW (leaf page)
-- `apps/web-next/app/(public)/news/[slug]/page.tsx` — NEW: news article page with NewsArticle JSON-LD; blast radius: LOW (leaf page)
+- `apps/web-next/app/(public)/news/[slug]/page.tsx` — UPDATED (Fix): improved hero (trek badge, source in byline), TableOfContents from h2 IDs, sidebar shows TOC+trek links+source; uses `content_json.news_item`; blast radius: LOW
 - `apps/web-next/app/news-sitemap.xml/route.ts` — NEW: Google News sitemap; blast radius: LOW (new system route)
 - `apps/web-next/app/sitemap.ts` — UPDATED: /news, /news-sitemap.xml, news_article page_type; blast radius: LOW (additive entries)
-- `apps/web-next/app/(public)/trek/[slug]/page.tsx` — UPDATED: fetchNewsByTrek call + news cards section + SiteNavigation schema; blast radius: MEDIUM (every trek guide page; graceful empty-array fallback so no breakage if API down)
-- `apps/web-next/app/(admin)/admin/cms/page.tsx` — UPDATED: generateTrekNews import + Newspaper icon + Generate News button per trek_guide row; blast radius: LOW (admin-only leaf page)
+- `apps/web-next/app/(public)/trek/[slug]/page.tsx` — UPDATED (Fix): fixed "Trek Trek" heading → `{trek.name} — Latest News`; blast radius: MEDIUM (every trek guide page)
+- `apps/web-next/app/(admin)/admin/cms/page.tsx` — UPDATED (Fix): tabs (All/Trek Guides/News/Other), status+language filters, Generate News popup modal, news_article in PAGE_PREFIX; blast radius: LOW (admin-only leaf page)
 
 ### Step 60 — Enhancement batch: CMS translation UX + search quality fixes blast radius
 - `services/api/app/api/routes/translation.py` — UPDATED: `content_html or ""` guard before calling translate_page; blast radius: LOW (additive null-safety, same callers)

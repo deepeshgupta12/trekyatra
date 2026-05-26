@@ -1,4 +1,4 @@
-"""Celery tasks for Step 56 — weekly news agent."""
+"""Celery tasks for Step 56 — per-item news agent (one CMS page per RSS article)."""
 from __future__ import annotations
 
 import logging
@@ -19,7 +19,10 @@ def generate_news_for_trek(self, trek_slug: str, trek_name: str, trek_state: str
     try:
         with SessionLocal() as db:
             result = generate_news(trek_slug, trek_name, trek_state, db)
-            log.info("News generated: slug=%s items=%s", result.get("slug"), result.get("items_count"))
+            log.info(
+                "News generated for %s: created=%s skipped=%s",
+                trek_slug, result.get("articles_created"), result.get("articles_skipped"),
+            )
             return result
     except Exception as exc:
         log.error("generate_news_for_trek failed for %s: %s", trek_slug, exc)

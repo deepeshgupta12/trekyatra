@@ -60,12 +60,15 @@ def list_news_articles(limit: int = 20, db: Session = Depends(get_db)):
 # NOTE: /by-trek/{trek_slug} registered BEFORE /{slug} — order matters
 @router.get("/public/news/by-trek/{trek_slug}", tags=["news"])
 def get_news_by_trek(trek_slug: str, limit: int = 5, db: Session = Depends(get_db)):
+    # Filter by content_json.trek_slug so both old (digest) and new (per-item) articles are returned
     pages = db.scalars(
         select(CMSPage)
         .where(
             CMSPage.page_type == "news_article",
             CMSPage.status == "published",
-            CMSPage.slug.startswith(f"{trek_slug}-news-"),
+            CMSPage.content_json.op("->>")(  # type: ignore[union-attr]
+                "trek_slug"
+            ) == trek_slug,
         )
         .order_by(CMSPage.created_at.desc())
         .limit(limit)
