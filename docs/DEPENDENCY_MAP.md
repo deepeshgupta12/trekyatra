@@ -1002,6 +1002,11 @@ Before editing any backend file:
 - `apps/web-next/app/(public)/trek/[slug]/page.tsx` — UPDATED (Fix): fixed "Trek Trek" heading → `{trek.name} — Latest News`; blast radius: MEDIUM (every trek guide page)
 - `apps/web-next/app/(admin)/admin/cms/page.tsx` — UPDATED (Fix): tabs (All/Trek Guides/News/Other), status+language filters, Generate News popup modal, news_article in PAGE_PREFIX; blast radius: LOW (admin-only leaf page)
 
+#### Step 56 Production Bug Fixes (2026-05-26)
+- `services/api/app/modules/agents/news/agent.py` — UPDATED (Prod Fix): added `_is_recent(pub_date_str, days=90)` using `email.utils.parsedate_to_datetime`; applied in `_fetch_rss()` to reject items older than 90 days; added outer + per-part code-fence stripping in `_llm_article_for_item()`; blast radius: LOW (callers: fetch_news, write_and_store_articles — same file)
+- `apps/web-next/app/(public)/news/[slug]/page.tsx` — UPDATED (Prod Fix): hero bg changed from broken CSS-var opacity modifier (`from-foreground/96`) to `bg-[#0c0e14] text-white`; all `text-surface/x` in hero → `text-white/x`; blast radius: LOW (leaf page)
+- `services/api/tests/test_news.py` — UPDATED (Prod Fix): `_is_recent` imported; TC-B19/B20/B21 added; 22 tests total; blast radius: LOW (test file only)
+
 ### Step 60 — Enhancement batch: CMS translation UX + search quality fixes blast radius
 - `services/api/app/api/routes/translation.py` — UPDATED: `content_html or ""` guard before calling translate_page; blast radius: LOW (additive null-safety, same callers)
 - `apps/web-next/app/(admin)/admin/cms/page.tsx` — UPDATED: `translatingSlug` loading state; spinner replaces Languages icon while in-flight; button disabled during request; real API error surfaced in feedback; blast radius: LOW (admin-only leaf page)

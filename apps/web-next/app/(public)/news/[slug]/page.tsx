@@ -136,7 +136,7 @@ export default async function NewsArticlePage({ params }: { params: { slug: stri
       <SchemaInjector schemas={[articleSchema, faqSchema, breadcrumbSchema]} />
 
       {/* Hero banner */}
-      <section className="relative bg-gradient-to-b from-foreground/96 to-foreground/82 text-surface pt-24 pb-12 overflow-hidden">
+      <section className="relative bg-[#0c0e14] text-white pt-24 pb-12 overflow-hidden">
         <div className="absolute inset-0 bg-gradient-to-br from-accent/8 via-transparent to-transparent pointer-events-none" />
         <div className="container-wide relative z-10">
 
@@ -162,7 +162,7 @@ export default async function NewsArticlePage({ params }: { params: { slug: stri
             {trekSlug && (
               <Link
                 href={`/trek/${trekSlug}`}
-                className="flex items-center gap-1 text-xs text-surface/60 bg-white/10 px-2.5 py-1 rounded-full hover:bg-white/20 hover:text-surface transition-colors"
+                className="flex items-center gap-1 text-xs text-white/60 bg-white/10 px-2.5 py-1 rounded-full hover:bg-white/20 hover:text-white transition-colors"
               >
                 <MapPin className="h-3 w-3" />
                 {trekName}
@@ -177,13 +177,13 @@ export default async function NewsArticlePage({ params }: { params: { slug: stri
 
           {/* Description */}
           {article.seo_description && (
-            <p className="text-surface/70 text-base md:text-lg max-w-2xl mb-6 leading-relaxed">
+            <p className="text-white/70 text-base md:text-lg max-w-2xl mb-6 leading-relaxed">
               {article.seo_description}
             </p>
           )}
 
           {/* Byline */}
-          <div className="flex flex-wrap items-center gap-x-4 gap-y-2 text-surface/50 text-xs">
+          <div className="flex flex-wrap items-center gap-x-4 gap-y-2 text-white/50 text-xs">
             <span className="flex items-center gap-1.5">
               <Calendar className="h-3.5 w-3.5" />
               {formatDate(article.published_at ?? article.created_at)}
@@ -194,7 +194,7 @@ export default async function NewsArticlePage({ params }: { params: { slug: stri
             <span>By TrekYatra Editorial</span>
             {newsItem?.source && (
               <>
-                <span className="text-surface/25">·</span>
+                <span className="text-white/25">·</span>
                 <span className="flex items-center gap-1">
                   Source:{" "}
                   {newsItem.link ? (
@@ -202,7 +202,7 @@ export default async function NewsArticlePage({ params }: { params: { slug: stri
                       href={newsItem.link}
                       target="_blank"
                       rel="noopener noreferrer nofollow"
-                      className="text-surface/70 hover:text-surface transition-colors underline underline-offset-2"
+                      className="text-white/70 hover:text-white transition-colors underline underline-offset-2"
                     >
                       {newsItem.source}
                     </a>

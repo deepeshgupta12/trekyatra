@@ -12,7 +12,8 @@ from __future__ import annotations
 import json
 import logging
 import re
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
+from email.utils import parsedate_to_datetime
 from typing import Any, TypedDict
 from xml.etree import ElementTree as ET
 
@@ -75,6 +76,20 @@ def _clean_title(title: str) -> str:
     return re.split(r"\s*[-—]\s+", title)[0].strip()
 
 
+def _is_recent(pub_date_str: str, days: int = 90) -> bool:
+    """Return True if pub_date_str (RFC 2822) is within the last `days` days.
+    Returns True when date is missing or unparseable to avoid silently dropping items.
+    """
+    if not pub_date_str:
+        return True
+    try:
+        pub_dt = parsedate_to_datetime(pub_date_str)
+        cutoff = datetime.now(pub_dt.tzinfo or timezone.utc) - timedelta(days=days)
+        return pub_dt >= cutoff
+    except Exception:
+        return True
+
+
 def _fetch_rss(query: str) -> list[dict]:
     encoded = query.replace(" ", "+")
     url = _NEWS_RSS.format(query=encoded)
@@ -90,7 +105,7 @@ def _fetch_rss(query: str) -> list[dict]:
             description = re.sub(r"<[^>]+>", "", item.findtext("description") or "").strip()
             source_el = item.find("source")
             source = (source_el.text or "").strip() if source_el is not None else ""
-            if title:
+            if title and _is_recent(pub_date, days=90):
                 items.append({
                     "title": title,
                     "link": link,
@@ -161,10 +176,16 @@ def _llm_article_for_item(trek_name: str, trek_state: str, item: dict) -> tuple[
         messages=[{"role": "user", "content": prompt}],
     )
     raw = response.content[0].text.strip()
+    # Strip outer code fence if LLM wraps the entire response (e.g. ```html...```)
+    if raw.startswith("```"):
+        raw = raw.split("\n", 1)[1].rsplit("```", 1)[0].strip()
 
     if "|||" in raw:
         html_part, meta_part = raw.split("|||", 1)
         html = html_part.strip()
+        # Strip code fence from html_part (e.g. ```html...``` around article body)
+        if html.startswith("```"):
+            html = html.split("\n", 1)[1].rsplit("```", 1)[0].strip()
         meta_part = meta_part.strip()
         if meta_part.startswith("```"):
             meta_part = meta_part.split("\n", 1)[1].rsplit("```", 1)[0].strip()

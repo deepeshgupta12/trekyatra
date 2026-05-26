@@ -25,6 +25,7 @@ from app.modules.agents.news.agent import (
     _slug_from_title,
     _clean_title,
     _fetch_rss,
+    _is_recent,
     NewsState,
 )
 from app.modules.cms.models import CMSPage
@@ -408,3 +409,27 @@ def test_current_week_label_format():
     year, week = int(parts[0]), int(parts[1])
     assert 2024 <= year <= 2030
     assert 1 <= week <= 53
+
+
+# ---------------------------------------------------------------------------
+# TC-B19: _is_recent accepts items within 90-day window
+# ---------------------------------------------------------------------------
+def test_is_recent_recent_date():
+    # RFC 2822 date within last 30 days — should be kept
+    assert _is_recent("Mon, 26 May 2026 10:00:00 GMT", days=90) is True
+
+
+# ---------------------------------------------------------------------------
+# TC-B20: _is_recent rejects items older than the cutoff
+# ---------------------------------------------------------------------------
+def test_is_recent_old_date():
+    # RFC 2822 date well over 90 days ago — should be filtered
+    assert _is_recent("Mon, 01 Jan 2024 10:00:00 GMT", days=90) is False
+
+
+# ---------------------------------------------------------------------------
+# TC-B21: _is_recent keeps items with missing or unparseable date (safe default)
+# ---------------------------------------------------------------------------
+def test_is_recent_missing_date():
+    assert _is_recent("", days=90) is True
+    assert _is_recent("not-a-date", days=90) is True

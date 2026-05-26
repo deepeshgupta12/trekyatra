@@ -153,3 +153,40 @@ Rewrote agent, tests, frontend page, and admin CMS to fix 8 reported issues.
 
 ### Test results (Fix)
 19/19 backend tests pass. `next build` passes with zero TypeScript errors.
+
+---
+
+## Production Bug Fixes — 2026-05-26
+
+Fixed 4 production issues found on `https://www.trekyatra.co.in/news/[slug]`.
+
+### Issues Fixed
+
+1. **Hero section invisible** — `bg-gradient-to-b from-foreground/96 to-foreground/82 text-surface` fails in both light and dark mode because Tailwind cannot apply opacity modifiers (`/96`, `/82`) to CSS variables defined as `hsl(var(--foreground))`. Fixed by replacing with `bg-[#0c0e14] text-white` (hardcoded dark). All `text-surface/x` opacity classes in the hero also replaced with `text-white/x`.
+
+2. **2024 articles appearing** — Google News RSS returns articles without date filtering. Added `_is_recent(pub_date_str, days=90)` helper using `email.utils.parsedate_to_datetime` to parse RFC 2822 dates and reject items older than 90 days. Applied in `_fetch_rss()` as a guard on each item.
+
+3. **Markdown code fences in article HTML** — LLM wraps the entire response in ` ```html...``` ` code blocks in some calls. Fixed in `_llm_article_for_item()`: strip outer code fence from `raw` before the `|||` split; strip code fences from both `html_part` and `meta_part` independently after split.
+
+4. **Breadcrumb invisible** — breadcrumb was already in the hero section with `!text-white/80` overrides, but the invisible hero background made it appear absent. Fixed by hero background fix (issue 1) above.
+
+### Files Modified (Production Fix)
+
+- `services/api/app/modules/agents/news/agent.py`
+  - Added `timedelta` + `parsedate_to_datetime` imports
+  - Added `_is_recent(pub_date_str, days)` helper (RFC 2822 parser with safe defaults)
+  - `_fetch_rss()` — items filtered with `_is_recent(pub_date, days=90)`
+  - `_llm_article_for_item()` — strip code fence from `raw` before `|||` split; strip from `html_part` after split
+- `apps/web-next/app/(public)/news/[slug]/page.tsx`
+  - Hero section: `bg-gradient-to-b from-foreground/96 to-foreground/82 text-surface` → `bg-[#0c0e14] text-white`
+  - Trek badge link: `text-surface/60 hover:text-surface` → `text-white/60 hover:text-white`
+  - Description paragraph: `text-surface/70` → `text-white/70`
+  - Byline row: `text-surface/50` → `text-white/50`
+  - Separator dot: `text-surface/25` → `text-white/25`
+  - Source link: `text-surface/70 hover:text-surface` → `text-white/70 hover:text-white`
+- `services/api/tests/test_news.py`
+  - Added `_is_recent` to imports
+  - Added TC-B19 (`test_is_recent_recent_date`), TC-B20 (`test_is_recent_old_date`), TC-B21 (`test_is_recent_missing_date`)
+
+### Test results (Production Fix)
+22/22 backend tests pass. `next build` passes with zero TypeScript errors.
