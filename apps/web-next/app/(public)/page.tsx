@@ -50,13 +50,30 @@ export default async function Home() {
     };
   });
 
-  // trending: prefer CMS trending API (popularity-ranked); fall back to CMS-enhanced static
+  // trending: prefer CMS trending API → then published CMS trek pages → then static fallback
+  const cmsTrendingFallback = cmsTrekPages.slice(0, 4).map(p => ({
+    slug: p.slug,
+    name: p.trek_name || p.title,
+    difficulty: p.trek_difficulty ?? "Moderate",
+    duration: p.trek_duration ?? "",
+    altitude: "",
+    region: p.trek_state ?? "",
+    state: p.trek_state ?? "",
+    season: p.trek_season ?? "",
+    description: p.seo_description ?? "",
+    image: p.hero_image_url ?? "",
+    suitability: p.trek_suitability ?? undefined,
+    tags: [] as string[],
+  }));
+
   const trending = trendingCMS.length > 0
     ? trendingCMS.map(t => ({
         ...t, name: t.name, difficulty: t.difficulty ?? "Moderate",
         region: t.region ?? t.state, description: t.description,
       }))
-    : staticEnhanced;
+    : cmsTrendingFallback.length > 0
+      ? cmsTrendingFallback
+      : staticEnhanced;
 
   return (
     <>

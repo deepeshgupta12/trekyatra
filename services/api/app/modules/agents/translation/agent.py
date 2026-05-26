@@ -1,8 +1,11 @@
 from __future__ import annotations
 
 import json
+import logging
 import os
 from typing import Any
+
+log = logging.getLogger(__name__)
 
 import anthropic as _anthropic
 
@@ -79,7 +82,7 @@ def translate_page(
         client = _anthropic.Anthropic(api_key=settings.anthropic_api_key)
         response = client.messages.create(
             model="claude-haiku-4-5-20251001",
-            max_tokens=12000,
+            max_tokens=8000,   # haiku-4-5 hard limit is 8192; 8000 leaves overhead
             system=[
                 {
                     "type": "text",
@@ -113,7 +116,8 @@ def translate_page(
             "faqs": result.get("faqs", faqs or []),
             "fallback": "false",
         }
-    except Exception:
+    except Exception as exc:
+        log.error("translate_page failed (%s): %s", type(exc).__name__, exc)
         return {
             "title": title,
             "content_html": content_html,
@@ -121,4 +125,5 @@ def translate_page(
             "seo_description": seo_description or "",
             "faqs": faqs or [],
             "fallback": "true",
+            "error": str(exc),
         }
