@@ -45,7 +45,7 @@ export default function AffiliateCard({ item }: Props) {
           rel="nofollow sponsored noopener"
           aria-label={`Check price for ${item.title}`}
           onClick={() => {
-            trackEvent("affiliate_click", { title: item.title, url: item.affiliateUrl });
+            trackEvent("engagement", "affiliate_click", { title: item.title, url: item.affiliateUrl });
             trackAffiliateClick({
               page_slug: typeof window !== "undefined" ? window.location.pathname : "/",
               affiliate_program: new URL(item.affiliateUrl, "https://x.com").hostname.replace("www.", ""),

@@ -86,6 +86,13 @@ class Settings(BaseSettings):
     do_spaces_region: str = "blr1"
     do_spaces_cdn_endpoint: str | None = None    # e.g. "https://trekyatra-media.blr1.cdn.digitaloceanspaces.com"
 
+    # Step 64 — CDP Analytics Layer
+    # GA4 Measurement Protocol (server-side event forwarding — bypasses ad blockers)
+    ga4_measurement_id: str | None = None        # e.g. "G-XXXXXXXXXX"
+    ga4_api_secret: str | None = None            # GA4 Admin > Data Streams > Measurement Protocol API secrets
+    # Google Search Console API (service account JSON, base64 or raw JSON string)
+    gsc_service_account_json: str | None = None  # JSON string from GSC service account key file
+
     model_config = SettingsConfigDict(
         env_file=".env",
         env_file_encoding="utf-8",

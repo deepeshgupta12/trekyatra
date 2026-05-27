@@ -4,7 +4,7 @@
 > must be listed here and confirmed by the user. No new URL structures should be introduced
 > without updating this file and getting confirmation.
 
-Last updated: 2026-05-19 (Step 47)
+Last updated: 2026-05-27 (Step 64)
 
 ---
 
@@ -134,6 +134,14 @@ Last updated: 2026-05-19 (Step 47)
 | `/admin/refresh` | Content refresh | Stale queue |
 | `/admin/hubs` | Destination hubs | Seasonal regeneration |
 | `/admin/analytics` | Analytics | Summary |
+| `/admin/cdp` | CDP Overview | Step 64 — KPI strip + nav cards |
+| `/admin/cdp/users` | CDP Users | Paginated user list with search |
+| `/admin/cdp/users/[id]` | CDP User Detail | Profile, sessions, events, touchpoints |
+| `/admin/cdp/events` | CDP Event Stream | Live event feed with category/name filters |
+| `/admin/cdp/funnels` | CDP Funnels | Funnel visualiser (3 pre-built funnels) |
+| `/admin/cdp/cohorts` | CDP Cohorts | Weekly retention cohort table |
+| `/admin/cdp/segments` | CDP Segments | 5 pre-defined audience segments |
+| `/admin/cdp/gsc` | CDP GSC | Google Search Console performance data |
 | `/admin/logs` | System logs | NOT BUILT — post-launch |
 | `/admin/settings` | Settings | NOT BUILT — post-launch |
 

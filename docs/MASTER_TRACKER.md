@@ -95,6 +95,7 @@ All V0 foundations are shipped. The stack is live locally with:
 | 57 | Plan My Trek revamp — 6-step wizard, weighted scoring engine (7 factors, CMS trek data), top-5 results with categories, lead capture | done |
 | 59 | Bug fixes: Rupin Pass region filter (CMS state overrides static), /plan auth gate + 2/24h rate limit, static treks removed from root sitemap, 301→410 deleted URL middleware | done |
 | 60 | Enhancement batch: CMS Hindi translation loading state + null-content guard; trek detail cluster/similar dedup (excludeSlugs); trending search real data + curated fallback; semantic search season_months filter; SEASON_BUCKETS winter fix; search exact-match segregation; semantic section moved to top; removed "Ranked by..." subtitle | done |
+| 64 | CDP Analytics Layer — full first-party event tracking, session management, identity stitching, UTM attribution, funnel/cohort analysis, segment builder, GSC integration, DPDP consent, 8 admin pages, Celery beat tasks | done |
 
 ## V5 — Mobile App Roadmap
 | Item | Status |

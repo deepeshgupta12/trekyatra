@@ -522,6 +522,19 @@
 - MonetizationSlot + GatedContent wiring on trek detail pages
 - Load testing, cross-browser testing
 
+### Step 64 — CDP Analytics Layer [DONE — 2026-05-27]
+- 5 DB migrations: analytics_events (0036), analytics_sessions (0037), user_traits (0038), attribution_touchpoints (0039), gsc_performance (0040)
+- CDP module: models.py, service.py (log_event, batch_log_events, start/end_session, stitch_identity, list_users, get_user_profile, funnels, cohorts, segments, GSC)
+- 12 backend API endpoints: POST /analytics/event, POST /analytics/events/batch, POST /analytics/session/start|end, POST /analytics/consent, GET /admin/cdp/users|users/{id}|funnels/{name}|cohorts|events/stream|segments|gsc
+- DPDP endpoints: GET /auth/me/data-export, DELETE /auth/me/data
+- 3 Celery beat tasks: nightly trait refresh, nightly GSC import, weekly cleanup
+- CDP client SDK: lib/analytics.ts (batch flush, UTM capture, session mgmt, consent, GA4 mirror)
+- 3 analytics components: AnalyticsProvider, ConsentBanner, ScrollDepthTracker
+- 8 admin CDP pages: /admin/cdp + 7 sub-pages
+- Admin layout CDP nav group
+- 24 backend tests, all passing; next build clean
+- Step doc: docs/steps/STEP-64-cdp-analytics-layer.md
+
 ## Execution Rule
 Do not start the next step without user confirmation.
 Current next step: **Step 41 — B2B Content / API Extensions**

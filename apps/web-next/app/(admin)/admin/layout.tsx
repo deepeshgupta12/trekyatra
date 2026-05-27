@@ -8,7 +8,7 @@ import {
   LayoutDashboard, Search, Layers, FileText, CheckSquare, Link2,
   DollarSign, BarChart2, Terminal, Settings, ChevronRight, Menu, X,
   GitBranch, Bot, GitMerge, Database, LogOut, Users, RefreshCw, Swords, Mail, Building2, Globe, Workflow, TrendingUp,
-  Package, ShoppingBag,
+  Package, ShoppingBag, Activity,
 } from "lucide-react";
 import { adminLogout } from "@/lib/admin-auth-api";
 
@@ -41,6 +41,18 @@ const NAV_GROUPS = [
       { href: "/admin/products", label: "Products", icon: Package },
       { href: "/admin/orders", label: "Orders", icon: ShoppingBag },
       { href: "/admin/analytics", label: "Analytics", icon: BarChart2 },
+    ],
+  },
+  {
+    label: "CDP",
+    items: [
+      { href: "/admin/cdp", label: "CDP Overview", icon: Activity },
+      { href: "/admin/cdp/users", label: "Users", icon: Users },
+      { href: "/admin/cdp/events", label: "Event Stream", icon: Activity },
+      { href: "/admin/cdp/funnels", label: "Funnels", icon: GitMerge },
+      { href: "/admin/cdp/cohorts", label: "Cohorts", icon: Layers },
+      { href: "/admin/cdp/segments", label: "Segments", icon: TrendingUp },
+      { href: "/admin/cdp/gsc", label: "GSC", icon: Search },
     ],
   },
   {

@@ -37,7 +37,7 @@ export default function LeadForm({ sourcePage, sourceCluster, ctaType = "lead_fo
     setError(null);
     try {
       await submitLead({ name, email, phone: phone || undefined, trek_interest: trekInterest, message: message || undefined, source_page: sourcePage, source_cluster: sourceCluster, cta_type: ctaType });
-      trackEvent("lead_form_submit", { source_page: sourcePage, cta_type: ctaType, trek_interest: trekInterest });
+      trackEvent("conversion", "lead_form_submit", { source_page: sourcePage, cta_type: ctaType, trek_interest: trekInterest });
       setSuccess(true);
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : "Something went wrong. Please try again.");

@@ -1019,3 +1019,35 @@ Before editing any backend file:
 
 #### Search Page Personalization Bug Fixes (2026-05-26)
 - `apps/web-next/app/(public)/search/page.tsx` — UPDATED (Prod Fix): `handleSuggestionClick` now logs `q.trim() || label` (actual typed query) instead of destination page title; `q` added to useCallback deps (stale closure fix); `handleResultClick` now calls `handleQueryCommit(q)` to save recent on TrekCard click; added debounced (1.5s) auto-save useEffect for passive browsing sessions; blast radius: LOW (leaf page, no upstream callers)
+
+### Step 64 — CDP Analytics Layer (2026-05-27)
+
+#### New Files — Backend
+- `services/api/alembic/versions/20260527_0036–0040_cdp_*.py` — 5 migrations; blast radius: NONE
+- `services/api/app/modules/cdp/models.py` — 5 ORM models; blast radius: LOW
+- `services/api/app/modules/cdp/service.py` — CDP service layer; blast radius: LOW
+- `services/api/app/schemas/cdp.py` — CDP Pydantic schemas; blast radius: LOW
+- `services/api/app/api/routes/cdp.py` — 12 endpoints; blast radius: LOW
+- `services/api/app/worker/tasks/cdp.py` — 3 Celery tasks; blast radius: LOW
+- `services/api/tests/test_cdp.py` — 24 tests; blast radius: NONE
+
+#### Modified Files — Backend
+- `services/api/app/db/base.py` — 5 new CDP model imports; blast radius: LOW (additive)
+- `services/api/app/api/router.py` — cdp_public_router + cdp_admin_router registered; blast radius: LOW (additive)
+- `services/api/app/worker/celery_app.py` — cdp tasks + 3 beat schedules added; blast radius: LOW (additive)
+- `services/api/app/core/config.py` — ga4_measurement_id, ga4_api_secret, gsc_service_account_json added; blast radius: LOW
+- `services/api/app/api/routes/auth.py` — DPDP data-export + data-delete endpoints added; blast radius: LOW
+
+#### New Files — Frontend
+- `apps/web-next/lib/analytics.ts` — CDP client SDK (REPLACED stub); blast radius: MEDIUM — callers updated to 4-arg signature
+- `apps/web-next/components/analytics/AnalyticsProvider.tsx` — blast radius: LOW
+- `apps/web-next/components/analytics/ConsentBanner.tsx` — blast radius: LOW
+- `apps/web-next/components/analytics/ScrollDepthTracker.tsx` — blast radius: NONE
+- `apps/web-next/app/(admin)/admin/cdp/` (8 pages) — blast radius: LOW (new pages)
+
+#### Modified Files — Frontend
+- `apps/web-next/components/Providers.tsx` — AnalyticsProvider + ConsentBanner added; blast radius: MEDIUM (wraps entire app, additive)
+- `apps/web-next/app/(admin)/admin/layout.tsx` — CDP nav group added; blast radius: LOW
+- `apps/web-next/components/monetization/AffiliateCard.tsx` — trackEvent 4-arg; blast radius: LOW
+- `apps/web-next/components/monetization/NewsletterCapture.tsx` — trackEvent 4-arg; blast radius: LOW
+- `apps/web-next/components/monetization/LeadForm.tsx` — trackEvent 4-arg; blast radius: LOW

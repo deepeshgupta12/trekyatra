@@ -18,6 +18,7 @@ celery_app = Celery(
         "app.modules.email_sequences.tasks",
         "app.modules.revenue.tasks",
         "app.worker.tasks.news",
+        "app.worker.tasks.cdp",
     ],
 )
 
@@ -70,6 +71,18 @@ celery_app.conf.update(
         "weekly-news-agent": {
             "task": "news.weekly_all_treks",
             "schedule": 604800,  # every 7 days
+        },
+        "nightly-cdp-trait-refresh": {
+            "task": "cdp.refresh_all_user_traits",
+            "schedule": 86400,  # 24 hours
+        },
+        "nightly-gsc-import": {
+            "task": "cdp.import_gsc_data",
+            "schedule": 86400,  # 24 hours
+        },
+        "weekly-cdp-cleanup": {
+            "task": "cdp.cleanup_old_events",
+            "schedule": 604800,  # 7 days
         },
     },
 )

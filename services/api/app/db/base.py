@@ -26,6 +26,13 @@ from app.modules.monetization.models import AffiliateProduct, PageIntentSession
 from app.modules.plan.models import TripPlan
 from app.modules.subscriptions.models import Subscription
 from app.modules.search.models import PageView, SearchEvent
+from app.modules.cdp.models import (
+    AnalyticsEvent,
+    AnalyticsSession,
+    UserTrait,
+    AttributionTouchpoint,
+    GscPerformance,
+)
 
 __all__ = [
     "Operator",
@@ -79,4 +86,9 @@ __all__ = [
     "SearchEvent",
     "PageView",
     "AccountComparison",
+    "AnalyticsEvent",
+    "AnalyticsSession",
+    "UserTrait",
+    "AttributionTouchpoint",
+    "GscPerformance",
 ]

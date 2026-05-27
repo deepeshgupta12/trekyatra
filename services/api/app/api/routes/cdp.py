@@ -1,0 +1,253 @@
+"""CDP API routes — event ingest (public) and analytics admin endpoints."""
+from __future__ import annotations
+
+import uuid
+from typing import Optional
+
+from fastapi import APIRouter, Depends, HTTPException, Query
+from sqlalchemy.orm import Session
+
+from app.db.session import get_db
+from app.modules.auth.dependencies import get_current_admin, get_optional_user
+from app.modules.cdp import service as cdp_service
+from app.schemas.cdp import (
+    BatchEventIn,
+    CohortOut,
+    ConsentOut,
+    ConsentUpdateIn,
+    EventIn,
+    EventOut,
+    EventStreamOut,
+    FunnelOut,
+    GscOut,
+    SegmentListOut,
+    SessionEndIn,
+    SessionOut,
+    SessionStartIn,
+    UserListOut,
+    UserProfileOut,
+)
+
+public_router = APIRouter(prefix="/analytics", tags=["cdp"])
+admin_router = APIRouter(
+    prefix="/admin/cdp",
+    tags=["cdp-admin"],
+    dependencies=[Depends(get_current_admin)],
+)
+
+
+# ── Public: event ingest ──────────────────────────────────────────────────────
+
+@public_router.post("/event", response_model=EventOut, status_code=201)
+def ingest_event(
+    body: EventIn,
+    db: Session = Depends(get_db),
+    current_user=Depends(get_optional_user),
+) -> EventOut:
+    user_id = current_user.id if current_user else None
+    event = cdp_service.log_event(db, body, user_id=user_id)
+    return EventOut.model_validate(event)
+
+
+@public_router.post("/events/batch", status_code=201)
+def ingest_events_batch(
+    body: BatchEventIn,
+    db: Session = Depends(get_db),
+    current_user=Depends(get_optional_user),
+) -> dict:
+    user_id = current_user.id if current_user else None
+    count = cdp_service.batch_log_events(db, body.events, user_id=user_id)
+    return {"ingested": count}
+
+
+# ── Public: session management ────────────────────────────────────────────────
+
+@public_router.post("/session/start", response_model=SessionOut, status_code=201)
+def session_start(
+    body: SessionStartIn,
+    db: Session = Depends(get_db),
+) -> SessionOut:
+    session = cdp_service.start_session(db, body)
+    return SessionOut.model_validate(session)
+
+
+@public_router.post("/session/end", response_model=SessionOut)
+def session_end(
+    body: SessionEndIn,
+    db: Session = Depends(get_db),
+) -> SessionOut:
+    session = cdp_service.end_session(db, body)
+    if not session:
+        raise HTTPException(status_code=404, detail="Session not found")
+    return SessionOut.model_validate(session)
+
+
+# ── Public: consent ───────────────────────────────────────────────────────────
+
+@public_router.post("/consent", response_model=ConsentOut)
+def update_consent(body: ConsentUpdateIn) -> ConsentOut:
+    from datetime import datetime, timezone
+    return ConsentOut(
+        anonymous_id=body.anonymous_id,
+        consent_given=body.consent_given,
+        updated_at=datetime.now(timezone.utc).isoformat(),
+    )
+
+
+# ── Admin: users ──────────────────────────────────────────────────────────────
+
+@admin_router.get("/users", response_model=UserListOut)
+def list_users(
+    page: int = Query(1, ge=1),
+    page_size: int = Query(50, ge=1, le=200),
+    search: Optional[str] = Query(None),
+    source: Optional[str] = Query(None),
+    db: Session = Depends(get_db),
+) -> UserListOut:
+    result = cdp_service.list_users(db, page=page, page_size=page_size, search=search, source=source)
+    return UserListOut(**result)
+
+
+@admin_router.get("/users/{user_id}")
+def get_user_profile(
+    user_id: uuid.UUID,
+    db: Session = Depends(get_db),
+) -> dict:
+    data = cdp_service.get_user_profile(db, user_id)
+    if not data["user"] and not data["traits"]:
+        raise HTTPException(status_code=404, detail="User not found")
+    return {
+        "user_id": str(user_id),
+        "email": data["user"].email if data["user"] else None,
+        "name": data["user"].full_name if data["user"] else None,
+        "traits": data["traits"],
+        "recent_events": [
+            {
+                "id": str(e.id),
+                "event_category": e.event_category,
+                "event_name": e.event_name,
+                "event_value": e.event_value,
+                "page_url": e.page_url,
+                "properties": e.properties,
+                "created_at": e.created_at.isoformat(),
+            }
+            for e in data["recent_events"]
+        ],
+        "sessions": [
+            {
+                "id": s.id,
+                "started_at": s.started_at.isoformat(),
+                "ended_at": s.ended_at.isoformat() if s.ended_at else None,
+                "duration_seconds": s.duration_seconds,
+                "page_count": s.page_count,
+                "event_count": s.event_count,
+                "converted": s.converted,
+                "landing_page": s.landing_page,
+                "utm_source": s.utm_source,
+            }
+            for s in data["sessions"]
+        ],
+        "touchpoints": [
+            {
+                "id": str(tp.id),
+                "touchpoint_type": tp.touchpoint_type,
+                "channel": tp.channel,
+                "utm_source": tp.utm_source,
+                "utm_medium": tp.utm_medium,
+                "utm_campaign": tp.utm_campaign,
+                "converted_at": tp.converted_at.isoformat() if tp.converted_at else None,
+                "created_at": tp.created_at.isoformat(),
+            }
+            for tp in data["touchpoints"]
+        ],
+    }
+
+
+# ── Admin: funnels ────────────────────────────────────────────────────────────
+
+@admin_router.get("/funnels/{name}")
+def get_funnel(
+    name: str,
+    date_from: Optional[str] = Query(None),
+    date_to: Optional[str] = Query(None),
+    db: Session = Depends(get_db),
+) -> dict:
+    return cdp_service.get_funnel(db, name=name, date_from=date_from, date_to=date_to)
+
+
+# ── Admin: cohorts ────────────────────────────────────────────────────────────
+
+@admin_router.get("/cohorts")
+def get_cohorts(db: Session = Depends(get_db)) -> dict:
+    return cdp_service.get_cohorts(db)
+
+
+# ── Admin: event stream ───────────────────────────────────────────────────────
+
+@admin_router.get("/events/stream")
+def get_event_stream(
+    page: int = Query(1, ge=1),
+    page_size: int = Query(100, ge=1, le=500),
+    event_name: Optional[str] = Query(None),
+    category: Optional[str] = Query(None),
+    db: Session = Depends(get_db),
+) -> dict:
+    result = cdp_service.get_event_stream(
+        db, page=page, page_size=page_size, event_name=event_name, category=category
+    )
+    return {
+        "events": [
+            {
+                "id": str(e.id),
+                "anonymous_id": e.anonymous_id,
+                "user_id": str(e.user_id) if e.user_id else None,
+                "event_category": e.event_category,
+                "event_name": e.event_name,
+                "event_value": e.event_value,
+                "page_url": e.page_url,
+                "properties": e.properties,
+                "created_at": e.created_at.isoformat(),
+            }
+            for e in result["events"]
+        ],
+        "total": result["total"],
+    }
+
+
+# ── Admin: segments ───────────────────────────────────────────────────────────
+
+@admin_router.get("/segments")
+def get_segments(db: Session = Depends(get_db)) -> dict:
+    return cdp_service.get_segments(db)
+
+
+# ── Admin: GSC ────────────────────────────────────────────────────────────────
+
+@admin_router.get("/gsc")
+def get_gsc(
+    date_from: Optional[str] = Query(None),
+    date_to: Optional[str] = Query(None),
+    page: int = Query(1, ge=1),
+    page_size: int = Query(100, ge=1, le=500),
+    db: Session = Depends(get_db),
+) -> dict:
+    result = cdp_service.get_gsc_data(
+        db, date_from=date_from, date_to=date_to, page=page, page_size=page_size
+    )
+    return {
+        "rows": [
+            {
+                "page_url": r.page_url,
+                "query": r.query,
+                "date": r.date.isoformat(),
+                "clicks": r.clicks,
+                "impressions": r.impressions,
+                "ctr": r.ctr,
+                "position": r.position,
+            }
+            for r in result["rows"]
+        ],
+        "total": result["total"],
+        "date_from": result["date_from"],
+        "date_to": result["date_to"],
+    }

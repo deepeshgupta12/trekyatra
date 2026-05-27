@@ -34,8 +34,8 @@ The platform:
 | Payments | Razorpay (test mode without keys) |
 | Email | SMTP (welcome + nurture sequences), Mailchimp/Brevo (optional) |
 | Auth | JWT HttpOnly cookies + Google OAuth |
-| Migrations | Alembic (26 migrations) |
-| Code Intelligence | GitNexus (7,966+ symbols, 13,674+ relationships) |
+| Migrations | Alembic (40 migrations) |
+| Code Intelligence | GitNexus (11,923+ symbols, 16,427+ relationships, 122 flows) |
 
 ---
 
@@ -55,17 +55,18 @@ trekyatra/
 │       │   ├── account/     # BookmarkButton
 │       │   └── trek/        # TrekCard, TrekGrid, etc.
 │       ├── lib/             # API client (api.ts), auth context, utilities
+│       ├── components/analytics/ # AnalyticsProvider, ConsentBanner, ScrollDepthTracker
 │       └── data/            # Static trek data (fallback when CMS has no page)
 ├── services/
 │   └── api/                 # FastAPI backend
 │       ├── app/
-│       │   ├── modules/     # Domain modules (cms, auth, agents, monetization, ...)
+│       │   ├── modules/     # Domain modules (cms, auth, agents, monetization, cdp, ...)
 │       │   ├── api/         # Route registrations (router.py + routes/*)
 │       │   ├── schemas/     # Pydantic request/response contracts
 │       │   ├── worker/      # Celery app + beat schedule + tasks
 │       │   └── core/        # Config, DB session, middleware
 │       ├── alembic/         # Database migrations (versions/)
-│       └── tests/           # pytest test suite (413 tests, all passing)
+│       └── tests/           # pytest test suite (568 tests, all passing)
 ├── docs/                    # Implementation plan, tracker, step docs, process guardrails
 └── scripts/                 # Setup and validation helpers
 ```
@@ -277,6 +278,23 @@ trekyatra/
 | Refresh queue | Done |
 | Seasonal hub manager | Done |
 
+### CDP Analytics Layer (Step 64)
+| Feature | Status |
+|---------|--------|
+| First-party event tracking SDK (batch ingest, consent gate) | Done |
+| Anonymous identity + session management with UTM attribution | Done |
+| Identity stitching (anonymous → user_id on sign-up) | Done |
+| DPDP Act 2023 compliance (consent banner, data export, right-to-delete) | Done |
+| Funnel analysis (3 pre-built funnels: discovery→signup, search→conversion, news→engagement) | Done |
+| Weekly retention cohort table | Done |
+| 5 pre-defined audience segments with live counts | Done |
+| Google Search Console performance data import | Done |
+| Live event stream viewer with category/name filters | Done |
+| Paginated user list with profile view (sessions, events, touchpoints) | Done |
+| CDP admin dashboard (`/admin/cdp/*` — 8 pages) | Done |
+| AnalyticsProvider + ConsentBanner + ScrollDepthTracker components | Done |
+| Nightly trait refresh + GSC import + weekly event cleanup Celery tasks | Done |
+
 ---
 
 ## Local Development Setup
@@ -343,7 +361,7 @@ Navigate to http://localhost:3000/admin/sign-in and log in with the `ADMIN_EMAIL
 ### 7. Run tests
 
 ```bash
-# All backend tests (413 tests)
+# All backend tests (568 tests)
 PYTHONPATH=services/api .venv/bin/pytest services/api/tests/ -v
 
 # Frontend build check (must pass before every commit)
@@ -373,6 +391,9 @@ cd apps/web-next && npm run build
 | `NEWSLETTER_PLATFORM` | Optional | `mailchimp` or `brevo` — skipped if unset |
 | `MONETIZATION_AB_TEST` | Optional | `true` to enable 50/50 intent A/B test |
 | `PRODUCT_FILES_DIR` | Optional | Directory for downloadable product files |
+| `GA4_MEASUREMENT_ID` | Optional | GA4 measurement ID — CDP mirrors events to GA4 if set |
+| `GA4_API_SECRET` | Optional | GA4 Measurement Protocol API secret |
+| `GSC_SERVICE_ACCOUNT_JSON` | Optional | Google Search Console service account JSON — GSC import skipped gracefully if unset |
 
 ### Frontend (`apps/web-next/.env.local`)
 
@@ -413,6 +434,13 @@ cd apps/web-next && npm run build
 | Saved comparisons | `GET/POST /api/v1/account/comparisons`, `DELETE /api/v1/account/comparisons/{id}` | User auth required |
 | News (public) | `GET /api/v1/public/news`, `GET /api/v1/public/news/{slug}`, `GET /api/v1/public/news/by-trek/{trek_slug}` | Public |
 | News (admin) | `POST /api/v1/admin/news/generate/{trek_slug}` | Admin auth required |
+| CDP event ingest | `POST /api/v1/analytics/event`, `POST /api/v1/analytics/events/batch` | Public (consent-gated) |
+| CDP session | `POST /api/v1/analytics/session/start`, `POST /api/v1/analytics/session/end` | Public |
+| CDP consent | `POST /api/v1/analytics/consent` | Public |
+| CDP admin — users | `GET /api/v1/admin/cdp/users`, `GET /api/v1/admin/cdp/users/{user_id}` | Admin auth |
+| CDP admin — analysis | `GET /api/v1/admin/cdp/funnels/{name}`, `GET /api/v1/admin/cdp/cohorts`, `GET /api/v1/admin/cdp/segments` | Admin auth |
+| CDP admin — stream/gsc | `GET /api/v1/admin/cdp/events/stream`, `GET /api/v1/admin/cdp/gsc` | Admin auth |
+| DPDP compliance | `GET /api/v1/auth/me/data-export`, `DELETE /api/v1/auth/me/data` | User auth required |
 
 Full API docs available at http://localhost:8000/docs when the backend is running.
 
@@ -420,7 +448,7 @@ Full API docs available at http://localhost:8000/docs when the backend is runnin
 
 ## Database Overview
 
-**33 Alembic migrations applied.** Key table groups:
+**40 Alembic migrations applied.** Key table groups:
 
 | Domain | Tables |
 |--------|--------|
@@ -439,6 +467,7 @@ Full API docs available at http://localhost:8000/docs when the backend is runnin
 | Content QA | `cannibalization_issues`, `compliance_issues`, `refresh_logs` |
 | Analytics | `search_events`, `page_views` |
 | Trek metadata (on cms_pages) | `trek_state`, `trek_name`, `trek_difficulty`, `trek_duration`, `trek_season`, `trek_suitability` |
+| CDP (Step 64) | `analytics_events`, `analytics_sessions`, `user_traits`, `attribution_touchpoints`, `gsc_performance` |
 
 ---
 
@@ -453,6 +482,7 @@ Full API docs available at http://localhost:8000/docs when the backend is runnin
 | V4 — Ecosystem Scale | Steps 38–41 | In Progress (Steps 38–40 done; Step 41 pending) |
 | Pre-Launch Sprint | Auth, stubs, E2E, UI polish | Complete — see PRELAUNCH_CHECKLIST.md for remaining manual items |
 | **Production Deploy** | DigitalOcean BLR1 | All components HEALTHY — DNS configuration next |
+| **Step 64 — CDP Analytics Layer** | First-party tracking, funnel/cohort/segment analysis, GSC, DPDP | Done — 2026-05-27 |
 
 ## Production Infrastructure
 

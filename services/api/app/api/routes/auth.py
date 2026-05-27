@@ -413,3 +413,83 @@ def get_my_leads(
         "cta_type": l.cta_type,
         "created_at": l.created_at,
     }) for l in leads]
+
+
+# ---------------------------------------------------------------------------
+# DPDP Act 2023 — data export and deletion rights
+# ---------------------------------------------------------------------------
+
+@router.get("/me/data-export")
+def data_export(
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+) -> dict:
+    """Return all personal data held for the authenticated user (DPDP Art. 11)."""
+    from app.modules.cdp.models import AnalyticsEvent, AnalyticsSession, AttributionTouchpoint, UserTrait
+
+    events = (
+        db.query(AnalyticsEvent)
+        .filter(AnalyticsEvent.user_id == current_user.id)
+        .order_by(AnalyticsEvent.created_at.desc())
+        .limit(1000)
+        .all()
+    )
+    sessions = (
+        db.query(AnalyticsSession)
+        .filter(AnalyticsSession.user_id == current_user.id)
+        .order_by(AnalyticsSession.started_at.desc())
+        .limit(200)
+        .all()
+    )
+    traits = (
+        db.query(UserTrait)
+        .filter(UserTrait.user_id == current_user.id)
+        .first()
+    )
+    return {
+        "user": {
+            "id": str(current_user.id),
+            "email": current_user.email,
+            "full_name": current_user.full_name,
+            "created_at": current_user.created_at.isoformat() if current_user.created_at else None,
+        },
+        "analytics_events": [
+            {
+                "event_category": e.event_category,
+                "event_name": e.event_name,
+                "page_url": e.page_url,
+                "created_at": e.created_at.isoformat(),
+            }
+            for e in events
+        ],
+        "sessions": [
+            {
+                "id": s.id,
+                "started_at": s.started_at.isoformat(),
+                "duration_seconds": s.duration_seconds,
+                "page_count": s.page_count,
+            }
+            for s in sessions
+        ],
+        "traits": {
+            "total_sessions": traits.total_sessions if traits else 0,
+            "total_events": traits.total_events if traits else 0,
+            "first_seen_at": traits.first_seen_at.isoformat() if traits and traits.first_seen_at else None,
+            "acquisition_source": traits.acquisition_source if traits else None,
+        },
+    }
+
+
+@router.delete("/me/data", status_code=204)
+def delete_my_data(
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+) -> None:
+    """Delete all behavioural data for the authenticated user (DPDP Art. 12)."""
+    from app.modules.cdp.models import AnalyticsEvent, AnalyticsSession, AttributionTouchpoint, UserTrait
+
+    db.query(AnalyticsEvent).filter(AnalyticsEvent.user_id == current_user.id).delete()
+    db.query(AnalyticsSession).filter(AnalyticsSession.user_id == current_user.id).delete()
+    db.query(AttributionTouchpoint).filter(AttributionTouchpoint.user_id == current_user.id).delete()
+    db.query(UserTrait).filter(UserTrait.user_id == current_user.id).delete()
+    db.commit()
