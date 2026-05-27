@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback, useRef } from "react";
+import { useState, useCallback, useRef, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { ArrowRight, ArrowLeft, Mountain, Sparkles } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -8,6 +8,7 @@ import WizardStep from "@/components/plan/WizardStep";
 import AuthGateModal from "@/components/plan/AuthGateModal";
 import { planRecommendTreks, type PlanRecommendRequest } from "@/lib/api";
 import { useAuth } from "@/lib/auth-context";
+import { trackPlanWizardStarted, trackPlanWizardStep, trackPlanWizardCompleted } from "@/lib/analytics";
 import Link from "next/link";
 
 // ── Wizard data ──────────────────────────────────────────────────────────────
@@ -101,6 +102,18 @@ export default function PlanPage() {
   // Keep a ref to the pending payload so auth-success can fire it immediately
   const pendingPayload = useRef<PlanRecommendRequest | null>(null);
 
+  // Track each step transition for CDP funnel analysis
+  useEffect(() => {
+    if (step === 0) return;
+    if (step === 1) { trackPlanWizardStarted(); return; }
+    if (step === 2) trackPlanWizardStep(1, { intents });
+    else if (step === 3) trackPlanWizardStep(2, { month: monthChunk });
+    else if (step === 4) trackPlanWizardStep(3, { duration: durationChunk });
+    else if (step === 5) trackPlanWizardStep(4, { experience, fitness });
+    else if (step === 6) trackPlanWizardStep(5, { region, budget });
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [step]);
+
   function toggleIntent(v: string) {
     setIntents(prev => prev.includes(v) ? prev.filter(x => x !== v) : [...prev, v]);
   }
@@ -142,6 +155,7 @@ export default function PlanPage() {
   async function handleSubmit() {
     const payload = buildPayload();
     pendingPayload.current = payload;
+    trackPlanWizardCompleted(payload as unknown as Record<string, unknown>);
 
     if (!user) {
       // Not logged in — show the auth gate modal; API call deferred to handleAuthSuccess

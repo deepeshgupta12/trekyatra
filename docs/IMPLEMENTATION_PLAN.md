@@ -522,6 +522,17 @@
 - MonetizationSlot + GatedContent wiring on trek detail pages
 - Load testing, cross-browser testing
 
+### Step 65 — CDP Analytics Enhancement [DONE — 2026-05-27]
+- Dynamic funnel builder: GET /admin/cdp/events/catalog, POST /admin/cdp/funnels/dynamic (2–8 steps, event/category filters, date range, count type)
+- Cohort retention heatmap: replaced 3-column table with full N×M (9-week) color-coded heatmap
+- Expanded segments: 10 segments (up from 5), human-readable criteria_label, improved descriptions
+- User activity timeline: GET /admin/cdp/users/activity (email lookup → paginated event timeline), new /admin/cdp/activity page
+- Plan My Trek stepwise tracking: trackPlanWizardStep(1–5) + trackPlanWizardCompleted wired into plan/page.tsx
+- New analytics helper: trackPlanWizardStep() in analytics.ts
+- Static /users/activity registered before dynamic /users/{user_id} to prevent path shadowing
+- 13 new backend tests in test_cdp_step65.py; 2 tests in test_cdp.py updated for new schemas
+- next build clean; 594 tests pass (2 pre-existing flaky refresh tests pass in isolation)
+
 ### Step 64 — CDP Analytics Layer [DONE — 2026-05-27]
 - 5 DB migrations: analytics_events (0036), analytics_sessions (0037), user_traits (0038), attribution_touchpoints (0039), gsc_performance (0040)
 - CDP module: models.py, service.py (log_event, batch_log_events, start/end_session, stitch_identity, list_users, get_user_profile, funnels, cohorts, segments, GSC)

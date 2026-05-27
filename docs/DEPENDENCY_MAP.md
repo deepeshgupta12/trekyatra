@@ -1051,3 +1051,25 @@ Before editing any backend file:
 - `apps/web-next/components/monetization/AffiliateCard.tsx` — trackEvent 4-arg; blast radius: LOW
 - `apps/web-next/components/monetization/NewsletterCapture.tsx` — trackEvent 4-arg; blast radius: LOW
 - `apps/web-next/components/monetization/LeadForm.tsx` — trackEvent 4-arg; blast radius: LOW
+
+### Step 65 — CDP Analytics Enhancement (2026-05-27)
+
+#### Modified Files — Backend
+- `services/api/app/schemas/cdp.py` — Added FunnelStepIn, DynamicFunnelIn/Out, EventCatalogOut, CohortHeatmapOut (replaces CohortOut), UserActivityOut; blast radius: LOW (schema change is additive except cohort which is a breaking change — both FE+BE shipped together)
+- `services/api/app/modules/cdp/service.py` — Replaced get_funnel/get_cohorts/SEGMENTS/get_segments with get_event_catalog, get_dynamic_funnel, get_cohort_heatmap, get_user_activity, expanded SEGMENTS (10); blast radius: LOW (only called by cdp route layer)
+- `services/api/app/api/routes/cdp.py` — Replaced /funnels/{name} with POST /funnels/dynamic; updated GET /cohorts to return heatmap; added GET /events/catalog, GET /users/activity (static route registered before /users/{user_id}); blast radius: LOW
+- `services/api/tests/test_cdp.py` — 2 tests updated (funnels + segments count); blast radius: NONE
+
+#### New Files — Backend
+- `services/api/tests/test_cdp_step65.py` — 13 new tests; blast radius: NONE
+
+#### Modified Files — Frontend
+- `apps/web-next/lib/analytics.ts` — Added trackPlanWizardStep(); blast radius: LOW (additive)
+- `apps/web-next/app/(public)/plan/page.tsx` — Added useEffect step tracking + trackPlanWizardCompleted on submit; blast radius: LOW
+- `apps/web-next/app/(admin)/admin/cdp/funnels/page.tsx` — Full rewrite: dynamic builder UI; blast radius: LOW
+- `apps/web-next/app/(admin)/admin/cdp/cohorts/page.tsx` — Full rewrite: N×M heatmap; blast radius: LOW
+- `apps/web-next/app/(admin)/admin/cdp/segments/page.tsx` — Rewrite: 10-segment grid with criteria_label; blast radius: LOW
+- `apps/web-next/app/(admin)/admin/layout.tsx` — User Activity nav link added; blast radius: LOW
+
+#### New Files — Frontend
+- `apps/web-next/app/(admin)/admin/cdp/activity/page.tsx` — User activity timeline page; blast radius: NONE (new page)

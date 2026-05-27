@@ -236,6 +236,10 @@ export function trackPlanWizardStarted(step?: string): void {
   trackEvent("conversion", "plan_wizard_started", { step });
 }
 
+export function trackPlanWizardStep(step: number, data?: Record<string, unknown>): void {
+  trackEvent("conversion", `plan_wizard_step_${step}`, { step, ...data });
+}
+
 export function trackPlanWizardCompleted(wizardData?: Record<string, unknown>): void {
   trackEvent("conversion", "plan_wizard_completed", wizardData ?? {}, 1);
   flushQueue();

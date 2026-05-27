@@ -66,7 +66,7 @@ trekyatra/
 │       │   ├── worker/      # Celery app + beat schedule + tasks
 │       │   └── core/        # Config, DB session, middleware
 │       ├── alembic/         # Database migrations (versions/)
-│       └── tests/           # pytest test suite (568 tests, all passing)
+│       └── tests/           # pytest test suite (581 tests, all passing)
 ├── docs/                    # Implementation plan, tracker, step docs, process guardrails
 └── scripts/                 # Setup and validation helpers
 ```
@@ -278,20 +278,22 @@ trekyatra/
 | Refresh queue | Done |
 | Seasonal hub manager | Done |
 
-### CDP Analytics Layer (Step 64)
+### CDP Analytics Layer (Steps 64–65)
 | Feature | Status |
 |---------|--------|
 | First-party event tracking SDK (batch ingest, consent gate) | Done |
 | Anonymous identity + session management with UTM attribution | Done |
 | Identity stitching (anonymous → user_id on sign-up) | Done |
 | DPDP Act 2023 compliance (consent banner, data export, right-to-delete) | Done |
-| Funnel analysis (3 pre-built funnels: discovery→signup, search→conversion, news→engagement) | Done |
-| Weekly retention cohort table | Done |
-| 5 pre-defined audience segments with live counts | Done |
+| Dynamic funnel builder (event catalog dropdowns, date range, Unique/Total toggle, drop-off visualization) | Done |
+| Full N×M retention cohort heatmap (9-week, color-coded by retention %) | Done |
+| 10 audience segments with human-readable filter criteria | Done |
+| User activity timeline (email lookup → chronological event history with pagination) | Done |
+| Plan My Trek stepwise event tracking (6 wizard steps instrumented) | Done |
 | Google Search Console performance data import | Done |
 | Live event stream viewer with category/name filters | Done |
 | Paginated user list with profile view (sessions, events, touchpoints) | Done |
-| CDP admin dashboard (`/admin/cdp/*` — 8 pages) | Done |
+| CDP admin dashboard (`/admin/cdp/*` — 9 pages) | Done |
 | AnalyticsProvider + ConsentBanner + ScrollDepthTracker components | Done |
 | Nightly trait refresh + GSC import + weekly event cleanup Celery tasks | Done |
 
@@ -438,7 +440,9 @@ cd apps/web-next && npm run build
 | CDP session | `POST /api/v1/analytics/session/start`, `POST /api/v1/analytics/session/end` | Public |
 | CDP consent | `POST /api/v1/analytics/consent` | Public |
 | CDP admin — users | `GET /api/v1/admin/cdp/users`, `GET /api/v1/admin/cdp/users/{user_id}` | Admin auth |
-| CDP admin — analysis | `GET /api/v1/admin/cdp/funnels/{name}`, `GET /api/v1/admin/cdp/cohorts`, `GET /api/v1/admin/cdp/segments` | Admin auth |
+| CDP admin — funnels | `POST /api/v1/admin/cdp/funnels/dynamic`, `GET /api/v1/admin/cdp/events/catalog` | Admin auth |
+| CDP admin — analysis | `GET /api/v1/admin/cdp/cohorts`, `GET /api/v1/admin/cdp/segments` | Admin auth |
+| CDP admin — activity | `GET /api/v1/admin/cdp/users/activity` | Admin auth |
 | CDP admin — stream/gsc | `GET /api/v1/admin/cdp/events/stream`, `GET /api/v1/admin/cdp/gsc` | Admin auth |
 | DPDP compliance | `GET /api/v1/auth/me/data-export`, `DELETE /api/v1/auth/me/data` | User auth required |
 
@@ -483,6 +487,7 @@ Full API docs available at http://localhost:8000/docs when the backend is runnin
 | Pre-Launch Sprint | Auth, stubs, E2E, UI polish | Complete — see PRELAUNCH_CHECKLIST.md for remaining manual items |
 | **Production Deploy** | DigitalOcean BLR1 | All components HEALTHY — DNS configuration next |
 | **Step 64 — CDP Analytics Layer** | First-party tracking, funnel/cohort/segment analysis, GSC, DPDP | Done — 2026-05-27 |
+| **Step 65 — CDP Analytics Enhancement** | Dynamic funnels, N×M cohort heatmap, 10 segments, user activity timeline, Plan wizard tracking | Done — 2026-05-27 |
 
 ## Production Infrastructure
 

@@ -248,3 +248,90 @@ class ConsentOut(BaseModel):
 class IdentifyIn(BaseModel):
     anonymous_id: str
     user_id: str
+
+
+# ── Dynamic funnel ────────────────────────────────────────────────────────────
+
+class FunnelStepIn(BaseModel):
+    event_name: str
+    event_category: Optional[str] = None
+    event_value_min: Optional[float] = None
+    event_value_max: Optional[float] = None
+
+
+class DynamicFunnelIn(BaseModel):
+    steps: List[FunnelStepIn] = Field(..., min_length=2, max_length=8)
+    date_from: Optional[str] = None
+    date_to: Optional[str] = None
+    count_type: str = "unique_users"  # "unique_users" | "total_events"
+
+
+class DynamicFunnelStepOut(BaseModel):
+    step: int
+    event_name: str
+    users: int
+    drop_off_pct: Optional[float]
+
+
+class DynamicFunnelOut(BaseModel):
+    steps: List[DynamicFunnelStepOut]
+    overall_conversion_pct: float
+    date_from: Optional[str]
+    date_to: Optional[str]
+    count_type: str
+
+
+# ── Event catalog ─────────────────────────────────────────────────────────────
+
+class EventCatalogItem(BaseModel):
+    event_name: str
+    event_category: str
+    count: int
+
+
+class EventCatalogOut(BaseModel):
+    events: List[EventCatalogItem]
+
+
+# ── Cohort retention heatmap ──────────────────────────────────────────────────
+
+class CohortRetentionCell(BaseModel):
+    week: int
+    users: int
+    pct: float
+
+
+class CohortHeatmapRow(BaseModel):
+    cohort_week: str
+    total_users: int
+    retention: List[CohortRetentionCell]
+
+
+class CohortHeatmapOut(BaseModel):
+    rows: List[CohortHeatmapRow]
+    max_weeks: int
+
+
+# ── User activity timeline ────────────────────────────────────────────────────
+
+class ActivityItem(BaseModel):
+    id: str
+    event_category: str
+    event_name: str
+    properties: Dict[str, Any]
+    page_url: Optional[str]
+    page_title: Optional[str]
+    created_at: datetime
+
+
+class UserActivityOut(BaseModel):
+    email: Optional[str]
+    full_name: Optional[str]
+    anonymous_id: Optional[str]
+    user_id: Optional[str]
+    signed_up_at: Optional[datetime]
+    total_events: int
+    events: List[ActivityItem]
+    page: int
+    page_size: int
+    total: int

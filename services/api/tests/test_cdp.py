@@ -217,22 +217,30 @@ def test_admin_user_profile_unknown_id_returns_404():
     assert res.status_code == 404
 
 
-def test_admin_funnels_known_name_returns_steps():
-    """TC-B13: /admin/cdp/funnels/trek_discovery_to_signup returns step data."""
-    res = client.get("/api/v1/admin/cdp/funnels/trek_discovery_to_signup")
+def test_admin_funnels_dynamic_two_steps():
+    """TC-B13: POST /admin/cdp/funnels/dynamic with 2 steps returns step data."""
+    res = client.post(
+        "/api/v1/admin/cdp/funnels/dynamic",
+        json={
+            "steps": [
+                {"event_name": "page_view"},
+                {"event_name": "trek_viewed"},
+            ],
+        },
+    )
     assert res.status_code == 200
     data = res.json()
-    assert "name" in data
     assert "steps" in data
-    assert len(data["steps"]) == 5  # 5-step funnel
+    assert len(data["steps"]) == 2
 
 
 def test_admin_cohorts_returns_rows():
-    """TC-B14: /admin/cdp/cohorts returns cohort retention rows."""
+    """TC-B14: /admin/cdp/cohorts returns retention heatmap with rows + max_weeks."""
     res = client.get("/api/v1/admin/cdp/cohorts")
     assert res.status_code == 200
     data = res.json()
     assert "rows" in data
+    assert "max_weeks" in data
 
 
 def test_admin_event_stream_returns_events():
@@ -245,12 +253,12 @@ def test_admin_event_stream_returns_events():
 
 
 def test_admin_segments_returns_list():
-    """TC-B16: /admin/cdp/segments returns all defined segments."""
+    """TC-B16: /admin/cdp/segments returns all 10 defined segments."""
     res = client.get("/api/v1/admin/cdp/segments")
     assert res.status_code == 200
     data = res.json()
     assert "segments" in data
-    assert len(data["segments"]) == 5  # 5 predefined segments
+    assert len(data["segments"]) == 10  # expanded to 10 segments in Step 65
 
 
 def test_admin_gsc_returns_rows():

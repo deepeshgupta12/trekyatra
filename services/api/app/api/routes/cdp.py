@@ -12,19 +12,22 @@ from app.modules.auth.dependencies import get_current_admin, get_optional_user
 from app.modules.cdp import service as cdp_service
 from app.schemas.cdp import (
     BatchEventIn,
-    CohortOut,
+    CohortHeatmapOut,
     ConsentOut,
     ConsentUpdateIn,
+    DynamicFunnelIn,
+    DynamicFunnelOut,
+    EventCatalogOut,
     EventIn,
     EventOut,
     EventStreamOut,
-    FunnelOut,
     GscOut,
     IdentifyIn,
     SegmentListOut,
     SessionEndIn,
     SessionOut,
     SessionStartIn,
+    UserActivityOut,
     UserListOut,
     UserProfileOut,
 )
@@ -128,6 +131,25 @@ def list_users(
     return UserListOut(**result)
 
 
+# Static route registered before dynamic /users/{user_id} to prevent path shadowing
+@admin_router.get("/users/activity", response_model=UserActivityOut)
+def get_user_activity_route(
+    email: str = Query(...),
+    page: int = Query(1, ge=1),
+    page_size: int = Query(50, ge=1, le=200),
+    date_from: Optional[str] = Query(None),
+    date_to: Optional[str] = Query(None),
+    db: Session = Depends(get_db),
+) -> UserActivityOut:
+    result = cdp_service.get_user_activity(
+        db, email=email, page=page, page_size=page_size,
+        date_from=date_from, date_to=date_to,
+    )
+    if result is None:
+        raise HTTPException(status_code=404, detail="User not found")
+    return UserActivityOut(**result)
+
+
 @admin_router.get("/users/{user_id}")
 def get_user_profile(
     user_id: uuid.UUID,
@@ -183,23 +205,35 @@ def get_user_profile(
     }
 
 
-# ── Admin: funnels ────────────────────────────────────────────────────────────
+# ── Admin: event catalog (for funnel builder dropdowns) ───────────────────────
 
-@admin_router.get("/funnels/{name}")
-def get_funnel(
-    name: str,
-    date_from: Optional[str] = Query(None),
-    date_to: Optional[str] = Query(None),
+@admin_router.get("/events/catalog", response_model=EventCatalogOut)
+def get_event_catalog(db: Session = Depends(get_db)) -> EventCatalogOut:
+    return cdp_service.get_event_catalog(db)
+
+
+# ── Admin: dynamic funnels ────────────────────────────────────────────────────
+
+@admin_router.post("/funnels/dynamic", response_model=DynamicFunnelOut)
+def run_dynamic_funnel(
+    body: DynamicFunnelIn,
     db: Session = Depends(get_db),
-) -> dict:
-    return cdp_service.get_funnel(db, name=name, date_from=date_from, date_to=date_to)
+) -> DynamicFunnelOut:
+    result = cdp_service.get_dynamic_funnel(
+        db,
+        steps=[s.model_dump() for s in body.steps],
+        date_from=body.date_from,
+        date_to=body.date_to,
+        count_type=body.count_type,
+    )
+    return DynamicFunnelOut(**result)
 
 
-# ── Admin: cohorts ────────────────────────────────────────────────────────────
+# ── Admin: cohort retention heatmap ──────────────────────────────────────────
 
-@admin_router.get("/cohorts")
-def get_cohorts(db: Session = Depends(get_db)) -> dict:
-    return cdp_service.get_cohorts(db)
+@admin_router.get("/cohorts", response_model=CohortHeatmapOut)
+def get_cohorts(db: Session = Depends(get_db)) -> CohortHeatmapOut:
+    return cdp_service.get_cohort_heatmap(db)
 
 
 # ── Admin: event stream ───────────────────────────────────────────────────────

@@ -138,9 +138,10 @@ Last updated: 2026-05-27 (Step 64)
 | `/admin/cdp/users` | CDP Users | Paginated user list with search |
 | `/admin/cdp/users/[id]` | CDP User Detail | Profile, sessions, events, touchpoints |
 | `/admin/cdp/events` | CDP Event Stream | Live event feed with category/name filters |
-| `/admin/cdp/funnels` | CDP Funnels | Funnel visualiser (3 pre-built funnels) |
-| `/admin/cdp/cohorts` | CDP Cohorts | Weekly retention cohort table |
-| `/admin/cdp/segments` | CDP Segments | 5 pre-defined audience segments |
+| `/admin/cdp/funnels` | CDP Funnels | Dynamic funnel builder — event catalog dropdowns, date range, count-type toggle (Step 65) |
+| `/admin/cdp/cohorts` | CDP Cohorts | Retention heatmap — N×M 9-week color-coded grid (Step 65) |
+| `/admin/cdp/segments` | CDP Segments | 10 expanded audience segments with human-readable criteria (Step 65) |
+| `/admin/cdp/activity` | CDP User Activity | Email lookup → chronological event timeline (Step 65) |
 | `/admin/cdp/gsc` | CDP GSC | Google Search Console performance data |
 | `/admin/logs` | System logs | NOT BUILT — post-launch |
 | `/admin/settings` | Settings | NOT BUILT — post-launch |

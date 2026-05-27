@@ -52,6 +52,7 @@ const NAV_GROUPS = [
       { href: "/admin/cdp/funnels", label: "Funnels", icon: GitMerge },
       { href: "/admin/cdp/cohorts", label: "Cohorts", icon: Layers },
       { href: "/admin/cdp/segments", label: "Segments", icon: TrendingUp },
+      { href: "/admin/cdp/activity", label: "User Activity", icon: Activity },
       { href: "/admin/cdp/gsc", label: "GSC", icon: Search },
     ],
   },
