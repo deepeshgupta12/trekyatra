@@ -8,6 +8,7 @@ import {
   trackPageView,
   flushQueue,
 } from "@/lib/analytics";
+import { ScrollDepthTracker } from "@/components/analytics/ScrollDepthTracker";
 
 export function AnalyticsProvider({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
@@ -33,5 +34,12 @@ export function AnalyticsProvider({ children }: { children: React.ReactNode }) {
     trackPageView(window.location.href, document.title);
   }, [pathname]);
 
-  return <>{children}</>;
+  // key={pathname} remounts ScrollDepthTracker on each navigation,
+  // resetting the fired-thresholds Set for the new page
+  return (
+    <>
+      <ScrollDepthTracker key={pathname} />
+      {children}
+    </>
+  );
 }
