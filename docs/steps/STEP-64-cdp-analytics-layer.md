@@ -532,3 +532,8 @@ All 5 CDP migrations applied: 0036 → 0037 → 0038 → 0039 → 0040
 - `GA4_MEASUREMENT_ID` — GA4 property ID (optional, graceful skip if unset)
 - `GA4_API_SECRET` — GA4 Measurement Protocol API secret (optional)
 - `GSC_SERVICE_ACCOUNT_JSON` — Google Search Console service account JSON (optional)
+
+### Production Deferral Notes (2026-05-27)
+- **GSC integration deferred** — `GSC_SERVICE_ACCOUNT_JSON` NOT set on DO production. Reason: Google Cloud org policy (`iam.disableServiceAccountKeyCreation`) blocked service account JSON key creation. To unblock: create a new GCP project under a personal Gmail account, enable Search Console API, create service account + download JSON key, add service account email as Full user in GSC, then set `GSC_SERVICE_ACCOUNT_JSON` in DO `api` env vars. Until then, `cdp.import_gsc_data` Celery task silently skips nightly — no errors. `/admin/cdp/gsc` shows empty state.
+- **GA4 Measurement Protocol deferred** — `GA4_MEASUREMENT_ID` and `GA4_API_SECRET` NOT set on DO production. Client-side GA4 (`NEXT_PUBLIC_GA_ID=G-XM61V2PPDK`) is live and unaffected. Only server-side Measurement Protocol mirroring is deferred. To enable: generate an API secret in GA4 Admin → Data Streams → your stream → Measurement Protocol API secrets, then set both vars in DO `api` env vars.
+- **No code changes required** — both features activate automatically once the env vars are added. No re-deploy or migration needed.

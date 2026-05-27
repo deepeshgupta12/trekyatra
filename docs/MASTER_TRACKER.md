@@ -96,6 +96,7 @@ All V0 foundations are shipped. The stack is live locally with:
 | 59 | Bug fixes: Rupin Pass region filter (CMS state overrides static), /plan auth gate + 2/24h rate limit, static treks removed from root sitemap, 301→410 deleted URL middleware | done |
 | 60 | Enhancement batch: CMS Hindi translation loading state + null-content guard; trek detail cluster/similar dedup (excludeSlugs); trending search real data + curated fallback; semantic search season_months filter; SEASON_BUCKETS winter fix; search exact-match segregation; semantic section moved to top; removed "Ranked by..." subtitle | done |
 | 64 | CDP Analytics Layer — full first-party event tracking, session management, identity stitching, UTM attribution, funnel/cohort analysis, segment builder, GSC integration, DPDP consent, 8 admin pages, Celery beat tasks | done |
+| 64 (prod note) | GSC (`GSC_SERVICE_ACCOUNT_JSON`) and GA4 Measurement Protocol (`GA4_MEASUREMENT_ID`, `GA4_API_SECRET`) env vars deferred — not set on DO. GSC blocked by GCP org policy; GA4 client-side tracking already live. Both activate automatically once env vars are added — no code change needed. See STEP-64 notes. | deferred |
 
 ## V5 — Mobile App Roadmap
 | Item | Status |
