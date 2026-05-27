@@ -12,7 +12,7 @@ declare global {
 }
 
 const API_BASE =
-  (process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000") + "/api/v1";
+  (process.env.NEXT_PUBLIC_API_BASE ?? "http://localhost:8000") + "/api/v1";
 const ANONYMOUS_ID_KEY = "ty_anon_id";
 const SESSION_ID_KEY = "ty_session_id";
 const CONSENT_KEY = "ty_consent";
