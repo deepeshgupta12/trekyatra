@@ -1,3 +1,7 @@
+// Always render fresh — never serve a build-time static snapshot that was
+// generated when the backend wasn't running (CMS pages would be empty → stubs).
+export const dynamic = "force-dynamic";
+
 import Link from "next/link";
 import { Mountain, Sparkles, ArrowRight, Star, Shield, FileCheck, Backpack, Wallet, Compass, ChevronRight, Clock } from "lucide-react";
 import { Button } from "@/components/ui/button";

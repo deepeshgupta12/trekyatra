@@ -99,8 +99,11 @@ export const Header = () => {
 
   async function handleLogout() {
     await logout();
-    router.push("/");
-    router.refresh();
+    // Use a full browser reload so the homepage always gets a fresh server render
+    // with live CMS data. router.push + router.refresh doesn't work correctly
+    // when logging out from a non-homepage route — refresh() targets the current
+    // route, not "/", so the homepage would load from a stale cached RSC payload.
+    window.location.href = "/";
   }
 
   return (
