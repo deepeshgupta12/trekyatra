@@ -20,6 +20,7 @@ from app.schemas.cdp import (
     EventStreamOut,
     FunnelOut,
     GscOut,
+    IdentifyIn,
     SegmentListOut,
     SessionEndIn,
     SessionOut,
@@ -92,6 +93,25 @@ def update_consent(body: ConsentUpdateIn) -> ConsentOut:
         consent_given=body.consent_given,
         updated_at=datetime.now(timezone.utc).isoformat(),
     )
+
+
+# ── Public: identity stitching ────────────────────────────────────────────────
+
+@public_router.post("/identify", status_code=200)
+def identify(
+    body: IdentifyIn,
+    db: Session = Depends(get_db),
+    current_user=Depends(get_optional_user),
+) -> dict:
+    """Link anonymous_id → user_id after sign-in or sign-up.
+    Only stitches when the caller is authenticated; ignores payload user_id
+    to prevent spoofing — always uses the JWT-verified user identity.
+    """
+    if not current_user:
+        return {"ok": True}
+    cdp_service.stitch_identity(db, body.anonymous_id, current_user.id)
+    cdp_service.refresh_user_traits(db, body.anonymous_id)
+    return {"ok": True}
 
 
 # ── Admin: users ──────────────────────────────────────────────────────────────

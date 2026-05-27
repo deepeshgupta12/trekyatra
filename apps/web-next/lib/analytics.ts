@@ -250,6 +250,16 @@ export function trackSignIn(method: string): void {
   trackEvent("conversion", "user_signed_in", { method });
 }
 
+export function identify(userId: string): void {
+  const anonymousId = getAnonymousId();
+  fetch(`${API_BASE}/analytics/identify`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    credentials: "include",
+    body: JSON.stringify({ anonymous_id: anonymousId, user_id: userId }),
+  }).catch(() => {});
+}
+
 export function trackNewsArticleViewed(slug: string, title?: string): void {
   trackEvent("engagement", "news_article_viewed", { slug, title });
 }

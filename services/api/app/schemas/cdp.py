@@ -241,3 +241,10 @@ class ConsentOut(BaseModel):
     anonymous_id: str
     consent_given: bool
     updated_at: str
+
+
+# ── Identity stitching ────────────────────────────────────────────────────────
+
+class IdentifyIn(BaseModel):
+    anonymous_id: str
+    user_id: str

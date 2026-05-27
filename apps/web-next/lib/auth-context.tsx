@@ -10,6 +10,7 @@ import {
   type UserResponse,
 } from "@/lib/auth-api";
 import { addBookmarkBySlug } from "@/lib/api";
+import { trackSignIn, trackSignUp, identify } from "@/lib/analytics";
 
 type AuthContextValue = {
   user: UserResponse | null;
@@ -67,6 +68,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const login = useCallback(async (email: string, password: string) => {
     const res = await loginEmail({ email, password });
     setUser(res.user);
+    trackSignIn("email");
+    identify(res.user.id);
     await flushPendingBookmarks();
   }, [flushPendingBookmarks]);
 
@@ -79,6 +82,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }) => {
       const res = await signupEmail(payload);
       setUser(res.user);
+      trackSignUp("email");
+      identify(res.user.id);
       await flushPendingBookmarks();
     },
     [flushPendingBookmarks],
@@ -87,6 +92,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const loginWithGoogle = useCallback(async (access_token: string) => {
     const res = await googleAuth(access_token);
     setUser(res.user);
+    trackSignIn("google");
+    identify(res.user.id);
     await flushPendingBookmarks();
   }, [flushPendingBookmarks]);
 
