@@ -82,6 +82,13 @@ export default async function Home() {
       ? cmsTrendingFallback
       : staticEnhanced;
 
+  // Build slug → hero_image_url map from CMS pages so RecentlyViewedSection can
+  // show images for CMS-only treks that aren't in the 12-item static trekList.
+  const cmsImageMap: Record<string, string> = {};
+  for (const p of cmsTrekPages) {
+    if (p.slug && p.hero_image_url) cmsImageMap[p.slug] = p.hero_image_url;
+  }
+
   return (
     <>
       <SchemaInjector schemas={[buildWebSiteSchema()]} />
@@ -231,12 +238,12 @@ export default async function Home() {
       <SeasonalTreksSection treks={trekList} cmsPages={cmsTrekPages} />
 
       {/* RECENTLY VIEWED — State D only (repeat logged-out): horizontal scroll of last 5 viewed treks */}
-      <RecentlyViewedSection trekList={trekList} />
+      <RecentlyViewedSection trekList={trekList} cmsImageMap={cmsImageMap} />
 
-      {/* PERSONALISED FEED — States A+B+D; hidden for State C (new logged-out) */}
-      <Section eyebrow="For you" title="Treks matched to your interests">
-        <PersonalisedFeed limit={6} />
-      </Section>
+      {/* PERSONALISED FEED — States A+B+D; hidden for State C (new logged-out, no behavior).
+          PersonalisedFeed manages its own section wrapper + heading so the Section title
+          never renders for State C (when PersonalisedFeed returns null). */}
+      <PersonalisedFeed limit={6} />
 
       {/* COMPARISON CTA */}
       <section className="py-12 md:py-20 bg-gradient-pine text-surface relative overflow-hidden">

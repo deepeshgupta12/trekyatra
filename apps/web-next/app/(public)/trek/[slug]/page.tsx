@@ -278,7 +278,7 @@ export default async function TrekDetailPage({ params }: { params: { slug: strin
       <TrekViewTracker
         slug={trek.slug}
         title={cmsDisplayName ?? trek.name}
-        region={trek.region}
+        region={cmsPage?.trek_state || trek.state || trek.region}
         difficulty={trek.difficulty}
         season={trek.season}
       />

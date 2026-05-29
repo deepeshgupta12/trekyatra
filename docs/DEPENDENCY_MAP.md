@@ -1135,3 +1135,10 @@ Before editing any backend file:
 
 ### No Backend Changes
 All Step 66 logic is entirely client-side using useAuth() + lib/behavior-tracker.ts (localStorage). No new API routes, no DB migrations.
+
+### Bug Fixes — Step 66 (2026-05-29)
+- `apps/web-next/components/home/RecentlyViewedSection.tsx` — UPDATED: added `cmsImageMap?: Record<string, string>` prop (slug → hero_image_url). Image enrichment now checks `staticMatch?.image || cmsImageMap[v.slug] || ""` so CMS-only treks (e.g., Prashar Lake, Chandrakhani Pass) show their CMS hero image instead of ⛰ placeholder.
+- `apps/web-next/components/content/PersonalisedFeed.tsx` — UPDATED: component now owns its own `<section className="py-16 md:py-24"><div className="container-wide">` wrapper. Previously the outer `<Section>` wrapper in page.tsx always rendered the heading even when PersonalisedFeed returned null for State C. Blast radius: LOW (homepage only).
+- `apps/web-next/components/home/HomeTrendingHeader.tsx` — UPDATED: removed `subLabel` state, all `setSubLabel` calls, `topRegion` local vars (States B+D), `getBehaviorProfile` import, and `<p>{subLabel}</p>` render. Subheading removed across all 4 states per user request.
+- `apps/web-next/app/(public)/page.tsx` — UPDATED: builds `cmsImageMap: Record<string,string>` from `cmsTrekPages` and passes to `RecentlyViewedSection`; removed `<Section eyebrow="For you">` wrapper around PersonalisedFeed — component renders its own section wrapper.
+- `apps/web-next/app/(public)/trek/[slug]/page.tsx` — UPDATED: `TrekViewTracker` region prop changed from `trek.region` (sub-location) to `cmsPage?.trek_state || trek.state || trek.region` (state name). Ensures `topRegions[0]` in localStorage stores state names ("Himachal Pradesh") not sub-locations ("Munsiyari, Pithoragarh district").

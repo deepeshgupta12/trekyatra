@@ -401,5 +401,37 @@ cd apps/web-next && npm run build   # zero TypeScript errors
 
 - The `getBehaviorProfile()` call is safe inside `useEffect` only — calling it during SSR returns `null` (guarded by `typeof window === "undefined"` check in the function). All new components that read behavior profile must be `"use client"` and must call it inside `useEffect` or after mount.
 - Auth loading states must always be handled: render `null` or skeleton while `authLoading = true` to prevent layout shift / content flash.
-- `RecentlyViewedSection` uses no API calls — entirely localStorage-driven. Trek names and images are enriched from the `trekList` server prop already available in `page.tsx` (the 12 static treks). CMS-only treks (not in static list) will show slug-formatted names and accent gradient placeholders.
+- `RecentlyViewedSection` uses no API calls — entirely localStorage-driven. Trek names and images are enriched from the `trekList` server prop (12 static treks) **plus** a `cmsImageMap` built from `cmsTrekPages` (slug → `hero_image_url`). CMS-only treks not in the static list now receive their CMS hero image; if no image is found in either source the card shows an accent gradient placeholder.
 - Step 67 (CDP revamp) will capture `home_section_view` events per section/state for analytics — this step focuses purely on the UX logic.
+
+---
+
+## Bug Fixes Applied (2026-05-29)
+
+Four regressions discovered after initial delivery were fixed in the same step:
+
+### Bug 1 — Trek images missing in RecentlyViewedSection
+**Symptom:** Cards for CMS-only treks (e.g., "Prashar Lake", "Chandrakhani Pass") showed ⛰ placeholder instead of the trek image.
+**Root cause:** `RecentlyViewedSection` enriched view entries against `trekList` (12 static treks only). CMS-only treks have no entry in `trekList` → `image: ""` → placeholder shown.
+**Fix:**
+- `page.tsx`: build `cmsImageMap: Record<string, string>` from `cmsTrekPages` (slug → `hero_image_url`) and pass as new `cmsImageMap` prop to `RecentlyViewedSection`
+- `RecentlyViewedSection.tsx`: accept `cmsImageMap?: Record<string, string>` prop; use `staticMatch?.image || cmsImageMap[v.slug] || ""` for the image field
+
+### Bug 2 — "FOR YOU / Treks matched to your interests" heading shows for State C
+**Symptom:** In a fresh private-browse session (no auth, no behavior data), the large "FOR YOU" section heading and "Treks matched to your interests" subtitle still rendered on the homepage.
+**Root cause:** `PersonalisedFeed` correctly returns `null` for State C, but `page.tsx` wrapped it in a `<Section eyebrow="For you" title="Treks matched to your interests">` component that always rendered its own heading regardless of whether the child was null.
+**Fix:**
+- `page.tsx`: removed the `<Section>` wrapper; `<PersonalisedFeed limit={6} />` is now rendered directly
+- `PersonalisedFeed.tsx`: the component now renders its own `<section className="py-16 md:py-24"><div className="container-wide">` wrapper around its content; heading and subtitle are shown only when items are present. The layout gap and visual hierarchy match the other `Section`-wrapped areas.
+
+### Bug 3 — Subheading below the trending section heading must be removed
+**Symptom:** `HomeTrendingHeader` showed a sub-label line below the main heading (e.g., "Popular treks from Munsiyari, Pithoragarh district" or "Great starting points for first-time trekkers").
+**User request:** Remove the subheading entirely across all states.
+**Fix:**
+- `HomeTrendingHeader.tsx`: removed `subLabel` state, all `setSubLabel(...)` calls, the `topRegion` local variables (States B and D), and the `<p className="text-muted-foreground text-sm mt-2">{subLabel}</p>` render line. Also removed the `getBehaviorProfile` import (now unused). The loading skeleton `<div className="h-4 w-56">` for the subLabel was also removed.
+
+### Bug 4 — Welcome banner shows sub-location name instead of state name
+**Symptom:** `HomeWelcomeBanner` showed "mostly in Munsiyari, Pithoragarh district." instead of the state name "Himachal Pradesh".
+**Root cause:** `TrekViewTracker` was passing `region={trek.region}` to `recordTrekView`. The static trek `region` field stores sub-location strings ("Garhwal Himalayas", "Munsiyari, Pithoragarh district") not state names. These sub-location strings were stored in `localStorage ty_behavior_v1` and surfaced as `topRegions[0]`.
+**Fix:**
+- `apps/web-next/app/(public)/trek/[slug]/page.tsx`: changed `region={trek.region}` to `region={cmsPage?.trek_state || trek.state || trek.region}` in the `TrekViewTracker` props. For CMS-published trek pages `cmsPage.trek_state` (e.g., "Himachal Pradesh") takes priority; for static-only pages `trek.state` (e.g., "Uttarakhand") is used; `trek.region` (sub-location) only falls through if both are absent. Going forward all newly recorded views store the state name in the `region` field.

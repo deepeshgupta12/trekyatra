@@ -90,20 +90,20 @@ export default function PersonalisedFeed({ limit = 6 }: { limit?: number }) {
   if (loading || items.length === 0) return null;
 
   return (
-    <div>
-      <div className="flex items-center justify-between mb-4">
-        <div>
-          <div className="text-xs uppercase tracking-widest text-accent font-medium mb-1">
-            {heading}
+    <section className="py-16 md:py-24">
+      <div className="container-wide">
+        <div className="flex items-end justify-between mb-10 gap-6">
+          <div className="max-w-2xl">
+            <div className="text-xs uppercase tracking-[0.25em] text-accent mb-3">{heading}</div>
+            <h2 className="font-display text-3xl md:text-5xl font-semibold leading-tight">{subLabel}</h2>
           </div>
-          <h2 className="font-display text-xl font-semibold">{subLabel}</h2>
+        </div>
+        <div className="grid sm:grid-cols-2 gap-3">
+          {items.slice(0, limit).map((item) => (
+            <FeedCard key={item.id} item={item} />
+          ))}
         </div>
       </div>
-      <div className="grid sm:grid-cols-2 gap-3">
-        {items.slice(0, limit).map((item) => (
-          <FeedCard key={item.id} item={item} />
-        ))}
-      </div>
-    </div>
+    </section>
   );
 }

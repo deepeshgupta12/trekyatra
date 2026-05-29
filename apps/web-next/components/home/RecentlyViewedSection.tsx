@@ -7,7 +7,8 @@ import { getBehaviorProfile, hasBehaviorData } from "@/lib/behavior-tracker";
 import type { Trek } from "@/components/trek/TrekCard";
 
 interface Props {
-  trekList: Trek[];   // static trek list from server for name/image enrichment
+  trekList: Trek[];
+  cmsImageMap?: Record<string, string>; // slug → hero_image_url for CMS-only treks
 }
 
 interface ViewChip {
@@ -18,7 +19,7 @@ interface ViewChip {
   difficulty: string;
 }
 
-export function RecentlyViewedSection({ trekList }: Props) {
+export function RecentlyViewedSection({ trekList, cmsImageMap = {} }: Props) {
   const { user, isLoading } = useAuth();
   const [chips, setChips] = useState<ViewChip[]>([]);
   const [mounted, setMounted] = useState(false);
@@ -40,7 +41,7 @@ export function RecentlyViewedSection({ trekList }: Props) {
       return {
         slug: v.slug,
         name: staticMatch?.name ?? v.slug.replace(/-/g, " ").replace(/\b\w/g, (c) => c.toUpperCase()),
-        image: staticMatch?.image ?? "",
+        image: staticMatch?.image || cmsImageMap[v.slug] || "",
         region: staticMatch?.region ?? v.region ?? "",
         difficulty: staticMatch?.difficulty ?? v.difficulty ?? "",
       };
