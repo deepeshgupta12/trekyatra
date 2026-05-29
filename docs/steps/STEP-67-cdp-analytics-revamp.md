@@ -1,7 +1,8 @@
 # STEP-67 — CDP Analytics Full Revamp
 
-**Status:** In Progress
+**Status:** Done
 **Date Started:** 2026-05-29
+**Date Completed:** 2026-05-29
 **Branch:** main
 
 ---
@@ -625,3 +626,191 @@ op.create_table("cdp_webhook_rules", ...)
 - **`is_internal` detection in SDK:** Only set to `true` on localhost. Never set it to `true` in production builds by default. The `NEXT_PUBLIC_IS_INTERNAL` env var allows QA/staging environments to be flagged.
 - **Segment builder preview query performance:** Limit preview evaluation to the last 90 days to keep query times under 2s on the current dataset.
 - **Route ordering:** All new static routes (`/events/export`, `/segments/custom`, `/content/pages`, etc.) must be registered BEFORE dynamic routes (`/segments/{id}`, `/events/{id}`) in `routes/cdp.py`. Revisit route ordering after adding new endpoints.
+
+---
+
+## What Was Done (Implemented 2026-05-29)
+
+### Phase 0 — Event Taxonomy + DB
+
+**Alembic Migration `20260529_0041_cdp_phase0.py`** (down_revision: `20260527_0040`)
+- `CREATE TABLE event_definitions` — id UUID PK, event_name UNIQUE, event_category, description, properties JSONB, is_active, is_test_only, timestamps
+- `CREATE TABLE custom_segments` — id UUID PK, name, description, conditions JSONB, user_count, last_computed_at, created_at
+- `CREATE TABLE cdp_webhook_rules` — id UUID PK, name, trigger_event, condition JSONB, webhook_url, is_active, created_at
+- `ALTER TABLE analytics_events ADD COLUMN is_internal BOOLEAN DEFAULT FALSE`
+- 4 new composite performance indexes: `ix_analytics_events_name_created`, `ix_analytics_events_anon_created`, `ix_analytics_events_url_created`, `ix_analytics_events_is_internal`
+- Seeded 35 events via `op.bulk_insert()` covering all categories
+
+**`services/api/app/modules/cdp/models.py`** — MODIFIED
+- Added `is_internal = Column(Boolean, nullable=False, default=False)` to `AnalyticsEvent`
+- Added `EventDefinition` ORM class (table: `event_definitions`)
+- Added `CustomSegment` ORM class (table: `custom_segments`, JSONB conditions column)
+- Added `CdpWebhookRule` ORM class (table: `cdp_webhook_rules`, JSONB condition column)
+
+**`services/api/app/db/base.py`** — MODIFIED
+- Imported and registered `EventDefinition`, `CustomSegment`, `CdpWebhookRule`
+
+**`services/api/app/core/config.py`** — MODIFIED
+- Added `internal_anonymous_ids: list[str] = []` setting (comma-separated in env)
+
+**`services/api/.env.example`** — MODIFIED
+- Added `INTERNAL_ANONYMOUS_IDS=` with doc comment
+
+### Phase 1 — Executive Dashboard + Event Explorer
+
+**`services/api/app/schemas/cdp.py`** — EXTENDED (~20 new Pydantic models)
+- `EventDefinitionOut`, `EventDefinitionsOut`
+- `SparklinePoint`, `KpiTile`, `KpisOut` (8 KPI tiles with delta + sparkline arrays)
+- `AlertItem`, `AlertsOut`
+- `RealtimeFeedItem`, `RealtimeFeedOut`
+- `EventExplorerItem`, `EventExplorerOut` (paginated with filters)
+- `FunnelTemplateStep`, `FunnelTemplate`, `FunnelTemplatesOut`
+- `CustomCohortIn` (cohort_event, retention_event, date_from/to, max_weeks)
+- `SegmentCondition` (type/event_name/property_key/value/operator/time_window)
+- `CustomSegmentIn`, `CustomSegmentOut`, `CustomSegmentListOut`
+- `SegmentPreviewIn`, `SegmentPreviewOut` (estimated_count + evaluated_in_ms)
+- `ContentPageAnalytics`, `ContentPagesOut`
+- `TrekAnalyticsRow`, `TrekAnalyticsOut`
+- `WebhookRuleIn`, `WebhookRuleOut`, `WebhookRulesOut`
+- `SuppressionItem`, `SuppressionsOut`
+- Added `is_internal: bool = False` to `EventIn`
+
+**`services/api/app/modules/cdp/service.py`** — EXTENDED
+- `_is_internal_event(event_in)` helper — checks `anonymous_id` against config list + `is_internal` payload flag
+- Updated `log_event()` to pass `is_internal=_is_internal_event(event_in)`
+- `get_kpis(db)` — 8 KPI tiles: DAU/WAU/MAU (COUNT DISTINCT anonymous_id), Sessions 7d, Avg Session Duration, Leads 30d, Plan Completions 30d, Scroll Depth 50%+. Each tile: current value + delta (vs prior period) + 7-day sparkline array
+- `get_alerts(db)` — evaluates 3 rule-based alert conditions: plan completion drop >20%, no events in 2h, new user spike >50%
+- `get_realtime_feed(db)` — last 50 events ordered by created_at DESC; returns serialized dicts (not ORM objects, avoids PydanticSerializationError)
+- `get_events_explorer(db, filters)` — paginated query with 7 filter dimensions: category, event_name, anonymous_id, page_url_contains, date_from/to, exclude_internal; returns serialized dicts
+- `get_events_export_csv(db, filters)` — streaming CSV generator, max 10,000 rows
+- `FUNNEL_TEMPLATES` constant — 6 preset TrekYatra funnels (Discovery→Plan, Search→Trek, Trek→Save, Trek→Lead, New User Activation, Content Engagement)
+- `get_funnel_templates()` — returns FUNNEL_TEMPLATES list
+- `get_custom_cohort(db, body)` — dynamic CTE SQL using week-offset CASE expressions; delegates to `get_cohort_heatmap()` when `cohort_event="session_started"`
+- `list_custom_segments(db)` — list from `custom_segments` table
+- `create_custom_segment(db, body)` — creates `CustomSegment` from `CustomSegmentIn`
+- `preview_segment(db, conditions)` — evaluates `SegmentCondition[]` against last 90 days; returns estimated_count + evaluated_in_ms
+- `export_segment_csv(db, segment_id)` — streaming CSV of users matching segment conditions
+- `get_content_pages_analytics(db, sort_by, page_type)` — LEFT JOIN cms_pages with analytics_events; computes views_7d, views_30d, scroll_50_count, scroll_100_count, leads per page
+- `get_trek_analytics(db)` — trek-level funnel: views, plan_cta_clicks, plan_completions, save_count, conversion_rate; sorted by conversion_rate DESC
+- `list_webhook_rules(db)` — all rows from `cdp_webhook_rules`
+- `create_webhook_rule(db, body)` — creates `CdpWebhookRule` from `WebhookRuleIn`
+- `delete_webhook_rule(db, rule_id)` — deletes rule by UUID
+- `get_suppressions(db)` — users where `user_traits.trait_key='suppressed'` and `trait_value='true'`
+- `suppress_user(db, user_id)` — upserts suppression trait
+- `get_event_definitions(db)` — all rows from `event_definitions` ordered by category, name
+
+**`services/api/app/api/routes/cdp.py`** — EXTENDED
+- 18 new route handlers: `GET /kpis`, `GET /realtime-feed`, `GET /alerts`, `GET /events/definitions`, `GET /events/export`, `GET /events` (all static before `/events/stream`), `GET /funnels/templates`, `POST /cohorts/custom`, `GET /segments/custom`, `POST /segments/custom`, `POST /segments/preview`, `GET /segments/{id}/export`, `GET /content/pages`, `GET /content/treks`, `GET /webhooks`, `POST /webhooks`, `DELETE /webhooks/{rule_id}`, `GET /suppressions`
+- Static routes registered before dynamic routes to prevent path shadowing
+- `StreamingResponse` added for CSV export endpoints
+
+### Backend Tests
+
+**`services/api/tests/test_cdp_step67.py`** — CREATED (25 tests)
+
+| Test ID | Name | Verifies |
+|---------|------|---------|
+| TC-B01 | test_event_ingest_is_internal_defaults_false | EventIn.is_internal=False by default; persisted to analytics_events |
+| TC-B02 | test_event_ingest_is_internal_true | is_internal=True persisted when sent |
+| TC-B03 | test_kpis_returns_8_tiles | GET /kpis returns 8 KPI tiles with correct keys |
+| TC-B04 | test_kpi_dau_gte_zero | DAU value ≥ 0 |
+| TC-B05 | test_realtime_feed_structure | GET /realtime-feed returns list of events with required fields |
+| TC-B06 | test_realtime_feed_is_list | Response is a list |
+| TC-B07 | test_alerts_structure | GET /alerts returns alerts list |
+| TC-B08 | test_alert_item_structure | If alerts present, each has message/severity/alert_type fields |
+| TC-B09 | test_event_explorer_paginated | GET /events returns paginated events with total/page/page_size |
+| TC-B10 | test_events_explorer_excludes_internal | exclude_internal=true filters is_internal events |
+| TC-B11 | test_events_export_csv_headers | GET /events/export returns text/csv with correct columns |
+| TC-B12 | test_funnel_templates_count | GET /funnels/templates returns 6 templates |
+| TC-B13 | test_funnel_template_structure | Each template has name, steps array with event_name |
+| TC-B14 | test_custom_cohort_heatmap | POST /cohorts/custom returns rows with retention list |
+| TC-B15 | test_custom_cohort_session_based | cohort_event=session_started returns valid heatmap |
+| TC-B16 | test_create_custom_segment | POST /segments/custom creates and returns segment with id |
+| TC-B17 | test_list_custom_segments | GET /segments/custom returns created segment |
+| TC-B18 | test_segment_preview_returns_count | POST /segments/preview returns estimated_count ≥ 0 |
+| TC-B19 | test_content_pages_analytics | GET /content/pages returns pages list |
+| TC-B20 | test_trek_analytics | GET /content/treks returns treks list with funnel metrics |
+| TC-B21 | test_create_webhook_rule | POST /webhooks creates rule with id |
+| TC-B22 | test_list_webhook_rules | GET /webhooks returns created rule |
+| TC-B23 | test_delete_webhook_rule | DELETE /webhooks/{id} returns 204; rule gone from list |
+| TC-B24 | test_suppressions_list | GET /suppressions returns list |
+| TC-B25 | test_event_definitions | GET /events/definitions returns 35 seeded definitions |
+
+All 25 tests pass. Full suite: **608 passed, 1 skipped, 0 failures**.
+
+### Frontend
+
+**`apps/web-next/lib/analytics.ts`** — EXTENDED
+- Added `IS_INTERNAL` constant: `process.env.NEXT_PUBLIC_IS_INTERNAL === "true" || window.location.hostname === "localhost"`
+- Added `is_internal: boolean` to `EventPayload` interface
+- Added `is_internal: IS_INTERNAL` to all event payload construction
+- Added 18 new exported `trackEvent` wrappers: `trackTrekPlanCtaClicked`, `trackTrekSaved`, `trackTrekCompared`, `trackTrekShared`, `trackFaqExpanded`, `trackSeasonTabChanged`, `trackDifficultyTabChanged`, `trackSearchResultClicked`, `trackRecommendationClicked`, `trackCompareView`, `trackPackingChecklistViewed`, `trackPermitGuideViewed`, `trackCostGuideViewed`, `trackScrollDepthPct`, `trackLeadSubmitted`, `trackNewsletterSubscribed`, `trackOperatorInquirySent`, `trackAffiliateClick`
+
+**`apps/web-next/app/(admin)/admin/cdp/page.tsx`** — FULL REWRITE (executive dashboard)
+- 8 KPI tiles with inline SVG sparklines (pure `<polyline>` — no chart library)
+- Delta display: pine/green (▲), red (▼), muted (→) with computed percentage
+- Alert rail — dismissible alert cards below KPIs
+- Real-time event feed — auto-refreshes every 10s, last 50 events with category badges
+- Expanded nav cards grid — 10 CDP sub-page cards
+
+**`apps/web-next/app/(admin)/admin/cdp/events/page.tsx`** — FULL REWRITE (event explorer)
+- 7 filter controls: category, event_name (from catalog dropdown), anonymous_id, page_url_contains, date_from/to, exclude_internal toggle
+- Paginated table with ← prev / next → pagination
+- Expandable rows: full JSON of event properties
+- CSV export via `window.location.href`
+
+**`apps/web-next/app/(admin)/admin/cdp/content/page.tsx`** — NEW
+- Per-page CMS analytics: sortable columns (views_7d, views_30d, scroll_50_count, leads), page_type filter, link to Trek Funnel Analytics
+
+**`apps/web-next/app/(admin)/admin/cdp/content/treks/page.tsx`** — NEW
+- Trek funnel analytics table: views_30d, plan_cta_clicks, plan_completions, save_count, conversion_rate (color-coded: pine ≥5%, amber ≥2%, muted <2%)
+- Aggregate KPI strip above table
+
+**`apps/web-next/app/(admin)/admin/cdp/segments/builder/page.tsx`** — NEW
+- Visual rule builder: Add/Remove condition rows (WHERE/AND logic), condition type dropdown, event catalog dropdown, operator dropdown, value inputs
+- Live preview count via `POST /segments/preview`
+- Save to backend via `POST /segments/custom`
+
+**`apps/web-next/app/(admin)/admin/cdp/webhooks/page.tsx`** — NEW
+- Inline create form: rule name, trigger_event dropdown (8 event types), webhook URL
+- Rules list with delete button
+- Fetch on mount + re-fetch on create/delete
+
+**`apps/web-next/app/(admin)/admin/layout.tsx`** — MODIFIED
+- Added `Filter`, `Webhook`, `Mountain` icon imports
+- CDP nav group: added `exact: true` to `/admin/cdp` (fixes active-state bleeding to sub-paths)
+- Added nav items: Segment Builder (`/admin/cdp/segments/builder`), Content Analytics (`/admin/cdp/content`), Trek Analytics (`/admin/cdp/content/treks`), Webhooks (`/admin/cdp/webhooks`)
+- Renamed "Event Stream" → "Event Explorer"
+
+### Build + Test Results
+- `next build` — ✅ 193 pages, zero TypeScript errors
+- pytest full suite — ✅ 608 passed, 1 skipped, 0 failures
+
+---
+
+## Files Created
+
+| File | Purpose |
+|------|---------|
+| `services/api/alembic/versions/20260529_0041_cdp_phase0.py` | DB migration: event_definitions, custom_segments, cdp_webhook_rules, is_internal column + indexes |
+| `services/api/tests/test_cdp_step67.py` | 25 new backend tests (TC-B01 to TC-B25) |
+| `apps/web-next/app/(admin)/admin/cdp/content/page.tsx` | Per-page content analytics |
+| `apps/web-next/app/(admin)/admin/cdp/content/treks/page.tsx` | Trek funnel analytics |
+| `apps/web-next/app/(admin)/admin/cdp/segments/builder/page.tsx` | Dynamic segment builder |
+| `apps/web-next/app/(admin)/admin/cdp/webhooks/page.tsx` | Webhook rules CRUD |
+
+## Files Modified
+
+| File | Change |
+|------|--------|
+| `services/api/app/modules/cdp/models.py` | Added EventDefinition, CustomSegment, CdpWebhookRule ORM models; added is_internal to AnalyticsEvent |
+| `services/api/app/db/base.py` | Registered 3 new CDP models |
+| `services/api/app/schemas/cdp.py` | ~20 new Pydantic schemas; is_internal on EventIn |
+| `services/api/app/modules/cdp/service.py` | _is_internal_event helper; updated log_event; 17 new service functions |
+| `services/api/app/api/routes/cdp.py` | 18 new route handlers; static routes ordered before dynamic |
+| `services/api/app/core/config.py` | internal_anonymous_ids setting |
+| `services/api/.env.example` | INTERNAL_ANONYMOUS_IDS env var documented |
+| `apps/web-next/lib/analytics.ts` | IS_INTERNAL flag; is_internal on EventPayload; 18 new trackEvent wrappers |
+| `apps/web-next/app/(admin)/admin/cdp/page.tsx` | Full rewrite — executive dashboard with KPIs, sparklines, alerts, real-time feed |
+| `apps/web-next/app/(admin)/admin/cdp/events/page.tsx` | Full rewrite — Event Explorer with 7 filters, pagination, CSV export |
+| `apps/web-next/app/(admin)/admin/layout.tsx` | Added 4 new CDP nav items; exact flag on CDP Overview; renamed Event Stream → Event Explorer |

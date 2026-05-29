@@ -32,6 +32,9 @@ from app.modules.cdp.models import (
     UserTrait,
     AttributionTouchpoint,
     GscPerformance,
+    EventDefinition,
+    CustomSegment,
+    CdpWebhookRule,
 )
 
 __all__ = [
@@ -91,4 +94,7 @@ __all__ = [
     "UserTrait",
     "AttributionTouchpoint",
     "GscPerformance",
+    "EventDefinition",
+    "CustomSegment",
+    "CdpWebhookRule",
 ]

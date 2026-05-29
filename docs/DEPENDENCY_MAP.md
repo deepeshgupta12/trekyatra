@@ -1074,6 +1074,53 @@ Before editing any backend file:
 #### New Files — Frontend
 - `apps/web-next/app/(admin)/admin/cdp/activity/page.tsx` — User activity timeline page; blast radius: NONE (new page)
 
+## Step 67 — CDP Analytics Full Revamp (2026-05-29)
+
+### New Files — Backend
+- `services/api/alembic/versions/20260529_0041_cdp_phase0.py` — migration: event_definitions, custom_segments, cdp_webhook_rules tables; is_internal column on analytics_events; 4 composite indexes; 35 event seeds; blast radius: LOW (additive, no existing tables modified except one column add)
+- `services/api/tests/test_cdp_step67.py` — 25 new tests (TC-B01–TC-B25); blast radius: NONE
+
+### Modified Files — Backend
+- `services/api/app/modules/cdp/models.py` — added EventDefinition, CustomSegment, CdpWebhookRule ORM models; added `is_internal` Boolean to AnalyticsEvent; blast radius: LOW — is_internal is additive; new models are new tables
+- `services/api/app/db/base.py` — 3 new model imports registered in metadata; blast radius: LOW (additive)
+- `services/api/app/schemas/cdp.py` — ~20 new Pydantic schemas; `is_internal: bool` added to EventIn; blast radius: LOW (additive — new schemas only; EventIn change backward-compatible with default=False)
+- `services/api/app/modules/cdp/service.py` — `_is_internal_event` helper; updated `log_event` to pass is_internal; 17 new service functions; blast radius: LOW (only called by cdp routes layer)
+- `services/api/app/api/routes/cdp.py` — 18 new admin route handlers; static routes registered before dynamic to prevent path shadowing; blast radius: LOW (additive routes)
+- `services/api/app/core/config.py` — `internal_anonymous_ids` list setting; blast radius: LOW (additive field, default empty list)
+- `services/api/.env.example` — INTERNAL_ANONYMOUS_IDS env var; blast radius: NONE
+
+### New Files — Frontend
+- `apps/web-next/app/(admin)/admin/cdp/content/page.tsx` — content analytics page; blast radius: NONE (new page)
+- `apps/web-next/app/(admin)/admin/cdp/content/treks/page.tsx` — trek funnel analytics page; blast radius: NONE (new page)
+- `apps/web-next/app/(admin)/admin/cdp/segments/builder/page.tsx` — dynamic segment builder; blast radius: NONE (new page)
+- `apps/web-next/app/(admin)/admin/cdp/webhooks/page.tsx` — webhook rules CRUD; blast radius: NONE (new page)
+
+### Modified Files — Frontend
+- `apps/web-next/lib/analytics.ts` — IS_INTERNAL flag; is_internal field on EventPayload; 18 new trackEvent wrappers; blast radius: MEDIUM — every existing call site continues to work (new field default false; new functions additive)
+- `apps/web-next/app/(admin)/admin/cdp/page.tsx` — full rewrite executive dashboard; blast radius: LOW (self-contained admin page)
+- `apps/web-next/app/(admin)/admin/cdp/events/page.tsx` — full rewrite event explorer; blast radius: LOW (self-contained admin page)
+- `apps/web-next/app/(admin)/admin/layout.tsx` — 4 new CDP nav links added; exact flag on CDP Overview; blast radius: LOW (additive nav items)
+
+### Endpoints Added (all under `/api/v1/admin/cdp/`)
+- `GET /kpis` — 8 KPI tiles with deltas + sparklines
+- `GET /realtime-feed` — last 50 events
+- `GET /alerts` — computed alert cards
+- `GET /events/definitions` — event catalog (static before /events/stream)
+- `GET /events/export` — CSV streaming download (static before /events/stream)
+- `GET /events` — paginated event explorer (static before /events/stream)
+- `GET /funnels/templates` — 6 preset funnel templates
+- `POST /cohorts/custom` — custom cohort heatmap by event type
+- `GET /segments/custom` — list custom segments
+- `POST /segments/custom` — create custom segment
+- `POST /segments/preview` — estimate user count for condition set
+- `GET /segments/{id}/export` — export segment as CSV
+- `GET /content/pages` — per-page CMS analytics
+- `GET /content/treks` — trek funnel analytics
+- `GET /webhooks` — list webhook rules
+- `POST /webhooks` — create webhook rule
+- `DELETE /webhooks/{rule_id}` — delete webhook rule
+- `GET /suppressions` — suppressed user list
+
 ## Step 66 — Homepage Section Logic by User State
 
 ### New Files — Frontend

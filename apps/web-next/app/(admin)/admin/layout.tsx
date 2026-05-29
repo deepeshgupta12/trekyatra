@@ -8,7 +8,7 @@ import {
   LayoutDashboard, Search, Layers, FileText, CheckSquare, Link2,
   DollarSign, BarChart2, Terminal, Settings, ChevronRight, Menu, X,
   GitBranch, Bot, GitMerge, Database, LogOut, Users, RefreshCw, Swords, Mail, Building2, Globe, Workflow, TrendingUp,
-  Package, ShoppingBag, Activity,
+  Package, ShoppingBag, Activity, Filter, Webhook, Mountain,
 } from "lucide-react";
 import { adminLogout } from "@/lib/admin-auth-api";
 
@@ -46,12 +46,16 @@ const NAV_GROUPS = [
   {
     label: "CDP",
     items: [
-      { href: "/admin/cdp", label: "CDP Overview", icon: Activity },
+      { href: "/admin/cdp", label: "CDP Overview", icon: Activity, exact: true },
       { href: "/admin/cdp/users", label: "Users", icon: Users },
-      { href: "/admin/cdp/events", label: "Event Stream", icon: Activity },
+      { href: "/admin/cdp/events", label: "Event Explorer", icon: BarChart2 },
       { href: "/admin/cdp/funnels", label: "Funnels", icon: GitMerge },
       { href: "/admin/cdp/cohorts", label: "Cohorts", icon: Layers },
       { href: "/admin/cdp/segments", label: "Segments", icon: TrendingUp },
+      { href: "/admin/cdp/segments/builder", label: "Segment Builder", icon: Filter },
+      { href: "/admin/cdp/content", label: "Content Analytics", icon: FileText },
+      { href: "/admin/cdp/content/treks", label: "Trek Analytics", icon: Mountain },
+      { href: "/admin/cdp/webhooks", label: "Webhooks", icon: Webhook },
       { href: "/admin/cdp/activity", label: "User Activity", icon: Activity },
       { href: "/admin/cdp/gsc", label: "GSC", icon: Search },
     ],

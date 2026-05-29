@@ -137,10 +137,14 @@ Last updated: 2026-05-27 (Step 64)
 | `/admin/cdp` | CDP Overview | Step 64 — KPI strip + nav cards |
 | `/admin/cdp/users` | CDP Users | Paginated user list with search |
 | `/admin/cdp/users/[id]` | CDP User Detail | Profile, sessions, events, touchpoints |
-| `/admin/cdp/events` | CDP Event Stream | Live event feed with category/name filters |
-| `/admin/cdp/funnels` | CDP Funnels | Dynamic funnel builder — event catalog dropdowns, date range, count-type toggle (Step 65) |
-| `/admin/cdp/cohorts` | CDP Cohorts | Retention heatmap — N×M 9-week color-coded grid (Step 65) |
+| `/admin/cdp/events` | CDP Event Explorer | Filterable event table (7 filters: category, event name, anonymous_id, page_url, date range, exclude_internal) + pagination + CSV export (Step 67) |
+| `/admin/cdp/funnels` | CDP Funnels | Dynamic funnel builder — event catalog dropdowns, date range, count-type toggle + 6 preset templates (Steps 65, 67) |
+| `/admin/cdp/cohorts` | CDP Cohorts | Retention heatmap — N×M 9-week color-coded grid + configurable cohort type (Steps 65, 67) |
 | `/admin/cdp/segments` | CDP Segments | 10 expanded audience segments with human-readable criteria (Step 65) |
+| `/admin/cdp/segments/builder` | CDP Segment Builder | Visual rule builder — AND condition rows, event catalog dropdown, live preview count, save to backend (Step 67) |
+| `/admin/cdp/content` | CDP Content Analytics | Per-page CMS analytics: views 7d/30d, scroll depth, leads, sortable + page_type filter (Step 67) |
+| `/admin/cdp/content/treks` | CDP Trek Analytics | Trek-level funnel: views, plan CTAs, completions, save count, conversion rate — sorted by conv. rate (Step 67) |
+| `/admin/cdp/webhooks` | CDP Webhooks | Campaign trigger webhook rules CRUD — create/list/delete outbound HTTP hooks per event (Step 67) |
 | `/admin/cdp/activity` | CDP User Activity | Email lookup → chronological event timeline (Step 65) |
 | `/admin/cdp/gsc` | CDP GSC | Google Search Console performance data |
 | `/admin/logs` | System logs | NOT BUILT — post-launch |

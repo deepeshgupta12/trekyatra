@@ -19,6 +19,11 @@ const CONSENT_KEY = "ty_consent";
 const FLUSH_INTERVAL_MS = 5000;
 const MAX_BATCH_SIZE = 20;
 
+// Internal traffic flag — set true on localhost or via env var for QA/staging
+const IS_INTERNAL: boolean =
+  process.env.NEXT_PUBLIC_IS_INTERNAL === "true" ||
+  (typeof window !== "undefined" && window.location.hostname === "localhost");
+
 // ── Anonymous ID ──────────────────────────────────────────────────────────────
 
 function generateId(): string {
@@ -149,6 +154,7 @@ interface EventPayload {
   device_type?: string;
   browser?: string;
   consent_given: boolean;
+  is_internal: boolean;
 }
 
 let _queue: EventPayload[] = [];
@@ -199,6 +205,7 @@ export function trackEvent(
     device_type: getDeviceType(),
     browser: getBrowser(),
     consent_given: getConsent(),
+    is_internal: IS_INTERNAL,
     ...utms,
   };
   _queue.push(payload);
@@ -286,6 +293,88 @@ export function trackLeadFormStarted(source: string): void {
 export function trackLeadFormSubmitted(source: string, trekInterest?: string): void {
   trackEvent("conversion", "lead_form_submitted", { source, trek_interest: trekInterest }, 1);
   flushQueue();
+}
+
+// ── Step 67: New tracking functions ──────────────────────────────────────────
+
+export function trackTrekPlanCtaClicked(trekSlug: string, source: "sidebar" | "mobile" | "hero" = "sidebar"): void {
+  trackEvent("conversion", "trek_plan_cta_clicked", { trek_slug: trekSlug, source });
+}
+
+export function trackTrekSaved(trekSlug: string): void {
+  trackEvent("engagement", "trek_saved", { trek_slug: trekSlug });
+}
+
+export function trackTrekCompared(trekSlug: string): void {
+  trackEvent("engagement", "trek_compared", { trek_slug: trekSlug });
+}
+
+export function trackTrekShared(trekSlug: string, method?: string): void {
+  trackEvent("engagement", "trek_shared", { trek_slug: trekSlug, method });
+}
+
+export function trackFaqExpanded(question: string, trekSlug?: string): void {
+  trackEvent("engagement", "faq_expanded", { question, trek_slug: trekSlug });
+}
+
+export function trackSeasonTabChanged(season: string): void {
+  trackEvent("engagement", "season_tab_changed", { season });
+}
+
+export function trackDifficultyTabChanged(difficulty: string): void {
+  trackEvent("engagement", "difficulty_tab_changed", { difficulty });
+}
+
+export function trackSearchResultClicked(trekSlug: string, query: string, position: number): void {
+  trackEvent("engagement", "search_result_clicked", { trek_slug: trekSlug, query, position });
+}
+
+export function trackRecommendationClicked(trekSlug: string, source: string): void {
+  trackEvent("engagement", "recommendation_clicked", { trek_slug: trekSlug, source });
+}
+
+export function trackCompareView(trekSlugs: string[]): void {
+  trackEvent("engagement", "compare_view", { trek_slugs: trekSlugs, count: trekSlugs.length });
+}
+
+export function trackPackingChecklistViewed(trekSlug: string): void {
+  trackEvent("engagement", "packing_checklist_viewed", { trek_slug: trekSlug });
+}
+
+export function trackPermitGuideViewed(trekSlug: string): void {
+  trackEvent("engagement", "permit_guide_viewed", { trek_slug: trekSlug });
+}
+
+export function trackCostGuideViewed(trekSlug: string): void {
+  trackEvent("engagement", "cost_guide_viewed", { trek_slug: trekSlug });
+}
+
+export function trackScrollDepthPct(depth: 25 | 50 | 75 | 100): void {
+  const eventName = `content_scroll_${depth}` as
+    | "content_scroll_25"
+    | "content_scroll_50"
+    | "content_scroll_75"
+    | "content_scroll_100";
+  trackEvent("engagement", eventName, { depth_pct: depth });
+}
+
+export function trackLeadSubmitted(source: string, trekInterest?: string): void {
+  trackEvent("conversion", "lead_submitted", { source, trek_interest: trekInterest }, 1);
+  flushQueue();
+}
+
+export function trackNewsletterSubscribed(source: string): void {
+  trackEvent("conversion", "newsletter_subscribed", { source }, 1);
+  flushQueue();
+}
+
+export function trackOperatorInquirySent(operatorSlug: string): void {
+  trackEvent("conversion", "operator_inquiry_sent", { operator_slug: operatorSlug }, 1);
+  flushQueue();
+}
+
+export function trackAffiliateClick(url: string, label?: string): void {
+  trackEvent("conversion", "affiliate_click", { url, label });
 }
 
 // ── Device detection helpers ─────────────────────────────────────────────────

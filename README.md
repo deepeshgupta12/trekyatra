@@ -278,7 +278,7 @@ trekyatra/
 | Refresh queue | Done |
 | Seasonal hub manager | Done |
 
-### CDP Analytics Layer (Steps 64–65)
+### CDP Analytics Layer (Steps 64–67)
 | Feature | Status |
 |---------|--------|
 | First-party event tracking SDK (batch ingest, consent gate) | Done |
@@ -286,14 +286,26 @@ trekyatra/
 | Identity stitching (anonymous → user_id on sign-up) | Done |
 | DPDP Act 2023 compliance (consent banner, data export, right-to-delete) | Done |
 | Dynamic funnel builder (event catalog dropdowns, date range, Unique/Total toggle, drop-off visualization) | Done |
+| 6 preset funnel templates (Discovery→Plan, Search→Trek, Trek→Save, Trek→Lead, New User Activation, Content Engagement) | Done |
 | Full N×M retention cohort heatmap (9-week, color-coded by retention %) | Done |
+| Configurable cohort builder (user_signed_up / trek_view / plan_wizard_started / trek_search) | Done |
 | 10 audience segments with human-readable filter criteria | Done |
+| Dynamic segment builder UI (rule conditions: event_count / event_property / trait / inactivity) | Done |
+| Segment preview (estimated user count, evaluated in ms) | Done |
 | User activity timeline (email lookup → chronological event history with pagination) | Done |
 | Plan My Trek stepwise event tracking (6 wizard steps instrumented) | Done |
 | Google Search Console performance data import | Done |
-| Live event stream viewer with category/name filters | Done |
+| Event Explorer (7 filters, paginated, CSV export, expandable property rows) | Done |
+| Per-page content analytics (views 7d/30d, scroll depth, leads, sortable) | Done |
+| Trek-level funnel analytics (views, plan CTAs, completions, conversion rate — sorted) | Done |
+| Campaign trigger webhook rules CRUD (create/list/delete outbound HTTP hooks per event) | Done |
+| Suppression list management (opt-out users excluded from segment exports) | Done |
+| Event taxonomy governance (event_definitions table, 35 canonical events seeded) | Done |
+| Internal traffic separation (is_internal flag: localhost / NEXT_PUBLIC_IS_INTERNAL) | Done |
+| 18 new typed trackEvent wrappers in analytics.ts SDK | Done |
+| Executive dashboard — 8 KPI tiles with SVG sparklines, deltas, alert rail, real-time feed | Done |
 | Paginated user list with profile view (sessions, events, touchpoints) | Done |
-| CDP admin dashboard (`/admin/cdp/*` — 9 pages) | Done |
+| CDP admin suite (`/admin/cdp/*` — 13 pages) | Done |
 | AnalyticsProvider + ConsentBanner + ScrollDepthTracker components | Done |
 | Nightly trait refresh + GSC import + weekly event cleanup Celery tasks | Done |
 
@@ -440,10 +452,16 @@ cd apps/web-next && npm run build
 | CDP session | `POST /api/v1/analytics/session/start`, `POST /api/v1/analytics/session/end` | Public |
 | CDP consent | `POST /api/v1/analytics/consent` | Public |
 | CDP admin — users | `GET /api/v1/admin/cdp/users`, `GET /api/v1/admin/cdp/users/{user_id}` | Admin auth |
-| CDP admin — funnels | `POST /api/v1/admin/cdp/funnels/dynamic`, `GET /api/v1/admin/cdp/events/catalog` | Admin auth |
-| CDP admin — analysis | `GET /api/v1/admin/cdp/cohorts`, `GET /api/v1/admin/cdp/segments` | Admin auth |
-| CDP admin — activity | `GET /api/v1/admin/cdp/users/activity` | Admin auth |
-| CDP admin — stream/gsc | `GET /api/v1/admin/cdp/events/stream`, `GET /api/v1/admin/cdp/gsc` | Admin auth |
+| CDP admin — dashboard | `GET /api/v1/admin/cdp/kpis`, `/realtime-feed`, `/alerts` | Admin auth |
+| CDP admin — events | `GET /api/v1/admin/cdp/events`, `/events/export`, `/events/definitions`, `/events/stream` | Admin auth |
+| CDP admin — funnels | `POST /api/v1/admin/cdp/funnels/dynamic`, `GET /funnels/templates` | Admin auth |
+| CDP admin — cohorts | `GET /api/v1/admin/cdp/cohorts`, `POST /cohorts/custom` | Admin auth |
+| CDP admin — segments | `GET/POST /api/v1/admin/cdp/segments/custom`, `POST /segments/preview`, `GET /segments/{id}/export` | Admin auth |
+| CDP admin — content | `GET /api/v1/admin/cdp/content/pages`, `/content/treks` | Admin auth |
+| CDP admin — webhooks | `GET/POST /api/v1/admin/cdp/webhooks`, `DELETE /webhooks/{id}` | Admin auth |
+| CDP admin — users | `GET /api/v1/admin/cdp/users`, `GET /users/{user_id}`, `GET /users/activity` | Admin auth |
+| CDP admin — gsc | `GET /api/v1/admin/cdp/gsc` | Admin auth |
+| CDP admin — suppressions | `GET /api/v1/admin/cdp/suppressions` | Admin auth |
 | DPDP compliance | `GET /api/v1/auth/me/data-export`, `DELETE /api/v1/auth/me/data` | User auth required |
 
 Full API docs available at http://localhost:8000/docs when the backend is running.

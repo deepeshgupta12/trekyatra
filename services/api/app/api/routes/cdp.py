@@ -10,26 +10,46 @@ from sqlalchemy.orm import Session
 from app.db.session import get_db
 from app.modules.auth.dependencies import get_current_admin, get_optional_user
 from app.modules.cdp import service as cdp_service
+from fastapi.responses import StreamingResponse
+
 from app.schemas.cdp import (
+    AlertsOut,
     BatchEventIn,
     CohortHeatmapOut,
     ConsentOut,
     ConsentUpdateIn,
+    ContentPagesOut,
+    CustomCohortIn,
+    CustomSegmentIn,
+    CustomSegmentListOut,
+    CustomSegmentOut,
     DynamicFunnelIn,
     DynamicFunnelOut,
     EventCatalogOut,
+    EventDefinitionsOut,
+    EventExplorerOut,
     EventIn,
     EventOut,
     EventStreamOut,
+    FunnelTemplatesOut,
     GscOut,
     IdentifyIn,
+    KpisOut,
+    RealtimeFeedOut,
     SegmentListOut,
+    SegmentPreviewIn,
+    SegmentPreviewOut,
     SessionEndIn,
     SessionOut,
     SessionStartIn,
+    SuppressionsOut,
+    TrekAnalyticsOut,
     UserActivityOut,
     UserListOut,
     UserProfileOut,
+    WebhookRuleIn,
+    WebhookRuleOut,
+    WebhookRulesOut,
 )
 
 public_router = APIRouter(prefix="/analytics", tags=["cdp"])
@@ -305,3 +325,201 @@ def get_gsc(
         "date_from": result["date_from"],
         "date_to": result["date_to"],
     }
+
+
+# ── Admin: Step 67 — KPI dashboard ────────────────────────────────────────────
+
+@admin_router.get("/kpis")
+def get_kpis(db: Session = Depends(get_db)) -> dict:
+    return cdp_service.get_kpis(db)
+
+
+@admin_router.get("/realtime-feed")
+def get_realtime_feed(
+    exclude_internal: bool = Query(True),
+    db: Session = Depends(get_db),
+) -> dict:
+    return cdp_service.get_realtime_feed(db, exclude_internal=exclude_internal)
+
+
+@admin_router.get("/alerts")
+def get_alerts(db: Session = Depends(get_db)) -> dict:
+    return cdp_service.get_alerts(db)
+
+
+# ── Admin: Step 67 — Event Explorer ──────────────────────────────────────────
+# NOTE: /events/definitions and /events/export registered BEFORE /events/stream
+# and any future /events/{id} to prevent path shadowing
+
+@admin_router.get("/events/definitions", response_model=EventDefinitionsOut)
+def get_event_definitions(db: Session = Depends(get_db)) -> EventDefinitionsOut:
+    result = cdp_service.get_event_definitions(db)
+    return EventDefinitionsOut(**result)
+
+
+@admin_router.get("/events/export")
+def export_events(
+    category: Optional[str] = Query(None),
+    event_name: Optional[str] = Query(None),
+    date_from: Optional[str] = Query(None),
+    date_to: Optional[str] = Query(None),
+    exclude_internal: bool = Query(True),
+    db: Session = Depends(get_db),
+) -> StreamingResponse:
+    csv_data = cdp_service.get_events_export_csv(
+        db,
+        category=category,
+        event_name=event_name,
+        date_from=date_from,
+        date_to=date_to,
+        exclude_internal=exclude_internal,
+    )
+    return StreamingResponse(
+        iter([csv_data]),
+        media_type="text/csv",
+        headers={"Content-Disposition": "attachment; filename=events_export.csv"},
+    )
+
+
+@admin_router.get("/events")
+def get_events_explorer(
+    category: Optional[str] = Query(None),
+    event_name: Optional[str] = Query(None),
+    anonymous_id: Optional[str] = Query(None),
+    user_id: Optional[str] = Query(None),
+    page_url_contains: Optional[str] = Query(None),
+    date_from: Optional[str] = Query(None),
+    date_to: Optional[str] = Query(None),
+    exclude_internal: bool = Query(True),
+    page: int = Query(1, ge=1),
+    page_size: int = Query(50, ge=1, le=200),
+    db: Session = Depends(get_db),
+) -> dict:
+    return cdp_service.get_events_explorer(
+        db,
+        category=category,
+        event_name=event_name,
+        anonymous_id=anonymous_id,
+        user_id=user_id,
+        page_url_contains=page_url_contains,
+        date_from=date_from,
+        date_to=date_to,
+        exclude_internal=exclude_internal,
+        page=page,
+        page_size=page_size,
+    )
+
+
+# ── Admin: Step 67 — Funnel templates ────────────────────────────────────────
+
+@admin_router.get("/funnels/templates")
+def get_funnel_templates() -> dict:
+    return cdp_service.get_funnel_templates()
+
+
+# ── Admin: Step 67 — Custom cohort ───────────────────────────────────────────
+
+@admin_router.post("/cohorts/custom")
+def run_custom_cohort(
+    body: CustomCohortIn,
+    db: Session = Depends(get_db),
+) -> dict:
+    return cdp_service.get_custom_cohort(
+        db,
+        cohort_event=body.cohort_event,
+        retention_event=body.retention_event,
+        date_from=body.date_from,
+        date_to=body.date_to,
+        max_weeks=body.max_weeks,
+    )
+
+
+# ── Admin: Step 67 — Segment builder (static routes before /{id} dynamic) ────
+
+@admin_router.get("/segments/custom", response_model=CustomSegmentListOut)
+def list_custom_segments(db: Session = Depends(get_db)) -> CustomSegmentListOut:
+    result = cdp_service.list_custom_segments(db)
+    return CustomSegmentListOut(**result)
+
+
+@admin_router.post("/segments/custom", response_model=CustomSegmentOut, status_code=201)
+def create_custom_segment(
+    body: CustomSegmentIn,
+    db: Session = Depends(get_db),
+) -> CustomSegmentOut:
+    seg = cdp_service.create_custom_segment(db, body)
+    return CustomSegmentOut.model_validate(seg)
+
+
+@admin_router.post("/segments/preview", response_model=SegmentPreviewOut)
+def preview_segment(
+    body: SegmentPreviewIn,
+    db: Session = Depends(get_db),
+) -> SegmentPreviewOut:
+    result = cdp_service.preview_segment(db, body.conditions)
+    return SegmentPreviewOut(**result)
+
+
+@admin_router.get("/segments/{segment_id}/export")
+def export_segment(
+    segment_id: str,
+    db: Session = Depends(get_db),
+) -> StreamingResponse:
+    csv_data = cdp_service.export_segment_csv(db, segment_id)
+    if not csv_data:
+        raise HTTPException(status_code=404, detail="Segment not found")
+    return StreamingResponse(
+        iter([csv_data]),
+        media_type="text/csv",
+        headers={"Content-Disposition": f"attachment; filename=segment_{segment_id}.csv"},
+    )
+
+
+# ── Admin: Step 67 — Content analytics ───────────────────────────────────────
+
+@admin_router.get("/content/pages")
+def get_content_pages(
+    sort_by: str = Query("views_30d"),
+    page_type: Optional[str] = Query(None),
+    db: Session = Depends(get_db),
+) -> dict:
+    return cdp_service.get_content_pages_analytics(db, sort_by=sort_by, page_type=page_type)
+
+
+@admin_router.get("/content/treks")
+def get_trek_analytics(db: Session = Depends(get_db)) -> dict:
+    return cdp_service.get_trek_analytics(db)
+
+
+# ── Admin: Step 67 — Webhook rules ───────────────────────────────────────────
+
+@admin_router.get("/webhooks", response_model=WebhookRulesOut)
+def list_webhooks(db: Session = Depends(get_db)) -> WebhookRulesOut:
+    result = cdp_service.list_webhook_rules(db)
+    return WebhookRulesOut(**result)
+
+
+@admin_router.post("/webhooks", response_model=WebhookRuleOut, status_code=201)
+def create_webhook(
+    body: WebhookRuleIn,
+    db: Session = Depends(get_db),
+) -> WebhookRuleOut:
+    rule = cdp_service.create_webhook_rule(db, body)
+    return WebhookRuleOut.model_validate(rule)
+
+
+@admin_router.delete("/webhooks/{rule_id}", status_code=204)
+def delete_webhook(
+    rule_id: str,
+    db: Session = Depends(get_db),
+) -> None:
+    deleted = cdp_service.delete_webhook_rule(db, rule_id)
+    if not deleted:
+        raise HTTPException(status_code=404, detail="Webhook rule not found")
+
+
+# ── Admin: Step 67 — Suppressions ────────────────────────────────────────────
+
+@admin_router.get("/suppressions")
+def get_suppressions(db: Session = Depends(get_db)) -> dict:
+    return cdp_service.get_suppressions(db)

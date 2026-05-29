@@ -555,7 +555,7 @@
 - Homepage page.tsx layout updated to include new components in correct order
 - No backend changes required — all logic is client-side via useAuth() + behavior-tracker
 
-### Step 67 — CDP Analytics Full Revamp [IN PROGRESS — 2026-05-29]
+### Step 67 — CDP Analytics Full Revamp [DONE — 2026-05-29]
 - Phase 0: event_definitions table + seed (35 events), is_internal flag on analytics_events, custom_segments + cdp_webhook_rules tables, Alembic migration 0041
 - Phase 1: Executive dashboard (8 KPI tiles with deltas/sparklines, real-time feed, alert rail), User 360 profile (full timeline, session list, trait badges, source attribution), Event Explorer (paginated + filters + CSV export)
 - Phase 2: 6 saved funnel templates, configurable cohort builder (4 cohort types), dynamic segment builder UI with rule conditions
@@ -568,4 +568,4 @@
 
 ## Execution Rule
 Do not start the next step without user confirmation.
-Current next step: **Step 66 — Homepage Section Logic by User State** (in progress)
+Current next step: **Step 68** (pending)

@@ -32,6 +32,7 @@ class AnalyticsEvent(Base):
     city = Column(String(128), nullable=True)
     ip_hash = Column(String(64), nullable=True)
     consent_given = Column(Boolean(), nullable=False, default=False)
+    is_internal = Column(Boolean(), nullable=False, default=False)
     created_at = Column(DateTime(timezone=True), server_default=func.now(), nullable=False)
 
 
@@ -128,3 +129,41 @@ class GscPerformance(Base):
     __table_args__ = (
         UniqueConstraint("date", "page_url", "query", "country", "device", name="uq_gsc_perf"),
     )
+
+
+class EventDefinition(Base):
+    __tablename__ = "event_definitions"
+
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    event_name = Column(String(120), nullable=False, unique=True, index=True)
+    event_category = Column(String(60), nullable=False, index=True)
+    description = Column(Text(), nullable=True)
+    properties = Column(JSONB, nullable=True)
+    is_active = Column(Boolean(), nullable=False, default=True)
+    is_test_only = Column(Boolean(), nullable=False, default=False)
+    created_at = Column(DateTime(timezone=True), server_default=func.now(), nullable=False)
+    updated_at = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now(), nullable=False)
+
+
+class CustomSegment(Base):
+    __tablename__ = "custom_segments"
+
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    name = Column(String(120), nullable=False)
+    description = Column(Text(), nullable=True)
+    conditions = Column(JSONB, nullable=False, default=list)
+    user_count = Column(Integer(), nullable=True, default=0)
+    last_computed_at = Column(DateTime(timezone=True), nullable=True)
+    created_at = Column(DateTime(timezone=True), server_default=func.now(), nullable=False)
+
+
+class CdpWebhookRule(Base):
+    __tablename__ = "cdp_webhook_rules"
+
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    name = Column(String(120), nullable=True)
+    trigger_event = Column(String(120), nullable=False, index=True)
+    condition = Column(JSONB, nullable=True)
+    webhook_url = Column(Text(), nullable=False)
+    is_active = Column(Boolean(), nullable=False, default=True, index=True)
+    created_at = Column(DateTime(timezone=True), server_default=func.now(), nullable=False)

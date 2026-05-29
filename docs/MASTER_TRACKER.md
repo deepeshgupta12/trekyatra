@@ -101,6 +101,7 @@ All V0 foundations are shipped. The stack is live locally with:
 | bugfix (2026-05-27) | Homepage stub regression after logout — **Root cause 1**: homepage had no `export const dynamic = "force-dynamic"`, so Next.js 14.2 statically pre-rendered it at build time when the backend isn't running → `fetchCMSPages` returns [] → DifficultyTabs + SeasonalTreks fall back to 12 static treks. **Root cause 2**: logout handler called `router.push("/"); router.refresh()` — `router.refresh()` refreshes the CURRENT route (not "/"), so navigating from /trek/kedarkantha the homepage router cache is never invalidated. **Fix**: added `force-dynamic` to homepage + changed logout to `window.location.href = "/"` (full reload bypasses all Next.js caches). Files: `app/(public)/page.tsx`, `components/layout/Header.tsx` | done |
 | 66 | Homepage Section Logic by User State — HomeWelcomeBanner (States A+B: logged-in greeting + last-viewed chips), HomeTrendingHeader (4-state personalized heading over SSR TrekCards), RecentlyViewedSection (State D: repeat logged-out horizontal recently-viewed row with login nudge), PersonalisedFeed 4-state logic (heading/fetcher/visibility per state), DifficultyTabsSection preferred-difficulty pre-select from behavior profile. No backend changes. | done |
 | bugfix (2026-05-29) | Plan My Trek CTA not working on trek detail page (desktop + mobile) — **Root cause**: Desktop sidebar "Plan My Trek" `<Button>` at `trek/[slug]/page.tsx:602` had NO `<Link>` wrapper and no `onClick` — rendered as a dead `<button>` with no navigation. Mobile had no in-article card (sidebar is `hidden lg:block`) and relied solely on `StickyMobileCTA` which can be permanently dismissed via localStorage. **Fix 1**: Wrapped desktop sidebar button in `<Link href="/plan">`. **Fix 2**: Added `block lg:hidden` in-article CTA card (same design as sidebar card) at end of article content — non-dismissable, always visible on mobile. File: `app/(public)/trek/[slug]/page.tsx` | done |
+| 67 | CDP Analytics Full Revamp — Phase 0 (event taxonomy, is_internal traffic separation, 3 new DB tables, 4 composite indexes, 35 seeded events); Phase 1 (executive dashboard with 8 KPI tiles + SVG sparklines + alert rail + real-time feed, Event Explorer with 7 filters + pagination + CSV export); Phase 2 (6 funnel templates, configurable cohort builder, dynamic segment builder with preview); Phase 3 (content analytics, trek funnel analytics); Phase 4 (webhook rules CRUD, suppression list); 25 backend tests added (608 total pass); 6 new/rewritten admin frontend pages; `is_internal` flag in analytics SDK + 18 new trackEvent wrappers | done |
 
 ## V5 — Mobile App Roadmap
 | Item | Status |
@@ -167,6 +168,7 @@ All V0 foundations are shipped. The stack is live locally with:
 | GitNexus re-indexed (9a2db42): 9,704 nodes, 13,470 edges, 368 clusters, 107 flows | done |
 | GitNexus re-indexed (6e3dd9d): 9,848 nodes, 13,652 edges, 371 clusters, 106 flows | done |
 | GitNexus re-indexed (9a37908): 10,902 nodes, 15,018 edges, 403 clusters, 106 flows | done |
+| GitNexus re-indexed (step67): 12,740 nodes, 17,614 edges, 483 clusters, 139 flows | done |
 | Security: ADMIN_EMAIL + ADMIN_PASSWORD are plaintext in App Spec — must encrypt via DO dashboard | pending |
 | NEXT_PUBLIC_API_BASE + NEXT_PUBLIC_SITE_URL confirmed plaintext in web component ✅ | done |
 | Google Analytics 4 — property created, Measurement ID: G-XM61V2PPDK, NEXT_PUBLIC_GA4_ID set in DO web component | done |
@@ -277,6 +279,92 @@ All V0 foundations are shipped. The stack is live locally with:
 | PRELAUNCH_CHECKLIST.md — comprehensive audit: 8 sections, 80+ items across BE/FE/Admin/Gaps/Production/Integrations/Testing | done |
 | Header nav — compact Logo (tagline hidden); search bar functional (onClick + ⌘K → /search); px-2.5 nav items; gap-4 | done |
 | Compare section — responsive: heading text-2xl sm:text-3xl; card p-3 md:p-4; text-sm md:text-base; no mobile overflow | done |
+
+### Step 67 — CDP Analytics Full Revamp
+Status: done
+Date: 2026-05-29
+What is done:
+
+**Phase 0 — Event Taxonomy + DB (`alembic/versions/20260529_0041_cdp_phase0.py`)**
+- `CREATE TABLE event_definitions` — canonical event dictionary (event_name UNIQUE, category, description, properties JSONB, is_active, is_test_only); seeded with 35 events covering navigation (1), engagement (18), conversion (11), system (3)
+- `CREATE TABLE custom_segments` — rule-based segment storage (name, description, conditions JSONB, user_count, last_computed_at)
+- `CREATE TABLE cdp_webhook_rules` — outbound webhook registry (trigger_event, condition JSONB, webhook_url, is_active)
+- `ALTER TABLE analytics_events ADD COLUMN is_internal BOOLEAN DEFAULT FALSE` — separates test/prod traffic
+- 4 composite performance indexes: `(event_name, created_at)`, `(anonymous_id, created_at)`, `(page_url, created_at)`, `(is_internal)`
+
+**Backend Models (`services/api/app/modules/cdp/models.py`)**
+- Added `is_internal` Boolean column to `AnalyticsEvent`
+- Added `EventDefinition`, `CustomSegment`, `CdpWebhookRule` ORM classes
+
+**Backend Schemas (`services/api/app/schemas/cdp.py`)** — 20 new Pydantic models:
+- KPI layer: `SparklinePoint`, `KpiTile`, `KpisOut` (8 tiles with value/delta/sparkline)
+- Dashboard: `AlertItem`, `AlertsOut`, `RealtimeFeedItem`, `RealtimeFeedOut`
+- Events: `EventExplorerItem`, `EventExplorerOut`, `EventDefinitionOut`
+- Funnels: `FunnelTemplate`, `FunnelTemplatesOut`
+- Cohorts: `CustomCohortIn`
+- Segments: `SegmentCondition`, `CustomSegmentIn`, `CustomSegmentOut`, `SegmentPreviewIn`, `SegmentPreviewOut`
+- Content: `ContentPageAnalytics`, `ContentPagesOut`, `TrekAnalyticsRow`, `TrekAnalyticsOut`
+- Webhooks: `WebhookRuleIn`, `WebhookRuleOut`, `WebhookRulesOut`
+- Suppressions: `SuppressionItem`, `SuppressionsOut`
+- `EventIn.is_internal: bool = False` added
+
+**Backend Service (`services/api/app/modules/cdp/service.py`)** — 17 new functions:
+- `_is_internal_event()` — checks anonymous_id list + payload flag; `log_event()` updated to pass is_internal
+- `get_kpis()` — 8 KPI tiles (DAU/WAU/MAU/Sessions/Avg-Duration/Leads/Plan-Completions/Scroll50) with delta vs prior period + 7-day sparkline arrays
+- `get_alerts()` — rule-based: plan completion drop >20%, no events 2h, user spike >50%
+- `get_realtime_feed()` — last 50 events as serialized dicts (avoids PydanticSerializationError)
+- `get_events_explorer()` — paginated with 7 filter dimensions; serialized dicts
+- `get_events_export_csv()` — streaming CSV generator (max 10,000 rows)
+- `FUNNEL_TEMPLATES` + `get_funnel_templates()` — 6 preset TrekYatra funnels
+- `get_custom_cohort()` — dynamic CTE SQL with week-offset CASE; falls back to `get_cohort_heatmap()` for session_started
+- `list_custom_segments()`, `create_custom_segment()` — CRUD on custom_segments table
+- `preview_segment()` — evaluates SegmentCondition[] against last 90 days; returns count + ms
+- `export_segment_csv()` — streaming segment CSV
+- `get_content_pages_analytics()` — LEFT JOIN cms_pages + analytics_events; views_7d/30d, scroll_50/100, leads
+- `get_trek_analytics()` — trek funnel metrics sorted by conversion_rate DESC
+- `list_webhook_rules()`, `create_webhook_rule()`, `delete_webhook_rule()` — CRUD on cdp_webhook_rules
+- `get_suppressions()` — users with suppressed user_trait
+- `get_event_definitions()` — all rows from event_definitions
+
+**Backend Routes (`services/api/app/api/routes/cdp.py`)** — 18 new endpoints (all static before dynamic):
+- `GET /admin/cdp/kpis`, `/realtime-feed`, `/alerts`
+- `GET /admin/cdp/events/definitions`, `/events/export`, `/events` (ordered before `/events/stream`)
+- `GET /admin/cdp/funnels/templates`
+- `POST /admin/cdp/cohorts/custom`
+- `GET/POST /admin/cdp/segments/custom`, `POST /segments/preview`, `GET /segments/{id}/export`
+- `GET /admin/cdp/content/pages`, `/content/treks`
+- `GET/POST /admin/cdp/webhooks`, `DELETE /webhooks/{rule_id}`
+- `GET /admin/cdp/suppressions`
+
+**Backend Tests (`services/api/tests/test_cdp_step67.py`)** — 25 tests (TC-B01 to TC-B25):
+- is_internal default false / true persisted; KPI structure (8 tiles); realtime feed list; alert structure; event explorer pagination + exclude_internal filter; CSV headers; 6 funnel templates; cohort heatmap structure (event-based + session-based); custom segment create/list; segment preview returns count; content pages list; trek analytics list; webhook CRUD (create/list/delete 204); suppressions list; event definitions (35)
+- Full suite: **608 passed, 1 skipped, 0 failures**
+
+**Frontend analytics.ts**
+- `IS_INTERNAL` constant: `localhost || NEXT_PUBLIC_IS_INTERNAL === "true"`
+- `is_internal: boolean` on `EventPayload` interface; passed in every event body
+- 18 new typed wrappers: `trackTrekPlanCtaClicked`, `trackTrekSaved`, `trackTrekCompared`, `trackTrekShared`, `trackFaqExpanded`, `trackSeasonTabChanged`, `trackDifficultyTabChanged`, `trackSearchResultClicked`, `trackRecommendationClicked`, `trackCompareView`, `trackPackingChecklistViewed`, `trackPermitGuideViewed`, `trackCostGuideViewed`, `trackScrollDepthPct`, `trackLeadSubmitted`, `trackNewsletterSubscribed`, `trackOperatorInquirySent`, `trackAffiliateClick`
+
+**Frontend admin pages (all under `apps/web-next/app/(admin)/admin/cdp/`)**
+- `page.tsx` — FULL REWRITE: 8 KPI tiles with pure SVG `<polyline>` sparklines; delta (pine/red/muted + ▲▼→); dismissible alert rail; real-time feed (10s polling, 50 events, category badges); 10 nav cards grid
+- `events/page.tsx` — FULL REWRITE: 7 filter controls; paginated table (← prev / next →); expandable JSON rows; CSV export
+- `content/page.tsx` — NEW: sortable per-page analytics table; page_type filter; link to trek analytics
+- `content/treks/page.tsx` — NEW: trek funnel table; aggregate KPI strip; color-coded conversion rates
+- `segments/builder/page.tsx` — NEW: visual rule builder (WHERE/AND rows, condition type + event dropdowns, operator + value inputs); live preview count; save to backend
+- `webhooks/page.tsx` — NEW: inline create form (name, event dropdown, URL); rules list with delete
+
+**Frontend layout (`apps/web-next/app/(admin)/admin/layout.tsx`)**
+- Added `Filter`, `Webhook`, `Mountain` icon imports
+- Added `exact: true` to CDP Overview nav item (fixes active state bleeding)
+- Added: Segment Builder, Content Analytics, Trek Analytics, Webhooks nav items
+- Renamed: "Event Stream" → "Event Explorer"
+
+**Build: `next build` — ✅ 193 pages, 0 TypeScript errors**
+
+What remains:
+- Phase 5 (AI insight cards) — deferred to future step
+- Webhook Celery delivery task (rules are stored; actual HTTP dispatch on event match is deferred)
+- GSC enhanced panel (CTR decay, position opportunities, query clusters) — deferred
 
 ### Step 63 — Hindi CMS translation fix + SEO (hreflang, JSON-LD, sitemap)
 Status: done
