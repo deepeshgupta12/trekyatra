@@ -340,3 +340,80 @@ def test_generate_brief_trigger_dispatches_task():
     assert "agent_run_id" in data
     assert data["status"] == "running"
     mock_task.assert_called_once()
+
+
+# ── _clean_llm_json unit tests (JSON repair resilience) ───────────────────────
+
+def test_clean_llm_json_fixes_literal_newlines_in_string():
+    from app.modules.agents.content_brief.agent import _clean_llm_json
+
+    # Simulate LLM emitting a real newline inside a JSON string value
+    raw = '{"editorial_brief_markdown": "## Day 1\nCamp at base"}'
+    cleaned = _clean_llm_json(raw)
+    parsed = json.loads(cleaned)
+    assert "Day 1" in parsed["editorial_brief_markdown"]
+    assert "\n" in parsed["editorial_brief_markdown"]  # real newline character present after JSON parse
+
+
+def test_clean_llm_json_preserves_escaped_sequences():
+    from app.modules.agents.content_brief.agent import _clean_llm_json
+
+    raw = '{"body": "line1\\nline2\\ttabbed"}'
+    cleaned = _clean_llm_json(raw)
+    assert cleaned == raw  # already-escaped sequences must pass through untouched
+
+
+def test_clean_llm_json_fixes_tabs_and_carriage_returns():
+    from app.modules.agents.content_brief.agent import _clean_llm_json
+
+    raw = '{"notes": "col1\tcol2\r\ncol3"}'
+    cleaned = _clean_llm_json(raw)
+    parsed = json.loads(cleaned)
+    assert "col1" in parsed["notes"]
+    assert "col2" in parsed["notes"]
+
+
+def test_generate_brief_recovers_from_literal_newlines_in_json():
+    """_generate_brief must succeed even when LLM emits literal newlines in JSON strings."""
+    from app.modules.agents.content_brief.agent import ContentBriefAgent
+
+    # Build a brief JSON with literal newlines inside string values (the real failure mode)
+    brief_with_literal_newlines = (
+        '{"page_objective": "Help trekkers plan Kedarkantha",\n'
+        ' "audience": "Beginner trekkers",\n'
+        ' "target_keyword": "kedarkantha trek guide",\n'
+        ' "secondary_keywords": ["kedarkantha winter trek"],\n'
+        ' "heading_structure": [{"level": "H1", "text": "Kedarkantha Trek Guide", "notes": "Overview"}],\n'
+        ' "faqs": [{"question": "When to go?", "answer_hint": "Dec-Apr"}],\n'
+        ' "key_entities": ["Kedarkantha"],\n'
+        ' "internal_link_targets": ["/trek/kedarkantha"],\n'
+        ' "schema_recommendations": ["Article"],\n'
+        ' "monetization_slots": [],\n'
+        ' "freshness_interval_days": 180,\n'
+        ' "word_count_target": 2500,\n'
+        ' "editorial_brief_markdown": "## Why Kedarkantha\nBest winter trek.\n## Itinerary\nDay 1: Sankri."}'
+    )
+
+    mock_message = MagicMock()
+    mock_message.content = [MagicMock(text=brief_with_literal_newlines)]
+
+    mock_client = MagicMock()
+    mock_client.messages.create.return_value = mock_message
+
+    state = {
+        "input": {"target_keyword": "kedarkantha trek guide", "page_type": "trek_guide"},
+        "metadata": {"topic": {"primary_keyword": "kedarkantha trek guide", "intent": "informational", "page_type": "trek_guide", "id": None, "title": None, "notes": None}, "cluster": None},
+        "errors": [],
+        "output": {},
+    }
+
+    with patch("app.modules.agents.content_brief.agent.get_anthropic_client", return_value=mock_client):
+        with patch("app.modules.agents.content_brief.agent.settings") as mock_settings:
+            mock_settings.anthropic_api_key = "sk-test"
+            db = MagicMock()
+            agent = ContentBriefAgent.__new__(ContentBriefAgent)
+            agent.db = db
+            result = agent._generate_brief(state)
+
+    assert "errors" not in result or not result["errors"]
+    assert result.get("output", {}).get("brief", {}).get("target_keyword") == "kedarkantha trek guide"

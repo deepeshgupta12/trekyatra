@@ -20,6 +20,38 @@ from app.schemas.content import ContentBriefCreate
 MODEL = "claude-sonnet-4-6"
 
 
+def _clean_llm_json(raw: str) -> str:
+    """Escape literal control characters inside JSON string values.
+
+    LLMs sometimes emit real newlines/tabs inside a JSON string instead of \\n/\\t,
+    making json.loads fail with 'Invalid control character' or 'Expecting , delimiter'.
+    Walk char-by-char, tracking whether we are inside a string, and escape offending bytes.
+    """
+    result: list[str] = []
+    in_string = False
+    i = 0
+    while i < len(raw):
+        ch = raw[i]
+        if ch == "\\" and in_string:
+            result.append(ch)
+            i += 1
+            if i < len(raw):
+                result.append(raw[i])
+        elif ch == '"':
+            in_string = not in_string
+            result.append(ch)
+        elif in_string and ch == "\n":
+            result.append("\\n")
+        elif in_string and ch == "\r":
+            result.append("\\r")
+        elif in_string and ch == "\t":
+            result.append("\\t")
+        else:
+            result.append(ch)
+        i += 1
+    return "".join(result)
+
+
 def _slugify(text: str) -> str:
     slug = re.sub(r"[^a-z0-9]+", "-", text.lower()).strip("-")[:72]
     return f"{slug}-{str(uuid.uuid4())[:8]}"
@@ -127,8 +159,18 @@ class ContentBriefAgent(BaseAgent):
 
         try:
             brief_data: dict[str, Any] = json.loads(raw)
-        except json.JSONDecodeError as exc:
-            return {"errors": [f"LLM returned invalid JSON (truncated?): {exc}. raw_length={len(raw)}"]}
+        except json.JSONDecodeError:
+            # Layer 2: escape literal control chars (newlines/tabs inside JSON strings)
+            try:
+                brief_data = json.loads(_clean_llm_json(raw))
+            except json.JSONDecodeError:
+                # Layer 3: json_repair handles unescaped quotes and other LLM JSON errors
+                try:
+                    from json_repair import repair_json
+                    repaired = repair_json(raw, return_objects=False, skip_json_loads=True)
+                    brief_data = json.loads(repaired)  # type: ignore[arg-type]
+                except Exception as exc:
+                    return {"errors": [f"LLM returned invalid JSON: {exc}. raw_length={len(raw)}"]}
         return {"output": {"brief": brief_data}}
 
     def _store_results(self, state: BaseAgentState) -> dict[str, Any]:
