@@ -589,6 +589,19 @@ export default async function TrekDetailPage({ params }: { params: { slug: strin
               publishedAt={cmsPage?.published_at}
               updatedAt={cmsPage?.updated_at}
             />
+
+            {/* Mobile-only Plan CTA — desktop shows this in the right sidebar */}
+            <div className="not-prose block lg:hidden mt-8 bg-gradient-pine text-surface rounded-2xl p-6 stack-shadow">
+              <div className="text-xs uppercase tracking-widest text-accent-glow mb-2">Plan this trek</div>
+              <div className="font-display text-2xl font-semibold mb-4 leading-tight">Get matched with a vetted operator</div>
+              <p className="text-sm text-surface/80 mb-5">Free planning help. We respond in 48 hrs.</p>
+              <Link href="/plan">
+                <Button variant="hero" size="default" className="w-full">Plan My Trek</Button>
+              </Link>
+              <div className="mt-4 pt-4 border-t border-surface/15 text-xs text-surface/70 flex items-center gap-2">
+                <Shield className="h-3 w-3" /> Editorially vetted operators only
+              </div>
+            </div>
           </article>
 
           {/* Right utility sidebar */}
@@ -599,7 +612,9 @@ export default async function TrekDetailPage({ params }: { params: { slug: strin
                   <div className="text-xs uppercase tracking-widest text-accent-glow mb-2">Plan this trek</div>
                   <div className="font-display text-2xl font-semibold mb-4 leading-tight">Get matched with a vetted operator</div>
                   <p className="text-sm text-surface/80 mb-5">Free planning help. We respond in 48 hrs.</p>
-                  <Button variant="hero" size="default" className="w-full">Plan My Trek</Button>
+                  <Link href="/plan">
+                    <Button variant="hero" size="default" className="w-full">Plan My Trek</Button>
+                  </Link>
                   <div className="mt-4 pt-4 border-t border-surface/15 text-xs text-surface/70 flex items-center gap-2">
                     <Shield className="h-3 w-3" /> Editorially vetted operators only
                   </div>
