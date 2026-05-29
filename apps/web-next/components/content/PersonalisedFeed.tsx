@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useAuth } from "@/lib/auth-context";
-import { hasBehaviorData, getBehaviorProfile } from "@/lib/behavior-tracker";
+import { hasBehaviorData } from "@/lib/behavior-tracker";
 import {
   RecommendationItem,
   fetchPersonalisedRecommendations,
@@ -43,47 +43,60 @@ function FeedCard({ item }: { item: RecommendationItem }) {
 export default function PersonalisedFeed({ limit = 6 }: { limit?: number }) {
   const { user, isLoading: authLoading } = useAuth();
   const [items, setItems] = useState<RecommendationItem[]>([]);
-  const [personalised, setPersonalised] = useState(false);
   const [loading, setLoading] = useState(true);
-  const [hasBehavior, setHasBehavior] = useState(false);
+  const [heading, setHeading] = useState("For you");
+  const [subLabel, setSubLabel] = useState("Treks matched to your interests");
 
   useEffect(() => {
-    // Cookie/localStorage gate: only show section when user has browsed treks
-    const behavior = hasBehaviorData();
-    setHasBehavior(behavior || !!user);
-
     if (authLoading) return;
 
-    if (!behavior && !user) {
-      // No browsing history and not logged in → hide section entirely
+    const hasBehavior = hasBehaviorData();
+
+    // State C (New logged out) — hide entirely
+    if (!user && !hasBehavior) {
       setLoading(false);
       return;
     }
 
-    const fetcher = user ? fetchPersonalisedRecommendations : fetchAnonymousRecommendations;
+    const firstName =
+      (user?.display_name || user?.full_name || "").split(" ")[0] || "Explorer";
+
+    // Determine heading + fetcher per state
+    let fetcher: (limit: number) => Promise<{ items: RecommendationItem[]; personalised: boolean }>;
+
+    if (user && hasBehavior) {
+      // State B: Repeat logged in — personalised
+      setHeading(`For ${firstName}`);
+      setSubLabel("Based on your browsing history");
+      fetcher = fetchPersonalisedRecommendations;
+    } else if (user && !hasBehavior) {
+      // State A: New logged in — generic popular treks
+      setHeading("Popular treks");
+      setSubLabel("Most loved by our community");
+      fetcher = fetchAnonymousRecommendations;
+    } else {
+      // State D: Repeat logged out — anonymous recs from browsing history
+      setHeading("Continue exploring");
+      setSubLabel("Treks based on your browsing history");
+      fetcher = fetchAnonymousRecommendations;
+    }
+
     fetcher(limit)
-      .then((data) => {
-        setItems(data.items);
-        // Personalised if logged in OR if we have behavioral data
-        setPersonalised(data.personalised || behavior);
-      })
+      .then((data) => setItems(data.items))
       .catch(() => setItems([]))
       .finally(() => setLoading(false));
   }, [user, authLoading, limit]);
 
-  // Hide completely when no behavior and not loading (no data to show)
-  if (loading || items.length === 0 || !hasBehavior) return null;
+  if (loading || items.length === 0) return null;
 
   return (
     <div>
       <div className="flex items-center justify-between mb-4">
         <div>
           <div className="text-xs uppercase tracking-widest text-accent font-medium mb-1">
-            {personalised ? "For you" : "Popular now"}
+            {heading}
           </div>
-          <h2 className="font-display text-xl font-semibold">
-            {personalised ? "Based on your interests" : "Trending treks"}
-          </h2>
+          <h2 className="font-display text-xl font-semibold">{subLabel}</h2>
         </div>
       </div>
       <div className="grid sm:grid-cols-2 gap-3">

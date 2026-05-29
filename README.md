@@ -488,6 +488,7 @@ Full API docs available at http://localhost:8000/docs when the backend is runnin
 | **Production Deploy** | DigitalOcean BLR1 | All components HEALTHY — DNS configuration next |
 | **Step 64 — CDP Analytics Layer** | First-party tracking, funnel/cohort/segment analysis, GSC, DPDP | Done — 2026-05-27 |
 | **Step 65 — CDP Analytics Enhancement** | Dynamic funnels, N×M cohort heatmap, 10 segments, user activity timeline, Plan wizard tracking | Done — 2026-05-27 |
+| **Step 66 — Homepage Section Logic by User State** | 4-state personalisation (New/Repeat × LoggedIn/LoggedOut): welcome banner, personalized trending header, recently-viewed section, 4-state PersonalisedFeed, preferred-difficulty pre-select | Done — 2026-05-29 |
 
 ## Production Infrastructure
 

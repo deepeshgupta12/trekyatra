@@ -1,11 +1,12 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import { ArrowRight } from "lucide-react";
 import { TrekCard, type Trek } from "@/components/trek/TrekCard";
 import type { CMSPage, TrekFacts } from "@/lib/api";
 import { cmsPageToTrek } from "@/lib/trek-utils";
+import { getBehaviorProfile } from "@/lib/behavior-tracker";
 
 function cmsMatchesDifficulty(page: CMSPage, match: string[]): boolean {
   const tf = (page.content_json?.trek_facts as TrekFacts | undefined);
@@ -54,8 +55,25 @@ interface Props {
   cmsPages?: CMSPage[];   // CMS trek_guide pages (preferred source)
 }
 
+function matchDifficultyToTab(raw: string): Difficulty {
+  const lower = raw.toLowerCase();
+  if (lower.includes("challenging") || lower.includes("hard") || lower.includes("difficult")) return "Challenging";
+  if (lower.includes("moderate")) return "Moderate";
+  return "Easy";
+}
+
 export function DifficultyTabsSection({ treks, cmsPages = [] }: Props) {
   const [active, setActive] = useState<Difficulty>("Easy");
+
+  // Pre-select preferred difficulty from behavior profile on first render
+  useEffect(() => {
+    const profile = getBehaviorProfile();
+    const preferred = profile?.topDifficulties[0];
+    if (preferred) {
+      setActive(matchDifficultyToTab(preferred));
+    }
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
   const cfg = DIFF_CONFIG.find((d) => d.label === active)!;
 
   // Prefer CMS pages; fall back to static treks for this difficulty

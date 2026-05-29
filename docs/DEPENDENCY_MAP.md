@@ -1073,3 +1073,18 @@ Before editing any backend file:
 
 #### New Files — Frontend
 - `apps/web-next/app/(admin)/admin/cdp/activity/page.tsx` — User activity timeline page; blast radius: NONE (new page)
+
+## Step 66 — Homepage Section Logic by User State
+
+### New Files — Frontend
+- `apps/web-next/components/home/HomeWelcomeBanner.tsx` — NEW: client component; reads useAuth() + getBehaviorProfile(); renders logged-in welcome banner (States A+B only); blast radius: NONE (leaf component, imported only by homepage)
+- `apps/web-next/components/home/HomeTrendingHeader.tsx` — NEW: client component; renders 4-state personalized heading for Trending section (heading text only — TrekCards remain SSR); blast radius: NONE (leaf component, imported only by homepage)
+- `apps/web-next/components/home/RecentlyViewedSection.tsx` — NEW: client component; State D only (repeat logged-out); horizontal scroll row of last 5 viewed treks from localStorage; enriched with static trekList prop; blast radius: NONE (leaf component, imported only by homepage)
+
+### Modified Files — Frontend
+- `apps/web-next/components/content/PersonalisedFeed.tsx` — 4-state logic: State A (new logged-in) → anonymous recs + "Popular treks" label; State B (repeat logged-in) → personalized recs + "For [name]" label; State C (new logged-out) → hidden; State D (repeat logged-out) → anonymous recs + "Continue exploring" label; blast radius: LOW (used only by homepage)
+- `apps/web-next/components/home/DifficultyTabsSection.tsx` — added useEffect on mount to pre-select preferred difficulty tab from getBehaviorProfile()?.topDifficulties[0]; falls back to "Easy" if no behavior data; added matchDifficultyToTab() helper; blast radius: LOW (used only by homepage)
+- `apps/web-next/app/(public)/page.tsx` — imports HomeWelcomeBanner, HomeTrendingHeader, RecentlyViewedSection; HomeWelcomeBanner added below hero; Trending section refactored to use HomeTrendingHeader over SSR TrekCards; RecentlyViewedSection added between SeasonalTreks and PersonalisedFeed; blast radius: MEDIUM (homepage)
+
+### No Backend Changes
+All Step 66 logic is entirely client-side using useAuth() + lib/behavior-tracker.ts (localStorage). No new API routes, no DB migrations.

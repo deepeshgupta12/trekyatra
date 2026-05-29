@@ -546,6 +546,26 @@
 - 24 backend tests, all passing; next build clean
 - Step doc: docs/steps/STEP-64-cdp-analytics-layer.md
 
+### Step 66 — Homepage Section Logic by User State [DONE — 2026-05-29]
+- HomeWelcomeBanner client component: States A+B (logged-in) greeting with last-viewed trek chips
+- HomeTrendingHeader client component: personalized section heading (4 states) over SSR TrekCards
+- RecentlyViewedSection client component: State D (repeat logged-out) compact horizontal scroll row
+- PersonalisedFeed revamp: 4-state logic with per-state labels, fetchers, and visibility rules
+- DifficultyTabsSection: useEffect on mount pre-selects preferred difficulty from getBehaviorProfile()
+- Homepage page.tsx layout updated to include new components in correct order
+- No backend changes required — all logic is client-side via useAuth() + behavior-tracker
+
+### Step 67 — CDP Analytics Full Revamp [IN PROGRESS — 2026-05-29]
+- Phase 0: event_definitions table + seed (35 events), is_internal flag on analytics_events, custom_segments + cdp_webhook_rules tables, Alembic migration 0041
+- Phase 1: Executive dashboard (8 KPI tiles with deltas/sparklines, real-time feed, alert rail), User 360 profile (full timeline, session list, trait badges, source attribution), Event Explorer (paginated + filters + CSV export)
+- Phase 2: 6 saved funnel templates, configurable cohort builder (4 cohort types), dynamic segment builder UI with rule conditions
+- Phase 3: Per-page content analytics, trek funnel analytics, enhanced GSC panel (query clusters, CTR decay, position opportunities)
+- Phase 4: Segment export CSV, campaign trigger webhook rules, suppression rules
+- Phase 5: AI insight cards (deferred to future step)
+- 13+ new admin frontend pages/rewrites; ~20 new backend tests
+
+---
+
 ## Execution Rule
 Do not start the next step without user confirmation.
-Current next step: **Step 41 — B2B Content / API Extensions**
+Current next step: **Step 66 — Homepage Section Logic by User State** (in progress)

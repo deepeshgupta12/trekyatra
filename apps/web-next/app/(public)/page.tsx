@@ -14,6 +14,9 @@ import HomeSearchBar from "@/components/home/HomeSearchBar";
 import PersonalisedFeed from "@/components/content/PersonalisedFeed";
 import { SeasonalTreksSection } from "@/components/home/SeasonalTreksSection";
 import { DifficultyTabsSection } from "@/components/home/DifficultyTabsSection";
+import { HomeWelcomeBanner } from "@/components/home/HomeWelcomeBanner";
+import { HomeTrendingHeader } from "@/components/home/HomeTrendingHeader";
+import { RecentlyViewedSection } from "@/components/home/RecentlyViewedSection";
 
 const regions = [
   { name: "Himachal Pradesh", count: "48 treks", image: "/images/region-himachal-camp.jpg", slug: "himachal" },
@@ -130,12 +133,18 @@ export default async function Home() {
         </div>
       </section>
 
-      {/* TRENDING */}
-      <Section eyebrow="Trending this month" title="Treks Indians are obsessing over right now" cta={{ label: "View all treks", to: "/explore" }}>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5">
-          {trending.map(t => <TrekCard key={t.slug} trek={t} />)}
+      {/* WELCOME BANNER — logged-in users only (States A + B) */}
+      <HomeWelcomeBanner />
+
+      {/* TRENDING — heading personalised per user state via client component */}
+      <section className="py-16 md:py-24">
+        <div className="container-wide">
+          <HomeTrendingHeader cta={{ label: "View all treks", to: "/explore" }} />
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5">
+            {trending.map(t => <TrekCard key={t.slug} trek={t} />)}
+          </div>
         </div>
-      </Section>
+      </section>
 
       {/* CATEGORY HUB */}
       <section className="py-16 md:py-24 bg-surface-muted">
@@ -221,7 +230,10 @@ export default async function Home() {
       {/* SEASONAL TABS — auto-select based on current month, shows state tags */}
       <SeasonalTreksSection treks={trekList} cmsPages={cmsTrekPages} />
 
-      {/* PERSONALISED FEED */}
+      {/* RECENTLY VIEWED — State D only (repeat logged-out): horizontal scroll of last 5 viewed treks */}
+      <RecentlyViewedSection trekList={trekList} />
+
+      {/* PERSONALISED FEED — States A+B+D; hidden for State C (new logged-out) */}
       <Section eyebrow="For you" title="Treks matched to your interests">
         <PersonalisedFeed limit={6} />
       </Section>
