@@ -11,7 +11,7 @@ export default function Maintenance() {
         <p className="text-surface/80 mb-8">TrekYatra is getting a small update. We&apos;ll be back in about 15 minutes.</p>
         <div className="text-sm text-surface/60">
           For urgent enquiries, email{" "}
-          <a className="text-accent-glow underline" href="mailto:hello@trekyatra.in">hello@trekyatra.in</a>
+          <a className="text-accent-glow underline" href="mailto:explore@trekyatra.co.in">explore@trekyatra.co.in</a>
         </div>
       </div>
     </div>

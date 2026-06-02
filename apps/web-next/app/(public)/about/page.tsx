@@ -73,7 +73,7 @@ export default async function About() {
         },
         {
           title: "Contact us",
-          body: "For press, partnerships, or content corrections: hello@trekyatra.in — we respond within 48 hours.\n\nFor planning help: use the free Trip Planner at /plan.\n\nFor urgent safety corrections or outdated permit data: mark your email subject 'URGENT — Data Correction' and we will act on it same day.",
+          body: "For press, partnerships, or content corrections: explore@trekyatra.co.in — we respond within 48 hours.\n\nFor planning help: use the free Trip Planner at /plan.\n\nFor urgent safety corrections or outdated permit data: mark your email subject 'URGENT — Data Correction' and we will act on it same day.",
         },
       ]}
     />

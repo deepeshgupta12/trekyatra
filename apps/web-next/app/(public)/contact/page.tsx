@@ -47,14 +47,14 @@ export default async function Contact() {
           eyebrow: "Reach us",
           title: "Contact channels",
           cards: [
-            { title: "General enquiries", body: "hello@trekyatra.in — questions, feedback, planning help, and partnership proposals." },
-            { title: "Content corrections", body: "Found outdated permit data or a factual error? Email hello@trekyatra.in with subject 'Data Correction'. We act within 48 hours." },
-            { title: "Press & media", body: "hello@trekyatra.in with subject 'Press'. We are happy to speak to journalists covering Indian trekking or adventure travel." },
+            { title: "General enquiries", body: "explore@trekyatra.co.in — questions, feedback, planning help, and partnership proposals." },
+            { title: "Content corrections", body: "Found outdated permit data or a factual error? Email explore@trekyatra.co.in with subject 'Data Correction'. We act within 48 hours." },
+            { title: "Press & media", body: "explore@trekyatra.co.in with subject 'Press'. We are happy to speak to journalists covering Indian trekking or adventure travel." },
           ],
         },
         {
           title: "Office",
-          body: "TrekYatra\nGurgaon, Haryana, India 122001\nhello@trekyatra.in",
+          body: "TrekYatra\nGurgaon, Haryana, India 122001\nexplore@trekyatra.co.in",
         },
         {
           title: "Response times",

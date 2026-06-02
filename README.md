@@ -160,6 +160,9 @@ trekyatra/
 | User onboarding / profile | Done |
 | Download dashboard | Done |
 | Password reset (forgot-password + reset-password, HMAC JWT, graceful SMTP) | Done |
+| Email verification (send-verification + verify-email, 24h JWT, graceful SMTP skip) | Done |
+| Email address standardised to explore@trekyatra.co.in across all pages and transactional emails | Done |
+| Trek alert email digest (daily Celery task, graceful SMTP skip) | Done |
 | Account settings page (update full_name, display_name via PATCH /auth/me) | Done |
 | Account enquiries page (user leads history via GET /auth/me/leads) | Done |
 
@@ -432,6 +435,8 @@ cd apps/web-next && npm run build
 | User account | `/api/v1/account/*` | User auth required |
 | Products & checkout | `/api/v1/products/*`, `/api/v1/checkout/*` | Public (read), User (purchase) |
 | Auth (extended) | `POST /auth/forgot-password`, `POST /auth/reset-password`, `PATCH /auth/me`, `GET /auth/me/leads` | Public (reset), User auth (settings/leads) |
+| Email verification | `POST /auth/send-verification`, `POST /auth/verify-email` | User auth (send), Public (verify) |
+| Trek alert digest | Celery: `account.send_trek_alerts` (daily beat, 08:00 IST) | Scheduled — no HTTP route |
 | Operators (public) | `/api/v1/operators/*`, `/api/v1/inquiries` | Public + optional user auth (reviews require user auth) |
 | Trip planning | `/api/v1/plan/generate`, `/api/v1/plan/{id}`, `/api/v1/plan/{id}/email` | Public + optional user auth |
 | Subscriptions | `/api/v1/subscriptions/create-checkout`, `/status`, `/cancel`, `/webhook` | User auth (webhook: no auth) |

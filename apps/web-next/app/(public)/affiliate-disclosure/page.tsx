@@ -84,7 +84,7 @@ export default async function AffiliateDisclosure() {
         },
         {
           title: "Questions",
-          body: "If you have any questions about our affiliate relationships or believe a recommendation is biased, email us at hello@trekyatra.in. We take editorial independence seriously and will investigate every concern.",
+          body: "If you have any questions about our affiliate relationships or believe a recommendation is biased, email us at explore@trekyatra.co.in. We take editorial independence seriously and will investigate every concern.",
         },
       ]}
     />

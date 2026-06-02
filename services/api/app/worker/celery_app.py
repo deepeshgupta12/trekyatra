@@ -16,6 +16,7 @@ celery_app = Celery(
         "app.modules.refresh.tasks",
         "app.modules.hubs.tasks",
         "app.modules.email_sequences.tasks",
+        "app.modules.account.tasks",
         "app.modules.revenue.tasks",
         "app.worker.tasks.news",
         "app.worker.tasks.cdp",
@@ -83,6 +84,10 @@ celery_app.conf.update(
         "weekly-cdp-cleanup": {
             "task": "cdp.cleanup_old_events",
             "schedule": 604800,  # 7 days
+        },
+        "daily-trek-alert-digest": {
+            "task": "account.send_trek_alerts",
+            "schedule": 86400,  # 24 hours — fires daily (cron pinning to 08:00 IST done in DO)
         },
     },
 )

@@ -568,4 +568,35 @@
 
 ## Execution Rule
 Do not start the next step without user confirmation.
-Current next step: **Step 68** (pending)
+### Step 68 — Email Infrastructure, SMTP + Email Verification (Z04) + Trek Alert Delivery (Z05) [DONE]
+
+**Part A — Email Address Standardisation:**
+- All `hello@trekyatra.in` and `noreply@trekyatra.com` occurrences replaced with `explore@trekyatra.co.in` across 8 frontend pages + seed script + config defaults
+
+**Part B — GoDaddy SMTP Configuration:**
+- `config.py`: `smtp_from_email` defaulted to `explore@trekyatra.co.in`; `admin_email` defaulted to `explore@trekyatra.co.in`; `frontend_url: str = "https://trekyatra.co.in"` added
+- `.env.example`: SMTP section updated with GoDaddy defaults (`smtpout.secureserver.net:587`, username = `explore@trekyatra.co.in`)
+
+**Part C — Email Verification Flow (Z04):**
+- `security.py`: `create_email_verification_token(user_id)` + `parse_email_verification_token(token)` (24h JWT, `typ=email_verification`)
+- `modules/auth/service.py`: `mark_email_verified(db, user_id)`
+- `schemas/auth.py`: `VerifyEmailRequest` schema added
+- `api/routes/auth.py`: `POST /auth/send-verification` (requires auth, graceful SMTP skip, returns 400 if already verified) + `POST /auth/verify-email` (validates token + marks verified)
+- `app/(auth)/auth/verify-email/page.tsx`: full rewrite — 4 states (idle/verifying/success/error), auto-verifies on `?token=` in URL, resend button, refresh() on success
+- `app/(public)/account/page.tsx`: email verification banner shown when `user && !user.is_verified_email`
+
+**Part D — Trek Alert Delivery (Z05):**
+- NEW `modules/account/tasks.py`: `send_trek_alerts_task` Celery task (name: `account.send_trek_alerts`, max_retries=3); graceful SMTP skip; groups TrekAlert by user_id and sends digest email
+- `worker/celery_app.py`: `app.modules.account.tasks` added to include list; `daily-trek-alert-digest` beat schedule (86400s)
+
+**Tests:** 8 new tests (TC-B01–TC-B08) — all PASSED; full suite 618 passed, 2 pre-existing failures (test_refresh.py), 1 skipped
+
+**Build:** `next build` ✅ zero TypeScript errors
+
+**GitNexus:** Re-indexed — 13,341 nodes | 18,236 edges | 490 clusters | 139 flows
+
+---
+
+## Execution Rule
+Do not start the next step without user confirmation.
+Current next step: **Step 69** (pending)

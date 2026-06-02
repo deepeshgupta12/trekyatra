@@ -109,8 +109,39 @@ All V0 foundations are shipped. The stack is live locally with:
 | Item | Status |
 |------|--------|
 | V5 roadmap document created | done |
+| All 22 step MD files created (STEP-M01 through STEP-M22) | done |
+| Comprehensive mobile review — gap analysis, missing docs created (2026-05-29) | done |
 | Kickoff decision (after V4 complete + 3 months traffic) | pending |
+
+### Mobile Review — Gaps Fixed (2026-05-29)
+The following gaps were identified and resolved during a full cross-check of all 22 mobile step docs against the complete website feature set (Steps 00–67):
+
+**V5-MOBILE-APP.md fixes:**
+- Added `buddy_signals` table to DB Tables section (was in M18 step doc but missing from V5 main doc)
+- Added `user_badges` table to DB Tables section (was in M16 step doc but missing from V5 main doc)
+- Fixed bundle ID inconsistency: `com.trekyatra.app` → `co.in.trekyatra.app` (matches M22 eas.json)
+- Added newsletter subscribe (Trail Letter email) to Web → Mobile feature parity matrix
+- Added legal/trust pages (Privacy, Terms, Affiliate Disclosure, Safety Disclaimer) to feature parity matrix
+
+**Step doc fixes:**
+- `STEP-M08` — Updated scope from 2-trek to 2-or-3-trek comparison (mirrors web Step 44 which supports 3 treks); updated save payload; added TC-M08-03 for 3-trek verify
+- `STEP-M05` — Added `AffiliateCard` block handling in CMSContentRenderer (affiliate gear cards from Step 36); added safety disclaimer banner for challenging treks; confirmed share URL uses `/trek/` not `/treks/` (web bugfix `63d0460`)
+- `STEP-M10` — Added Trail Letter newsletter subscribe form to Settings screen; added Safety Disclaimer link to About section
+
+**New documentation files created:**
+- `docs/mobile/MOBILE_PRELAUNCH_CHECKLIST.md` — Complete 9-section pre-launch checklist covering platform accounts, backend/DO configuration, EAS setup, App Store + Play Store, step gates, testing, and go/no-go sign-off
+- `docs/mobile/MOBILE_PRODUCTION_SETUP.md` — Production setup log covering shared DO infra, new env vars (OpenWeatherMap, Firebase, APNs, DO Spaces, Razorpay webhook), new Celery tasks, EAS/Expo setup, Apple Developer + Play Console + Firebase step-by-step, Sentry, migration sequence, cost estimate, OTA + rollback policy
+
+**DO configuration gaps identified (not yet actioned — pre-M14/M17/M18/M19):**
+- `OPENWEATHERMAP_API_KEY` — add before M19 implementation
+- `FIREBASE_SERVICE_ACCOUNT_JSON`, `APNS_KEY_ID`, `APNS_TEAM_ID` — add before M14 implementation
+- `DO_SPACES_KEY`, `DO_SPACES_SECRET` — add before M17 implementation (bucket already provisioned)
+- `RAZORPAY_WEBHOOK_SECRET` — add before M12 implementation
+- 4 new Celery beat tasks (M14×2, M18×1, M19×1) — require celery-beat restart after each mobile step deploys
+
 > Full spec: `docs/versions/V5-MOBILE-APP.md`
+> Pre-launch checklist: `docs/mobile/MOBILE_PRELAUNCH_CHECKLIST.md`
+> Production setup: `docs/mobile/MOBILE_PRODUCTION_SETUP.md`
 
 ## Production Deployment — In Progress (DigitalOcean BLR1)
 > Full details in `docs/PRODUCTION_SETUP.md`
@@ -182,12 +213,12 @@ All V0 foundations are shipped. The stack is live locally with:
 | Amazon Associates India — account created, Associate ID: trekyatra21-21 (180-day deadline: ~2026-11-15) | done |
 | Amazon Associates — Tax information (PAN + bank) must be completed at affiliate-program.amazon.in | pending |
 | Amazon Associates — affiliate product links to be seeded in /admin/monetization after content pipeline runs | pending |
-| ANTHROPIC_API_KEY — credits purchased; must be added to DO App Platform at APP LEVEL (not component level) env vars | pending |
+| ANTHROPIC_API_KEY — credits purchased; must be added to DO App Platform at APP LEVEL (not component level) env vars | done |
 | Step 42+43 — CMS-driven pages + slug dedup + sitemap real-time + agent 2026 (commit b4924d6) | done |
 | Schema.ts Google Rich Results fix — author field, ImageObject, 110-char headline, LOGO_URL corrected (commit a3b8d53) | done |
 | Sitemap — 12 static pages added; /treks/{slug} bug fixed to /trek/{slug} (commit a3b8d53) | done |
-| NEXT_PUBLIC_GOOGLE_CLIENT_ID — NOT set in DO web component; required for Google OAuth on production | pending |
-| ANTHROPIC_API_KEY — NOT set in DO; Plan My Trek + all LLM agents blocked without it | pending |
+| NEXT_PUBLIC_GOOGLE_CLIENT_ID — set in DO web component ✅ | done |
+| ANTHROPIC_API_KEY — set in DO App Platform ✅ (confirmed 2026-06-02) | done |
 | CMSPageForm — editorial page_type added to dropdown (commit ebd6dc9) | done |
 | CMS seed script — services/api/scripts/seed_static_cms_pages.py created (commit ebd6dc9) | done |
 | CMS seed script bug fix — db.commit() missing; create_page uses flush() not commit() (commit b34cf96) | done |
@@ -236,7 +267,7 @@ All V0 foundations are shipped. The stack is live locally with:
 | Plan rate limiting — 2/hour per IP via Redis; 429 with retry-in message; local/test bypass (commit f41079c) | done |
 | Uploads StaticFiles mount — data/uploads/ served at /uploads/ in FastAPI (commit f41079c) | done |
 | SeasonalTreksSection hydration fix — useEffect for date-based state; resolves React errors #418/#423/#425 (commit f41079c) | done |
-| NEXT_PUBLIC_GOOGLE_CLIENT_ID — must be set in DO web component for Google OAuth | pending |
+| NEXT_PUBLIC_GOOGLE_CLIENT_ID — set in DO web component ✅ | done |
 | Breadcrumb visibility fix — dark backdrop pill on hero; !text-white/90 with !important (commit 930dd7c) | done |
 | Similar treks images — staticImageMap fallback; trekToItem uses trek.image; API items enriched (commit 930dd7c) | done |
 | SEO meta pipeline fix — update_draft_seo_fields() added; SEOAEOAgent saves snippet_intro as meta_description (commit 930dd7c) | done |
@@ -281,6 +312,66 @@ All V0 foundations are shipped. The stack is live locally with:
 | PRELAUNCH_CHECKLIST.md — comprehensive audit: 8 sections, 80+ items across BE/FE/Admin/Gaps/Production/Integrations/Testing | done |
 | Header nav — compact Logo (tagline hidden); search bar functional (onClick + ⌘K → /search); px-2.5 nav items; gap-4 | done |
 | Compare section — responsive: heading text-2xl sm:text-3xl; card p-3 md:p-4; text-sm md:text-base; no mobile overflow | done |
+
+### V5 Mobile App — Comprehensive Review (2026-06-02)
+Status: done
+What is done:
+- Full 22-step doc review against web feature set (Steps 00–67 + all bugfixes)
+- `docs/versions/V5-MOBILE-APP.md` — fixed bundle ID `com.trekyatra.app` → `co.in.trekyatra.app`; added `buddy_signals`, `user_badges` to DB tables; added newsletter + legal pages to feature parity matrix
+- `docs/mobile/steps/STEP-M05-trek-detail-screen.md` — added MonetizationSlot `monetization_slot` block handling in CMSContentRenderer; safety disclaimer banner for Challenging/Difficult treks; confirmed share URL uses `/trek/` (matches web bugfix commit 63d0460)
+- `docs/mobile/steps/STEP-M08-trek-comparison.md` — updated scope from 2-trek to 2-or-3-trek; updated save payload
+- `docs/mobile/steps/STEP-M10-user-account.md` — added Trail Letter newsletter subscribe form; Safety Disclaimer link in About section
+- NEW `docs/mobile/MOBILE_PRELAUNCH_CHECKLIST.md` — 9-section launch gate: platform accounts, DO env vars, EAS/app build, store setup, step gates, testing, known gaps, Go/No-Go
+- NEW `docs/mobile/MOBILE_PRODUCTION_SETUP.md` — shared DO infra reference, new env vars table, EAS/Apple/Google/Firebase/Sentry setup, DB migration sequence, cost estimates, OTA policy, rollback
+What remains: All V5 mobile steps (M01–M22) are pending implementation
+
+### Step 68 — Email Infrastructure, SMTP + Email Verification (Z04) + Trek Alert Delivery (Z05)
+Status: done
+Date: 2026-06-02
+What is done:
+
+**Part A — Email Address Standardisation:**
+- Replaced all `hello@trekyatra.in` / `noreply@trekyatra.com` with `explore@trekyatra.co.in` across 8 frontend pages (`contact`, `privacy`, `affiliate-disclosure`, `methodology`, `terms`, `about`, `maintenance`, `Footer.tsx`) + seed script (`seed_static_cms_pages.py`) + config defaults
+
+**Part B — GoDaddy SMTP Configuration:**
+- `services/api/app/core/config.py`: `admin_email` → `explore@trekyatra.co.in`; `smtp_from_email` → `explore@trekyatra.co.in`; `frontend_url: str = "https://trekyatra.co.in"` added
+- `services/api/.env.example`: `SMTP_HOST=smtpout.secureserver.net`, `SMTP_PORT=587`, `SMTP_USER=explore@trekyatra.co.in`, `FRONTEND_URL=https://trekyatra.co.in` documented
+
+**Part C — Email Verification Flow (Z04):**
+- `services/api/app/core/security.py`: `create_email_verification_token(user_id)` (24h JWT, `typ=email_verification`) + `parse_email_verification_token(token)` (validates typ)
+- `services/api/app/modules/auth/service.py`: `mark_email_verified(db, user_id)`
+- `services/api/app/schemas/auth.py`: `VerifyEmailRequest` schema
+- `services/api/app/api/routes/auth.py`: `POST /auth/send-verification` (auth-required, graceful SMTP skip, 400 if already verified) + `POST /auth/verify-email` (validates token, marks verified) + `_send_verification_email_helper`
+- `apps/web-next/app/(auth)/auth/verify-email/page.tsx`: FULL REWRITE — 4-state flow (idle=check inbox, verifying, success, error); auto-triggers on `?token=` query param; resend button; calls `refresh()` on success; Suspense wrapper
+- `apps/web-next/app/(public)/account/page.tsx`: email verification banner (amber) shown when `user && !user.is_verified_email`
+
+**Part D — Trek Alert Delivery (Z05):**
+- NEW `services/api/app/modules/account/tasks.py`: `send_trek_alerts_task` (name: `account.send_trek_alerts`, bind=True, max_retries=3); SMTP skip when unconfigured; groups active TrekAlert records by user_id; sends per-user digest email listing trek URLs; `_send_trek_alert_digest` helper
+- `services/api/app/worker/celery_app.py`: `app.modules.account.tasks` added to include list; `daily-trek-alert-digest` beat schedule (86400s, 08:00 IST pinning done in DO)
+
+**Tests:** NEW `services/api/tests/test_email_step68.py` — 8 tests (TC-B01–TC-B08), all PASSED; full suite 618 passed, 2 pre-existing failures (test_refresh.py — unrelated), 1 skipped
+**Build:** `next build` ✅ zero TypeScript errors (193 pages)
+**GitNexus:** Re-indexed — 13,341 nodes | 18,236 edges | 490 clusters | 139 flows
+
+What remains:
+- Add DO env vars: `SMTP_HOST`, `SMTP_PORT`, `SMTP_USER`, `SMTP_PASSWORD`, `SMTP_FROM_EMAIL`, `FRONTEND_URL`, `ADMIN_EMAIL` (production activation)
+- Celery worker must be restarted on DO after deploy to register `account.send_trek_alerts` task
+
+### Pre-Launch Sprint — Website Pending Steps (Steps 69–70)
+Status: in-progress
+What is done:
+- Confirmed: `ANTHROPIC_API_KEY` set in DO ✅
+- Confirmed: `NEXT_PUBLIC_GOOGLE_CLIENT_ID` + `GOOGLE_CLIENT_ID` + `GOOGLE_CLIENT_SECRET` set in DO ✅
+- Confirmed: Manual content seeding M02 (operators), M03 (products), M04 (CMS trek guides) complete ✅
+- Step 68 done (see above)
+- NEW `docs/steps/STEP-69-compare-revamp-seo.md` — spec for compare page CMS data integration, SEO metadata + canonical, JSON-LD (WebPage/ItemList/FAQPage), AEO FAQ block (6 Qs), saved comparisons API wiring, interlinking from trek detail, sitemap entry
+- NEW `docs/steps/STEP-70-component-wiring.md` — spec for wiring MonetizationSlot (Z02, replace hardcoded AffiliateRail) and GatedContent (Z03, is_premium gate on trek body)
+
+| Step | Title | Status |
+|------|-------|--------|
+| 68 | Email infrastructure, SMTP + email verification (Z04) + trek alert delivery (Z05) | done |
+| 69 | Compare feature SEO/AEO revamp | pending |
+| 70 | Component wiring: MonetizationSlot (Z02) + GatedContent (Z03) | pending |
 
 ### Step 67 — CDP Analytics Full Revamp
 Status: done

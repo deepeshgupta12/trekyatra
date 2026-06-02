@@ -38,17 +38,21 @@ class Settings(BaseSettings):
     auth_cookie_samesite: str = "lax"
 
     # CMS admin credentials — completely separate from public user auth
-    admin_email: str = "guyshazam12@gmail.com"
+    admin_email: str = "explore@trekyatra.co.in"
     admin_password: str | None = None
     admin_cookie_name: str = "trekyatra_admin_token"
     admin_token_expire_hours: int = 24
 
-    # SMTP — used for lead notification emails (gracefully disabled if unset)
+    # Frontend base URL — used when building links in emails (e.g. verification URL)
+    frontend_url: str = "https://trekyatra.co.in"
+
+    # SMTP — used for lead notification, welcome, verification emails (gracefully disabled if unset)
+    # GoDaddy SMTP: smtpout.secureserver.net, port 587 (STARTTLS)
     smtp_host: str | None = None
     smtp_port: int = 587
     smtp_user: str | None = None
     smtp_password: str | None = None
-    smtp_from_email: str = "noreply@trekyatra.com"
+    smtp_from_email: str = "explore@trekyatra.co.in"
 
     # Newsletter platform wiring (mailchimp | brevo); gracefully disabled if unset
     newsletter_platform: str | None = None

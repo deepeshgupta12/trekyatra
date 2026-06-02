@@ -94,3 +94,7 @@ class LeadResponse(BaseModel):
     source_page: str
     cta_type: str | None
     created_at: datetime
+
+
+class VerifyEmailRequest(BaseModel):
+    token: str

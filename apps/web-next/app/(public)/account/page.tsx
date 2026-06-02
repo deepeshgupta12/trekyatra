@@ -2,8 +2,9 @@
 
 import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
-import { Bookmark, BarChart2, Download, Bell, ExternalLink, Clock } from "lucide-react";
+import { Bookmark, BarChart2, Download, Bell, ExternalLink, Clock, MailWarning } from "lucide-react";
 import { useAuth } from "@/lib/auth-context";
+import { Button } from "@/components/ui/button";
 import {
   BookmarkResponse,
   fetchBookmarks,
@@ -86,6 +87,24 @@ export default function AccountDashboard() {
           Welcome back, <span className="font-semibold text-foreground">{displayName}</span>. Your saved pages and planning workspace.
         </p>
       </div>
+
+      {/* Email verification banner — only shown for unverified email signups */}
+      {user && !user.is_verified_email && (
+        <div className="flex items-start gap-3 bg-amber-400/10 border border-amber-400/30 rounded-2xl p-4 mb-8">
+          <MailWarning className="h-5 w-5 text-amber-500 flex-shrink-0 mt-0.5" />
+          <div className="flex-1 min-w-0">
+            <p className="text-sm font-medium text-foreground">Please verify your email address</p>
+            <p className="text-xs text-muted-foreground mt-0.5">
+              We sent a verification link to <strong>{user.email}</strong>. Click it to secure your account.
+            </p>
+          </div>
+          <Link href="/auth/verify-email">
+            <Button variant="outline" size="sm" className="flex-shrink-0 text-xs border-amber-400/40 text-amber-600 hover:bg-amber-400/10">
+              Resend
+            </Button>
+          </Link>
+        </div>
+      )}
 
       {/* Stats */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-10">

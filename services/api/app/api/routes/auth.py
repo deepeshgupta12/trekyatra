@@ -10,7 +10,14 @@ from fastapi import APIRouter, Depends, HTTPException, Request, Response, status
 from sqlalchemy.orm import Session
 
 from app.core.config import settings
-from app.core.security import create_reset_token, hash_password, parse_reset_token, validate_password_strength
+from app.core.security import (
+    create_email_verification_token,
+    create_reset_token,
+    hash_password,
+    parse_email_verification_token,
+    parse_reset_token,
+    validate_password_strength,
+)
 from app.db.session import get_db
 from app.modules.auth.dependencies import get_current_session, get_current_user
 from app.modules.auth.models import User, UserSession
@@ -19,6 +26,7 @@ from app.modules.auth.service import (
     create_session_for_user,
     get_user_by_email,
     login_or_register_google_user,
+    mark_email_verified,
     normalize_email,
     register_email_user,
     revoke_session,
@@ -37,6 +45,7 @@ from app.schemas.auth import (
     PlaceholderResponse,
     ResetPasswordRequest,
     UserResponse,
+    VerifyEmailRequest,
 )
 
 logger = logging.getLogger(__name__)
@@ -357,6 +366,64 @@ def _send_reset_email(to_email: str, reset_url: str) -> None:
             server.sendmail(settings.smtp_from_email, to_email, msg.as_string())
     except Exception:
         logger.warning("Failed to send password reset email to %s", to_email)
+
+
+# ---------------------------------------------------------------------------
+# Email verification (Z04)
+# ---------------------------------------------------------------------------
+
+@router.post("/send-verification", response_model=MessageResponse)
+def send_verification_email(
+    current_user: User = Depends(get_current_user),
+) -> MessageResponse:
+    """Send an email verification link to the authenticated user's address."""
+    if current_user.is_verified_email:
+        raise HTTPException(status_code=400, detail="Email is already verified.")
+    token, _ = create_email_verification_token(current_user.id)
+    verify_url = f"{settings.frontend_url}/auth/verify-email?token={token}"
+    _send_verification_email_helper(current_user.email, current_user.full_name, verify_url)
+    return MessageResponse(message="Verification email sent. Check your inbox.")
+
+
+@router.post("/verify-email", response_model=MessageResponse)
+def verify_email(
+    payload: VerifyEmailRequest,
+    db: Session = Depends(get_db),
+) -> MessageResponse:
+    """Consume a verification token and mark the user's email as verified."""
+    parsed = parse_email_verification_token(payload.token)
+    if not parsed:
+        raise HTTPException(status_code=400, detail="Invalid or expired verification link.")
+    user_id = uuid.UUID(parsed["sub"])
+    mark_email_verified(db, user_id)
+    db.commit()
+    return MessageResponse(message="Email verified successfully.")
+
+
+def _send_verification_email_helper(to_email: str, name: str | None, verify_url: str) -> None:
+    if not settings.smtp_host:
+        logger.info("SMTP not configured — email verification link: %s", verify_url)
+        return
+    try:
+        greeting = f"Hi {name}," if name else "Hi,"
+        body = (
+            f"{greeting}\n\n"
+            f"Please verify your email address for TrekYatra by clicking the link below:\n\n"
+            f"{verify_url}\n\n"
+            f"This link is valid for 24 hours. If you did not create an account, ignore this email.\n\n"
+            f"— TrekYatra Team\nexplore@trekyatra.co.in"
+        )
+        msg = MIMEText(body)
+        msg["Subject"] = "Verify your TrekYatra email address"
+        msg["From"] = settings.smtp_from_email
+        msg["To"] = to_email
+        with smtplib.SMTP(settings.smtp_host, settings.smtp_port) as server:
+            if settings.smtp_user and settings.smtp_password:
+                server.starttls()
+                server.login(settings.smtp_user, settings.smtp_password)
+            server.sendmail(settings.smtp_from_email, to_email, msg.as_string())
+    except Exception:
+        logger.warning("Failed to send verification email to %s", to_email)
 
 
 # ---------------------------------------------------------------------------

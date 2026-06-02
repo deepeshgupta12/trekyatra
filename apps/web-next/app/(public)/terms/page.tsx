@@ -87,7 +87,7 @@ export default async function Terms() {
         },
         {
           title: "Contact",
-          body: "For questions about these Terms: hello@trekyatra.in",
+          body: "For questions about these Terms: explore@trekyatra.co.in",
         },
       ]}
     />

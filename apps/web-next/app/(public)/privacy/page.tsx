@@ -101,7 +101,7 @@ export default async function Privacy() {
         },
         {
           title: "Contact",
-          body: "For privacy questions or data requests: hello@trekyatra.in — we respond within 5 business days.",
+          body: "For privacy questions or data requests: explore@trekyatra.co.in — we respond within 5 business days.",
         },
       ]}
     />

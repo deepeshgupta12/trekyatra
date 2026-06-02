@@ -116,7 +116,7 @@ export const Footer = () => (
         </div>
         <div className="flex items-center gap-4">
           <span className="flex items-center gap-1.5"><MapPin className="h-3 w-3" /> Gurgaon · India</span>
-          <span className="flex items-center gap-1.5"><Phone className="h-3 w-3" /> hello@trekyatra.co.in</span>
+          <span className="flex items-center gap-1.5"><Phone className="h-3 w-3" /> explore@trekyatra.co.in</span>
         </div>
       </div>
     </div>

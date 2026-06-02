@@ -44,7 +44,7 @@ PAGES: list[dict] = [
 <h2>Our team</h2>
 <p>TrekYatra is built by a small team of trekkers, writers, and engineers based in Gurgaon, India. We are not a travel agency, tour operator, or booking platform. We earn through editorial affiliate commissions and digital products — never through paid operator placement.</p>
 <h2>Contact us</h2>
-<p>For editorial enquiries, corrections, or partnership discussions, write to us at <strong>hello@trekyatra.co.in</strong>. We respond within 2 business days.</p>""",
+<p>For editorial enquiries, corrections, or partnership discussions, write to us at <strong>explore@trekyatra.co.in</strong>. We respond within 2 business days.</p>""",
     },
     {
         "slug": "privacy",
@@ -138,7 +138,7 @@ PAGES: list[dict] = [
 <h2>Technical support and account issues</h2>
 <p>For issues with your account, digital product downloads, or subscription billing, write to <strong>support@trekyatra.co.in</strong>. Include your registered email address and a description of the issue. Response time: 1 business day.</p>
 <h2>General enquiries</h2>
-<p>For anything else: <strong>hello@trekyatra.co.in</strong></p>
+<p>For anything else: <strong>explore@trekyatra.co.in</strong></p>
 <h2>Our office</h2>
 <p>TrekYatra<br>Gurgaon, Haryana 122001<br>India</p>""",
     },

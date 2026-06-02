@@ -144,3 +144,27 @@ def parse_reset_token(token: str) -> dict | None:
         return payload
     except InvalidTokenError:
         return None
+
+
+def create_email_verification_token(user_id: uuid.UUID) -> tuple[str, datetime]:
+    """Issue a 24-hour JWT for email address verification."""
+    expires_at = datetime.now(timezone.utc) + timedelta(hours=24)
+    payload = {
+        "sub": str(user_id),
+        "typ": "email_verification",
+        "iat": datetime.now(timezone.utc),
+        "exp": expires_at,
+    }
+    token = jwt.encode(payload, settings.auth_jwt_secret, algorithm=settings.auth_jwt_algorithm)
+    return token, expires_at
+
+
+def parse_email_verification_token(token: str) -> dict | None:
+    """Return the JWT payload if valid and typ=email_verification, else None."""
+    try:
+        payload = jwt.decode(token, settings.auth_jwt_secret, algorithms=[settings.auth_jwt_algorithm])
+        if payload.get("typ") != "email_verification":
+            return None
+        return payload
+    except InvalidTokenError:
+        return None

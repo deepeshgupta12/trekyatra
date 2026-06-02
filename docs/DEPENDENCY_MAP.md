@@ -1145,4 +1145,41 @@ All Step 66 logic is entirely client-side using useAuth() + lib/behavior-tracker
 
 ### Bug Fix — ContentBrief Pipeline JSON Repair (2026-05-29)
 - `services/api/app/modules/agents/content_brief/agent.py` — UPDATED: Added `_clean_llm_json()` function (identical to the one in `seo_aeo/agent.py` and `content_writing/agent.py`) and replaced the single `json.loads(raw)` call with the three-layer parse pattern: Layer 1 `json.loads(raw)`, Layer 2 `json.loads(_clean_llm_json(raw))` (fixes literal `\n`/`\r`/`\t` chars inside JSON strings), Layer 3 `json_repair.repair_json(raw)` (handles unescaped quotes). Root cause: the 9-section trek guide template generates a longer `editorial_brief_markdown` field with real control characters embedded in JSON string values. `json-repair` library was already in `pyproject.toml`. Blast radius: LOW — only affects `ContentBriefAgent._generate_brief()`, 0 external callers.
+
+## Step 68 — Email Infrastructure, SMTP + Email Verification (Z04) + Trek Alert Delivery (Z05)
+
+### New Files
+- `services/api/app/modules/account/tasks.py` — NEW: `send_trek_alerts_task` Celery task (name: `account.send_trek_alerts`, bind=True, max_retries=3); `_send_trek_alert_digest` helper; blast radius: LOW (scheduled only — no external callers)
+- `services/api/tests/test_email_step68.py` — NEW: 8 tests for email verification + trek alert task
+- `apps/web-next/app/(auth)/auth/verify-email/page.tsx` — FULL REWRITE: 4-state flow (idle/verifying/success/error); auto-verify on `?token=`; resend button; `refresh()` on success; Suspense wrapper; blast radius: LOW (standalone auth page)
+
+### Modified Files — Backend
+- `services/api/app/core/config.py` — UPDATED: `admin_email` default → `explore@trekyatra.co.in`; `smtp_from_email` default → `explore@trekyatra.co.in`; `frontend_url: str = "https://trekyatra.co.in"` added; blast radius: MEDIUM (all SMTP-sending code reads these settings)
+- `services/api/.env.example` — UPDATED: GoDaddy SMTP defaults documented; `FRONTEND_URL` added
+- `services/api/app/core/security.py` — UPDATED: `create_email_verification_token(user_id)` + `parse_email_verification_token(token)` added; blast radius: LOW (new functions, no existing callers)
+- `services/api/app/modules/auth/service.py` — UPDATED: `mark_email_verified(db, user_id)` added; blast radius: LOW (called only by verify-email route)
+- `services/api/app/schemas/auth.py` — UPDATED: `VerifyEmailRequest` schema added; blast radius: LOW (additive)
+- `services/api/app/api/routes/auth.py` — UPDATED: `POST /auth/send-verification` + `POST /auth/verify-email` endpoints added; `_send_verification_email_helper` module-level function added; blast radius: LOW (new endpoints, no change to existing routes)
+- `services/api/app/worker/celery_app.py` — UPDATED: `app.modules.account.tasks` added to include list; `daily-trek-alert-digest` added to beat_schedule (86400s); blast radius: MEDIUM (celery worker must be restarted to pick up new task registration)
+- `services/api/scripts/seed_static_cms_pages.py` — UPDATED: `hello@trekyatra.in` → `explore@trekyatra.co.in` (×2); blast radius: LOW (script, not imported)
+
+### Modified Files — Frontend (email replacement)
+- `apps/web-next/app/(public)/contact/page.tsx` — `hello@trekyatra.in` → `explore@trekyatra.co.in` (×4); blast radius: LOW
+- `apps/web-next/app/(public)/privacy/page.tsx` — email replaced; blast radius: LOW
+- `apps/web-next/app/(public)/affiliate-disclosure/page.tsx` — email replaced; blast radius: LOW
+- `apps/web-next/app/(public)/methodology/page.tsx` — email replaced (×2); blast radius: LOW
+- `apps/web-next/app/(public)/terms/page.tsx` — email replaced; blast radius: LOW
+- `apps/web-next/app/(public)/about/page.tsx` — email replaced; blast radius: LOW
+- `apps/web-next/app/maintenance/page.tsx` — email replaced; blast radius: LOW
+- `apps/web-next/components/layout/Footer.tsx` — `hello@trekyatra.co.in` → `explore@trekyatra.co.in`; blast radius: MEDIUM (site-wide footer)
+- `apps/web-next/app/(public)/account/page.tsx` — email verification amber banner added (conditional on `user && !user.is_verified_email`); blast radius: LOW (account dashboard only)
+
+### New API Routes
+- `POST /api/v1/auth/send-verification` — auth-required; issues 24h JWT verification link; graceful SMTP skip
+- `POST /api/v1/auth/verify-email` — no auth; validates JWT token + marks `is_verified_email=True`
+
+### Celery Task Registration
+- Task name: `account.send_trek_alerts` (beat: daily at 86400s)
+- Include path: `app.modules.account.tasks`
+- **Worker must be restarted** on DO after deploy to register this task
 - `services/api/tests/test_brief_agent.py` — UPDATED: 4 new tests added: `test_clean_llm_json_fixes_literal_newlines_in_string`, `test_clean_llm_json_preserves_escaped_sequences`, `test_clean_llm_json_fixes_tabs_and_carriage_returns`, `test_generate_brief_recovers_from_literal_newlines_in_json`. Total: 19 tests in file, 610 pass suite-wide.

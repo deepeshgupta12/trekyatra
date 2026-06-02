@@ -67,11 +67,11 @@ export default async function Methodology() {
         },
         {
           title: "Error correction policy",
-          body: "We correct errors within 48 hours of being notified. For safety-critical errors (wrong permit rules, wrong emergency contacts, incorrect altitude data), we aim to correct within 6 hours.\n\nIf you find an error, email hello@trekyatra.in with the subject 'Correction'. We will acknowledge receipt and confirm the correction once made. We do not silently fix errors — we add a correction note to the relevant page.",
+          body: "We correct errors within 48 hours of being notified. For safety-critical errors (wrong permit rules, wrong emergency contacts, incorrect altitude data), we aim to correct within 6 hours.\n\nIf you find an error, email explore@trekyatra.co.in with the subject 'Correction'. We will acknowledge receipt and confirm the correction once made. We do not silently fix errors — we add a correction note to the relevant page.",
         },
         {
           title: "AI and technology use",
-          body: "TrekYatra uses AI assistance to accelerate research, identify topic gaps, and draft initial content structures. However, all published content is reviewed, edited, and verified by a human editor who has knowledge of the specific trek or topic. AI-generated content that cannot be verified against primary sources is not published.\n\nWe are transparent about this. If you have questions about our use of AI in the editorial process, email hello@trekyatra.in.",
+          body: "TrekYatra uses AI assistance to accelerate research, identify topic gaps, and draft initial content structures. However, all published content is reviewed, edited, and verified by a human editor who has knowledge of the specific trek or topic. AI-generated content that cannot be verified against primary sources is not published.\n\nWe are transparent about this. If you have questions about our use of AI in the editorial process, email explore@trekyatra.co.in.",
         },
         {
           title: "Feedback and accountability",

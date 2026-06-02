@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import uuid
 from datetime import datetime, timezone
 from typing import Final
 
@@ -135,6 +136,14 @@ def create_session_for_user(
 def revoke_session(db: Session, session: UserSession) -> None:
     session.revoked_at = datetime.now(timezone.utc)
     db.flush()
+
+
+def mark_email_verified(db: Session, user_id: uuid.UUID) -> None:
+    """Mark user's email as verified. No-op if already verified or user not found."""
+    user = db.scalar(select(User).where(User.id == user_id))
+    if user and not user.is_verified_email:
+        user.is_verified_email = True
+        db.flush()
 
 
 def login_or_register_google_user(
