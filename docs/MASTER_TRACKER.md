@@ -370,7 +370,7 @@ What is done:
 | Step | Title | Status |
 |------|-------|--------|
 | 68 | Email infrastructure, SMTP + email verification (Z04) + trek alert delivery (Z05) | done |
-| 69 | Compare feature SEO/AEO revamp | pending |
+| 69 | Compare feature SEO/AEO revamp | done |
 | 70 | Component wiring: MonetizationSlot (Z02) + GatedContent (Z03) | pending |
 
 ### Step 67 — CDP Analytics Full Revamp

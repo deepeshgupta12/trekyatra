@@ -77,7 +77,7 @@ export function TrekCTAs({ slug, region, name }: TrekCTAsProps) {
           : <><Bookmark className="h-4 w-4" /> Save</>
         }
       </Button>
-      <Link href={`/compare?a=${slug}`}>
+      <Link href={`/compare?slugs=${slug}`}>
         <Button variant="glass" size="default">
           <GitCompare className="h-4 w-4" /> Compare
         </Button>

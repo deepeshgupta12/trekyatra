@@ -1182,4 +1182,16 @@ All Step 66 logic is entirely client-side using useAuth() + lib/behavior-tracker
 - Task name: `account.send_trek_alerts` (beat: daily at 86400s)
 - Include path: `app.modules.account.tasks`
 - **Worker must be restarted** on DO after deploy to register this task
+
+## Step 69 — Compare Feature SEO/AEO Revamp
+
+### New Files — Frontend
+- `apps/web-next/app/(public)/compare/CompareClient.tsx` — NEW: `"use client"` component; exports `CompareTrek` interface and `CompareClient({ initialTreks })` function; dropdown selectors, URL sync, save comparison, AEO FAQ accordion; blast radius: LOW (used only by compare/page.tsx)
+
+### Modified Files — Frontend
+- `apps/web-next/app/(public)/compare/page.tsx` — FULL REWRITE: now a Server Component (removed `"use client"`); `generateMetadata()` with canonical + OG; fetches `fetchCMSPages({ page_type: "trek_guide", status: "published", limit: 200 })` at request time (`revalidate=3600`); static fallback for empty API; injects 3 JSON-LD scripts (WebPage, ItemList, FAQPage); renders `<Suspense><CompareClient /></Suspense>`; blast radius: LOW (leaf page, no upstream importers)
+- `apps/web-next/components/trek/TrekCTAs.tsx` — bug fix: `/compare?a=${slug}` → `/compare?slugs=${slug}`; blast radius: MEDIUM (used on every trek detail page, but change is a 1-char URL param fix — no logic change)
+
+### No Backend Changes
+No new API routes, no DB migrations. Uses `GET /api/v1/cms/pages` (Step 16) and `POST /api/v1/account/comparisons` (Step 44).
 - `services/api/tests/test_brief_agent.py` — UPDATED: 4 new tests added: `test_clean_llm_json_fixes_literal_newlines_in_string`, `test_clean_llm_json_preserves_escaped_sequences`, `test_clean_llm_json_fixes_tabs_and_carriage_returns`, `test_generate_brief_recovers_from_literal_newlines_in_json`. Total: 19 tests in file, 610 pass suite-wide.

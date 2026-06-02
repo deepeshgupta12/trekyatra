@@ -1,6 +1,6 @@
 # STEP-69 — Compare Feature SEO/AEO Revamp
 
-**Status:** Pending
+**Status:** Done
 **Phase:** SEO / Production Hardening
 **Dependencies:** Step 26 (trek data API), Step 44 (saved comparisons), Step 45 (JSON-LD schemas), Step 50 (AEO FAQ blocks)
 
@@ -216,3 +216,21 @@ No new DB tables or columns. Uses existing `account_comparisons` table (Step 44)
 7. **TC-69-07**: `next build` with no TypeScript errors
 8. **TC-69-08**: View page source → find JSON-LD script with `@type: "FAQPage"`
 9. **TC-69-09**: `GET /sitemap.xml` → `/compare` entry is present
+
+---
+
+## Implementation Notes (Done — 2026-06-02)
+
+**Files Created:**
+- `apps/web-next/app/(public)/compare/CompareClient.tsx` — `"use client"` component; `CompareTrek` interface exported; `CompareClient({ initialTreks })` renders dropdowns, comparison table, save button, AEO FAQ accordion (6 Qs)
+
+**Files Modified:**
+- `apps/web-next/app/(public)/compare/page.tsx` — FULL REWRITE: server component; `generateMetadata()` with canonical + OG; fetches CMS trek guides (`fetchCMSPages page_type=trek_guide, limit=200`); static fallback for empty API; 3 JSON-LD scripts (WebPage, ItemList top-6, FAQPage); `revalidate=3600`
+- `apps/web-next/components/trek/TrekCTAs.tsx` — bug fix: `/compare?a=${slug}` → `/compare?slugs=${slug}` (URL param mismatch with compare page reader)
+
+**No backend changes.** All APIs pre-exist (Step 16 CMS pages, Step 44 saved comparisons).
+
+**Sitemap:** `/compare` was already present at priority 0.7 — no change needed.
+
+**Build:** `next build` ✅ zero TypeScript errors (193 pages)
+**GitNexus:** 13,370 nodes | 18,267 edges | 493 clusters | 140 flows
