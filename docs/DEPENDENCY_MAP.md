@@ -1212,3 +1212,13 @@ No new API routes, no DB migrations. Uses `GET /api/v1/cms/pages` (Step 16) and 
 
 ### No New Routes or Migrations
 All changes use existing endpoints: `GET /api/v1/account/comparisons` (Step 44), `POST /api/v1/auth/signup/email` (Step 26). No DB changes.
+
+## Step 69D — Post-Production Fixes #3
+
+### Modified Files — Frontend
+- `apps/web-next/app/(public)/compare/CompareClient.tsx` — `doSave` now generates `name` from selected trek names and includes it in POST body; blast radius: LOW (Compare module only)
+- `apps/web-next/app/(public)/account/page.tsx` — amber verification banner "Resend" changed from `<Link>` navigation to inline API call (`POST /api/v1/auth/send-verification`); added `resendStatus` state; added `handleResendVerification`; blast radius: LOW (account dashboard leaf page)
+- `apps/web-next/app/(auth)/auth/verify-email/page.tsx` — idle state resend button now guarded by `authLoading` spinner → `user && !user.is_verified_email` → sign-in redirect; prevents 401 for unauthenticated visitors; blast radius: LOW (verify-email leaf page)
+
+### No Backend Changes
+All fixes are purely frontend. No new endpoints, no schema changes, no migrations.

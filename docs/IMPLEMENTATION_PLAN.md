@@ -621,6 +621,15 @@ Do not start the next step without user confirmation.
 
 ---
 
+### Step 69D — Post-Production Fixes #3 (Compare Save, Resend Verification Auth) [DONE]
+
+- `compare/CompareClient.tsx` — `doSave` generates `name = selected.map(t => t.name).join(" vs ")` and includes it in POST body; fixes 422 from `ComparisonCreate.name: str` required
+- `account/page.tsx` — amber banner "Resend" changed from `<Link href="/auth/verify-email">` to inline button that calls `POST /api/v1/auth/send-verification` directly (user is definitely authed on the dashboard); shows spinner/success state inline
+- `verify-email/page.tsx` — idle state resend button guarded: `authLoading` → spinner; `user && !verified` → resend button; `!user` → "Sign in to resend" redirect; prevents unauthenticated 401
+- Frontend-only changes. 608 backend tests pass; `next build` ✅ zero errors
+
+---
+
 ## Execution Rule
 Do not start the next step without user confirmation.
 Current next step: **Step 70** (pending)

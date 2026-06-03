@@ -33,7 +33,7 @@ async function callSendVerification(): Promise<{ ok: boolean; message: string }>
 function VerifyEmailContent() {
   const searchParams = useSearchParams();
   const router = useRouter();
-  const { user, refresh } = useAuth();
+  const { user, isLoading: authLoading, refresh } = useAuth();
   const token = searchParams?.get("token") ?? null;
 
   const [status, setStatus] = useState<"idle" | "verifying" | "success" | "error">("idle");
@@ -164,20 +164,34 @@ function VerifyEmailContent() {
               <li>Allow a minute or two for delivery</li>
             </ul>
           </div>
-          <Button
-            variant="hero"
-            size="lg"
-            className="w-full mb-3"
-            onClick={handleResend}
-            disabled={resendStatus === "sending" || resendStatus === "sent"}
-          >
-            {resendStatus === "sending" && <Loader2 className="h-4 w-4 animate-spin mr-2" />}
-            {resendStatus === "sent" ? "Email sent — check your inbox" : "Resend verification email"}
-            {resendStatus === "idle" && <ArrowRight className="h-4 w-4" />}
-          </Button>
-          {resendStatus === "error" && (
-            <p className="text-sm text-red-500 mb-2">{message || "Failed to send. Please try again."}</p>
-          )}
+          {authLoading ? (
+            <div className="flex justify-center mb-3">
+              <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
+            </div>
+          ) : user && !user.is_verified_email ? (
+            <>
+              <Button
+                variant="hero"
+                size="lg"
+                className="w-full mb-3"
+                onClick={handleResend}
+                disabled={resendStatus === "sending" || resendStatus === "sent"}
+              >
+                {resendStatus === "sending" && <Loader2 className="h-4 w-4 animate-spin mr-2" />}
+                {resendStatus === "sent" ? "Email sent — check your inbox" : "Resend verification email"}
+                {resendStatus === "idle" && <ArrowRight className="h-4 w-4" />}
+              </Button>
+              {resendStatus === "error" && (
+                <p className="text-sm text-red-500 mb-2">{message || "Failed to send. Please try again."}</p>
+              )}
+            </>
+          ) : !user ? (
+            <Link href="/auth/sign-in?next=/auth/verify-email" className="block">
+              <Button variant="hero" size="lg" className="w-full mb-3">
+                Sign in to resend verification email <ArrowRight className="h-4 w-4" />
+              </Button>
+            </Link>
+          ) : null}
           <p className="text-sm text-muted-foreground">
             Wrong email? <Link href="/auth/sign-up" className="text-accent font-medium">Go back</Link>
           </p>

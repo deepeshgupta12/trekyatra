@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
-import { Bookmark, BarChart2, Download, Bell, ExternalLink, Clock, MailWarning } from "lucide-react";
+import { Bookmark, BarChart2, Download, Bell, ExternalLink, Clock, MailWarning, Loader2, CheckCircle2 } from "lucide-react";
 import { useAuth } from "@/lib/auth-context";
 import { Button } from "@/components/ui/button";
 import {
@@ -12,6 +12,8 @@ import {
   fetchAlerts,
   fetchComparisons,
 } from "@/lib/api";
+
+const API_BASE = process.env.NEXT_PUBLIC_API_BASE ?? "";
 
 const RECENTLY_VIEWED_KEY = "ty_recently_viewed";
 
@@ -73,6 +75,21 @@ export default function AccountDashboard() {
     return () => window.removeEventListener("bookmark-changed", handler);
   }, []);
 
+  const [resendStatus, setResendStatus] = useState<"idle" | "sending" | "sent" | "error">("idle");
+
+  async function handleResendVerification() {
+    setResendStatus("sending");
+    try {
+      const res = await fetch(`${API_BASE}/api/v1/auth/send-verification`, {
+        method: "POST",
+        credentials: "include",
+      });
+      setResendStatus(res.ok ? "sent" : "error");
+    } catch {
+      setResendStatus("error");
+    }
+  }
+
   const stats = [
     { label: "Saved pages", value: loading ? "—" : String(bookmarks.length), icon: Bookmark, href: "/account/saved" },
     { label: "Compare lists", value: loading ? "—" : String(compareCount), icon: BarChart2, href: "/account/compare" },
@@ -99,14 +116,24 @@ export default function AccountDashboard() {
           <div className="flex-1 min-w-0">
             <p className="text-sm font-medium text-foreground">Please verify your email address</p>
             <p className="text-xs text-muted-foreground mt-0.5">
-              We sent a verification link to <strong>{user.email}</strong>. Click it to secure your account.
+              {resendStatus === "sent"
+                ? "Verification email sent — check your inbox."
+                : <>We sent a verification link to <strong>{user.email}</strong>. Click it to secure your account.</>}
             </p>
           </div>
-          <Link href="/auth/verify-email">
-            <Button variant="outline" size="sm" className="flex-shrink-0 text-xs border-amber-400/40 text-amber-600 hover:bg-amber-400/10">
-              Resend
+          {resendStatus === "sent" ? (
+            <CheckCircle2 className="h-5 w-5 text-pine flex-shrink-0 mt-0.5" />
+          ) : (
+            <Button
+              variant="outline"
+              size="sm"
+              disabled={resendStatus === "sending"}
+              onClick={handleResendVerification}
+              className="flex-shrink-0 text-xs border-amber-400/40 text-amber-600 hover:bg-amber-400/10"
+            >
+              {resendStatus === "sending" ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : "Resend"}
             </Button>
-          </Link>
+          )}
         </div>
       )}
 

@@ -110,11 +110,12 @@ export function CompareClient({ initialTreks }: { initialTreks: CompareTrek[] })
   async function doSave() {
     setSaving(true);
     try {
+      const name = selected.map((t) => t.name).join(" vs ");
       const res = await fetch("/api/v1/account/comparisons", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         credentials: "include",
-        body: JSON.stringify({ slugs: selectedSlugs }),
+        body: JSON.stringify({ name, slugs: selectedSlugs }),
       });
       if (res.ok) {
         setSaveSuccess(true);
