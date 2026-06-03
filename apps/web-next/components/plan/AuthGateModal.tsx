@@ -1,7 +1,24 @@
 "use client";
 
 import { useState } from "react";
-import * as Dialog from "@radix-ui/react-dialog";
+import {
+  Root as _DialogRoot,
+  Portal as _DialogPortal,
+  Overlay as _DialogOverlay,
+  Content as _DialogContent,
+  Close as _DialogClose,
+  Title as _DialogTitle,
+  Description as _DialogDescription,
+} from "@radix-ui/react-dialog";
+
+// Cast to ElementType to work around radix-ui@1.1.15 + @types/react@18 JSX incompatibility
+const DRoot = _DialogRoot as React.ElementType;
+const DPortal = _DialogPortal as React.ElementType;
+const DOverlay = _DialogOverlay as React.ElementType;
+const DContent = _DialogContent as React.ElementType;
+const DClose = _DialogClose as React.ElementType;
+const DTitle = _DialogTitle as React.ElementType;
+const DDescription = _DialogDescription as React.ElementType;
 import { useGoogleLogin } from "@react-oauth/google";
 import { Button } from "@/components/ui/button";
 import {
@@ -120,20 +137,20 @@ export default function AuthGateModal({ open, onClose, onSuccess }: Props) {
   );
 
   return (
-    <Dialog.Root open={open} onOpenChange={(v) => { if (!v) onClose(); }}>
-      <Dialog.Portal>
-        <Dialog.Overlay className="fixed inset-0 bg-foreground/50 backdrop-blur-sm z-50 data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0" />
-        <Dialog.Content className="fixed left-1/2 top-1/2 z-50 -translate-x-1/2 -translate-y-1/2 w-full max-w-md bg-paper-grain rounded-2xl shadow-2xl p-8 focus:outline-none data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 data-[state=closed]:slide-out-to-top-[2%] data-[state=open]:slide-in-from-top-[2%] max-h-[90vh] overflow-y-auto">
+    <DRoot open={open} onOpenChange={(v: boolean) => { if (!v) onClose(); }}>
+      <DPortal>
+        <DOverlay className="fixed inset-0 bg-foreground/50 backdrop-blur-sm z-50 data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0" />
+        <DContent className="fixed left-1/2 top-1/2 z-50 -translate-x-1/2 -translate-y-1/2 w-full max-w-md bg-paper-grain rounded-2xl shadow-2xl p-8 focus:outline-none data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 data-[state=closed]:slide-out-to-top-[2%] data-[state=open]:slide-in-from-top-[2%] max-h-[90vh] overflow-y-auto">
 
           {/* Close */}
-          <Dialog.Close asChild>
+          <DClose asChild>
             <button
               className="absolute right-4 top-4 text-muted-foreground hover:text-foreground transition-colors"
               aria-label="Close"
             >
               <X className="h-5 w-5" />
             </button>
-          </Dialog.Close>
+          </DClose>
 
           {/* Header */}
           <div className="flex items-center gap-3 mb-6">
@@ -141,12 +158,12 @@ export default function AuthGateModal({ open, onClose, onSuccess }: Props) {
               <Mountain className="h-5 w-5 text-accent" />
             </div>
             <div>
-              <Dialog.Title className="font-display text-xl font-semibold leading-tight">
+              <DTitle className="font-display text-xl font-semibold leading-tight">
                 {mode === "sign-in" ? "Sign in to see your results" : "Create a free account"}
-              </Dialog.Title>
-              <Dialog.Description className="text-sm text-muted-foreground mt-0.5">
+              </DTitle>
+              <DDescription className="text-sm text-muted-foreground mt-0.5">
                 Your trek recommendations will be ready immediately after.
-              </Dialog.Description>
+              </DDescription>
             </div>
           </div>
 
@@ -275,8 +292,8 @@ export default function AuthGateModal({ open, onClose, onSuccess }: Props) {
               </>
             )}
           </p>
-        </Dialog.Content>
-      </Dialog.Portal>
-    </Dialog.Root>
+        </DContent>
+      </DPortal>
+    </DRoot>
   );
 }
