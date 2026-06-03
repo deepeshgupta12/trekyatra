@@ -8,9 +8,11 @@ TC-B05: verify_email with invalid token returns 400
 TC-B06: verify_email with wrong typ (password_reset token) returns 400
 TC-B07: send_trek_alerts_task returns {sent: False} when SMTP not configured
 TC-B08: create/parse_email_verification_token round-trip
+TC-B09: signup_email auto-sends verification email immediately on registration
 """
 
 import uuid
+from unittest.mock import patch
 
 import pytest
 from fastapi.testclient import TestClient
@@ -141,3 +143,17 @@ def test_email_verification_token_round_trip():
 
     wrong = parse_email_verification_token("garbage")
     assert wrong is None
+
+
+def test_signup_email_sends_verification_on_register():
+    """TC-B09: POST /auth/signup/email triggers verification email send immediately."""
+    email = f"testuser-{uuid.uuid4().hex[:8]}@example.com"
+    with patch("app.api.routes.auth._send_verification_email_helper") as mock_send:
+        resp = client.post(
+            "/api/v1/auth/signup/email",
+            json={"email": email, "password": "strongpass123", "full_name": "Test User"},
+        )
+        assert resp.status_code == 201
+        mock_send.assert_called_once()
+        call_args = mock_send.call_args
+        assert call_args[0][0] == email

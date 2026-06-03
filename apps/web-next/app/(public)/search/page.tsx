@@ -168,6 +168,8 @@ export default function SearchResults() {
   const [cmsOverrides, setCmsOverrides] = useState<Record<string, CMSTrekOverride>>({});
   // fuseVersion increments when the Fuse index is rebuilt, forcing useMemo to re-run
   const [fuseVersion, setFuseVersion] = useState(0);
+  // All CMS treks loaded — used for compare suggestion similarity lookup
+  const [allLoadedTreks, setAllLoadedTreks] = useState<TrekWithTags[]>([]);
   // Step 58: semantic search results from backend (for 5+ char queries)
   const [semanticResults58, setSemanticResults58] = useState<SemanticSearchResult[]>([]);
   const semanticDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -210,6 +212,7 @@ export default function SearchResults() {
         keys: [{ name: "name", weight: 1 }, { name: "tags", weight: 0.5 }],
         threshold: 0.55, includeScore: true, minMatchCharLength: 3,
       });
+      setAllLoadedTreks(merged);
       setFuseVersion(v => v + 1);  // triggers useMemo re-run
     }).catch(() => {});
   }, []);
@@ -356,6 +359,28 @@ export default function SearchResults() {
     () => fuzzyTreks.filter(t => !semanticUniq.some(r => r.slug === t.slug)),
     [fuzzyTreks, semanticUniq],
   );
+
+  // Compare suggestion — shown when there's an exact match: find a similar trek by difficulty+state
+  const compareMatch = useMemo(() => {
+    if (exactTreks.length === 0) return null;
+    const primary = exactTreks[0];
+    const pool = allLoadedTreks.length > 0 ? allLoadedTreks : _staticTreksWithTags;
+    const sameDiffAndState = pool.find(
+      t => t.slug !== primary.slug &&
+           t.difficulty?.toLowerCase() === primary.difficulty?.toLowerCase() &&
+           t.state?.toLowerCase() === primary.state?.toLowerCase()
+    );
+    if (sameDiffAndState) return { primary, similar: sameDiffAndState };
+    const sameDiff = pool.find(
+      t => t.slug !== primary.slug &&
+           t.difficulty?.toLowerCase() === primary.difficulty?.toLowerCase()
+    );
+    if (sameDiff) return { primary, similar: sameDiff };
+    if (exactTreks.length >= 2) return { primary, similar: exactTreks[1] };
+    if (fuzzyTreks.length >= 1) return { primary, similar: fuzzyTreks[0] };
+    return null;
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [exactTreks, fuzzyTreks, allLoadedTreks, fuseVersion]);
 
   const totalCount = matchingTreks.length + matchingGuides.length;
   const showTreks = tab === "All" || tab === "Treks";
@@ -536,6 +561,31 @@ export default function SearchResults() {
                     ))}
                   </div>
                 </div>
+              )}
+
+              {/* ── Compare suggestion — shown when there's a single exact match ── */}
+              {showTreks && compareMatch && (
+                <Link
+                  href={`/compare?slugs=${compareMatch.primary.slug},${compareMatch.similar.slug}`}
+                  onClick={() => handleResultClick(compareMatch.primary.slug, "compare")}
+                  className="flex items-center gap-4 p-4 bg-accent/5 border border-accent/20 rounded-2xl hover:border-accent/50 hover:bg-accent/8 transition-colors group"
+                >
+                  <div className="h-10 w-10 rounded-xl bg-accent/10 flex items-center justify-center flex-shrink-0">
+                    <GitCompare className="h-4 w-4 text-accent" />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-medium text-foreground">
+                      Compare <span className="text-accent">{compareMatch.primary.name}</span> vs{" "}
+                      <span className="text-accent">{compareMatch.similar.name}</span>
+                    </p>
+                    <p className="text-xs text-muted-foreground mt-0.5">
+                      {compareMatch.similar.difficulty}
+                      {compareMatch.similar.state ? ` · ${compareMatch.similar.state}` : ""}
+                      {" · "}<span className="text-accent/70">Side-by-side comparison</span>
+                    </p>
+                  </div>
+                  <ChevronRight className="h-4 w-4 text-muted-foreground group-hover:text-accent flex-shrink-0" />
+                </Link>
               )}
 
               {/* ── Semantic results (#6) — moved to top, right after exact match ── */}

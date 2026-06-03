@@ -10,6 +10,7 @@ import {
   fetchBookmarks,
   fetchDownloads,
   fetchAlerts,
+  fetchComparisons,
 } from "@/lib/api";
 
 const RECENTLY_VIEWED_KEY = "ty_recently_viewed";
@@ -40,6 +41,7 @@ export default function AccountDashboard() {
   const [bookmarks, setBookmarks] = useState<BookmarkResponse[]>([]);
   const [downloadCount, setDownloadCount] = useState(0);
   const [alertCount, setAlertCount] = useState(0);
+  const [compareCount, setCompareCount] = useState(0);
   const [loading, setLoading] = useState(true);
   const [recentlyViewed, setRecentlyViewed] = useState<RecentlyViewedItem[]>([]);
 
@@ -48,10 +50,12 @@ export default function AccountDashboard() {
       fetchBookmarks().catch(() => [] as BookmarkResponse[]),
       fetchDownloads().catch(() => []),
       fetchAlerts().catch(() => []),
-    ]).then(([bk, dl, al]) => {
+      fetchComparisons().catch(() => []),
+    ]).then(([bk, dl, al, cp]) => {
       setBookmarks(bk);
       setDownloadCount(dl.length);
       setAlertCount(al.length);
+      setCompareCount(cp.length);
     }).finally(() => setLoading(false));
   }, []);
 
@@ -71,7 +75,7 @@ export default function AccountDashboard() {
 
   const stats = [
     { label: "Saved pages", value: loading ? "—" : String(bookmarks.length), icon: Bookmark, href: "/account/saved" },
-    { label: "Compare lists", value: "0", icon: BarChart2, href: "/account/compare" },
+    { label: "Compare lists", value: loading ? "—" : String(compareCount), icon: BarChart2, href: "/account/compare" },
     { label: "Downloads", value: loading ? "—" : String(downloadCount), icon: Download, href: "/account/downloads" },
     { label: "Alerts set", value: loading ? "—" : String(alertCount), icon: Bell, href: "/account/settings" },
   ];

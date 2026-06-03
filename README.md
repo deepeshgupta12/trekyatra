@@ -161,8 +161,11 @@ trekyatra/
 | Download dashboard | Done |
 | Password reset (forgot-password + reset-password, HMAC JWT, graceful SMTP) | Done |
 | Email verification (send-verification + verify-email, 24h JWT, graceful SMTP skip) | Done |
+| Email verification auto-sent on signup (immediately on email+password registration) | Done |
 | Email address standardised to explore@trekyatra.co.in across all pages and transactional emails | Done |
-| Compare page — CMS data source (100+ treks vs 12 static), generateMetadata, 3 JSON-LD schemas (WebPage/ItemList/FAQPage), AEO FAQ block, save comparisons, interlinking from trek detail | Done |
+| Compare page — CMS data source (100+ treks vs 12 static), generateMetadata, 8 compare fields, AuthGateModal save, share feedback | Done |
+| Account dashboard "Compare Lists" tile shows real saved comparison count | Done |
+| Search page compare suggestion card (similar trek pair from top exact result) | Done |
 | Trek alert email digest (daily Celery task, graceful SMTP skip) | Done |
 | Account settings page (update full_name, display_name via PATCH /auth/me) | Done |
 | Account enquiries page (user leads history via GET /auth/me/leads) | Done |

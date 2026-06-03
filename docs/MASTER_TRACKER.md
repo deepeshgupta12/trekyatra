@@ -372,6 +372,7 @@ What is done:
 | 68 | Email infrastructure, SMTP + email verification (Z04) + trek alert delivery (Z05) | done |
 | 69 | Compare feature SEO/AEO revamp | done |
 | 69 (prod fixes 2026-06-03) | Post-production fixes to compare page: altitude from `content_json.trek_facts.altitude` (was `undefined`); expanded comparison table (8 fields: adds permits, base camp, suitability); removed hardcoded FAQ section (generic, not trek-specific); removed all JSON-LD scripts (dirty URL issue); share button now shows "Link copied!" clipboard feedback; save button opens AuthGateModal when logged out, shows green success banner with profile link when logged in; `next build` ✅ zero errors | done |
+| 69C (prod fixes #2 2026-06-03) | Issue #6: account dashboard "Compare Lists" tile now shows real count via `fetchComparisons()` in `Promise.all` (was hardcoded `"0"`). Issue #7: search page shows compare suggestion card (similar trek pair) when exact results exist — uses difficulty+state similarity, fallback chains. Issue #9: `signup_email` now auto-sends verification email via `_send_verification_email_helper` immediately on registration (graceful try/except — SMTP failure never breaks signup). TC-B09 added. 608 pass / `next build` ✅ | done |
 | 70 | Component wiring: MonetizationSlot (Z02) + GatedContent (Z03) | pending |
 
 ### Step 67 — CDP Analytics Full Revamp

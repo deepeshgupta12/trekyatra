@@ -117,6 +117,14 @@ def signup_email(
     except Exception:
         pass
 
+    # Send email verification link immediately on signup (Z04)
+    try:
+        token_str, _ = create_email_verification_token(user.id)
+        verify_url = f"{settings.frontend_url}/auth/verify-email?token={token_str}"
+        _send_verification_email_helper(user.email, user.full_name, verify_url)
+    except Exception:
+        logger.warning("Failed to send signup verification email for %s", user.email)
+
     return AuthResponse(
         user=UserResponse.model_validate(
             {

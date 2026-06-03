@@ -611,6 +611,16 @@ Do not start the next step without user confirmation.
 
 ---
 
+### Step 69C — Post-Production Fixes #2 (Compare Count, Search Compare CTA, Email Verification on Signup) [DONE]
+
+- `account/page.tsx` — added `fetchComparisons()` to `Promise.all` in `loadData`; added `compareCount` state; "Compare Lists" tile now shows real API count (was `"0"`)
+- `search/page.tsx` — added `allLoadedTreks` state tracking full merged CMS trek list; added `compareMatch` useMemo (similarity: difficulty+state → difficulty → second result → fuzzy fallback); added compare suggestion UI card between exact + semantic results
+- `auth.py` — `signup_email` now calls `_send_verification_email_helper` immediately after welcome email dispatch; wrapped in try/except so SMTP failure never breaks 201 signup response
+- `test_email_step68.py` — TC-B09 added: patches `_send_verification_email_helper`, asserts called once with correct email on signup
+- Backend: 608 pass, 1 skipped; `next build` ✅ zero errors
+
+---
+
 ## Execution Rule
 Do not start the next step without user confirmation.
 Current next step: **Step 70** (pending)

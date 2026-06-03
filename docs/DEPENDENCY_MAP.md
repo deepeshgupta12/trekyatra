@@ -1199,3 +1199,16 @@ All Step 66 logic is entirely client-side using useAuth() + lib/behavior-tracker
 ### No Backend Changes
 No new API routes, no DB migrations. Uses `GET /api/v1/cms/pages` (Step 16) and `POST /api/v1/account/comparisons` (Step 44).
 - `services/api/tests/test_brief_agent.py` — UPDATED: 4 new tests added: `test_clean_llm_json_fixes_literal_newlines_in_string`, `test_clean_llm_json_preserves_escaped_sequences`, `test_clean_llm_json_fixes_tabs_and_carriage_returns`, `test_generate_brief_recovers_from_literal_newlines_in_json`. Total: 19 tests in file, 610 pass suite-wide.
+
+## Step 69C — Post-Production Fixes #2
+
+### Modified Files — Backend
+- `services/api/app/api/routes/auth.py` — `signup_email` now calls `_send_verification_email_helper(email, name, verify_url)` after welcome email; wrapped in try/except; blast radius: LOW (signup response unchanged, only side effect added)
+- `services/api/tests/test_email_step68.py` — TC-B09 added (`test_signup_email_sends_verification_on_register`); total: 9 tests; blast radius: TEST only
+
+### Modified Files — Frontend
+- `apps/web-next/app/(public)/account/page.tsx` — `loadData` Promise.all now includes `fetchComparisons()`; `compareCount` state drives "Compare Lists" stat tile; blast radius: LOW (account dashboard leaf page, no importers)
+- `apps/web-next/app/(public)/search/page.tsx` — added `allLoadedTreks` state + `compareMatch` useMemo + compare suggestion UI card; blast radius: LOW (new derived state only; existing search/fuse/semantic logic unchanged)
+
+### No New Routes or Migrations
+All changes use existing endpoints: `GET /api/v1/account/comparisons` (Step 44), `POST /api/v1/auth/signup/email` (Step 26). No DB changes.
