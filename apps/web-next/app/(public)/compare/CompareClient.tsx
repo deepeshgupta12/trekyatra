@@ -193,6 +193,7 @@ export function CompareClient({ initialTreks }: { initialTreks: CompareTrek[] })
                 )}
               </div>
               <select
+                aria-label={`Trek ${idx + 1}`}
                 value={trek.slug}
                 onChange={(e) => changeSlug(idx, e.target.value)}
                 className={selectCls}

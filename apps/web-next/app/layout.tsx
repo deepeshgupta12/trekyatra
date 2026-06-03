@@ -1,7 +1,28 @@
 import type { Metadata } from "next";
 import Script from "next/script";
+import { Fraunces, Inter, JetBrains_Mono } from "next/font/google";
 import "./globals.css";
 import { Providers } from "@/components/Providers";
+
+const fraunces = Fraunces({
+  subsets: ["latin"],
+  variable: "--font-display",
+  display: "swap",
+  axes: ["opsz"],
+});
+
+const inter = Inter({
+  subsets: ["latin"],
+  variable: "--font-sans",
+  display: "swap",
+});
+
+const jetbrainsMono = JetBrains_Mono({
+  subsets: ["latin"],
+  variable: "--font-mono",
+  weight: ["400", "500"],
+  display: "swap",
+});
 
 const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? "https://www.trekyatra.co.in";
 
@@ -13,11 +34,13 @@ export const metadata: Metadata = {
   },
   description:
     "Discover, compare and plan India's best treks. Trail-tested guides, real permit updates, honest cost notes — from the Sahyadris to the high Himalayas.",
-  // Favicon — uses the TrekYatra logo PNG
   icons: {
-    icon: [{ url: "/images/Logo_Trekyatra.png", type: "image/png" }],
+    icon: [
+      { url: "/images/favicon-16.png", sizes: "16x16", type: "image/png" },
+      { url: "/images/favicon-32.png", sizes: "32x32", type: "image/png" },
+    ],
     apple: "/images/Logo_Trekyatra.png",
-    shortcut: "/images/Logo_Trekyatra.png",
+    shortcut: "/images/favicon-32.png",
   },
   // Author and publisher — shown by SEO tools and required for Google Rich Results
   authors: [{ name: "TrekYatra Editorial Team", url: `${SITE_URL}/about/authors` }],
@@ -55,27 +78,31 @@ const GA4_ID = process.env.NEXT_PUBLIC_GA4_ID;
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en" suppressHydrationWarning>
+    <html lang="en" className={`${fraunces.variable} ${inter.variable} ${jetbrainsMono.variable}`} suppressHydrationWarning>
+      <head>
+        <link rel="preconnect" href="https://trekyatra-media.sgp1.digitaloceanspaces.com" />
+        <link rel="preconnect" href="https://images.unsplash.com" />
+      </head>
       <body>
         <Providers>{children}</Providers>
       </body>
-      {/* GA4 — next/script ensures execution on initial load AND client-side navigations */}
+      {/* GA4 — lazyOnload defers until page is fully idle, reducing TBT */}
       {GA4_ID && (
         <>
           <Script
             src={`https://www.googletagmanager.com/gtag/js?id=${GA4_ID}`}
-            strategy="afterInteractive"
+            strategy="lazyOnload"
           />
-          <Script id="ga4-init" strategy="afterInteractive">
+          <Script id="ga4-init" strategy="lazyOnload">
             {`window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag('js',new Date());gtag('config','${GA4_ID}');`}
           </Script>
         </>
       )}
-      {/* AdSense — loads after page is interactive */}
+      {/* AdSense — deferred until idle */}
       {ADSENSE_ID && (
         <Script
           src={`https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=${ADSENSE_ID}`}
-          strategy="afterInteractive"
+          strategy="lazyOnload"
           crossOrigin="anonymous"
         />
       )}

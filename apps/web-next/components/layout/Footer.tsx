@@ -84,8 +84,12 @@ export const Footer = () => (
             India&apos;s editorial trekking companion. We map routes, surface trust, and help you choose the right trail — from the Sahyadris to the high Himalayas.
           </p>
           <div className="flex items-center gap-3 mt-6">
-            {[Instagram, Youtube, Mail].map((Icon, i) => (
-              <a key={i} href="#" className="h-10 w-10 rounded-full bg-surface/10 hover:bg-accent flex items-center justify-center transition-colors">
+            {([
+              [Instagram, "TrekYatra on Instagram"],
+              [Youtube, "TrekYatra on YouTube"],
+              [Mail, "Contact TrekYatra"],
+            ] as const).map(([Icon, label], i) => (
+              <a key={i} href="#" aria-label={label} className="h-10 w-10 rounded-full bg-surface/10 hover:bg-accent flex items-center justify-center transition-colors">
                 <Icon className="h-4 w-4" />
               </a>
             ))}

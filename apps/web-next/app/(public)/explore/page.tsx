@@ -276,6 +276,7 @@ function ExploreContent() {
                 </span>
               </div>
               <select
+                aria-label="Sort treks"
                 className="h-9 px-3 rounded-full border border-border bg-surface text-sm w-auto"
                 value={sortBy}
                 onChange={(e) => setSortBy(e.target.value)}

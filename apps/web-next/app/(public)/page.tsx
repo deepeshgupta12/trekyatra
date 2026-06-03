@@ -3,6 +3,7 @@
 export const dynamic = "force-dynamic";
 
 import Link from "next/link";
+import Image from "next/image";
 import { Mountain, Sparkles, ArrowRight, Star, Shield, FileCheck, Backpack, Wallet, Compass, ChevronRight, Clock } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { TrekCard } from "@/components/trek/TrekCard";
@@ -11,19 +12,28 @@ import { fetchCMSPages, fetchTrendingTreks, fetchTrekCMSOverrides, type CMSTrekC
 import SchemaInjector from "@/components/seo/SchemaInjector";
 import { buildWebSiteSchema } from "@/lib/schema";
 import HomeSearchBar from "@/components/home/HomeSearchBar";
-import PersonalisedFeed from "@/components/content/PersonalisedFeed";
 import { SeasonalTreksSection } from "@/components/home/SeasonalTreksSection";
 import { DifficultyTabsSection } from "@/components/home/DifficultyTabsSection";
 import { HomeWelcomeBanner } from "@/components/home/HomeWelcomeBanner";
 import { HomeTrendingHeader } from "@/components/home/HomeTrendingHeader";
-import { RecentlyViewedSection } from "@/components/home/RecentlyViewedSection";
+import makeDynamic from "next/dynamic";
+
+// Below-fold client components deferred to reduce initial JS bundle and TBT
+const RecentlyViewedSection = makeDynamic(
+  () => import("@/components/home/RecentlyViewedSection").then(m => m.RecentlyViewedSection),
+  { ssr: false }
+);
+const PersonalisedFeed = makeDynamic(
+  () => import("@/components/content/PersonalisedFeed"),
+  { ssr: false }
+);
 
 const regions = [
-  { name: "Himachal Pradesh", count: "48 treks", image: "/images/region-himachal-camp.jpg", slug: "himachal" },
-  { name: "Uttarakhand", count: "62 treks", image: "/images/region-uttarakhand-snow.jpg", slug: "uttarakhand" },
-  { name: "Kashmir & Ladakh", count: "29 treks", image: "/images/region-kashmir.jpg", slug: "kashmir" },
-  { name: "Sahyadris", count: "70+ treks", image: "/images/region-sahyadri.jpg", slug: "maharashtra" },
-  { name: "Sikkim & NE", count: "24 treks", image: "/images/region-ladakh.jpg", slug: "sikkim" },
+  { name: "Himachal Pradesh", count: "48 treks", image: "/images/region-himachal-camp.webp", slug: "himachal" },
+  { name: "Uttarakhand", count: "62 treks", image: "/images/region-uttarakhand-snow.webp", slug: "uttarakhand" },
+  { name: "Kashmir & Ladakh", count: "29 treks", image: "/images/region-kashmir.webp", slug: "kashmir" },
+  { name: "Sahyadris", count: "70+ treks", image: "/images/region-sahyadri.webp", slug: "maharashtra" },
+  { name: "Sikkim & NE", count: "24 treks", image: "/images/region-ladakh.webp", slug: "sikkim" },
 ];
 
 const trustStats = [
@@ -96,12 +106,13 @@ export default async function Home() {
       <section className="relative min-h-[65vh] md:min-h-[55vh] flex flex-col">
         {/* Background image + gradients */}
         <div className="absolute inset-0 overflow-hidden">
-          <img
+          <Image
             src="/images/hero-himalaya-dawn.jpg"
             alt="Himalayan dawn ridge"
-            width={1920}
-            height={1280}
-            className="w-full h-full object-cover object-center"
+            fill
+            priority
+            sizes="100vw"
+            className="object-cover object-center"
           />
           <div className="absolute inset-0 bg-gradient-to-t from-foreground/95 via-foreground/40 to-foreground/20" />
           <div className="absolute inset-0 bg-gradient-to-r from-foreground/50 via-transparent to-transparent" />
@@ -210,7 +221,7 @@ export default async function Home() {
         <div className="container-wide">
           <div className="grid lg:grid-cols-2 gap-10 items-center">
             <div className="relative h-[520px] rounded-2xl overflow-hidden stack-shadow">
-              <img src="/images/trek-summit.jpg" alt="Trekker at Himalayan summit" loading="lazy" width={1200} height={1200} className="w-full h-full object-cover" />
+              <img src="/images/trek-summit.webp" alt="Trekker at Himalayan summit" loading="lazy" width={1200} height={1200} className="w-full h-full object-cover" />
               <div className="absolute top-5 left-5 px-3 py-1 rounded-full bg-accent text-accent-foreground text-xs uppercase tracking-widest font-semibold">Editorial spotlight</div>
             </div>
             <div>
@@ -300,9 +311,9 @@ export default async function Home() {
       <Section eyebrow="Free downloads" title="Planning resources, made by trekkers">
         <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
           {[
-            { title: "The complete Himalayan packing checklist", type: "PDF · 24 pages", image: "/images/region-uttarakhand-snow.jpg" },
-            { title: "First-trek prep — 4 week training plan", type: "PDF · 12 pages", image: "/images/trek-summit.jpg" },
-            { title: "India trekking cost calculator (Notion)", type: "Notion template", image: "/images/region-himachal-camp.jpg" },
+            { title: "The complete Himalayan packing checklist", type: "PDF · 24 pages", image: "/images/region-uttarakhand-snow.webp" },
+            { title: "First-trek prep — 4 week training plan", type: "PDF · 12 pages", image: "/images/trek-summit.webp" },
+            { title: "India trekking cost calculator (Notion)", type: "Notion template", image: "/images/region-himachal-camp.webp" },
           ].map((r) => (
             <div key={r.title} className="group bg-card border border-border rounded-2xl lift overflow-hidden">
               <div className="relative h-44 overflow-hidden">

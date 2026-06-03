@@ -632,24 +632,27 @@ Do not start the next step without user confirmation.
 
 ## Execution Rule
 Do not start the next step without user confirmation.
-Current next step: **Step 71 — Core Web Vitals Optimisation** (HIGH PRIORITY — production Lighthouse 56/52)
-After that: **Step 70** — Component wiring MonetizationSlot + GatedContent
+Current next step: **Step 70** — Component wiring MonetizationSlot + GatedContent
 
 ---
 
-### Step 71 — Core Web Vitals Optimisation [PENDING]
+### Step 71 — Core Web Vitals Optimisation [DONE]
 
 Spec: `docs/steps/STEP-71-page-vitals-optimisation.md`
 
 Baseline (2026-06-03): Mobile 56, Desktop 52. LCP 10.8 s mobile / 8.0 s desktop.
 
-Root causes identified:
-- `globals.css` line 1: render-blocking Google Fonts `@import` → adds 3–5 s to FCP
-- `next.config.mjs`: `images: { unoptimized: true }` → ALL images served as raw JPEG, no WebP/AVIF, no srcset → primary LCP cause
-- Homepage + trek hero `<img>` tags: no `fetchpriority="high"` or preload hint → browser discovers LCP image late
-- Favicon: 301 KB PNG → wastes early network bandwidth
-- No preconnect hints for Unsplash CDN
-- Below-fold client components (RecentlyViewedSection, HomepagePersonalizationSection) hydrate eagerly → TBT 290 ms desktop
+Implemented (2026-06-03):
+- `globals.css`: removed render-blocking Google Fonts `@import`
+- `layout.tsx`: `next/font/google` self-hosted Fraunces + Inter + JetBrains Mono (CSS variables); `lazyOnload` for GA4 + AdSense; preconnect for DO Spaces + Unsplash; favicon → 16px/32px optimised PNGs
+- `tailwind.config.ts`: fontFamily updated to CSS variable references
+- `next.config.mjs`: removed `unoptimized:true`; AVIF/WebP formats; remotePatterns for DO Spaces, Unsplash, Pixabay
+- `app/(public)/page.tsx`: hero `<Image priority fill>`; `RecentlyViewedSection` + `PersonalisedFeed` → dynamic(ssr:false); region/editorial images → .webp
+- `app/(public)/trek/[slug]/page.tsx`: `fetchPriority="high"` on hero
+- `.browserslistrc`: modern browser targets → −11 KB legacy polyfills
+- 8 static JPEGs → WebP via cwebp; favicon-16.png (814B) + favicon-32.png (2.2KB)
+- Accessibility: `aria-label` on footer social icons, explore sort select, compare select
+- `next build` ✅ 193 pages, zero errors
 
 Files to modify: `globals.css`, `layout.tsx`, `tailwind.config.ts`, `next.config.mjs`, `app/(public)/page.tsx`, `app/(public)/trek/[slug]/page.tsx`
 

@@ -286,7 +286,7 @@ export default async function TrekDetailPage({ params }: { params: { slug: strin
       {/* Hero */}
       <section className="relative h-[78vh] min-h-[600px] flex items-end overflow-hidden">
         <div className="absolute inset-0">
-          <img src={heroImg} alt={trek.name} className="w-full h-full object-cover" width={1920} height={1080} />
+          <img src={heroImg} alt={trek.name} className="w-full h-full object-cover" width={1920} height={1080} fetchPriority="high" />
           <div className="absolute inset-0 bg-gradient-to-t from-foreground via-foreground/40 to-foreground/20" />
         </div>
         {/* Breadcrumb — dark semi-transparent pill so it's readable on any hero image */}

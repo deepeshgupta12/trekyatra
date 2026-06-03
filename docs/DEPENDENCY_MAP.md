@@ -1222,3 +1222,30 @@ All changes use existing endpoints: `GET /api/v1/account/comparisons` (Step 44),
 
 ### No Backend Changes
 All fixes are purely frontend. No new endpoints, no schema changes, no migrations.
+
+## Step 71 — Core Web Vitals Optimisation
+
+### Modified Files — Frontend Only (no backend changes, no migrations)
+
+| File | Change | Blast Radius |
+|------|--------|-------------|
+| `apps/web-next/app/globals.css` | Removed render-blocking `@import url(fonts.googleapis.com...)` line 1 | LOW — purely removes a network request; fonts now served via next/font |
+| `apps/web-next/app/layout.tsx` | Added Fraunces/Inter/JetBrains_Mono from `next/font/google`; CSS variable class on `<html>`; preconnect hints; favicon 16/32px; GA4+AdSense strategy `lazyOnload` | LOW — root layout; changes affect all pages but are additive only |
+| `apps/web-next/tailwind.config.ts` | fontFamily values changed from string literals to CSS variable references | LOW — requires `layout.tsx` CSS variables to be present (set atomically) |
+| `apps/web-next/next.config.mjs` | Removed `unoptimized:true`; added AVIF/WebP formats + remotePatterns | MEDIUM — all `<Image>` components now go through optimiser; remote domains not in remotePatterns would 500 (all covered) |
+| `apps/web-next/app/(public)/page.tsx` | Hero `<img>` → `<Image priority fill>`; dynamic imports for RecentlyViewedSection + PersonalisedFeed; region/editorial images → .webp | LOW — homepage SSR; dynamic imports reduce initial JS |
+| `apps/web-next/app/(public)/trek/[slug]/page.tsx` | `fetchPriority="high"` on trek hero `<img>` | LOW — non-breaking HTML attribute |
+| `apps/web-next/app/(public)/explore/page.tsx` | `aria-label` on sort select | LOW — accessibility only |
+| `apps/web-next/app/(public)/compare/CompareClient.tsx` | `aria-label` on trek picker select | LOW — accessibility only |
+| `apps/web-next/components/layout/Footer.tsx` | `aria-label` on all 3 social icon links | LOW — accessibility only |
+| `apps/web-next/.browserslistrc` | New file — modern browser targets | LOW — reduces polyfill bundle; no functional impact |
+| `apps/web-next/public/images/favicon-16.png` | New — 814 B favicon | LOW — new asset only |
+| `apps/web-next/public/images/favicon-32.png` | New — 2.2 KB favicon | LOW — new asset only |
+| `apps/web-next/public/images/*.webp` | 8 new WebP files converted from JPEG | LOW — new assets; old JPEGs kept for compatibility |
+
+### No Backend Changes
+No API routes, no DB migrations, no Celery tasks, no schema changes.
+
+### Infrastructure Notes (user action required)
+- DigitalOcean Spaces: set `Cache-Control: public, max-age=31536000, immutable` on the bucket — currently Cache TTL: None (9,871 KiB wasted on repeat visits). This is a DO console action, not a code change.
+- Server TTFB 1,955ms: partially addressed by next/font + image optimisation; further improvement requires CDN/edge caching at DO App Platform level.

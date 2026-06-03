@@ -23,7 +23,17 @@ const nextConfig = {
     ];
   },
   images: {
-    unoptimized: true,
+    formats: ["image/avif", "image/webp"],
+    remotePatterns: [
+      { protocol: "https", hostname: "images.unsplash.com" },
+      { protocol: "https", hostname: "pixabay.com" },
+      { protocol: "https", hostname: "cdn.pixabay.com" },
+      { protocol: "https", hostname: "trekyatra-media.sgp1.digitaloceanspaces.com" },
+      { protocol: "https", hostname: "*.digitaloceanspaces.com" },
+      { protocol: "https", hostname: "source.unsplash.com" },
+    ],
+    deviceSizes: [375, 640, 750, 828, 1080, 1200, 1920],
+    imageSizes: [16, 32, 64, 128, 256],
   },
 };
 
