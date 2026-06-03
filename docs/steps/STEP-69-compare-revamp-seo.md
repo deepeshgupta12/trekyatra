@@ -234,3 +234,30 @@ No new DB tables or columns. Uses existing `account_comparisons` table (Step 44)
 
 **Build:** `next build` ✅ zero TypeScript errors (193 pages)
 **GitNexus:** 13,370 nodes | 18,267 edges | 493 clusters | 140 flows
+
+---
+
+## Post-Production Fixes (2026-06-03)
+
+User-reported issues after reviewing the compare page in production:
+
+**Files Modified:**
+
+`apps/web-next/app/(public)/compare/page.tsx`
+- Fixed altitude: `altitude: undefined` → `altitude: p.content_json?.trek_facts?.altitude ?? undefined` (root cause: altitude lives in `content_json.trek_facts`, not as a top-level `CMSPage` field)
+- Also prefer `trek_facts` values for difficulty/duration/season over top-level columns (more accurate)
+- Added `permits`, `base`, `suitability` fields to CMS mapping (static fallback also updated)
+- Removed all 3 JSON-LD scripts (`webPageSchema`, `itemListSchema`, `faqSchema`) — user requested removal: compare URL is a dirty/parameterised URL, canonical JSON-LD is unreliable
+- Removed `FAQ_SCHEMA_ITEMS` const
+
+`apps/web-next/app/(public)/compare/CompareClient.tsx`
+- Removed `FAQ_ITEMS` const, `FAQItem` component, and the entire FAQ render section
+- Updated `CompareTrek` interface: added `permits?`, `base?`, `suitability?`
+- Updated `COMPARE_FIELDS`: expanded from 5 to 8 rows (added Permits required, Base camp, Suitability)
+- Fixed `handleShare`: added `shareCopied` state — button now shows "Link copied!" for 2.5s after clipboard write; fallback to `window.prompt` if clipboard API unavailable
+- Rewired `handleSave`: checks `useAuth().user` — opens `AuthGateModal` when logged out; calls `doSave()` after successful login or directly if already logged in
+- Added `saveSuccess` state: shows green "Comparison saved! View in your profile" banner for 5s after successful POST
+- Imported `AuthGateModal` from `@/components/plan/AuthGateModal`
+- Imported `useAuth` from `@/lib/auth-context`
+
+**Build:** `next build` ✅ zero TypeScript errors (193+ pages)

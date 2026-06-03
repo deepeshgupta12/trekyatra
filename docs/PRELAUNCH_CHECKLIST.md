@@ -269,9 +269,9 @@
 
 | # | Integration | Current State | Action Required |
 |---|-------------|--------------|-----------------|
-| I01 | Anthropic Claude | Rule-based fallback | Set `ANTHROPIC_API_KEY` |
+| I01 | Anthropic Claude | ✅ Set in DO App Platform (2026-06-02) | — |
 | I02 | OpenAI Embeddings | Similarity fallback | Set `OPENAI_API_KEY` |
-| I03 | Google OAuth | Configured locally | Create production OAuth app |
+| I03 | Google OAuth | ✅ `GOOGLE_CLIENT_ID` + `GOOGLE_CLIENT_SECRET` + `NEXT_PUBLIC_GOOGLE_CLIENT_ID` set in DO (2026-06-02) | — |
 | I04 | Razorpay | Test mode | Set `RAZORPAY_KEY_ID/SECRET` |
 | I05 | Stripe | Test redirect + subscription creation | Set `STRIPE_SECRET_KEY` + `STRIPE_WEBHOOK_SECRET` + Price IDs |
 | I06 | SMTP | Email skipped | Set `SMTP_HOST/PORT/USER/PASSWORD` (recommend Resend or SendGrid) |
@@ -288,9 +288,9 @@
 | # | Task | Status |
 |---|------|--------|
 | M01 | Place logo PNG at `/public/images/Logo_Trekyatra.png` | `[x]` | Done — logo active in Header and Footer |
-| M02 | Run content pipeline: trigger → brief approve → write → publish ≥20 trek guides | `[ ]` |
-| M03 | Review and approve AI-generated briefs | `[ ]` |
-| M04 | Review AI-generated drafts (check YMYL claims) | `[ ]` |
+| M02 | Run content pipeline: trigger → brief approve → write → publish ≥20 trek guides | `[x]` | Done (2026-06-02) |
+| M03 | Review and approve AI-generated briefs | `[x]` | Done (2026-06-02) |
+| M04 | Review AI-generated drafts (check YMYL claims) | `[x]` | Done (2026-06-02) |
 | M05 | Add affiliate products to catalog (`/admin/monetization`) | `[ ]` |
 | M06 | Add at least 3 digital products (`/admin/products`) | `[ ]` |
 | M07 | Add at least 5 operators (`/admin/operators`) | `[ ]` |
@@ -330,8 +330,8 @@ All items below must be `[x]` before going live:
 - [ ] M07 — At least 5 operators registered
 - [ ] M05 — Affiliate catalog has ≥5 products
 - [ ] P01–P05 — Production hosting, DB, Redis, CI/CD, SSL
-- [ ] I01 — ANTHROPIC_API_KEY configured (for AI agents)
-- [ ] I06 — SMTP configured (for lead confirmation + welcome emails)
-- [ ] I03 — Google OAuth live on production domain
+- [x] I01 — ANTHROPIC_API_KEY configured ✅ (set in DO 2026-06-02)
+- [ ] I06 — SMTP configured (for lead confirmation + welcome emails) — Step 68
+- [x] I03 — Google OAuth live on production domain ✅ (GOOGLE_CLIENT_ID set in DO 2026-06-02)
 - [ ] T04 — Playwright E2E passing
 - [ ] T07, T08 — Cross-browser and mobile checked

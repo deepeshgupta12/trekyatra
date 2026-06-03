@@ -601,11 +601,12 @@ Do not start the next step without user confirmation.
 Do not start the next step without user confirmation.
 ### Step 69 — Compare Feature SEO/AEO Revamp [DONE]
 
-- `compare/CompareClient.tsx` — NEW: "use client" client component; `CompareTrek` interface; dropdown selectors from `initialTreks` prop; URL param sync (`?slugs=`); single-slug pre-selection from trek detail links; save comparison to `POST /account/comparisons`; AEO FAQ accordion (6 questions targeting voice search)
-- `compare/page.tsx` — FULL REWRITE to Server Component: `generateMetadata()` (title, description, canonical, OG); fetches `fetchCMSPages(trek_guide, published, 200)` server-side; static fallback; 3 JSON-LD scripts (WebPage, ItemList top-6, FAQPage); `revalidate=3600`
+- `compare/CompareClient.tsx` — NEW: "use client" client component; `CompareTrek` interface (8 fields incl. altitude/permits/base/suitability); dropdown selectors; URL param sync (`?slugs=`); AuthGateModal for logged-out save; success banner after save; "Link copied!" share feedback
+- `compare/page.tsx` — FULL REWRITE to Server Component: `generateMetadata()` (title, description, canonical, OG); fetches `fetchCMSPages(trek_guide, published, 200)` server-side; altitude from `content_json.trek_facts.altitude`; static fallback; no JSON-LD (dirty URL); `revalidate=3600`
 - `TrekCTAs.tsx` — bug fix: `/compare?a=` → `/compare?slugs=` (URL param was mismatched with compare page)
+- Post-production fixes (2026-06-03): altitude bug fixed, FAQ removed, JSON-LD removed, AuthGateModal wired, share feedback added, 8 compare fields
 - No backend changes. Sitemap already had `/compare` at priority 0.7.
-- `next build` ✅ 193 pages, 0 errors
+- `next build` ✅ 193+ pages, 0 errors
 - GitNexus: 13,370 nodes | 18,267 edges | 493 clusters | 140 flows
 
 ---

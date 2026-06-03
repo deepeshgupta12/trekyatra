@@ -371,6 +371,7 @@ What is done:
 |------|-------|--------|
 | 68 | Email infrastructure, SMTP + email verification (Z04) + trek alert delivery (Z05) | done |
 | 69 | Compare feature SEO/AEO revamp | done |
+| 69 (prod fixes 2026-06-03) | Post-production fixes to compare page: altitude from `content_json.trek_facts.altitude` (was `undefined`); expanded comparison table (8 fields: adds permits, base camp, suitability); removed hardcoded FAQ section (generic, not trek-specific); removed all JSON-LD scripts (dirty URL issue); share button now shows "Link copied!" clipboard feedback; save button opens AuthGateModal when logged out, shows green success banner with profile link when logged in; `next build` ✅ zero errors | done |
 | 70 | Component wiring: MonetizationSlot (Z02) + GatedContent (Z03) | pending |
 
 ### Step 67 — CDP Analytics Full Revamp
