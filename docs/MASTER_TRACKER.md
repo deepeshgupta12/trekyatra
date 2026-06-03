@@ -126,6 +126,27 @@ All V0 foundations are shipped. The stack is live locally with:
 - **tsc --noEmit: 0 errors | expo export --platform ios: ✓ (79 assets, 5.2MB bundle)**
 - Key decision: reanimated pinned to ~3.16.0 (v4 needs react-native-worklets; add in M07)
 
+### Step M01 — Post-push Deployment Fixes (2026-06-03)
+
+Three successive DO deployment failures were encountered and resolved after M01 push. **All web-next changes are TypeScript-only type casts — zero runtime impact on production website (Desktop and Mobile web).**
+
+**Failure 1 — `ERESOLVE` on `@expo/log-box` (commit `5de7269`)**
+- Root cause: DO's npm 10.9.7 (strict peer-dep resolution by default) failed when installing monorepo workspaces. `@expo/log-box@^56.0.12` in mobile conflicted with expo-router's exact peer dep `@expo/log-box@56.0.4`.
+- Fix: Added root `.npmrc` with `legacy-peer-deps=true` (matches local install mode). Removed `@expo/log-box` from `apps/mobile` explicit deps — let expo-router manage it as a transitive dep.
+- Production impact: **None** — this was an install-time error, never reached the build stage.
+
+**Failure 2 — `button.tsx` TypeScript error (commit `54fde37`)**
+- Root cause: Adding npm workspaces caused `@radix-ui/react-slot@1.2.3` to be hoisted. v1.2.3 tightened the `onChange` prop type (`FormEventHandler<HTMLButtonElement>` not assignable to `ChangeEventHandler<HTMLElement, Element>`), breaking the JSX spread in `button.tsx:46`.
+- Fix: Cast `Comp` as `React.ElementType` — `(asChild ? Slot : "button") as React.ElementType`. This is a compile-time-only cast; the runtime value is identical.
+- Production impact: **None** — TypeScript cast only; compiled JS output unchanged.
+
+**Failure 3 — `AuthGateModal.tsx` Dialog namespace errors (commit `54fde37`)**
+- Root cause: `@radix-ui/react-dialog@1.1.15` (newest patch of `^1.1.14`) updated component return types to include `Promise<ReactNode>` for RSC support. This made all 7 `Dialog.*` namespace components fail the JSX element type check with `@types/react@18.3.x`.
+- Fix: Replaced `import * as Dialog` with named imports (`Root as _DialogRoot`, etc.), each cast to `React.ElementType`. JSX output is byte-for-byte identical.
+- Production impact: **None** — same Radix Dialog components rendered; only TypeScript types changed.
+
+**Root cause of all three:** npm workspaces hoisting resolves the LATEST version of every package satisfying the declared range, whereas before workspaces each app installed in isolation with its own pinned lockfile. The `overrides` field added to root `package.json` pins `@types/react@^18.3.23` and `@types/react-dom@^18.3.7` for future protection.
+
 ### Mobile Review — Gaps Fixed (2026-05-29)
 The following gaps were identified and resolved during a full cross-check of all 22 mobile step docs against the complete website feature set (Steps 00–67):
 

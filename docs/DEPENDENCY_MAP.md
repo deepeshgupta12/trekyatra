@@ -1339,3 +1339,41 @@ aws s3 cp s3://trekyatra-media/ s3://trekyatra-media/ \
 - `react-native-reanimated` pinned to ~3.16.0 — v4 requires `react-native-worklets`; add in Step M07
 - `@sentry/react-native` v8 (config-plugin approach changed from v5 — removed from `plugins` array)
 - Sentry guarded by `EXPO_PUBLIC_SENTRY_DSN` env var — disabled in dev without key
+
+---
+
+## Step M01 — Post-push Deployment Fixes (2026-06-03)
+
+### Problem: npm workspaces hoisting breaks DO web deployment
+
+Adding `workspaces` to root `package.json` caused DO's npm 10.9.7 to install ALL workspace packages (web + mobile) at the monorepo root, hoisting packages to their latest compatible versions. Before workspaces, each app installed in isolation with its own lockfile-pinned versions.
+
+### Fix 1 — `ERESOLVE @expo/log-box` (commit `5de7269`)
+| File | Change | Production Impact |
+|------|--------|-------------------|
+| `.npmrc` (root) | `legacy-peer-deps=true` | None — install-time only |
+| `apps/mobile/package.json` | Removed explicit `@expo/log-box: ^56.0.12`; loosened expo-linking/expo-constants/@expo/metro-runtime to `~56.0.0` | None |
+
+Root cause: DO's npm 10.9.7 strict resolver rejected `@expo/log-box@^56.0.12` conflicting with expo-router's exact peer dep `56.0.4`.
+
+### Fix 2 — `button.tsx` & `AuthGateModal.tsx` TypeScript errors (commit `54fde37`)
+| File | Change | Production Impact |
+|------|--------|-------------------|
+| `apps/web-next/components/ui/button.tsx` | Cast `(asChild ? Slot : "button") as React.ElementType` | **None — type cast only; runtime identical** |
+| `apps/web-next/components/plan/AuthGateModal.tsx` | Replaced `import * as Dialog` namespace with named imports, each cast `as React.ElementType` | **None — same Radix components rendered; JS output byte-identical** |
+| `package.json` (root) | Added `overrides: { "@types/react": "^18.3.23", "@types/react-dom": "^18.3.7", "@radix-ui/react-dialog": "1.1.14" }` | None |
+| `apps/mobile/package.json` | Changed `@types/react` devDep `^19.0.0` → `^18.3.0` | None |
+
+Root causes:
+- `@radix-ui/react-slot@1.2.3` hoisted (was isolated before) — tightened `onChange` type breaks `button.tsx` JSX spread
+- `@radix-ui/react-dialog@1.1.15` hoisted (new patch) — added `Promise<ReactNode>` return type for RSC, breaking JSX element type check in `@types/react@18.3.x`
+- `react-native@0.85.3` peer dep `@types/react: "^19.1.1"` would have hoisted React 19 types over the whole workspace — blocked by root `overrides`
+
+### Safe-to-modify Files (TypeScript-only changes)
+Both web-next file changes are **compile-time type annotations only**. They do not change:
+- Component identity (same Radix components instantiated)
+- Props passed at runtime
+- DOM output
+- Styling
+- Event handlers
+- Behaviour on Desktop or Mobile Web
