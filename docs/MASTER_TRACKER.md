@@ -145,7 +145,14 @@ Three successive DO deployment failures were encountered and resolved after M01 
 - Fix: Replaced `import * as Dialog` with named imports (`Root as _DialogRoot`, etc.), each cast to `React.ElementType`. JSX output is byte-for-byte identical.
 - Production impact: **None** — same Radix Dialog components rendered; only TypeScript types changed.
 
-**Root cause of all three:** npm workspaces hoisting resolves the LATEST version of every package satisfying the declared range, whereas before workspaces each app installed in isolation with its own pinned lockfile. The `overrides` field added to root `package.json` pins `@types/react@^18.3.23` and `@types/react-dom@^18.3.7` for future protection.
+**Failure 4 — React error #31 on `/404` and `/500` during SSR prerender**
+- Root cause: npm workspaces with `"apps/*"` glob pulled `apps/mobile` into the workspace graph. `react-native@0.85.3` declares `react@^19.2.3` as a peer dep, so npm hoisted React 19 to root `node_modules`. Next.js SSR prerender for `/404`/`/500` failed with minified React error #31 ("Objects are not valid as a React child") because React 18 (web-next) and React 19 (root) created two separate instance registries.
+- Fix attempted (failed): Adding `"react": "^18.3.0"` / `"react-dom": "^18.3.0"` to root `overrides` — npm returned `EOVERRIDE` because workspace members are treated as direct deps and cannot be overridden.
+- Fix applied: Changed root `package.json` workspaces from `["apps/*", "packages/*"]` to `["apps/web-next", "packages/*"]` — explicitly excluding `apps/mobile`. Mobile uses EAS (not DO), so it does not need npm workspace membership. With mobile excluded, npm installs React 18 into `apps/web-next/node_modules` with no conflict. Also changed `apps/mobile/package.json` `react`/`react-dom` from `^19.0.0` to `^18.3.0` for standalone-install consistency.
+- Verification: `npx next build` in `apps/web-next` → ✓ Compiled successfully, ✓ Generating static pages (193/193), zero errors.
+- Production impact: **None** — Mobile uses EAS (Metro bundler, separate from DO). Excluding mobile from npm workspaces has zero effect on the production website.
+
+**Root cause of all four failures:** npm workspaces hoisting resolves the LATEST version of every package satisfying the declared range. The permanent fix is to only include web-facing apps in the npm workspace graph. Mobile (EAS-built) must remain outside npm workspaces to prevent React version conflicts.
 
 ### Mobile Review — Gaps Fixed (2026-05-29)
 The following gaps were identified and resolved during a full cross-check of all 22 mobile step docs against the complete website feature set (Steps 00–67):

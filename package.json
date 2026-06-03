@@ -4,7 +4,7 @@
   "private": true,
   "description": "TrekYatra monorepo with backend foundation, static frontend source-of-truth, and GitNexus integration",
   "workspaces": [
-    "apps/*",
+    "apps/web-next",
     "packages/*"
   ],
   "overrides": {

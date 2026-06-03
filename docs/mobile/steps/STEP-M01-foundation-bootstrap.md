@@ -208,3 +208,7 @@ npx tsc --noEmit                        # zero TypeScript errors
 - Expo Router v3 uses the `/app` directory for file-based routing (same convention as Next.js App Router but with `/app/(tabs)/` for the tab group)
 - NativeWind v4 requires Metro config change + babel plugin — follow official NativeWind v4 setup guide exactly
 - Do NOT use Expo Go for Step M02 onwards — many packages (SecureStore, biometric, push) require a dev build
+- **Expo SDK upgraded from 51 → 56** at implementation time (SDK 51 was EOL). `react-native@0.85.3`, Expo Router `~56.0.0`, React 19 peer dep.
+- **Reanimated pinned to `~3.16.0`** (v3.x) — v4 requires `react-native-worklets` which is not in mobile scope until M07.
+- **`apps/mobile` must NOT be in npm workspaces** (`"apps/*"` glob must NOT be used). `react-native@0.85.3` declares `react@^19.2.3` as peer dep; if mobile is in workspaces, npm hoists React 19 to root, causing React error #31 on Next.js's `/404`/`/500` SSR prerender. Root `package.json` workspaces must be `["apps/web-next", "packages/*"]` — explicitly excluding mobile.
+- **Post-push deployment failures (Failure 1–4):** See MASTER_TRACKER.md § "Step M01 — Post-push Deployment Fixes" for full incident log.

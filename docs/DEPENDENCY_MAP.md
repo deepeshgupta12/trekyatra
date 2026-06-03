@@ -1327,7 +1327,7 @@ aws s3 cp s3://trekyatra-media/ s3://trekyatra-media/ \
 ### Modified Files
 | File | Change |
 |------|--------|
-| `package.json` (root) | Added `"workspaces": ["apps/*", "packages/*"]` |
+| `package.json` (root) | Added `"workspaces": ["apps/web-next", "packages/*"]` — mobile excluded (see Fix 3 below) |
 
 ### Blast Radius
 - **M01 changes are additive only** — no existing web or API files modified
@@ -1335,8 +1335,9 @@ aws s3 cp s3://trekyatra-media/ s3://trekyatra-media/ \
 - Root `package.json` workspaces change is non-breaking for existing `apps/web-next/` workspace
 
 ### Key Decisions
-- Expo SDK 56 (not SDK 51 as specced) — latest at time of implementation (RN 0.85.3, React 19)
+- Expo SDK 56 (not SDK 51 as specced) — latest at time of implementation (RN 0.85.3, React 19 peer dep)
 - `react-native-reanimated` pinned to ~3.16.0 — v4 requires `react-native-worklets`; add in Step M07
+- `apps/mobile` excluded from npm workspaces — `react-native@0.85.3` peer dep on `react@^19` conflicts with web-next React 18 when both are in the workspace graph (causes React error #31 on SSR)
 - `@sentry/react-native` v8 (config-plugin approach changed from v5 — removed from `plugins` array)
 - Sentry guarded by `EXPO_PUBLIC_SENTRY_DSN` env var — disabled in dev without key
 
@@ -1368,6 +1369,20 @@ Root causes:
 - `@radix-ui/react-slot@1.2.3` hoisted (was isolated before) — tightened `onChange` type breaks `button.tsx` JSX spread
 - `@radix-ui/react-dialog@1.1.15` hoisted (new patch) — added `Promise<ReactNode>` return type for RSC, breaking JSX element type check in `@types/react@18.3.x`
 - `react-native@0.85.3` peer dep `@types/react: "^19.1.1"` would have hoisted React 19 types over the whole workspace — blocked by root `overrides`
+
+### Fix 3 — React error #31 on `/404` and `/500` SSR prerender
+| File | Change | Production Impact |
+|------|--------|-------------------|
+| `package.json` (root) | Changed workspaces from `["apps/*", "packages/*"]` → `["apps/web-next", "packages/*"]` — explicitly excludes `apps/mobile` | **None — web build unchanged; mobile uses EAS separately** |
+| `apps/mobile/package.json` | Changed `react`/`react-dom` from `^19.0.0` → `^18.3.0` | **None — mobile local install only; EAS builds run standalone** |
+
+Root cause: `react-native@0.85.3` declares `react@^19.2.3` as a peer dep. With `apps/mobile` in workspaces, npm hoisted React 19.2.7 to root `node_modules`, creating two React instance registries (React 18 in web-next, React 19 at root). Next.js's SSR prerender for `/404`/`/500` pages hit the dual-React boundary and threw minified React error #31 ("Objects are not valid as a React child — {$typeof, type, key, ref, props, _owner}").
+
+Fix attempted and rejected: Root `overrides: { "react": "^18.3.0" }` — npm returns `EOVERRIDE` because workspace members' direct deps cannot be overridden via root overrides. Overrides only apply to transitive (nested) deps.
+
+Fix applied: Exclude mobile from workspaces entirely. Mobile is EAS-built; it does not participate in DO's npm install graph. With only `apps/web-next` in workspaces, React 18.3.1 installs cleanly into `apps/web-next/node_modules` with no conflict.
+
+Verification: `npx next build` → ✓ Compiled successfully, ✓ Generating static pages (193/193).
 
 ### Safe-to-modify Files (TypeScript-only changes)
 Both web-next file changes are **compile-time type annotations only**. They do not change:
