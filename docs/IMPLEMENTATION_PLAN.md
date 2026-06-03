@@ -632,4 +632,25 @@ Do not start the next step without user confirmation.
 
 ## Execution Rule
 Do not start the next step without user confirmation.
-Current next step: **Step 70** (pending)
+Current next step: **Step 71 — Core Web Vitals Optimisation** (HIGH PRIORITY — production Lighthouse 56/52)
+After that: **Step 70** — Component wiring MonetizationSlot + GatedContent
+
+---
+
+### Step 71 — Core Web Vitals Optimisation [PENDING]
+
+Spec: `docs/steps/STEP-71-page-vitals-optimisation.md`
+
+Baseline (2026-06-03): Mobile 56, Desktop 52. LCP 10.8 s mobile / 8.0 s desktop.
+
+Root causes identified:
+- `globals.css` line 1: render-blocking Google Fonts `@import` → adds 3–5 s to FCP
+- `next.config.mjs`: `images: { unoptimized: true }` → ALL images served as raw JPEG, no WebP/AVIF, no srcset → primary LCP cause
+- Homepage + trek hero `<img>` tags: no `fetchpriority="high"` or preload hint → browser discovers LCP image late
+- Favicon: 301 KB PNG → wastes early network bandwidth
+- No preconnect hints for Unsplash CDN
+- Below-fold client components (RecentlyViewedSection, HomepagePersonalizationSection) hydrate eagerly → TBT 290 ms desktop
+
+Files to modify: `globals.css`, `layout.tsx`, `tailwind.config.ts`, `next.config.mjs`, `app/(public)/page.tsx`, `app/(public)/trek/[slug]/page.tsx`
+
+Expected after: Mobile 82–88, Desktop 88–92; LCP < 2.5 s; FCP < 1.8 s mobile
