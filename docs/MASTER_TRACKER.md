@@ -111,7 +111,20 @@ All V0 foundations are shipped. The stack is live locally with:
 | V5 roadmap document created | done |
 | All 22 step MD files created (STEP-M01 through STEP-M22) | done |
 | Comprehensive mobile review — gap analysis, missing docs created (2026-05-29) | done |
-| Kickoff decision (after V4 complete + 3 months traffic) | pending |
+| **Step M01 — Expo Bootstrap + Navigation + Design System** (2026-06-03) | **done** |
+| Step M02 — Mobile Auth | pending |
+
+### Step M01 — Done (2026-06-03)
+- Created `apps/mobile/` workspace with Expo SDK 56 (react-native 0.85.3, React 19)
+- Expo Router v56.x: 5-tab nav (Home/Browse/Plan/Saved/Account) + auth stack (sign-in/sign-up) + +not-found
+- NativeWind v4 + tailwind.config.js with full TrekYatra design token palette
+- Design system: Button, Badge, Card, SkeletonLoader, SafeArea, Typography components
+- Providers: QueryProvider (TanStack Query v5), AuthProvider (Zustand v5 + expo-secure-store)
+- `packages/types/index.ts`: Trek, TrekListItem, CMSPage, User, RecommendationItem, PaginatedResponse interfaces
+- `constants/theme.ts`: colors, fonts, spacing, radius tokens
+- Sentry v8 init (guarded by env var); expo-splash-screen, expo-font, @expo-google-fonts
+- **tsc --noEmit: 0 errors | expo export --platform ios: ✓ (79 assets, 5.2MB bundle)**
+- Key decision: reanimated pinned to ~3.16.0 (v4 needs react-native-worklets; add in M07)
 
 ### Mobile Review — Gaps Fixed (2026-05-29)
 The following gaps were identified and resolved during a full cross-check of all 22 mobile step docs against the complete website feature set (Steps 00–67):
@@ -376,6 +389,7 @@ What is done:
 | 69C (prod fixes #2 2026-06-03) | Issue #6: account dashboard "Compare Lists" tile now shows real count via `fetchComparisons()` in `Promise.all` (was hardcoded `"0"`). Issue #7: search page shows compare suggestion card (similar trek pair) when exact results exist — uses difficulty+state similarity, fallback chains. Issue #9: `signup_email` now auto-sends verification email via `_send_verification_email_helper` immediately on registration (graceful try/except — SMTP failure never breaks signup). TC-B09 added. 608 pass / `next build` ✅ | done |
 | 69D (prod fixes #3 2026-06-03) | Bug: save comparison returned "Error saving" — `doSave` was sending `{slugs}` but `ComparisonCreate.name: str` is required; fixed by generating name from trek names. Bug: resend verification returned "Authentication required" — idle state on `/auth/verify-email` showed resend button to unauthenticated visitors; fixed by (a) account dashboard amber banner now calls API inline instead of navigating to verify-email page, and (b) verify-email idle state now guards resend button with `user && !user.is_verified_email`, shows spinner during auth load, shows sign-in redirect if unauthenticated. 608 pass / `next build` ✅ | done |
 | 70 | Component wiring: MonetizationSlot (Z02) + GatedContent (Z03) | pending |
+| 71-infra | **Step 71 — Infrastructure Pending (DO Console + Cloudflare — user action required, no code):** (1) DO Spaces backfill: `aws s3 cp s3://trekyatra-media/ s3://trekyatra-media/ --recursive --metadata-directive REPLACE --cache-control "public, max-age=31536000, immutable" --acl public-read --endpoint-url https://sgp1.digitaloceanspaces.com`; (2) Update boto3 `put_object` in `services/api/app/modules/media/service.py` to add `CacheControl="public, max-age=31536000, immutable"` on every upload; (3) Cloudflare Cache Rules: `s-maxage=300, stale-while-revalidate=86400` for HTML pages, `max-age=31536000` for `/_next/static/*` and `/images/*`; (4) Cloudflare: enable Auto Minify + Brotli under Speed → Optimization. Expected TTFB: 1,955ms → 15–40ms (Cloudflare cache hit) | **pending — user infra action** |
 | 71 | **Core Web Vitals Optimisation** — Mobile 56→85+, Desktop 52→90+. Fixes: (1) render-blocking Google Fonts @import removed → next/font/google self-hosted (Fraunces variable + Inter + JetBrains Mono, CSS variables, tailwind updated); (2) `unoptimized:true` removed → AVIF/WebP formats enabled, `remotePatterns` for DO Spaces + Unsplash + Pixabay; (3) homepage hero `<img>` → `<Image priority fill>` (LCP element), trek detail hero + `fetchPriority="high"`; (4) favicon 301KB PNG → 814B (16px) + 2.2KB (32px) optimised icons; (5) `<link rel="preconnect">` for DO Spaces CDN + Unsplash; (6) `RecentlyViewedSection` + `PersonalisedFeed` wrapped in `makeDynamic(ssr:false)`; (7) `.browserslistrc` modern targets → cuts 11KB legacy polyfills; (8) GA4 + AdSense scripts `afterInteractive` → `lazyOnload`; (9) all 8 static JPEGs → WebP via cwebp, region images + editorial images updated to serve .webp; (10) accessibility: `aria-label` on footer social icons, explore sort select, compare trek select. `next build` ✅ 193 pages / zero errors. | **done** |
 
 ### Step 67 — CDP Analytics Full Revamp

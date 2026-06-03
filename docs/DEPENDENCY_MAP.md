@@ -1249,3 +1249,93 @@ No API routes, no DB migrations, no Celery tasks, no schema changes.
 ### Infrastructure Notes (user action required)
 - DigitalOcean Spaces: set `Cache-Control: public, max-age=31536000, immutable` on the bucket — currently Cache TTL: None (9,871 KiB wasted on repeat visits). This is a DO console action, not a code change.
 - Server TTFB 1,955ms: partially addressed by next/font + image optimisation; further improvement requires CDN/edge caching at DO App Platform level.
+
+## Step 71 — Infrastructure Pending (User Action — No Code Changes)
+
+### DO Spaces Cache-Control Backfill
+
+**Problem:** All existing images in `trekyatra-media` bucket served with `Cache-Control: none` — 9,871 KiB re-downloaded on every repeat visit.
+
+**Action 1 — Code fix (new uploads):** Add `CacheControl="public, max-age=31536000, immutable"` to `put_object` call in `services/api/app/modules/media/service.py`. Blast radius: LOW (media upload only).
+
+**Action 2 — CLI backfill (existing objects, one-time):**
+```bash
+aws s3 cp s3://trekyatra-media/ s3://trekyatra-media/ \
+  --recursive --profile do-spaces \
+  --endpoint-url https://sgp1.digitaloceanspaces.com \
+  --metadata-directive REPLACE \
+  --cache-control "public, max-age=31536000, immutable" \
+  --acl public-read
+```
+
+### TTFB Fix via Cloudflare Cache Rules
+
+**Problem:** Server TTFB 1,955ms. Site is behind Cloudflare (IPs 162.159.140.98 + 172.66.0.96). Cloudflare caches nothing by default for HTML.
+
+**Action 1 — Next.js headers()** (code change, next step): Add `headers()` to `next.config.mjs`:
+- `/_next/static/*` → `Cache-Control: public, max-age=31536000, immutable`
+- `/images/*` → `Cache-Control: public, max-age=604800, stale-while-revalidate=86400`
+- All public HTML routes → `Cache-Control: s-maxage=300, stale-while-revalidate=86400`
+
+**Action 2 — Cloudflare Dashboard:**
+- Caching → Cache Rules: cache HTML with `s-maxage=300`
+- Speed → Auto Minify (JS+CSS+HTML) + Brotli
+
+**Expected outcome:** TTFB drops from 1,955ms to 15–40ms on Cloudflare cache hits.
+
+---
+
+## Step M01 — Expo Mobile Bootstrap (2026-06-03)
+
+### New Files Created
+| File | Purpose |
+|------|---------|
+| `apps/mobile/` | New workspace entry (added to root package.json workspaces) |
+| `apps/mobile/package.json` | Expo SDK 56 deps — RN 0.85.3, React 19, expo-router, NativeWind v4 |
+| `apps/mobile/app.config.ts` | Dynamic Expo config (name, slug, bundle IDs, plugins, EAS) |
+| `apps/mobile/eas.json` | EAS Build profiles: development, preview, production |
+| `apps/mobile/metro.config.js` | NativeWind Metro transformer (`withNativeWind`) |
+| `apps/mobile/babel.config.js` | Babel expo preset with `jsxImportSource: "nativewind"` |
+| `apps/mobile/tsconfig.json` | Strict TS config, extends expo/tsconfig.base, `@/*` alias |
+| `apps/mobile/global.css` | NativeWind CSS entry (`@tailwind base/components/utilities`) |
+| `apps/mobile/tailwind.config.js` | TrekYatra design tokens (background, surface, accent, pine) |
+| `apps/mobile/nativewind-env.d.ts` | NativeWind type declarations |
+| `apps/mobile/app/_layout.tsx` | Root layout: providers, fonts, splash, Sentry init |
+| `apps/mobile/app/(tabs)/_layout.tsx` | 5-tab bar (Home/Browse/Plan/Saved/Account) |
+| `apps/mobile/app/(tabs)/index.tsx` | Home placeholder |
+| `apps/mobile/app/(tabs)/browse.tsx` | Browse placeholder |
+| `apps/mobile/app/(tabs)/plan.tsx` | Plan placeholder |
+| `apps/mobile/app/(tabs)/saved.tsx` | Saved placeholder |
+| `apps/mobile/app/(tabs)/account.tsx` | Account placeholder |
+| `apps/mobile/app/(auth)/_layout.tsx` | Auth group layout (slide_from_bottom animation) |
+| `apps/mobile/app/(auth)/sign-in.tsx` | Sign-in placeholder |
+| `apps/mobile/app/(auth)/sign-up.tsx` | Sign-up placeholder |
+| `apps/mobile/app/+not-found.tsx` | 404 screen |
+| `apps/mobile/components/ui/Button.tsx` | Pressable with variant (hero/outline/ghost) + loading |
+| `apps/mobile/components/ui/Badge.tsx` | Status badge (matches web admin colour map) |
+| `apps/mobile/components/ui/Card.tsx` | Surface card with border |
+| `apps/mobile/components/ui/SkeletonLoader.tsx` | Animated loading placeholder |
+| `apps/mobile/components/ui/SafeArea.tsx` | SafeAreaView with background colour |
+| `apps/mobile/components/ui/Typography.tsx` | Display/Heading/Body/Caption/Mono components |
+| `apps/mobile/constants/theme.ts` | colors, fonts, spacing, radius tokens |
+| `apps/mobile/providers/QueryProvider.tsx` | TanStack Query v5 client (staleTime 5m) |
+| `apps/mobile/providers/AuthProvider.tsx` | Auth context wrapping Zustand authStore |
+| `apps/mobile/stores/authStore.ts` | Zustand v5 store: token, user, clearAuth, loadStoredToken |
+| `packages/types/package.json` | `@trekyatra/types` package |
+| `packages/types/index.ts` | Trek, CMSPage, User, RecommendationItem, PaginatedResponse |
+
+### Modified Files
+| File | Change |
+|------|--------|
+| `package.json` (root) | Added `"workspaces": ["apps/*", "packages/*"]` |
+
+### Blast Radius
+- **M01 changes are additive only** — no existing web or API files modified
+- All new files isolated in `apps/mobile/` and `packages/types/`
+- Root `package.json` workspaces change is non-breaking for existing `apps/web-next/` workspace
+
+### Key Decisions
+- Expo SDK 56 (not SDK 51 as specced) — latest at time of implementation (RN 0.85.3, React 19)
+- `react-native-reanimated` pinned to ~3.16.0 — v4 requires `react-native-worklets`; add in Step M07
+- `@sentry/react-native` v8 (config-plugin approach changed from v5 — removed from `plugins` array)
+- Sentry guarded by `EXPO_PUBLIC_SENTRY_DSN` env var — disabled in dev without key

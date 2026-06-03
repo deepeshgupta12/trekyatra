@@ -1,0 +1,280 @@
+# STEP-M02 — Mobile Auth
+
+**Status:** Pending
+**Phase:** Foundation
+**Dependencies:** STEP-M01 (Expo bootstrap)
+**Backend dependency:** STEP-M03 issues the mobile token; M02 wires the auth flow, M03 provides the endpoint
+
+---
+
+## Scope
+
+Implement complete authentication for the mobile app. Users must be able to sign in / sign up with email, continue with Google, and use Apple Sign In (required by App Store guidelines). On subsequent opens, biometric re-authentication (Touch ID / Face ID) offers a frictionless login. All tokens are stored securely in the device keystore/keychain via `expo-secure-store`.
+
+This step covers:
+- Auth screens (Welcome, Sign In, Sign Up, OTP, Forgot/Reset Password)
+- Secure token storage strategy (access token + refresh token)
+- Google Sign In (expo-auth-session)
+- Apple Sign In (expo-apple-authentication — mandatory for iOS)
+- Biometric re-auth (expo-local-authentication)
+- Auth state Zustand store
+- Route guards (unauthenticated users redirected to auth group)
+- Sign out (token purge + device deregistration)
+
+---
+
+## Files to Create
+
+### Auth Screens
+| File | Route | Purpose |
+|------|-------|---------|
+| `apps/mobile/app/(auth)/_layout.tsx` | Auth group | Full-screen stack, no tab bar |
+| `apps/mobile/app/(auth)/welcome.tsx` | `/welcome` | 3-slide onboarding carousel (shown only on first launch) |
+| `apps/mobile/app/(auth)/sign-in.tsx` | `/sign-in` | Email + password + Google + Apple CTA |
+| `apps/mobile/app/(auth)/sign-up.tsx` | `/sign-up` | Name + email + password |
+| `apps/mobile/app/(auth)/otp.tsx` | `/otp` | 6-digit OTP verification |
+| `apps/mobile/app/(auth)/forgot-password.tsx` | `/forgot-password` | Request reset link |
+| `apps/mobile/app/(auth)/reset-password.tsx` | `/reset-password` | Token-based password reset |
+
+### Auth Logic
+| File | Purpose |
+|------|---------|
+| `apps/mobile/stores/authStore.ts` | Zustand store: `user`, `accessToken`, `isLoading`, `isAuthenticated` actions |
+| `apps/mobile/lib/authStorage.ts` | SecureStore read/write helpers: `saveTokens`, `loadTokens`, `clearTokens` |
+| `apps/mobile/lib/authApi.ts` | Typed API calls: `signIn`, `signUp`, `refreshToken`, `signOut`, `getMe` |
+| `apps/mobile/lib/googleAuth.ts` | expo-auth-session Google OAuth flow |
+| `apps/mobile/lib/appleAuth.ts` | expo-apple-authentication Sign In with Apple |
+| `apps/mobile/lib/biometricAuth.ts` | expo-local-authentication biometric prompt |
+| `apps/mobile/components/auth/SocialSignInButtons.tsx` | Google + Apple buttons (consistent placement) |
+| `apps/mobile/hooks/useAuth.ts` | Hook exposing auth store state + actions |
+| `apps/mobile/hooks/useRequireAuth.ts` | Route guard hook — redirects to /sign-in if not authenticated |
+
+---
+
+## Auth Flow
+
+### First-time sign-in
+```
+App opens
+  → SecureStore: no access token found
+  → Navigate to (auth)/welcome (if first launch flag not set)
+  → User taps "Sign in" or "Create account"
+  → Email/password OR Google OR Apple
+  → POST /api/v1/auth/login (email) OR /api/v1/auth/google (Google/Apple)
+  → Receive { access_token, refresh_token, user }
+  → SecureStore: save access_token + refresh_token
+  → authStore: set user + isAuthenticated = true
+  → Navigate to (tabs)/index (Home tab)
+```
+
+### Returning user (token exists)
+```
+App opens
+  → SecureStore: access token found
+  → Decode token: check expiry
+    → Not expired: GET /api/v1/auth/me with token → restore user
+    → Expired: POST /api/v1/auth/mobile/token (refresh) → new access token saved
+  → If biometric enabled in settings:
+    → expo-local-authentication.authenticate() prompt
+    → On success: proceed to home
+    → On fail: redirect to sign-in screen
+  → Navigate to last active tab
+```
+
+### Sign out
+```
+User taps "Sign out"
+  → DELETE /api/v1/mobile/device/{device_id}  (unregister push token)
+  → POST /api/v1/auth/logout
+  → SecureStore: clearTokens()
+  → authStore: reset to unauthenticated state
+  → Navigate to (auth)/sign-in
+  → Clear AsyncStorage behavior profile (ty_behavior_v1)
+```
+
+---
+
+## Secure Token Storage
+
+```typescript
+// lib/authStorage.ts
+import * as SecureStore from 'expo-secure-store';
+
+const ACCESS_KEY  = 'trekyatra_access_token';
+const REFRESH_KEY = 'trekyatra_refresh_token';
+const DEVICE_KEY  = 'trekyatra_device_id';
+
+export async function saveTokens(access: string, refresh: string) {
+  await SecureStore.setItemAsync(ACCESS_KEY, access);
+  await SecureStore.setItemAsync(REFRESH_KEY, refresh);
+}
+
+export async function loadTokens(): Promise<{ access: string | null; refresh: string | null }> {
+  const [access, refresh] = await Promise.all([
+    SecureStore.getItemAsync(ACCESS_KEY),
+    SecureStore.getItemAsync(REFRESH_KEY),
+  ]);
+  return { access, refresh };
+}
+
+export async function clearTokens() {
+  await Promise.all([
+    SecureStore.deleteItemAsync(ACCESS_KEY),
+    SecureStore.deleteItemAsync(REFRESH_KEY),
+  ]);
+}
+```
+
+---
+
+## Zustand Auth Store
+
+```typescript
+// stores/authStore.ts
+interface AuthState {
+  user: User | null;
+  accessToken: string | null;
+  isLoading: boolean;
+  isAuthenticated: boolean;
+
+  setAuth: (user: User, token: string) => void;
+  clearAuth: () => void;
+  setLoading: (v: boolean) => void;
+}
+```
+
+---
+
+## API Wiring
+
+All auth API calls use the **same FastAPI endpoints** as the web, with one addition from Step M03:
+
+| Endpoint | Method | Used for |
+|----------|--------|---------|
+| `/api/v1/auth/login` | POST | Email/password sign in |
+| `/api/v1/auth/register` | POST | Email sign up |
+| `/api/v1/auth/google` | POST | Google OAuth token exchange |
+| `/api/v1/auth/me` | GET | Restore user session (Bearer header) |
+| `/api/v1/auth/logout` | POST | Server-side session invalidation |
+| `/api/v1/auth/forgot-password` | POST | Send password reset email |
+| `/api/v1/auth/reset-password` | POST | Token-based password reset |
+| `/api/v1/auth/mobile/token` | POST | Refresh expired access token (Step M03) |
+
+**Mobile tokens use `Authorization: Bearer <access_token>` header** (not cookies, which don't work well in React Native).
+
+---
+
+## Apple Sign In (Mandatory for iOS)
+
+Apple requires any app with third-party sign-in options to also offer Sign in with Apple. Failure to include it results in App Store rejection.
+
+```typescript
+// lib/appleAuth.ts
+import * as AppleAuthentication from 'expo-apple-authentication';
+
+export async function signInWithApple() {
+  const credential = await AppleAuthentication.signInAsync({
+    requestedScopes: [
+      AppleAuthentication.AppleAuthenticationScope.FULL_NAME,
+      AppleAuthentication.AppleAuthenticationScope.EMAIL,
+    ],
+  });
+  // credential.identityToken → send to /api/v1/auth/apple for server-side verification
+  return credential;
+}
+```
+
+Backend needs `/api/v1/auth/apple` endpoint (extend existing auth module, verify Apple identity token).
+
+---
+
+## Biometric Re-auth
+
+```typescript
+// lib/biometricAuth.ts
+import * as LocalAuthentication from 'expo-local-authentication';
+
+export async function promptBiometric(): Promise<boolean> {
+  const has = await LocalAuthentication.hasHardwareAsync();
+  const enrolled = await LocalAuthentication.isEnrolledAsync();
+  if (!has || !enrolled) return false; // fall through to PIN/password
+
+  const result = await LocalAuthentication.authenticateAsync({
+    promptMessage: 'Verify it\'s you',
+    cancelLabel: 'Use password instead',
+    fallbackLabel: 'Use PIN',
+  });
+  return result.success;
+}
+```
+
+Biometric is a re-auth on app resume (not first sign-in). Setting stored in AsyncStorage: `biometric_enabled: boolean`.
+
+---
+
+## Welcome Onboarding Carousel
+
+3 slides shown only on first launch (AsyncStorage flag `onboarding_done`):
+
+| Slide | Headline | Subtext | Image |
+|-------|---------|---------|-------|
+| 1 | 250+ trek guides, offline | Download guides for trails with no signal | Trek in snow |
+| 2 | Plan your perfect trek | Answer 6 questions. Get matched to the right trek. | Wizard mockup |
+| 3 | Permit alerts & conditions | Get notified before permit windows close. | Alert screenshot |
+
+Last slide has "Get Started" CTA → navigates to sign-up, and "Sign In" link.
+
+---
+
+## Route Guards
+
+```typescript
+// hooks/useRequireAuth.ts
+export function useRequireAuth() {
+  const { isAuthenticated, isLoading } = useAuth();
+  const router = useRouter();
+
+  useEffect(() => {
+    if (!isLoading && !isAuthenticated) {
+      router.replace('/(auth)/sign-in');
+    }
+  }, [isAuthenticated, isLoading]);
+}
+```
+
+Protected routes: `/saved`, `/account`, `/plan` (full results + lead capture require auth).
+
+---
+
+## New Packages
+
+```json
+"expo-auth-session": "~5.5.0",
+"expo-apple-authentication": "~6.4.0",
+"expo-local-authentication": "~14.0.0",
+"expo-web-browser": "~13.0.0"
+```
+
+---
+
+## Verification
+
+### Manual smoke tests
+1. **TC-M02-01**: Sign up with new email → OTP verification → lands on Home tab
+2. **TC-M02-02**: Sign in with existing email → biometric prompt (if enrolled) → Home tab
+3. **TC-M02-03**: Google sign-in → completes OAuth → token stored → Home tab
+4. **TC-M02-04**: Apple sign-in (iOS only) → identity token verified → Home tab
+5. **TC-M02-05**: Kill app + reopen → biometric prompt → auto-login without entering password
+6. **TC-M02-06**: Sign out → SecureStore cleared → lands on Sign In screen → can sign in again
+7. **TC-M02-07**: Access `/saved` tab without auth → redirected to Sign In
+8. **TC-M02-08**: Expired token (mock 0-second expiry in dev) → refresh token used → transparent re-auth
+9. **TC-M02-09**: Forgot password → receives email → reset link → new password works
+
+---
+
+## Notes
+
+- `expo-local-authentication` requires a dev build (not Expo Go) — use `eas build --profile development` from Step M01
+- Google OAuth redirect URI must be added to the Google Cloud Console Authorized Redirect URIs: `com.trekyatra.app:/oauth2redirect`
+- Apple Sign In requires the `Sign In with Apple` capability enabled in the Xcode provisioning profile and in Apple Developer portal
+- The backend must extend existing `auth.py` to also accept Bearer token in the `Authorization` header (in addition to the existing HttpOnly cookie) since cookies are unreliable in React Native

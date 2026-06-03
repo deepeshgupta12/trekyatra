@@ -503,6 +503,25 @@ Full API docs available at http://localhost:8000/docs when the backend is runnin
 
 ---
 
+### Mobile App (V5)
+| Feature | Status |
+|---------|--------|
+| Expo SDK 56 monorepo workspace (`apps/mobile/`) | Done (M01) |
+| Expo Router v56 — 5-tab navigation (Home/Browse/Plan/Saved/Account) | Done (M01) |
+| NativeWind v4 design system — matches web palette | Done (M01) |
+| UI components: Button, Badge, Card, Typography, SkeletonLoader, SafeArea | Done (M01) |
+| TanStack Query v5 + Zustand v5 auth store | Done (M01) |
+| `packages/types/` — shared Trek, CMSPage, User TypeScript types | Done (M01) |
+| expo-secure-store token persistence | Done (M01) |
+| Sentry v8 error tracking init | Done (M01) |
+| Mobile Auth — sign-in/up screens, Google, Apple, biometric | Pending (M02) |
+| Trek list + detail screens | Pending (M03–M05) |
+| Offline sync (expo-sqlite) | Pending (M04) |
+| Trek planning wizard | Pending (M08) |
+| Push notifications | Pending (M14) |
+
+---
+
 ## Roadmap Status
 
 | Version | Steps | Status |
@@ -518,6 +537,7 @@ Full API docs available at http://localhost:8000/docs when the backend is runnin
 | **Step 65 — CDP Analytics Enhancement** | Dynamic funnels, N×M cohort heatmap, 10 segments, user activity timeline, Plan wizard tracking | Done — 2026-05-27 |
 | **Step 66 — Homepage Section Logic by User State** | 4-state personalisation (New/Repeat × LoggedIn/LoggedOut): welcome banner, personalized trending header, recently-viewed section, 4-state PersonalisedFeed, preferred-difficulty pre-select | Done — 2026-05-29 |
 | **Step 71 — Core Web Vitals Optimisation** | next/font self-hosted fonts (−3–5 s FCP), Next.js image optimisation + AVIF/WebP (−6 s LCP), hero `<Image priority>`, favicon 301KB→3KB, preconnect hints, dynamic imports, .browserslistrc modern targets (−11KB polyfills), GA4 lazyOnload, 8 static images converted to WebP, accessibility aria-labels | Done — 2026-06-03 |
+| **Step M01 — Expo Mobile Bootstrap** | `apps/mobile/` workspace (Expo SDK 56, RN 0.85.3, React 19); Expo Router v56 5-tab nav; NativeWind v4 design system; Button/Badge/Card/Typography/SkeletonLoader; TanStack Query v5 + Zustand v5 auth store; `packages/types/` shared types; tsc 0 errors + expo export ✓ | Done — 2026-06-03 |
 
 ## Production Infrastructure
 

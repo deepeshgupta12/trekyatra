@@ -1,0 +1,49 @@
+{
+  "name": "@trekyatra/mobile",
+  "version": "0.1.0",
+  "private": true,
+  "main": "expo-router/entry",
+  "scripts": {
+    "start": "expo start",
+    "android": "expo start --android",
+    "ios": "expo start --ios",
+    "build:android": "eas build --platform android",
+    "build:ios": "eas build --platform ios",
+    "type-check": "tsc --noEmit",
+    "export": "expo export --platform all"
+  },
+  "dependencies": {
+    "expo": "~56.0.0",
+    "expo-router": "~56.0.0",
+    "react": "^19.0.0",
+    "react-native": "0.85.3",
+    "nativewind": "^4.0.0",
+    "tailwindcss": "^3.4.0",
+    "@tanstack/react-query": "^5.0.0",
+    "zustand": "^5.0.0",
+    "expo-font": "~56.0.0",
+    "expo-secure-store": "~56.0.0",
+    "expo-status-bar": "~56.0.0",
+    "expo-splash-screen": "~56.0.0",
+    "@sentry/react-native": "^8.0.0",
+    "react-native-reanimated": "~3.16.0",
+    "react-native-gesture-handler": "^3.0.0",
+    "@expo/vector-icons": "^14.0.0",
+    "react-native-safe-area-context": ">=5.4.0",
+    "react-native-screens": "^4.25.0",
+    "react-native-web": "*",
+    "expo-linking": "^56.0.13",
+    "expo-constants": "^56.0.16",
+    "@expo/metro-runtime": "^56.0.13",
+    "@expo/log-box": "^56.0.12",
+    "react-dom": "^19.0.0",
+    "@expo-google-fonts/inter": "^0.2.3",
+    "@expo-google-fonts/playfair-display": "^0.2.3",
+    "@expo-google-fonts/jetbrains-mono": "^0.2.3"
+  },
+  "devDependencies": {
+    "@babel/core": "^7.24.0",
+    "@types/react": "^19.0.0",
+    "typescript": "~5.8.0"
+  }
+}

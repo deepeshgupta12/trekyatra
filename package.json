@@ -3,6 +3,10 @@
   "version": "0.1.0",
   "private": true,
   "description": "TrekYatra monorepo with backend foundation, static frontend source-of-truth, and GitNexus integration",
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
   "scripts": {
     "gitnexus:analyze": "npx gitnexus analyze",
     "gitnexus:analyze:force": "npx gitnexus analyze --force",
