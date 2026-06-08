@@ -209,6 +209,6 @@ npx tsc --noEmit                        # zero TypeScript errors
 - NativeWind v4 requires Metro config change + babel plugin — follow official NativeWind v4 setup guide exactly
 - Do NOT use Expo Go for Step M02 onwards — many packages (SecureStore, biometric, push) require a dev build
 - **Expo SDK upgraded from 51 → 56** at implementation time (SDK 51 was EOL). `react-native@0.85.3`, Expo Router `~56.0.0`, React 19 peer dep.
-- **Reanimated pinned to `~3.16.0`** (v3.x) — v4 requires `react-native-worklets` which is not in mobile scope until M07.
+- **`react-native-reanimated` removed from M01** — `~3.16.0` is incompatible with `react-native@0.85.3`: RN 0.85.3 ships a newer Folly that removed `folly/coro/Coroutine.h`, causing an Xcode build failure. M01 has no animation code and no babel reanimated plugin, so the dep is deferred to Step M07 where animations are actually needed. Add it back in M07 with the version compatible with RN 0.85.x at that time.
 - **`apps/mobile` must NOT be in npm workspaces** (`"apps/*"` glob must NOT be used). `react-native@0.85.3` declares `react@^19.2.3` as peer dep; if mobile is in workspaces, npm hoists React 19 to root, causing React error #31 on Next.js's `/404`/`/500` SSR prerender. Root `package.json` workspaces must be `["apps/web-next", "packages/*"]` — explicitly excluding mobile.
 - **Post-push deployment failures (Failure 1–4):** See MASTER_TRACKER.md § "Step M01 — Post-push Deployment Fixes" for full incident log.

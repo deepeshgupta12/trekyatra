@@ -154,6 +154,13 @@ Three successive DO deployment failures were encountered and resolved after M01 
 
 **Root cause of all four failures:** npm workspaces hoisting resolves the LATEST version of every package satisfying the declared range. The permanent fix is to only include web-facing apps in the npm workspace graph. Mobile (EAS-built) must remain outside npm workspaces to prevent React version conflicts.
 
+**Failure 5 — Xcode build failure: `'folly/coro/Coroutine.h' file not found` in RNReanimated (2026-06-08)**
+- Root cause: `react-native-reanimated@~3.16.0` is incompatible with `react-native@0.85.3`. RN 0.85.3 ships a newer version of Folly (Facebook's C++ library) that removed or relocated `folly/coro/Coroutine.h`. reanimated 3.16.x attempts to include this header during iOS compilation.
+- Additional Xcode issues (warnings, not errors): Hundreds of Sentry `@_implementationOnly` warnings — cosmetic only, do not prevent builds. Signing "Failed Registering Bundle Identifier `in.co.trekyatra.app`" — only affects physical device builds; simulator builds do not require a paid developer account.
+- Fix: Removed `react-native-reanimated` from M01 `apps/mobile/package.json`. M01 has no animation code and no reanimated babel plugin — the dep was premature. Will be added back in Step M07 (animations) with a version tested against RN 0.85.x at that time.
+- After fix: Run `npm install && npx expo prebuild --clean --platform ios` in `apps/mobile/`, then rebuild in Xcode with a **simulator** selected (not "Any iOS Device").
+- Production impact: **None** — M01 is not in production; Expo shell app only.
+
 ### Mobile Review — Gaps Fixed (2026-05-29)
 The following gaps were identified and resolved during a full cross-check of all 22 mobile step docs against the complete website feature set (Steps 00–67):
 
