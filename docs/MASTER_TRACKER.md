@@ -155,10 +155,10 @@ Three successive DO deployment failures were encountered and resolved after M01 
 **Root cause of all four failures:** npm workspaces hoisting resolves the LATEST version of every package satisfying the declared range. The permanent fix is to only include web-facing apps in the npm workspace graph. Mobile (EAS-built) must remain outside npm workspaces to prevent React version conflicts.
 
 **Failure 5 — Xcode build failure: `'folly/coro/Coroutine.h' file not found` in RNReanimated (2026-06-08)**
-- Root cause: `react-native-reanimated@~3.16.0` is incompatible with `react-native@0.85.3`. RN 0.85.3 ships a newer version of Folly (Facebook's C++ library) that removed or relocated `folly/coro/Coroutine.h`. reanimated 3.16.x attempts to include this header during iOS compilation.
-- Additional Xcode issues (warnings, not errors): Hundreds of Sentry `@_implementationOnly` warnings — cosmetic only, do not prevent builds. Signing "Failed Registering Bundle Identifier `in.co.trekyatra.app`" — only affects physical device builds; simulator builds do not require a paid developer account.
-- Fix: Removed `react-native-reanimated` from M01 `apps/mobile/package.json`. M01 has no animation code and no reanimated babel plugin — the dep was premature. Will be added back in Step M07 (animations) with a version tested against RN 0.85.x at that time.
-- After fix: Run `npm install && npx expo prebuild --clean --platform ios` in `apps/mobile/`, then rebuild in Xcode with a **simulator** selected (not "Any iOS Device").
+- Root cause: `react-native-reanimated@~3.16.0` is incompatible with `react-native@0.85.3`. RN 0.85.3 ships a newer Folly that removed `folly/coro/Coroutine.h`. reanimated 3.16.x includes this header during iOS compilation.
+- First fix attempt: Removed reanimated entirely — caused Metro runtime error because `react-native-css-interop` (NativeWind v4 core) requires reanimated at runtime (`makeMutable`, `withRepeat`, `withSequence` from line 281 of native-interop.js).
+- Final fix: `npx expo install react-native-reanimated` → Expo SDK 56 selected **reanimated 4.3.1**. v4.x was rewritten without the folly/coro dependency, so it compiles cleanly against RN 0.85.3. Added `react-native-reanimated/plugin` to `apps/mobile/babel.config.js` (required by reanimated 4.x; NativeWind v4 uses the reanimated shared value API).
+- After fix: Run `npx expo prebuild --clean --platform ios` in `apps/mobile/`, then rebuild in Xcode with a simulator selected.
 - Production impact: **None** — M01 is not in production; Expo shell app only.
 
 ### Mobile Review — Gaps Fixed (2026-05-29)

@@ -1384,16 +1384,18 @@ Fix applied: Exclude mobile from workspaces entirely. Mobile is EAS-built; it do
 
 Verification: `npx next build` → ✓ Compiled successfully, ✓ Generating static pages (193/193).
 
-### Xcode Build Failure — `'folly/coro/Coroutine.h' file not found` (2026-06-08)
+### Xcode Build Failure + Metro Runtime Error — reanimated resolution (2026-06-08)
 | File | Change | Impact |
 |------|--------|--------|
-| `apps/mobile/package.json` | Removed `react-native-reanimated: ~3.16.0` — deferred to Step M07 | None — M01 has no animation code |
+| `apps/mobile/package.json` | Upgraded `react-native-reanimated` from `~3.16.0` → `4.3.1` (via `npx expo install`) | None on web |
+| `apps/mobile/babel.config.js` | Added `react-native-reanimated/plugin` to plugins array | None on web |
 
-Root cause: `react-native-reanimated@~3.16.0` includes Folly's coroutine header during iOS compilation. `react-native@0.85.3` ships a newer Folly that relocated/removed `folly/coro/Coroutine.h`. This causes a hard build error in Xcode.
+Root cause chain:
+1. `react-native-reanimated@~3.16.0` → Xcode build error: `folly/coro/Coroutine.h` not found (RN 0.85.3 ships newer Folly that removed this header)
+2. Removing reanimated entirely → Metro runtime error: `react-native-css-interop` (NativeWind v4) imports `makeMutable`, `withRepeat`, `withSequence` from reanimated at line 281 of `native-interop.js`
+3. Final fix: `npx expo install react-native-reanimated` → Expo SDK 56 pinned `4.3.1`. v4.x rewrites native layer without folly/coro dependency; compiles cleanly against RN 0.85.3
 
-Fix: Defer reanimated to Step M07. Re-add with a version compatible with RN 0.85.x at M07 implementation time. After removing, run `npm install && npx expo prebuild --clean --platform ios` and rebuild.
-
-Other Xcode issues (non-blocking): Sentry `@_implementationOnly` warnings (~150) are cosmetic — they come from `@sentry/react-native@^8.0.0` and do not prevent builds. Signing "Failed Registering Bundle Identifier" applies only to physical device builds; simulator builds skip signing entirely.
+Other Xcode issues (non-blocking): Sentry `@_implementationOnly` warnings (~150) are cosmetic. Signing "Failed Registering Bundle Identifier" only affects physical device builds; simulator builds skip signing.
 
 ### Safe-to-modify Files (TypeScript-only changes)
 Both web-next file changes are **compile-time type annotations only**. They do not change:
