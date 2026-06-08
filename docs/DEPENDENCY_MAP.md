@@ -1387,13 +1387,14 @@ Verification: `npx next build` → ✓ Compiled successfully, ✓ Generating sta
 ### Xcode Build Failure + Metro Runtime Error — reanimated resolution (2026-06-08)
 | File | Change | Impact |
 |------|--------|--------|
-| `apps/mobile/package.json` | Upgraded `react-native-reanimated` from `~3.16.0` → `4.3.1` (via `npx expo install`) | None on web |
-| `apps/mobile/babel.config.js` | Added `react-native-reanimated/plugin` to plugins array | None on web |
+| `apps/mobile/package.json` | `react-native-reanimated` `~3.16.0` → `4.3.1`; added `react-native-worklets@0.8.3` | None on web |
+| `apps/mobile/babel.config.js` | Added `react-native-reanimated/plugin` | None on web |
 
 Root cause chain:
 1. `react-native-reanimated@~3.16.0` → Xcode build error: `folly/coro/Coroutine.h` not found (RN 0.85.3 ships newer Folly that removed this header)
 2. Removing reanimated entirely → Metro runtime error: `react-native-css-interop` (NativeWind v4) imports `makeMutable`, `withRepeat`, `withSequence` from reanimated at line 281 of `native-interop.js`
-3. Final fix: `npx expo install react-native-reanimated` → Expo SDK 56 pinned `4.3.1`. v4.x rewrites native layer without folly/coro dependency; compiles cleanly against RN 0.85.3
+3. reanimated 4.3.1 alone → pod install error: `RNReanimated.podspec` validates worklets version, fails if `react-native-worklets` not present
+4. Final fix: reanimated 4.3.1 + worklets 0.8.3 (both via `npx expo install`) → ✔ pod install succeeds, no folly errors
 
 Other Xcode issues (non-blocking): Sentry `@_implementationOnly` warnings (~150) are cosmetic. Signing "Failed Registering Bundle Identifier" only affects physical device builds; simulator builds skip signing.
 

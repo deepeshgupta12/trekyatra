@@ -157,8 +157,8 @@ Three successive DO deployment failures were encountered and resolved after M01 
 **Failure 5 — Xcode build failure: `'folly/coro/Coroutine.h' file not found` in RNReanimated (2026-06-08)**
 - Root cause: `react-native-reanimated@~3.16.0` is incompatible with `react-native@0.85.3`. RN 0.85.3 ships a newer Folly that removed `folly/coro/Coroutine.h`. reanimated 3.16.x includes this header during iOS compilation.
 - First fix attempt: Removed reanimated entirely — caused Metro runtime error because `react-native-css-interop` (NativeWind v4 core) requires reanimated at runtime (`makeMutable`, `withRepeat`, `withSequence` from line 281 of native-interop.js).
-- Final fix: `npx expo install react-native-reanimated` → Expo SDK 56 selected **reanimated 4.3.1**. v4.x was rewritten without the folly/coro dependency, so it compiles cleanly against RN 0.85.3. Added `react-native-reanimated/plugin` to `apps/mobile/babel.config.js` (required by reanimated 4.x; NativeWind v4 uses the reanimated shared value API).
-- After fix: Run `npx expo prebuild --clean --platform ios` in `apps/mobile/`, then rebuild in Xcode with a simulator selected.
+- Final fix: `npx expo install react-native-reanimated` → Expo SDK 56 selected **reanimated 4.3.1**. `npx expo install react-native-worklets` → **worklets 0.8.3** (required peer dep for reanimated 4.x; podspec validates its presence). v4.x was rewritten without the folly/coro dependency, compiles cleanly against RN 0.85.3. Added `react-native-reanimated/plugin` to `apps/mobile/babel.config.js`.
+- After fix: `npx expo prebuild --clean --platform ios` → ✔ Installed CocoaPods. Ready to build in Xcode.
 - Production impact: **None** — M01 is not in production; Expo shell app only.
 
 ### Mobile Review — Gaps Fixed (2026-05-29)
