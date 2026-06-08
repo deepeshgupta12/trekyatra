@@ -161,6 +161,11 @@ Three successive DO deployment failures were encountered and resolved after M01 
 - After fix: `npx expo prebuild --clean --platform ios` → ✔ Installed CocoaPods. Ready to build in Xcode.
 - Production impact: **None** — M01 is not in production; Expo shell app only.
 
+**Failure 6 — Metro runtime: Incompatible React versions `19.2.7` vs `19.2.3` (2026-06-08)**
+- Root cause: `"react": "^19.0.0"` in package.json resolved to `19.2.7` (latest). `react-native@0.85.3` bundles `react-native-renderer@19.2.3`. React requires an **exact** version match between `react` and `react-native-renderer` — the `^` range caused a patch-level mismatch.
+- Fix: Pinned `react` and `react-dom` to exact version `19.2.3` in `apps/mobile/package.json`. Rule: always pin react to the exact version that the installed react-native version ships with (check by looking at `react-native-renderer` version in node_modules).
+- Production impact: **None**.
+
 ### Mobile Review — Gaps Fixed (2026-05-29)
 The following gaps were identified and resolved during a full cross-check of all 22 mobile step docs against the complete website feature set (Steps 00–67):
 
