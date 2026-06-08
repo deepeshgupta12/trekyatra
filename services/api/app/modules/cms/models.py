@@ -50,6 +50,9 @@ class CMSPage(UUIDPrimaryKeyMixin, TimestampMixin, Base):
     trek_season: Mapped[str | None] = mapped_column(String(200), nullable=True)
     trek_suitability: Mapped[str | None] = mapped_column(String(100), nullable=True)
 
+    # Tombstone for mobile sync — set when a page is soft-deleted
+    deleted_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+
     brief_id: Mapped[uuid.UUID | None] = mapped_column(
         ForeignKey("content_briefs.id", ondelete="SET NULL"),
         nullable=True,

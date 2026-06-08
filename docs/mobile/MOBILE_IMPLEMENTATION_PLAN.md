@@ -37,24 +37,28 @@ These rules apply to every mobile step, in addition to the project-wide rules in
 - tsc --noEmit: 0 errors; expo export --platform ios: succeeded (79 assets, 5.2MB bundle)
 - `react-native-reanimated` pinned to ~3.16.0 (v4 requires react-native-worklets — add in M07 when animations needed)
 
-### Step M02 — Mobile Auth [PENDING]
-- Long-lived JWT Bearer token (POST /auth/mobile/token issued via Step M03)
-- expo-secure-store for token storage (Keychain/Keystore)
-- Email sign-in + sign-up screens wired to existing `/auth/*` endpoints
-- Google Sign In (expo-auth-session)
-- Apple Sign In (expo-apple-authentication — required for iOS App Store)
-- Biometric re-auth (expo-local-authentication) for returning sessions
-- Auth state Zustand store + AuthProvider context
-- Route guards (redirect to /auth/sign-in if unauthenticated for protected screens)
+### Step M02 — Mobile Auth [DONE — 2026-06-08]
+- Long-lived JWT Bearer token via POST /auth/mobile/login + /signup (dedicated mobile endpoints)
+- expo-secure-store for token storage (Keychain/Keystore) via authStorage.ts
+- Email sign-in + sign-up screens with full form validation
+- Google Sign In (expo-auth-session, ResponseType.Token implicit flow)
+- Apple Sign In UI wired (backend endpoint deferred to M04)
+- Biometric auth helpers (expo-local-authentication, used in M05+)
+- Auth state Zustand store (setAuth, setLoading, clearAuth) + full AuthProvider context
+- AuthGate in root _layout: onboarding check + auth-aware redirect
+- Route guards on /saved and /account tabs
+- tsc --noEmit: 0 errors
 
-### Step M03 — Backend Mobile API Extensions [PENDING]
-- `POST /api/v1/auth/mobile/token` — issue 30-day access token + refresh token pair
+### Step M03 — Backend Mobile API Extensions [DONE — 2026-06-08]
+- `POST /api/v1/auth/mobile/login` + `/signup` — dedicated email auth endpoints returning Bearer tokens
+- `POST /api/v1/auth/mobile/token` — exchange web session for mobile token pair
+- `POST /api/v1/auth/mobile/token/refresh` — refresh token → new access token
 - `GET /api/v1/mobile/sync?last_sync=<ISO>` — incremental CMS page sync
 - `POST /api/v1/mobile/device` — register FCM/APNs device token
 - `DELETE /api/v1/mobile/device/{device_id}` — unregister on logout
-- DB migration: `mobile_devices` table
-- Backend tests: mobile token issuance, sync endpoint pagination, device registration
-- All tests pass; full test suite regression-free
+- DB migration 20260608_0042: `mobile_devices` table + `cms_pages.deleted_at` + partial index
+- `get_current_user_bearer` dependency for Authorization: Bearer auth
+- 11 backend tests; all pass; full suite regression-free
 
 ### Step M04 — CMS Offline Content Engine [PENDING]
 - `expo-sqlite` database (`trekyatra.db`) with Drizzle ORM schema

@@ -123,6 +123,35 @@ def get_optional_user(
 # Role-based access control
 # ──────────────────────────────────────────────────────────────────────────────
 
+def get_current_user_bearer(
+    request: Request,
+    db: Session = Depends(get_db),
+) -> User:
+    """FastAPI dependency for mobile API routes. Validates Authorization: Bearer <mobile_access_token>."""
+    auth_header = request.headers.get("Authorization", "")
+    if not auth_header.startswith("Bearer "):
+        raise _unauthorized("Bearer token required.")
+    token = auth_header[len("Bearer "):]
+
+    payload = parse_access_token(token)
+    if not payload or payload.get("typ") != "mobile_access":
+        raise _unauthorized("Invalid or expired mobile token.")
+
+    raw_user_id = payload.get("sub")
+    if not raw_user_id:
+        raise _unauthorized("Invalid token payload.")
+
+    try:
+        user_id = uuid.UUID(str(raw_user_id))
+    except ValueError as exc:
+        raise _unauthorized("Invalid token payload.") from exc
+
+    user = db.scalar(select(User).where(User.id == user_id, User.is_active == True))  # noqa: E712
+    if not user:
+        raise _unauthorized("User not found or inactive.")
+    return user
+
+
 class RequireRole:
     """FastAPI dependency that enforces role-based access control.
 

@@ -51,6 +51,8 @@ from app.api.routes.search import router as search_router
 from app.api.routes.news import router as news_router
 from app.api.routes.cdp import public_router as cdp_public_router
 from app.api.routes.cdp import admin_router as cdp_admin_router
+from app.api.routes.mobile import router as mobile_router
+from app.api.routes.auth_mobile import router as auth_mobile_router
 
 api_router = APIRouter()
 api_router.include_router(health_router, tags=["health"])
@@ -104,3 +106,5 @@ api_router.include_router(search_router)
 api_router.include_router(news_router)
 api_router.include_router(cdp_public_router)
 api_router.include_router(cdp_admin_router)
+api_router.include_router(auth_mobile_router)
+api_router.include_router(mobile_router)

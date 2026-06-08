@@ -1,6 +1,6 @@
 import "../global.css";
-import { useEffect } from "react";
-import { Stack } from "expo-router";
+import { useEffect, useState, type ReactNode } from "react";
+import { Stack, useRouter, useSegments } from "expo-router";
 import { useFonts } from "expo-font";
 import * as SplashScreen from "expo-splash-screen";
 import * as Sentry from "@sentry/react-native";
@@ -15,8 +15,9 @@ import {
 import {
   JetBrainsMono_400Regular,
 } from "@expo-google-fonts/jetbrains-mono";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 import { QueryProvider } from "@/providers/QueryProvider";
-import { AuthProvider } from "@/providers/AuthProvider";
+import { AuthProvider, useAuth } from "@/providers/AuthProvider";
 
 Sentry.init({
   dsn: process.env.EXPO_PUBLIC_SENTRY_DSN,
@@ -26,6 +27,41 @@ Sentry.init({
 });
 
 SplashScreen.preventAutoHideAsync();
+
+const ONBOARDING_KEY = "trekyatra_onboarding_done";
+
+function AuthGate({ children }: { children: ReactNode }) {
+  const { isLoading, isAuthenticated } = useAuth();
+  const segments = useSegments();
+  const router = useRouter();
+  const [onboardingChecked, setOnboardingChecked] = useState(false);
+  const [onboardingDone, setOnboardingDone] = useState(false);
+
+  useEffect(() => {
+    AsyncStorage.getItem(ONBOARDING_KEY).then((val) => {
+      setOnboardingDone(!!val);
+      setOnboardingChecked(true);
+    });
+  }, []);
+
+  useEffect(() => {
+    if (isLoading || !onboardingChecked) return;
+    const inAuthGroup = segments[0] === "(auth)";
+
+    if (!onboardingDone) {
+      if (!inAuthGroup) router.replace("/(auth)/welcome");
+      return;
+    }
+
+    if (!isAuthenticated && !inAuthGroup) {
+      router.replace("/(auth)/sign-in");
+    } else if (isAuthenticated && inAuthGroup) {
+      router.replace("/(tabs)");
+    }
+  }, [isLoading, isAuthenticated, segments, onboardingChecked, onboardingDone]);
+
+  return <>{children}</>;
+}
 
 export default Sentry.wrap(function RootLayout() {
   const [fontsLoaded, fontError] = useFonts({
@@ -49,11 +85,13 @@ export default Sentry.wrap(function RootLayout() {
   return (
     <QueryProvider>
       <AuthProvider>
-        <Stack screenOptions={{ headerShown: false }}>
-          <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-          <Stack.Screen name="(auth)" options={{ headerShown: false }} />
-          <Stack.Screen name="+not-found" />
-        </Stack>
+        <AuthGate>
+          <Stack screenOptions={{ headerShown: false }}>
+            <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+            <Stack.Screen name="(auth)" options={{ headerShown: false }} />
+            <Stack.Screen name="+not-found" />
+          </Stack>
+        </AuthGate>
       </AuthProvider>
     </QueryProvider>
   );

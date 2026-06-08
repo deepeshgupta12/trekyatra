@@ -1,6 +1,6 @@
 # STEP-M02 — Mobile Auth
 
-**Status:** Pending
+**Status:** Done (2026-06-08)
 **Phase:** Foundation
 **Dependencies:** STEP-M01 (Expo bootstrap)
 **Backend dependency:** STEP-M03 issues the mobile token; M02 wires the auth flow, M03 provides the endpoint
@@ -278,3 +278,42 @@ Protected routes: `/saved`, `/account`, `/plan` (full results + lead capture req
 - Google OAuth redirect URI must be added to the Google Cloud Console Authorized Redirect URIs: `com.trekyatra.app:/oauth2redirect`
 - Apple Sign In requires the `Sign In with Apple` capability enabled in the Xcode provisioning profile and in Apple Developer portal
 - The backend must extend existing `auth.py` to also accept Bearer token in the `Authorization` header (in addition to the existing HttpOnly cookie) since cookies are unreliable in React Native
+- Apple Sign In backend endpoint deferred to M04 — `signInWithApple()` in AuthProvider throws a user-friendly error; Apple button does not appear (onApple not passed to SocialSignInButtons)
+- Google OAuth uses `ResponseType.Token` (implicit flow) — exchanges access_token via existing `/auth/google` endpoint, then `/auth/mobile/token` for Bearer token pair
+- `@react-native-async-storage/async-storage@2.2.0` added to package.json (needed for onboarding flag + welcome.tsx)
+- `.expo/types/router.d.ts` manually updated to include new routes: welcome, otp, forgot-password, reset-password
+
+## Implementation Completed (2026-06-08)
+
+### Files Created
+| File | Purpose |
+|------|---------|
+| `apps/mobile/lib/authStorage.ts` | SecureStore helpers: saveTokens, loadTokens, clearTokens, getOrCreateDeviceId |
+| `apps/mobile/lib/authApi.ts` | signIn, signUp, getMe, refreshAccessToken, signOutServer, forgotPassword, resetPassword, signInWithGoogle |
+| `apps/mobile/lib/googleAuth.ts` | expo-auth-session Google OAuth (ResponseType.Token) |
+| `apps/mobile/lib/appleAuth.ts` | expo-apple-authentication native Apple Sign In |
+| `apps/mobile/lib/biometricAuth.ts` | expo-local-authentication isBiometricAvailable + promptBiometric |
+| `apps/mobile/hooks/useAuth.ts` | Re-exports useAuth from AuthProvider |
+| `apps/mobile/hooks/useRequireAuth.ts` | Route guard: redirects unauthenticated users to sign-in |
+| `apps/mobile/components/auth/SocialSignInButtons.tsx` | Google + Apple (iOS only when handler provided) buttons |
+| `apps/mobile/app/(auth)/welcome.tsx` | 3-slide onboarding carousel, AsyncStorage flag, Get Started + Sign in CTAs |
+| `apps/mobile/app/(auth)/otp.tsx` | Placeholder (OTP verification coming M04) |
+| `apps/mobile/app/(auth)/forgot-password.tsx` | Email input → POST /auth/forgot-password → success state |
+| `apps/mobile/app/(auth)/reset-password.tsx` | Password + confirm → POST /auth/reset-password with token param |
+| `apps/mobile/.env.example` | EXPO_PUBLIC_API_URL, EXPO_PUBLIC_GOOGLE_CLIENT_ID, EXPO_PUBLIC_SENTRY_DSN |
+
+### Files Modified
+| File | Change |
+|------|--------|
+| `apps/mobile/app/(auth)/sign-in.tsx` | Full rewrite: email+password form, Google OAuth, forgot-password link |
+| `apps/mobile/app/(auth)/sign-up.tsx` | Full rewrite: fullName+email+password form |
+| `apps/mobile/app/(auth)/_layout.tsx` | Added welcome, otp, forgot-password, reset-password to Stack |
+| `apps/mobile/app/_layout.tsx` | Added AuthGate component with onboarding check + auth-aware redirect |
+| `apps/mobile/app/(tabs)/saved.tsx` | Added useRequireAuth() route guard |
+| `apps/mobile/app/(tabs)/account.tsx` | Added useRequireAuth() route guard |
+| `apps/mobile/stores/authStore.ts` | Replaced setTokens with setAuth (stores user), added setLoading, uses authStorage lib |
+| `apps/mobile/providers/AuthProvider.tsx` | Added signIn, signUp, signInWithGoogle, signInWithApple methods |
+| `apps/mobile/lib/googleAuth.ts` | Added ResponseType.Token for implicit OAuth flow |
+| `apps/mobile/package.json` | Added @react-native-async-storage/async-storage@2.2.0 |
+| `apps/mobile/.expo/types/router.d.ts` | Added welcome, otp, forgot-password, reset-password typed routes |
+| `apps/mobile/app.config.ts` | Added expo-web-browser and expo-local-authentication to plugins |

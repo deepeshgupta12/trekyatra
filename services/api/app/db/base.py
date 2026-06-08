@@ -26,6 +26,7 @@ from app.modules.monetization.models import AffiliateProduct, PageIntentSession
 from app.modules.plan.models import TripPlan
 from app.modules.subscriptions.models import Subscription
 from app.modules.search.models import PageView, SearchEvent
+from app.modules.mobile.models import MobileDevice
 from app.modules.cdp.models import (
     AnalyticsEvent,
     AnalyticsSession,
@@ -97,4 +98,5 @@ __all__ = [
     "EventDefinition",
     "CustomSegment",
     "CdpWebhookRule",
+    "MobileDevice",
 ]

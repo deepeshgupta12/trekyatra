@@ -1,6 +1,6 @@
 # STEP-M03 — Backend Mobile API Extensions
 
-**Status:** Pending
+**Status:** Done (2026-06-08)
 **Phase:** Foundation
 **Backend step:** Yes — new endpoints + DB migration
 **Dependencies:** STEP-M02 (auth flow design), STEP-M01 (knows what device data to register)
@@ -274,3 +274,46 @@ PYTHONPATH=services/api .venv/bin/pytest services/api/tests/ -v  # no regression
 - The `body_json` field in SyncOut is the raw CMS content block format. Step M04 will write a React Native renderer for this format.
 - For the initial sync (no `last_sync` param), the response may be large. The client should call with `limit=100` and loop until `has_more = false`.
 - Add `deleted_at` column to `cms_pages` table in this migration to support deleted slug tracking in sync response.
+
+## Implementation Completed (2026-06-08)
+
+### Files Created
+| File | Purpose |
+|------|---------|
+| `services/api/app/modules/mobile/__init__.py` | Module init |
+| `services/api/app/modules/mobile/models.py` | MobileDevice ORM model (user_id FK, device_id UNIQUE, fcm_token, apns_token, platform, refresh_token_hash) |
+| `services/api/app/modules/mobile/service.py` | mobile_login, mobile_signup, issue_mobile_token, refresh_mobile_token, register_device, unregister_device, get_sync_pages |
+| `services/api/app/schemas/mobile.py` | MobileSignInIn, MobileSignUpIn, MobileAuthOut, MobileTokenIn/Out, MobileRefreshIn, MobileAccessOut, DeviceIn/Out, SyncPageOut, SyncOut |
+| `services/api/app/api/routes/auth_mobile.py` | POST /auth/mobile/login, POST /auth/mobile/signup, POST /auth/mobile/token, POST /auth/mobile/token/refresh |
+| `services/api/app/api/routes/mobile.py` | GET /mobile/sync, POST /mobile/device, DELETE /mobile/device/{device_id} |
+| `services/api/alembic/versions/20260608_0042_mobile_devices.py` | Creates mobile_devices table; adds deleted_at to cms_pages; adds partial index on cms_pages(updated_at) WHERE status='published' |
+| `services/api/tests/test_mobile_step_m03.py` | 11 tests — all pass |
+
+### Files Modified
+| File | Change |
+|------|--------|
+| `services/api/app/api/router.py` | Registered auth_mobile_router (prefix=/auth/mobile) and mobile_router (prefix=/mobile) |
+| `services/api/app/db/base.py` | Added MobileDevice import and __all__ entry |
+| `services/api/app/core/config.py` | Added mobile_token_expire_days: int = 30 |
+| `services/api/app/core/security.py` | Added create_mobile_access_token, create_mobile_refresh_token, parse_mobile_refresh_token |
+| `services/api/app/modules/auth/dependencies.py` | Added get_current_user_bearer (checks Authorization: Bearer header, validates typ=="mobile_access") |
+| `services/api/app/modules/cms/models.py` | Added deleted_at: Mapped[datetime | None] column |
+
+### Test Results
+- 11/11 new tests pass
+- Pre-existing 4 failures (test_refresh isolation, test_brief_agent, test_rbac) — confirmed pre-existing, not caused by M03
+
+### New Endpoints
+| Method | Path | Auth | Purpose |
+|--------|------|------|---------|
+| POST | `/api/v1/auth/mobile/login` | None | Email+password sign in → MobileAuthOut |
+| POST | `/api/v1/auth/mobile/signup` | None | Email+password registration → MobileAuthOut (201) |
+| POST | `/api/v1/auth/mobile/token` | Cookie/Bearer | Exchange session → mobile Bearer token pair |
+| POST | `/api/v1/auth/mobile/token/refresh` | None | Refresh token → new access token |
+| GET | `/api/v1/mobile/sync` | Bearer | Incremental CMS page sync |
+| POST | `/api/v1/mobile/device` | Bearer | Register/update device push token |
+| DELETE | `/api/v1/mobile/device/{device_id}` | Bearer | Unregister device |
+
+### Token Types
+- `mobile_access`: 30-day JWT (typ="mobile_access"), used as Bearer token in all mobile API calls
+- `mobile_refresh`: 90-day JWT (typ="mobile_refresh"), hash stored in mobile_devices.refresh_token_hash

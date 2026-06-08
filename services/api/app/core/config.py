@@ -97,6 +97,9 @@ class Settings(BaseSettings):
     # Google Search Console API (service account JSON, base64 or raw JSON string)
     gsc_service_account_json: str | None = None  # JSON string from GSC service account key file
 
+    # Step M03 — Mobile token expiry
+    mobile_token_expire_days: int = 30
+
     # Step 67 — CDP Phase 0: internal traffic separation
     # Comma-separated list of anonymous_ids belonging to developers/internal team.
     # Events from these IDs are marked is_internal=true and excluded from analytics by default.

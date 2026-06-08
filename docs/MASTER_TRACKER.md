@@ -112,7 +112,9 @@ All V0 foundations are shipped. The stack is live locally with:
 | All 22 step MD files created (STEP-M01 through STEP-M22) | done |
 | Comprehensive mobile review — gap analysis, missing docs created (2026-05-29) | done |
 | **Step M01 — Expo Bootstrap + Navigation + Design System** (2026-06-03) | **done** |
-| Step M02 — Mobile Auth | pending |
+| **Step M02 — Mobile Auth** (2026-06-08) | **done** |
+| **Step M03 — Backend Mobile Extensions** (2026-06-08) | **done** |
+| Step M04 — CMS Offline Content Engine | pending |
 
 ### Step M01 — Done (2026-06-03)
 - Created `apps/mobile/` workspace with Expo SDK 56 (react-native 0.85.3, React 19)
@@ -190,6 +192,40 @@ The following gaps were identified and resolved during a full cross-check of all
 - `FIREBASE_SERVICE_ACCOUNT_JSON`, `APNS_KEY_ID`, `APNS_TEAM_ID` — add before M14 implementation
 - `DO_SPACES_KEY`, `DO_SPACES_SECRET` — add before M17 implementation (bucket already provisioned)
 - `RAZORPAY_WEBHOOK_SECRET` — add before M12 implementation
+
+### Step M02 — Mobile Auth — Done (2026-06-08)
+- `lib/authStorage.ts` — SecureStore helpers (saveTokens, loadTokens, clearTokens, getOrCreateDeviceId)
+- `lib/authApi.ts` — signIn, signUp, getMe, refreshAccessToken, signOutServer, forgotPassword, resetPassword, signInWithGoogle
+- `lib/googleAuth.ts` — expo-auth-session Google OAuth with ResponseType.Token (implicit flow)
+- `lib/appleAuth.ts` — expo-apple-authentication native prompt (backend endpoint deferred to M04)
+- `lib/biometricAuth.ts` — expo-local-authentication isBiometricAvailable + promptBiometric
+- `hooks/useAuth.ts` + `hooks/useRequireAuth.ts` — auth access + route guard
+- `components/auth/SocialSignInButtons.tsx` — Google + conditional Apple (iOS only)
+- `app/(auth)/welcome.tsx` — 3-slide onboarding carousel with AsyncStorage flag
+- `app/(auth)/sign-in.tsx` — email+password + Google OAuth + forgot-password link
+- `app/(auth)/sign-up.tsx` — fullName + email + password registration form
+- `app/(auth)/otp.tsx` — placeholder (M04)
+- `app/(auth)/forgot-password.tsx` + `reset-password.tsx` — full functional password reset flow
+- `app/(auth)/_layout.tsx` — added all 6 auth screens to Stack
+- `app/_layout.tsx` — AuthGate with onboarding check + auth-aware redirect
+- `app/(tabs)/saved.tsx` + `account.tsx` — useRequireAuth() guards added
+- `stores/authStore.ts` — setAuth (user+tokens), setLoading, clearAuth using authStorage
+- `providers/AuthProvider.tsx` — signIn, signUp, signInWithGoogle, signInWithApple methods
+- `@react-native-async-storage/async-storage@2.2.0` added to package.json
+- `.expo/types/router.d.ts` updated with new typed routes
+- **tsc --noEmit: 0 errors**
+
+### Step M03 — Backend Mobile Extensions — Done (2026-06-08)
+- Alembic migration `20260608_0042_mobile_devices.py`: `mobile_devices` table + `cms_pages.deleted_at` + partial index on `cms_pages(updated_at)`
+- `app/modules/mobile/models.py` — MobileDevice ORM (user_id FK, device_id UNIQUE, refresh_token_hash, platform, push tokens)
+- `app/modules/mobile/service.py` — mobile_login, mobile_signup, issue_mobile_token (30d access + 90d refresh), refresh_mobile_token, register_device, unregister_device, get_sync_pages
+- `app/schemas/mobile.py` — 12 Pydantic schemas for all mobile endpoints
+- `app/api/routes/auth_mobile.py` — POST /auth/mobile/login, /signup, /token, /token/refresh
+- `app/api/routes/mobile.py` — GET /mobile/sync, POST /mobile/device, DELETE /mobile/device/{id}
+- `app/core/security.py` — create_mobile_access_token, create_mobile_refresh_token, parse_mobile_refresh_token
+- `app/modules/auth/dependencies.py` — get_current_user_bearer (Authorization: Bearer header, typ==mobile_access)
+- `services/api/.env.example` — added MOBILE_TOKEN_EXPIRE_DAYS=30
+- **11/11 new tests pass; 4 pre-existing failures confirmed unchanged**
 - 4 new Celery beat tasks (M14×2, M18×1, M19×1) — require celery-beat restart after each mobile step deploys
 
 > Full spec: `docs/versions/V5-MOBILE-APP.md`

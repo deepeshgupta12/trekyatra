@@ -1334,6 +1334,68 @@ aws s3 cp s3://trekyatra-media/ s3://trekyatra-media/ \
 - All new files isolated in `apps/mobile/` and `packages/types/`
 - Root `package.json` workspaces change is non-breaking for existing `apps/web-next/` workspace
 
+---
+
+## Steps M02 + M03 — Mobile Auth + Backend Mobile Extensions (2026-06-08)
+
+### New Files Created — M03 Backend
+| File | Purpose |
+|------|---------|
+| `services/api/app/modules/mobile/__init__.py` | Mobile module init |
+| `services/api/app/modules/mobile/models.py` | MobileDevice ORM (device_id UNIQUE, refresh_token_hash, platform, push tokens) |
+| `services/api/app/modules/mobile/service.py` | mobile_login, mobile_signup, issue_mobile_token, refresh_mobile_token, register_device, unregister_device, get_sync_pages |
+| `services/api/app/schemas/mobile.py` | 12 Pydantic schemas for all mobile endpoints |
+| `services/api/app/api/routes/auth_mobile.py` | POST /auth/mobile/login, /signup, /token, /token/refresh |
+| `services/api/app/api/routes/mobile.py` | GET /mobile/sync, POST /mobile/device, DELETE /mobile/device/{id} |
+| `services/api/alembic/versions/20260608_0042_mobile_devices.py` | mobile_devices table + cms_pages.deleted_at + partial index |
+| `services/api/tests/test_mobile_step_m03.py` | 11 backend tests |
+
+### New Files Created — M02 Mobile Frontend
+| File | Purpose |
+|------|---------|
+| `apps/mobile/lib/authStorage.ts` | SecureStore token helpers |
+| `apps/mobile/lib/authApi.ts` | Typed API calls: signIn, signUp, getMe, refreshAccessToken, etc. |
+| `apps/mobile/lib/googleAuth.ts` | expo-auth-session Google OAuth (ResponseType.Token) |
+| `apps/mobile/lib/appleAuth.ts` | expo-apple-authentication native prompt |
+| `apps/mobile/lib/biometricAuth.ts` | expo-local-authentication helpers |
+| `apps/mobile/hooks/useAuth.ts` | Re-exports useAuth |
+| `apps/mobile/hooks/useRequireAuth.ts` | Route guard: redirects unauthenticated to sign-in |
+| `apps/mobile/components/auth/SocialSignInButtons.tsx` | Google + Apple (iOS only) buttons |
+| `apps/mobile/app/(auth)/welcome.tsx` | 3-slide onboarding carousel |
+| `apps/mobile/app/(auth)/otp.tsx` | OTP placeholder (M04) |
+| `apps/mobile/app/(auth)/forgot-password.tsx` | Forgot password form |
+| `apps/mobile/app/(auth)/reset-password.tsx` | Reset password form |
+| `apps/mobile/.env.example` | EXPO_PUBLIC_API_URL, EXPO_PUBLIC_GOOGLE_CLIENT_ID, EXPO_PUBLIC_SENTRY_DSN |
+
+### Modified Files — M03 Backend
+| File | Change | Blast Radius |
+|------|--------|-------------|
+| `services/api/app/api/router.py` | Added auth_mobile_router + mobile_router | LOW — additive only |
+| `services/api/app/db/base.py` | Added MobileDevice import | LOW — additive only |
+| `services/api/app/core/config.py` | Added mobile_token_expire_days: int = 30 | LOW — new field |
+| `services/api/app/core/security.py` | Added 3 mobile token functions | LOW — additive only |
+| `services/api/app/modules/auth/dependencies.py` | Added get_current_user_bearer | LOW — new function, no existing callers affected |
+| `services/api/app/modules/cms/models.py` | Added deleted_at nullable column | LOW — nullable, no existing queries break |
+
+### Modified Files — M02 Mobile Frontend
+| File | Change | Blast Radius |
+|------|--------|-------------|
+| `apps/mobile/app/(auth)/sign-in.tsx` | Full rewrite — email+password+Google form | LOW — was placeholder |
+| `apps/mobile/app/(auth)/sign-up.tsx` | Full rewrite — registration form | LOW — was placeholder |
+| `apps/mobile/app/(auth)/_layout.tsx` | Added 4 new screens to Stack | LOW — additive |
+| `apps/mobile/app/_layout.tsx` | Added AuthGate with onboarding redirect | MEDIUM — controls all navigation |
+| `apps/mobile/app/(tabs)/saved.tsx` | Added useRequireAuth() | LOW — adds redirect for unauth |
+| `apps/mobile/app/(tabs)/account.tsx` | Added useRequireAuth() | LOW — adds redirect for unauth |
+| `apps/mobile/stores/authStore.ts` | Replaced setTokens→setAuth, added setLoading | MEDIUM — touched by AuthProvider |
+| `apps/mobile/providers/AuthProvider.tsx` | Added signIn, signUp, signInWithGoogle, signInWithApple | MEDIUM — all auth consumers |
+| `apps/mobile/lib/googleAuth.ts` | Added ResponseType.Token | LOW — auth flow only |
+| `apps/mobile/package.json` | Added async-storage@2.2.0 | LOW — new dep |
+
+### Blast Radius Summary
+- **Backend changes**: additive only — no web endpoints touched, no existing tests broken
+- **Mobile changes**: isolated to apps/mobile/ — zero impact on apps/web-next/ production website
+- **Database**: migration adds nullable column (deleted_at) to cms_pages — safe, no queries break
+
 ### Key Decisions
 - Expo SDK 56 (not SDK 51 as specced) — latest at time of implementation (RN 0.85.3, React 19 peer dep)
 - `react-native-reanimated` pinned to ~3.16.0 — v4 requires `react-native-worklets`; add in Step M07

@@ -1,7 +1,10 @@
 import { View, Text } from "react-native";
 import { SafeArea } from "@/components/ui/SafeArea";
+import { useRequireAuth } from "@/hooks/useRequireAuth";
 
 export default function SavedScreen() {
+  useRequireAuth();
+
   return (
     <SafeArea>
       <View className="flex-1 items-center justify-center">

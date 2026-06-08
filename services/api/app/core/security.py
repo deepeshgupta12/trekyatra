@@ -168,3 +168,42 @@ def parse_email_verification_token(token: str) -> dict | None:
         return payload
     except InvalidTokenError:
         return None
+
+
+def create_mobile_access_token(user_id: uuid.UUID, device_id: str) -> tuple[str, datetime]:
+    """Issue a mobile access token with 30-day expiry."""
+    expires_at = datetime.now(timezone.utc) + timedelta(days=settings.mobile_token_expire_days)
+    payload = {
+        "sub": str(user_id),
+        "did": device_id,
+        "typ": "mobile_access",
+        "iat": datetime.now(timezone.utc),
+        "exp": expires_at,
+    }
+    token = jwt.encode(payload, settings.auth_jwt_secret, algorithm=settings.auth_jwt_algorithm)
+    return token, expires_at
+
+
+def create_mobile_refresh_token(user_id: uuid.UUID, device_id: str) -> tuple[str, datetime]:
+    """Issue a mobile refresh token with 90-day expiry."""
+    expires_at = datetime.now(timezone.utc) + timedelta(days=90)
+    payload = {
+        "sub": str(user_id),
+        "did": device_id,
+        "typ": "mobile_refresh",
+        "iat": datetime.now(timezone.utc),
+        "exp": expires_at,
+    }
+    token = jwt.encode(payload, settings.auth_jwt_secret, algorithm=settings.auth_jwt_algorithm)
+    return token, expires_at
+
+
+def parse_mobile_refresh_token(token: str) -> dict | None:
+    """Return the JWT payload if valid and typ=mobile_refresh, else None."""
+    try:
+        payload = jwt.decode(token, settings.auth_jwt_secret, algorithms=[settings.auth_jwt_algorithm])
+        if payload.get("typ") != "mobile_refresh":
+            return None
+        return payload
+    except InvalidTokenError:
+        return None
