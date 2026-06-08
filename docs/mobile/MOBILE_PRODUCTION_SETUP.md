@@ -27,9 +27,10 @@ The mobile app reuses the existing DigitalOcean backend — no new servers neede
 Add these in DigitalOcean → App Platform → trekyatra → api → Environment Variables.
 These do NOT exist yet — must be added before the relevant mobile step is implemented.
 
-| Env Var | Required By | How to Get | Notes |
-|---------|-------------|-----------|-------|
-| `OPENWEATHERMAP_API_KEY` | M19 | openweathermap.org → API Keys | One Call API 3.0, free tier (1000 calls/day) |
+| Env Var | Required By | How to Get | Notes | Status |
+|---------|-------------|-----------|-------|--------|
+| `MOBILE_TOKEN_EXPIRE_DAYS` | M03 | Set to `30` | Mobile JWT lifetime (days) | `[x]` DONE 2026-06-08 |
+| `OPENWEATHERMAP_API_KEY` | M19 | openweathermap.org → API Keys | One Call API 3.0, free tier (1000 calls/day) | `[ ]` |
 | `FIREBASE_SERVICE_ACCOUNT_JSON` | M14 FCM | Firebase Console → Project Settings → Service Accounts → Generate new private key | Store as encrypted DO env var; escape newlines in JSON |
 | `APNS_KEY_ID` | M14 APNs | Apple Developer → Certificates, IDs & Profiles → Keys | 10-character string |
 | `APNS_TEAM_ID` | M14 APNs | Apple Developer → Membership → Team ID | 10-character string |
@@ -186,7 +187,7 @@ alembic upgrade head
 
 | Migration | Step | Tables/Columns Added | Status |
 |-----------|------|---------------------|--------|
-| `YYYYMMDD_0042_mobile_devices.py` | M03 | `mobile_devices` | `[ ]` |
+| `20260608_0042_mobile_devices.py` | M03 | `mobile_devices`, `cms_pages.deleted_at`, partial index | `[x]` DONE 2026-06-08 |
 | `YYYYMMDD_0043_users_mobile_prefs.py` | M02 | `users.preferred_language`, `users.notification_prefs` | `[ ]` |
 | `YYYYMMDD_0044_mobile_push_log.py` | M14 | `mobile_push_log`, `trek_alerts.delivery_channel` | `[ ]` |
 | `YYYYMMDD_0045_mobile_analytics.py` | M15 | `analytics_events.platform/app_version`, `analytics_sessions.platform/device_model/os_version` | `[ ]` |
