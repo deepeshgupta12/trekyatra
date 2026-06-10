@@ -60,14 +60,19 @@ These rules apply to every mobile step, in addition to the project-wide rules in
 - `get_current_user_bearer` dependency for Authorization: Bearer auth
 - 11 backend tests; all pass; full suite regression-free
 
-### Step M04 — CMS Offline Content Engine [PENDING]
+### Step M04 — CMS Offline Content Engine [DONE — 2026-06-10]
 - `expo-sqlite` database (`trekyatra.db`) with Drizzle ORM schema
-- Tables: `cms_pages` (slug, title, body_json, page_type, hero_image_url, synced_at), `sync_meta` (last_sync_at)
-- Sync service: fetch from `/mobile/sync`, upsert into SQLite, handle deleted slugs
-- Background sync on app foreground (every 15 min if online)
-- Content renderer: `<CMSContentRenderer>` component parses body_json block format into native components
-- Offline indicator badge (shows when reading from local cache, no network)
-- Trek guide download manager: manual "Download for offline" button per trek
+- Tables: `cms_pages` (slug, title, body_json, page_type, hero_image_url, synced_at, is_downloaded), `sync_meta` (last_sync_at, total_pages)
+- Sync service (`services/syncService.ts`): fetch from `/mobile/sync`, upsert into SQLite, handle deleted slugs, pagination
+- Background sync (`services/backgroundSync.ts`): AppState listener, 15-min throttle, token-aware
+- `useSync` hook: isSyncing / lastSyncAt / syncProgress / triggerSync / refreshLastSync
+- CMSContentRenderer + 8 block components: ParagraphBlock, HeadingBlock, ImageBlock, ListBlock, TableBlock, CalloutBlock, FAQBlock, AffiliateCardBlock
+- Offline indicator badge `OfflineBadge` + toggle button `OfflineToggle`
+- Downloads screen at `(tabs)/downloads.tsx`
+- Zustand offlineStore: downloadedSlugs, download(), remove(), isDownloaded()
+- Root `_layout.tsx` wired: initDb() + initBackgroundSync() + loadDownloaded()
+- Packages: expo-sqlite ~56.0.4, drizzle-orm ^0.30.10, drizzle-kit ^0.20.18
+- tsc --noEmit: 0 errors
 
 ### Step M05 — Trek Detail Screen [PENDING]
 - `app/(tabs)/(home)/trek/[slug].tsx` — server fetch first, SQLite fallback

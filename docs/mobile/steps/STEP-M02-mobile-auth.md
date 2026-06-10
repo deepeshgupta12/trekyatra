@@ -283,6 +283,125 @@ Protected routes: `/saved`, `/account`, `/plan` (full results + lead capture req
 - `@react-native-async-storage/async-storage@2.2.0` added to package.json (needed for onboarding flag + welcome.tsx)
 - `.expo/types/router.d.ts` manually updated to include new routes: welcome, otp, forgot-password, reset-password
 
+---
+
+## Google OAuth Pending Setup (Developer Action Required)
+
+Google Sign In will return `EXPO_PUBLIC_GOOGLE_CLIENT_ID is empty` and silently fail until the following setup is completed:
+
+### Step 1 — Create Expo Account
+1. Go to [expo.dev](https://expo.dev) → Sign Up (or Log In if you have one)
+2. Create a new project named `trekyatra` (matches `apps/mobile/app.config.ts` slug)
+3. Note your Expo username — you will use it in step 4
+
+### Step 2 — Create Google OAuth Web Client (for Expo Go + dev builds)
+1. Go to [Google Cloud Console](https://console.cloud.google.com) → APIs & Services → Credentials
+2. Click **+ Create Credentials** → **OAuth 2.0 Client ID**
+3. Application type: **Web application**
+4. Name: `TrekYatra Mobile (Expo Dev)`
+5. Under **Authorized redirect URIs**, add:
+   ```
+   https://auth.expo.io/@YOUR_EXPO_USERNAME/trekyatra
+   ```
+   (Replace `YOUR_EXPO_USERNAME` with your actual Expo username from Step 1)
+6. Click **Create** → Copy the **Client ID** (looks like `xxxxx.apps.googleusercontent.com`)
+
+### Step 3 — Create Google OAuth Native Clients (for production EAS builds)
+Repeat credential creation twice:
+- **Android** type → package: `in.co.trekyatra.app`
+- **iOS** type → bundle ID: `in.co.trekyatra.app`
+
+These native client IDs are used in `apps/mobile/app.config.ts` under `googleServicesFile` (via Firebase in M14).
+
+### Step 4 — Set env var locally
+Edit `apps/mobile/.env.local`:
+```
+EXPO_PUBLIC_GOOGLE_CLIENT_ID=xxxxx.apps.googleusercontent.com
+```
+(Use the **Web** client ID from Step 2 — not the Android/iOS client IDs)
+
+### Step 5 — Test Google Sign In in Expo Go
+```bash
+cd apps/mobile && npx expo start
+# Scan QR code with Expo Go app
+# Tap "Continue with Google" → browser opens auth.expo.io → completes OAuth
+```
+
+> **Status:** `[ ]` Not yet configured (2026-06-08)
+
+---
+
+## Frontend Test Cases — Step M02: Mobile Auth
+
+### TC-M02-F01: Email sign-up happy path
+**Prerequisite:** Fresh app install (or cleared AsyncStorage)
+**Steps:**
+1. Launch app → Welcome carousel appears (3 slides)
+2. Tap "Get Started" on last slide
+3. Tap "Create account" → Sign Up screen
+4. Enter full name, email, password (min 8 chars) → tap "Create account"
+**Expected:** User created → lands on Home tab → account tab shows user name
+**Pass =** No error, user profile loaded in account tab
+
+### TC-M02-F02: Email sign-in happy path
+**Steps:**
+1. From sign-in screen, enter registered email + password
+2. Tap "Sign in"
+**Expected:** Navigates to Home tab, tokens stored in SecureStore
+**Pass =** Home tab loads, Account tab shows user details
+
+### TC-M02-F03: Google Sign In (requires EXPO_PUBLIC_GOOGLE_CLIENT_ID set)
+**Prerequisite:** `.env.local` has valid Google client ID, Expo account created
+**Steps:**
+1. Tap "Continue with Google"
+2. Browser opens Google auth flow → approve permissions
+3. Returns to app
+**Expected:** Auth completes, user lands on Home tab
+**Pass =** User profile populated, SecureStore has access token
+
+### TC-M02-F04: Route guard — saved tab
+**Steps:**
+1. Open app without signing in (skip onboarding)
+2. Tap Saved tab
+**Expected:** Redirected to Sign In screen
+**Pass =** Sign In screen appears, not Saved content
+
+### TC-M02-F05: Route guard — account tab
+**Steps:**
+1. Open app without signing in
+2. Tap Account tab
+**Expected:** Redirected to Sign In screen
+**Pass =** Sign In screen appears
+
+### TC-M02-F06: Forgot password flow
+**Steps:**
+1. Sign In screen → tap "Forgot password?"
+2. Enter registered email → tap "Send reset link"
+**Expected:** Success message: "Check your email for a reset link"
+**Pass =** No error, success state shown
+
+### TC-M02-F07: Onboarding shown only once
+**Steps:**
+1. Fresh install → onboarding carousel shows (3 slides)
+2. Complete onboarding → sign in
+3. Kill app, reopen
+**Expected:** Onboarding does NOT show again; goes directly to sign-in or home
+**Pass =** No carousel on second launch
+
+### TC-M02-F08: Sign out
+**Steps:**
+1. Sign in successfully
+2. Go to Account tab → tap "Sign out"
+**Expected:** App navigates to Sign In screen, tokens cleared
+**Pass =** Account tab now shows sign-in redirect on next visit
+
+### TC-M02-F09: Mobile layout (375px)
+**Device:** iPhone SE / small Android device (375px wide)
+**Steps:**
+1. Open welcome, sign-in, sign-up screens
+**Expected:** No horizontal overflow, all form fields visible, buttons full-width
+**Pass =** No clipping or cut-off elements on small screen
+
 ## Implementation Completed (2026-06-08)
 
 ### Files Created

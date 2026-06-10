@@ -1468,3 +1468,23 @@ Both web-next file changes are **compile-time type annotations only**. They do n
 - Styling
 - Event handlers
 - Behaviour on Desktop or Mobile Web
+
+### Step M04 — CMS Offline Content Engine blast radius
+| File | Purpose | Blast Radius |
+|------|---------|-------------|
+| `apps/mobile/db/schema.ts` | Drizzle schema: cmsPages + syncMeta | LOW — new file; imported by db/client.ts + syncService.ts |
+| `apps/mobile/db/client.ts` | expo-sqlite + Drizzle client + initDb() | LOW — imported by syncService, _layout.tsx |
+| `apps/mobile/services/syncService.ts` | syncContent(), getCachedPage(), download/remove helpers | LOW — new file; imported by backgroundSync, offlineStore |
+| `apps/mobile/services/backgroundSync.ts` | AppState listener, 15-min throttle | LOW — new file; imported by _layout.tsx |
+| `apps/mobile/hooks/useSync.ts` | isSyncing / triggerSync React hook | LOW — new file; used by consumer screens in M05+ |
+| `apps/mobile/components/cms/types.ts` | Block union type | LOW — imported by all block components + CMSContentRenderer |
+| `apps/mobile/components/cms/CMSContentRenderer.tsx` | Block dispatcher | LOW — new file; used by trek detail screen (M05+) |
+| `apps/mobile/components/cms/blocks/*.tsx` | 8 block components | LOW — leaf components; no shared state |
+| `apps/mobile/stores/offlineStore.ts` | Zustand offline download state | LOW — new file; imported by OfflineToggle + downloads screen |
+| `apps/mobile/components/trek/OfflineBadge.tsx` | Offline indicator | LOW — leaf component |
+| `apps/mobile/components/trek/OfflineToggle.tsx` | Download/delete toggle | LOW — leaf component; imports offlineStore + useAuth |
+| `apps/mobile/app/(tabs)/downloads.tsx` | Downloads list screen | LOW — leaf screen; no upstream callers |
+| `apps/mobile/app/_layout.tsx` | Root layout | MEDIUM — wired initDb + backgroundSync + offlineStore; any error here affects app boot |
+| `apps/mobile/app.config.ts` | Added expo-sqlite plugin | LOW — additive plugin config |
+
+**No backend changes.** All M04 work is mobile-only (apps/mobile). Zero blast radius on web-next or services/api.

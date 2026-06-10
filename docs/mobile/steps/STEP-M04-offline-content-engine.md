@@ -1,6 +1,6 @@
 # STEP-M04 — CMS Offline Content Engine
 
-**Status:** Pending
+**Status:** Done (2026-06-10)
 **Phase:** Foundation
 **Dependencies:** STEP-M01 (scaffold), STEP-M03 (/mobile/sync endpoint)
 **Backend dependency:** None (reads from M03 endpoint)
@@ -268,3 +268,52 @@ User taps "Remove download"
 5. **TC-M04-05**: Background app for 20 minutes → foreground → sync runs automatically
 6. **TC-M04-06**: body_json with all block types renders correctly (paragraph, heading, image, list, table, callout, FAQ, affiliate card)
 7. **TC-M04-07**: Network error during sync → error caught silently → SQLite content still accessible
+
+---
+
+## Implementation Completed (2026-06-10)
+
+### New Packages
+| Package | Version | Purpose |
+|---------|---------|---------|
+| `expo-sqlite` | `~56.0.4` | SQLite on-device database |
+| `drizzle-orm` | `^0.30.10` | Type-safe ORM for expo-sqlite |
+| `drizzle-kit` | `^0.20.18` | Drizzle schema tooling (dev dep) |
+
+### Files Created
+| File | Purpose |
+|------|---------|
+| `apps/mobile/db/schema.ts` | Drizzle schema: `cmsPages` + `syncMeta` tables with full type exports |
+| `apps/mobile/db/client.ts` | `expo-sqlite` connection + Drizzle client init + `initDb()` (DDL CREATE TABLE IF NOT EXISTS) |
+| `apps/mobile/services/syncService.ts` | `syncContent()`, `getCachedPage()`, `getDownloadedPages()`, `downloadTrekPages()`, `removeTrekDownload()`, `getLastSyncAt()` |
+| `apps/mobile/services/backgroundSync.ts` | AppState listener; `initBackgroundSync()`, `destroyBackgroundSync()`, `triggerSyncNow()` |
+| `apps/mobile/hooks/useSync.ts` | React hook: `isSyncing`, `lastSyncAt`, `syncProgress`, `error`, `triggerSync()`, `refreshLastSync()` |
+| `apps/mobile/components/cms/types.ts` | `Block` union type covering all 9 block variants |
+| `apps/mobile/components/cms/CMSContentRenderer.tsx` | Root dispatcher — maps block.type to typed sub-component |
+| `apps/mobile/components/cms/blocks/ParagraphBlock.tsx` | `<p>` text blocks |
+| `apps/mobile/components/cms/blocks/HeadingBlock.tsx` | H2/H3 headings |
+| `apps/mobile/components/cms/blocks/ImageBlock.tsx` | Image with optional caption |
+| `apps/mobile/components/cms/blocks/ListBlock.tsx` | Ordered + unordered lists |
+| `apps/mobile/components/cms/blocks/TableBlock.tsx` | Horizontal-scrollable data tables |
+| `apps/mobile/components/cms/blocks/CalloutBlock.tsx` | Warning / tip / info callout boxes |
+| `apps/mobile/components/cms/blocks/FAQBlock.tsx` | Accordion FAQ with expand/collapse |
+| `apps/mobile/components/cms/blocks/AffiliateCardBlock.tsx` | Product card with price + external link |
+| `apps/mobile/stores/offlineStore.ts` | Zustand: `downloadedSlugs`, `download()`, `remove()`, `loadDownloaded()`, `isDownloaded()` |
+| `apps/mobile/components/trek/OfflineBadge.tsx` | Amber badge shown when content served from SQLite |
+| `apps/mobile/components/trek/OfflineToggle.tsx` | Download/delete toggle button for a single trek |
+| `apps/mobile/app/(tabs)/downloads.tsx` | Downloads screen — list of offline treks with delete action |
+
+### Files Modified
+| File | Change |
+|------|--------|
+| `apps/mobile/app/_layout.tsx` | Added `initDb()` on mount, `initBackgroundSync()` / `destroyBackgroundSync()` wired to auth token, `loadDownloaded()` Zustand init |
+| `apps/mobile/app.config.ts` | Added `"expo-sqlite"` to plugins array |
+| `apps/mobile/package.json` | Added expo-sqlite ~56.0.4, drizzle-orm ^0.30.10, drizzle-kit ^0.20.18 |
+
+### Notes
+- `expo-sqlite` uses SDK 56 version `~56.0.4` (not `~14.0.0` from spec — Expo install picks compatible version automatically)
+- `initDb()` uses `CREATE TABLE IF NOT EXISTS` DDL directly (no Drizzle migrations runner needed for Expo SQLite — simpler and more reliable for mobile)
+- Background sync fires at most once every 15 minutes when app enters foreground, only if access token is present
+- `body_json` stored as serialised JSON string in SQLite; `CMSContentRenderer` receives parsed `Block[]` — callers must `JSON.parse()` before passing
+- HTML blocks render as plain placeholder text — `expo-web-browser` / WebView would need a native build (deferred to M05)
+- `tsc --noEmit`: 0 errors after implementation

@@ -75,6 +75,27 @@ After each mobile step that adds a Celery task is deployed, the `celery-beat` co
 
 ---
 
+## Google OAuth Setup for Mobile (M02 — Developer Action Required)
+
+Google Sign In on the mobile app requires a separate **Web** OAuth client in Google Cloud Console, plus an Expo account. This is distinct from the web platform's Google OAuth client.
+
+| Step | Action | Status |
+|------|--------|--------|
+| 1 | Create Expo account at expo.dev — project name: `trekyatra` | `[ ]` |
+| 2 | Go to Google Cloud Console → APIs & Services → Credentials | `[ ]` |
+| 3 | Create OAuth 2.0 Client ID — type: **Web application**, name: `TrekYatra Mobile (Expo Dev)` | `[ ]` |
+| 4 | Add redirect URI: `https://auth.expo.io/@YOUR_EXPO_USERNAME/trekyatra` | `[ ]` |
+| 5 | Copy the Web client ID → set in `apps/mobile/.env.local` as `EXPO_PUBLIC_GOOGLE_CLIENT_ID` | `[ ]` |
+| 6 | Create Android OAuth client: package `in.co.trekyatra.app` (for EAS production builds) | `[ ]` |
+| 7 | Create iOS OAuth client: bundle `in.co.trekyatra.app` (for EAS production builds) | `[ ]` |
+| 8 | Test: `npx expo start` → scan QR with Expo Go → tap "Continue with Google" → auth completes | `[ ]` |
+
+**Reference guide:** `docs/mobile/steps/STEP-M02-mobile-auth.md` → Google OAuth Pending Setup section
+
+> **IMPORTANT:** `EXPO_PUBLIC_GOOGLE_CLIENT_ID` is a Metro bundler variable — it goes in `apps/mobile/.env.local` on the developer's machine and as an EAS secret for production builds. It is NOT a DigitalOcean App Platform env var.
+
+---
+
 ## EAS Build & Expo Setup
 
 | Item | Value | Status |
@@ -82,8 +103,8 @@ After each mobile step that adds a Celery task is deployed, the `celery-beat` co
 | Expo account | expo.dev (owner: trekyatra) | `[ ]` |
 | EAS project name | `trekyatra` | `[ ]` |
 | EAS Project ID | Set from `eas init` output | `[ ]` |
-| iOS bundle ID | `co.in.trekyatra.app` | `[ ]` |
-| Android package | `co.in.trekyatra.app` | `[ ]` |
+| iOS bundle ID | `in.co.trekyatra.app` | `[ ]` |
+| Android package | `in.co.trekyatra.app` | `[ ]` |
 | EAS CLI version | >= 5.0.0 | `[ ]` |
 
 ### EAS Secrets (NOT git-committed)
@@ -120,7 +141,7 @@ Required in repo Settings → Secrets → Actions:
 | Step | Action | Status |
 |------|--------|--------|
 | 1 | Create Apple Developer account at developer.apple.com ($99/year) | `[ ]` |
-| 2 | Create App ID: `co.in.trekyatra.app` with capabilities: Sign In with Apple, Push Notifications, In-App Purchase | `[ ]` |
+| 2 | Create App ID: `in.co.trekyatra.app` with capabilities: Sign In with Apple, Push Notifications, In-App Purchase | `[ ]` |
 | 3 | Create APNs Auth Key (.p8) — download and store securely | `[ ]` |
 | 4 | Register EAS distribution certificate via `eas credentials` | `[ ]` |
 | 5 | Create App Store Connect record for TrekYatra | `[ ]` |
@@ -136,7 +157,7 @@ Required in repo Settings → Secrets → Actions:
 | Step | Action | Status |
 |------|--------|--------|
 | 1 | Create Play Console account ($25 one-time) | `[ ]` |
-| 2 | Create app: package `co.in.trekyatra.app`, category Travel & Local, content rating Everyone | `[ ]` |
+| 2 | Create app: package `in.co.trekyatra.app`, category Travel & Local, content rating Everyone | `[ ]` |
 | 3 | Create service account JSON for EAS Submit (Actions → Manage Play Store keys) | `[ ]` |
 | 4 | Configure In-App Products: same IDs as iOS (`trekyatra_premium_monthly`, `trekyatra_premium_annual`) | `[ ]` |
 | 5 | Data Safety form: Location (coarse, optional), Purchases, User Content (trip reports + photos) | `[ ]` |
@@ -150,8 +171,8 @@ Required in repo Settings → Secrets → Actions:
 | Step | Action | Status |
 |------|--------|--------|
 | 1 | Create Firebase project `trekyatra-mobile` at console.firebase.google.com | `[ ]` |
-| 2 | Add Android app: package `co.in.trekyatra.app` | `[ ]` |
-| 3 | Add iOS app: bundle `co.in.trekyatra.app` | `[ ]` |
+| 2 | Add Android app: package `in.co.trekyatra.app` | `[ ]` |
+| 3 | Add iOS app: bundle `in.co.trekyatra.app` | `[ ]` |
 | 4 | Enable Firebase Authentication: Google provider | `[ ]` |
 | 5 | Enable Cloud Messaging (FCM) | `[ ]` |
 | 6 | Download `google-services.json` (Android) → add as EAS secret | `[ ]` |

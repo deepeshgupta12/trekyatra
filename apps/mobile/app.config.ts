@@ -34,6 +34,7 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
     "expo-secure-store",
     "expo-web-browser",
     "expo-local-authentication",
+    "expo-sqlite",
   ],
   scheme: "trekyatra",
   experiments: {

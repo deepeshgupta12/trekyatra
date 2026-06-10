@@ -1,5 +1,5 @@
 import "../global.css";
-import { useEffect, useState, type ReactNode } from "react";
+import { useEffect, useState, useCallback, type ReactNode } from "react";
 import { Stack, useRouter, useSegments } from "expo-router";
 import { useFonts } from "expo-font";
 import * as SplashScreen from "expo-splash-screen";
@@ -18,6 +18,9 @@ import {
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { QueryProvider } from "@/providers/QueryProvider";
 import { AuthProvider, useAuth } from "@/providers/AuthProvider";
+import { initDb } from "@/db/client";
+import { initBackgroundSync, destroyBackgroundSync } from "@/services/backgroundSync";
+import { useOfflineStore } from "@/stores/offlineStore";
 
 Sentry.init({
   dsn: process.env.EXPO_PUBLIC_SENTRY_DSN,
@@ -31,11 +34,28 @@ SplashScreen.preventAutoHideAsync();
 const ONBOARDING_KEY = "trekyatra_onboarding_done";
 
 function AuthGate({ children }: { children: ReactNode }) {
-  const { isLoading, isAuthenticated } = useAuth();
+  const { isLoading, isAuthenticated, accessToken } = useAuth();
   const segments = useSegments();
   const router = useRouter();
   const [onboardingChecked, setOnboardingChecked] = useState(false);
   const [onboardingDone, setOnboardingDone] = useState(false);
+  const loadDownloaded = useOfflineStore((s) => s.loadDownloaded);
+
+  // Initialise SQLite DB on first mount
+  useEffect(() => {
+    initDb().catch(console.error);
+  }, []);
+
+  // Wire background sync once auth token is available
+  useEffect(() => {
+    initBackgroundSync(() => accessToken);
+    return () => destroyBackgroundSync();
+  }, [accessToken]);
+
+  // Load downloaded slugs into Zustand store on mount
+  useEffect(() => {
+    loadDownloaded().catch(console.error);
+  }, []);
 
   useEffect(() => {
     AsyncStorage.getItem(ONBOARDING_KEY).then((val) => {

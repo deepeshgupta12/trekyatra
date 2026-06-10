@@ -114,7 +114,8 @@ All V0 foundations are shipped. The stack is live locally with:
 | **Step M01 — Expo Bootstrap + Navigation + Design System** (2026-06-03) | **done** |
 | **Step M02 — Mobile Auth** (2026-06-08) | **done** |
 | **Step M03 — Backend Mobile Extensions** (2026-06-08) | **done** |
-| Step M04 — CMS Offline Content Engine | pending |
+| **Step M04 — CMS Offline Content Engine** (2026-06-10) | **done** |
+| Step M05 — Trek Detail Screen | pending |
 
 ### Step M01 — Done (2026-06-03)
 - Created `apps/mobile/` workspace with Expo SDK 56 (react-native 0.85.3, React 19)
@@ -227,6 +228,24 @@ The following gaps were identified and resolved during a full cross-check of all
 - `services/api/.env.example` — added MOBILE_TOKEN_EXPIRE_DAYS=30
 - **11/11 new tests pass; 4 pre-existing failures confirmed unchanged**
 - 4 new Celery beat tasks (M14×2, M18×1, M19×1) — require celery-beat restart after each mobile step deploys
+
+### Step M04 — CMS Offline Content Engine — Done (2026-06-10)
+- `apps/mobile/db/schema.ts` — Drizzle schema: `cmsPages` + `syncMeta` tables
+- `apps/mobile/db/client.ts` — expo-sqlite connection + `initDb()` DDL bootstrapper
+- `apps/mobile/services/syncService.ts` — `syncContent()` (paginated upsert), `getCachedPage()`, `getDownloadedPages()`, `downloadTrekPages()`, `removeTrekDownload()`
+- `apps/mobile/services/backgroundSync.ts` — AppState listener; triggers sync every 15 min on foreground
+- `apps/mobile/hooks/useSync.ts` — React hook: isSyncing / lastSyncAt / triggerSync / refreshLastSync
+- `apps/mobile/components/cms/types.ts` — `Block` union type (9 variants)
+- `apps/mobile/components/cms/CMSContentRenderer.tsx` — block dispatcher
+- 8 block components: ParagraphBlock, HeadingBlock, ImageBlock, ListBlock, TableBlock, CalloutBlock, FAQBlock, AffiliateCardBlock
+- `apps/mobile/stores/offlineStore.ts` — Zustand: downloadedSlugs, download(), remove(), isDownloaded()
+- `apps/mobile/components/trek/OfflineBadge.tsx` — amber "Offline" indicator badge
+- `apps/mobile/components/trek/OfflineToggle.tsx` — download/delete toggle button
+- `apps/mobile/app/(tabs)/downloads.tsx` — offline content list screen
+- `apps/mobile/app/_layout.tsx` — wired initDb + initBackgroundSync + loadDownloaded on mount
+- `apps/mobile/app.config.ts` — added expo-sqlite plugin
+- Packages added: expo-sqlite ~56.0.4, drizzle-orm ^0.30.10, drizzle-kit ^0.20.18
+- **tsc --noEmit: 0 errors**
 
 > Full spec: `docs/versions/V5-MOBILE-APP.md`
 > Pre-launch checklist: `docs/mobile/MOBILE_PRELAUNCH_CHECKLIST.md`
