@@ -116,7 +116,9 @@ All V0 foundations are shipped. The stack is live locally with:
 | **Step M03 — Backend Mobile Extensions** (2026-06-08) | **done** |
 | **Step M04 — CMS Offline Content Engine** (2026-06-10) | **done** |
 | **Step M-DS1 — Mobile Design System Overhaul** (2026-06-10) | **done** |
-| Step M05 — Trek Detail Screen | pending |
+| **Step M05 — Trek Detail Screen** (2026-06-10) | **done** |
+| **Step M06 — Home Screen + 4-State Personalisation** (2026-06-10) | **done** |
+| Step M07 — Explore & Search | pending |
 
 ### Step M01 — Done (2026-06-03)
 - Created `apps/mobile/` workspace with Expo SDK 56 (react-native 0.85.3, React 19)
@@ -248,6 +250,37 @@ The following gaps were identified and resolved during a full cross-check of all
 - Assets bundled: `onboarding-1–4.jpg` (himalaya dawn, kashmir, ladakh, uttarakhand snow), `logo.png`
 - **tsc --noEmit: 0 errors**
 - No backend changes. No web-next changes.
+
+### Step M05 — Trek Detail Screen — Done (2026-06-10)
+- `apps/mobile/app/(tabs)/(home)/_layout.tsx` (NEW) — Stack layout for home route group; trek detail screen registered with transparent header + back arrow
+- `apps/mobile/app/(tabs)/(home)/trek/[slug].tsx` (NEW) — Full trek detail screen: TrekHero, TrekMetaStrip, TrekTabBar (Guide/Packing/Permits/Costs), TrekRelatedRow, TrekStickyBar, share sheet, offline badge, safety disclaimer
+- `apps/mobile/components/trek/TrekHero.tsx` (NEW) — expo-image + LinearGradient overlay + trek title/state
+- `apps/mobile/components/trek/TrekMetaStrip.tsx` (NEW) — Duration/altitude/difficulty/season chips with color coding
+- `apps/mobile/components/trek/TrekTabBar.tsx` (NEW) — 4-tab switcher with saffron active indicator
+- `apps/mobile/components/trek/TrekStickyBar.tsx` (NEW) — "Plan with this trek" saffron button + heart Save button (auth-gated; redirect to sign-in if unauthenticated)
+- `apps/mobile/components/trek/TrekCard.tsx` (NEW) — Reusable trek card (expo-image, difficulty badge, state/duration meta)
+- `apps/mobile/components/trek/TrekRelatedRow.tsx` (NEW) — Horizontal related treks row using TrekCard
+- `apps/mobile/hooks/useTrekDetail.ts` (NEW) — TanStack Query: network-first fetch + SQLite upsert; falls back to SQLite cache on network error
+- `apps/mobile/lib/mobileApi.ts` (NEW) — Bearer-token API client: fetchWithAuth (auto token refresh via authStorage + authApi), contentApi helpers (getCmsPage, getTrendingTreks, getSeasonalTreks, getAnonymousRecommendations, getPersonalisedRecommendations, saveTrek)
+- `apps/mobile/lib/behaviorProfile.ts` (NEW) — AsyncStorage ty_behavior_v1 read/write; `recordTrekView()` + `getBehaviorProfile()` + `hasBehaviorData()`
+- `apps/mobile/app/(tabs)/_layout.tsx` — Home tab name changed from `"index"` to `"(home)"`
+- `apps/mobile/app.config.ts` — Added `"expo-image"` to plugins array
+- Packages: `expo-image ~56.0.10` + `expo-linear-gradient ~56.0.4` installed
+- **tsc --noEmit: 0 errors** | No backend changes | No web-next changes
+
+### Step M06 — Home Screen + 4-State Personalisation — Done (2026-06-10)
+- `apps/mobile/app/(tabs)/(home)/index.tsx` (NEW) — 4-state home screen; resolves A/B/C/D from `isLoggedIn + hasBehavior`; pull-to-refresh; skeleton on first load
+- `apps/mobile/components/home/HomeWelcomeBanner.tsx` (NEW) — `HomeWelcomeBannerA` (state A: greeting + browse CTA) + `HomeWelcomeBannerB` (state B: greeting + view count + recent-view chips)
+- `apps/mobile/components/home/HomeTrendingSection.tsx` (NEW) — Horizontal trek card row; heading adapts: "Trending" (A/C), "Recommended for you" (B), "Continue exploring" (D)
+- `apps/mobile/components/home/RegionsRow.tsx` (NEW) — 8 region chips → navigate to browse with region filter
+- `apps/mobile/components/home/SeasonalPicksRow.tsx` (NEW) — Current-month seasonal treks; auto-detects month
+- `apps/mobile/components/home/RecentlyViewedRow.tsx` (NEW) — State D only: compact horizontal cards from ty_behavior_v1
+- `apps/mobile/components/home/PersonalisedFeedSection.tsx` (NEW) — States A/B/D: 2×3 feed grid; State B calls `/recommendations/personalised`, A/D call `/recommendations/anonymous`
+- `apps/mobile/components/home/HomeSkeleton.tsx` (NEW) — Pulse-animated skeleton (Animated loop opacity 0.3→0.7)
+- `apps/mobile/hooks/useBehaviorProfile.ts` (NEW) — Reads ty_behavior_v1; exposes `profile`, `hasBehavior`, `recentViews`, `topRegions`, `topDifficulties`
+- `apps/mobile/hooks/useHomeData.ts` (NEW) — Parallel `useQueries`: trending (10min stale), seasonal (1hr stale), recs (5min stale)
+- Old `apps/mobile/app/(tabs)/index.tsx` placeholder removed (replaced by `(home)/index.tsx`)
+- **tsc --noEmit: 0 errors** | No backend changes | No web-next changes
 
 ### Step M04 — CMS Offline Content Engine — Done (2026-06-10)
 - `apps/mobile/db/schema.ts` — Drizzle schema: `cmsPages` + `syncMeta` tables

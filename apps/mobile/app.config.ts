@@ -39,6 +39,7 @@ export default ({ config }: ConfigContext): any => ({
     "expo-web-browser",
     "expo-local-authentication",
     "expo-sqlite",
+    "expo-image",
   ],
   scheme: "trekyatra",
   experiments: {

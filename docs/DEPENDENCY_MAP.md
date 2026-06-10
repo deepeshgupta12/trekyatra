@@ -1510,3 +1510,42 @@ Both web-next file changes are **compile-time type annotations only**. They do n
 | `apps/mobile/app.config.ts` | splash.backgroundColor Pine + userInterfaceStyle: automatic | LOW — config only |
 
 **No backend changes. No web-next changes.** All M-DS1 work is mobile-only. Zero blast radius on production website.
+
+---
+
+### Step M05 — Trek Detail Screen blast radius
+| File | Purpose | Blast Radius |
+|------|---------|-------------|
+| `apps/mobile/lib/mobileApi.ts` | NEW — Bearer-token API client with auto-refresh; contentApi helpers | LOW — new file; no existing callers |
+| `apps/mobile/lib/behaviorProfile.ts` | NEW — AsyncStorage ty_behavior_v1 read/write | LOW — new file; imported by useTrekDetail + home screen |
+| `apps/mobile/hooks/useTrekDetail.ts` | NEW — TanStack Query: network-first + SQLite upsert/fallback | LOW — new hook; used by trek detail screen only |
+| `apps/mobile/app/(tabs)/(home)/_layout.tsx` | NEW — Stack layout for home route group | LOW — new file; enables back-nav from trek detail |
+| `apps/mobile/app/(tabs)/(home)/trek/[slug].tsx` | NEW — Trek detail screen | LOW — new dynamic route; no upstream callers |
+| `apps/mobile/components/trek/TrekHero.tsx` | NEW — expo-image hero + LinearGradient + title | LOW — leaf component |
+| `apps/mobile/components/trek/TrekMetaStrip.tsx` | NEW — duration/altitude/difficulty/season chips | LOW — leaf component |
+| `apps/mobile/components/trek/TrekTabBar.tsx` | NEW — Guide/Packing/Permits/Costs switcher | LOW — leaf component |
+| `apps/mobile/components/trek/TrekStickyBar.tsx` | NEW — Plan CTA + Save button (auth-gated) | LOW — leaf component; imports useAuth + mobileApi |
+| `apps/mobile/components/trek/TrekCard.tsx` | NEW — Reusable trek card (expo-image, difficulty badge) | LOW — new component; shared with M06 home screen |
+| `apps/mobile/components/trek/TrekRelatedRow.tsx` | NEW — Horizontal related treks row | LOW — leaf component; uses TrekCard |
+| `apps/mobile/app/(tabs)/_layout.tsx` | Home tab name: `"index"` → `"(home)"` | LOW — cosmetic route group rename; navigation unchanged |
+| `apps/mobile/app.config.ts` | Added `"expo-image"` to plugins | LOW — additive config |
+
+**No backend changes. No web-next changes.** All M05 work is mobile-only. Zero blast radius on production website.
+
+---
+
+### Step M06 — Home Screen + 4-State Personalisation blast radius
+| File | Purpose | Blast Radius |
+|------|---------|-------------|
+| `apps/mobile/app/(tabs)/(home)/index.tsx` | NEW — 4-state home screen | LOW — new route; replaces placeholder |
+| `apps/mobile/hooks/useBehaviorProfile.ts` | NEW — Reads ty_behavior_v1 from AsyncStorage | LOW — new hook; used by home screen |
+| `apps/mobile/hooks/useHomeData.ts` | NEW — Parallel TanStack useQueries (trending + seasonal + recs) | LOW — new hook; used by home screen |
+| `apps/mobile/components/home/HomeWelcomeBanner.tsx` | NEW — States A+B greeting cards | LOW — leaf component |
+| `apps/mobile/components/home/HomeTrendingSection.tsx` | NEW — Horizontal trek card row | LOW — leaf component; uses TrekCard |
+| `apps/mobile/components/home/RegionsRow.tsx` | NEW — Region filter chip row | LOW — leaf component |
+| `apps/mobile/components/home/SeasonalPicksRow.tsx` | NEW — Monthly seasonal treks row | LOW — leaf component; uses TrekCard |
+| `apps/mobile/components/home/RecentlyViewedRow.tsx` | NEW — State D recently viewed | LOW — leaf component |
+| `apps/mobile/components/home/PersonalisedFeedSection.tsx` | NEW — States A/B/D feed grid | LOW — leaf component; uses expo-image |
+| `apps/mobile/components/home/HomeSkeleton.tsx` | NEW — Pulse skeleton loader | LOW — leaf component |
+
+**No backend changes. No web-next changes.** All M06 work is mobile-only. Zero blast radius on production website.

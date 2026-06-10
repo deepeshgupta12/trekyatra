@@ -1,6 +1,6 @@
 # STEP-M06 — Home Screen + 4-State Personalisation
 
-**Status:** Pending
+**Status:** Done ✓ (2026-06-10)
 **Phase:** Discovery
 **Dependencies:** STEP-M02 (auth), STEP-M04 (offline), STEP-M05 (TrekCard)
 
@@ -191,6 +191,29 @@ trekyatra://account/saved        → open saved treks
 ```
 
 Expo Router handles these via `scheme: "trekyatra"` in `app.config.ts`.
+
+---
+
+## Files Created
+| File | Purpose |
+|------|---------|
+| `apps/mobile/app/(tabs)/(home)/index.tsx` | 4-state home screen with pull-to-refresh + skeleton |
+| `apps/mobile/components/home/HomeWelcomeBanner.tsx` | HomeWelcomeBannerA (state A) + HomeWelcomeBannerB (state B) |
+| `apps/mobile/components/home/HomeTrendingSection.tsx` | Horizontal trek card row, heading adapts per state |
+| `apps/mobile/components/home/RegionsRow.tsx` | 8 region chips → browse filter |
+| `apps/mobile/components/home/SeasonalPicksRow.tsx` | Current-month seasonal treks row |
+| `apps/mobile/components/home/RecentlyViewedRow.tsx` | State D: recently viewed compact cards |
+| `apps/mobile/components/home/PersonalisedFeedSection.tsx` | States A/B/D: 2×3 feed grid |
+| `apps/mobile/components/home/HomeSkeleton.tsx` | Pulse-animated skeleton loader |
+| `apps/mobile/hooks/useBehaviorProfile.ts` | Reads ty_behavior_v1 from AsyncStorage |
+| `apps/mobile/hooks/useHomeData.ts` | Parallel TanStack useQueries: trending + seasonal + recs |
+
+## Notes
+- State resolution is client-side: `isLoggedIn + hasBehavior → A/B/C/D`
+- State C (no user, no behavior) skips welcome banner and feed entirely
+- Behavior profile data (topRegions, topDifficulties) feeds anonymous recommendation API
+- PersonalisedFeedSection calls `/recommendations/personalised` for State B, `/recommendations/anonymous` for A/D
+- `tsc --noEmit`: 0 errors
 
 ---
 

@@ -84,35 +84,47 @@ These rules apply to every mobile step, in addition to the project-wide rules in
 - Packages: expo-sqlite ~56.0.4, drizzle-orm ^0.30.10, drizzle-kit ^0.20.18
 - tsc --noEmit: 0 errors
 
-### Step M05 — Trek Detail Screen [PENDING]
+### Step M05 — Trek Detail Screen [DONE — 2026-06-10]
 - `app/(tabs)/(home)/trek/[slug].tsx` — server fetch first, SQLite fallback
 - Native tab bar: Guide | Packing | Permits | Costs (mirrors `/trek/[slug]/packing` etc.)
-- Hero image (expo-image with blur placeholder)
-- Table of contents (ScrollView anchor links via ref)
-- Sticky CTA bar: "Plan with this trek" + "Save" buttons
-- Native share sheet (expo-sharing + Linking) → shares `trekyatra.co.in/trek/{slug}`
-- Offline save button → downloads guide + all 3 sub-pages to SQLite
-- Operator inquiry deeplink to operators screen
+- Hero image (expo-image with blur placeholder + LinearGradient overlay)
+- TrekMetaStrip: duration/altitude/difficulty/season chips
+- TrekStickyBar: "Plan with this trek" + Save button (auth-gated)
+- Native share sheet → shares `trekyatra.co.in/trek/{slug}`
+- Offline badge when serving from SQLite cache
+- Safety disclaimer nudge for Challenging/Difficult treks
+- Behavior profile tracking: recordTrekView() on mount
+- Related treks horizontal row via TrekRelatedRow
+- TrekCard component (shared with M06)
+- `lib/mobileApi.ts`: Bearer-token API client with auto-refresh
+- `lib/behaviorProfile.ts`: AsyncStorage ty_behavior_v1 read/write
+- expo-image + expo-linear-gradient installed
+- (home) route group Stack layout for back-navigation context
+- tsc --noEmit: 0 errors
 
 ---
 
 ## Phase 2 — Discovery Layer (Steps M06–M08)
 
-### Step M06 — Home Screen + 4-State Personalisation [PENDING]
+### Step M06 — Home Screen + 4-State Personalisation [DONE — 2026-06-10]
 Full parity with web homepage personalisation. Client-side 4-state logic:
 - **State A** (new logged-in): welcome banner + "Popular treks" feed
 - **State B** (repeat logged-in): "Welcome back {name}" + last-viewed chips + personalized feed
-- **State C** (new logged-out): generic hero + trending treks + no personalised section
-- **State D** (repeat logged-out): "Continue exploring" + recently viewed row + anonymous recs
+- **State C** (new logged-out): trending + regions + seasonal only (no banner/feed)
+- **State D** (repeat logged-out): recently viewed row + anonymous recs
 
-Components:
-- `HomeWelcomeBanner` (States A + B)
-- `TrendingTreksRow` (all states)
-- `RecentlyViewedRow` (State D)
-- `PersonalisedFeedSection` (States A + B + D)
-- `SeasonalPicksRow`
-- Pull-to-refresh
-- Skeleton loading states per section
+Components delivered:
+- `HomeWelcomeBannerA` + `HomeWelcomeBannerB` (States A + B)
+- `HomeTrendingSection` (all states, heading adapts per state)
+- `RegionsRow` (all states — 8 region chips)
+- `SeasonalPicksRow` (all states — current month auto-selected)
+- `RecentlyViewedRow` (State D only)
+- `PersonalisedFeedSection` (States A + B + D — 2×3 feed grid)
+- `HomeSkeleton` (pulse animation loading state)
+- `useBehaviorProfile` hook (reads ty_behavior_v1 from AsyncStorage)
+- `useHomeData` hook (parallel TanStack useQueries: trending + seasonal + recs)
+- Pull-to-refresh, skeleton loading states per section
+- tsc --noEmit: 0 errors
 
 ### Step M07 — Explore & Search [PENDING]
 - Browse screen: infinite scroll grid of trek cards
@@ -302,12 +314,12 @@ Mobile-adapted version of `lib/analytics.ts` for React Native:
 
 | Phase | Status |
 |-------|--------|
-| Foundation (M01–M05) | Pending — V4 website must stabilise first |
-| Discovery (M06–M08) | Pending |
+| Foundation (M01–M05) | ✓ DONE (M01, M02, M03, M-DS1, M04, M05 complete) |
+| Discovery (M06–M08) | M06 ✓ Done — M07, M08 Pending |
 | User & Commerce (M09–M13) | Pending |
 | Engagement & Analytics (M14–M15) | Pending |
 | Community (M16–M18) | Pending |
 | Contextual Intelligence (M19–M20) | Pending |
 | Content & Release (M21–M22) | Pending |
 
-**Current next step:** Gate check (prerequisites above). Begin M01 once prerequisites confirmed.
+**Current next step:** M07 — Explore & Search (browse screen + filter bottom sheet + semantic search).

@@ -98,6 +98,72 @@ Replace the dark-only admin-style design system with the full TrekYatra brand id
 
 ---
 
+## Frontend Test Cases (Pending Manual Verification)
+
+Run: `cd apps/mobile && npx expo start` (open in iOS Simulator or Expo Go)
+
+### TC-M-DS1-F01: Onboarding carousel — full-bleed photos
+**URL:** Onboarding (fresh install or clear AsyncStorage `trekyatra_onboarding_done`)
+**Steps:**
+1. Clear app data / fresh install
+2. Launch the app
+**Expected:** 4 full-bleed mountain photos fill the entire screen; dark gradient overlay from bottom; saffron/pine/sky/earth icon in glassmorphic box for each slide; white Playfair Display headline + muted subtext; 4 progress dots (active dot elongated saffron); saffron "Next →" button
+**Pass =** Swipe through all 4 slides; slide 4 shows "Start exploring →" + "Already have an account? Sign in" link
+
+### TC-M-DS1-F02: Onboarding — slide icons match spec
+**Steps:**
+1. Reach onboarding fresh state
+2. Swipe through all 4 slides
+**Expected:** Slide 1: compass icon (saffron); Slide 2: shield-checkmark (pine); Slide 3: map (sky); Slide 4: sparkles (earth)
+**Pass =** Each icon color matches the spec exactly
+
+### TC-M-DS1-F03: Sign-in screen — light design
+**Steps:**
+1. Complete onboarding → "Start exploring →" → land on sign-up → tap "Sign in"
+**Expected:** Paper/white background (`#FAF5EE`); TrekYatra logo at top; "Welcome back" in Pine Playfair Display; subtle bordered inputs (Pine 15% border); saffron "Forgot password?" link; saffron "Sign in" button with glow shadow
+**Pass =** No dark background visible; logo PNG renders correctly
+
+### TC-M-DS1-F04: Sign-up screen — light design
+**Steps:**
+1. Complete onboarding → "Start exploring →"
+**Expected:** Same Paper background; TrekYatra logo at top; "Join TrekYatra" heading; saffron "Create account" button with glow
+**Pass =** Light design consistent with sign-in screen
+
+### TC-M-DS1-F05: Custom FAB tab bar — layout and behavior
+**Steps:**
+1. Sign in and reach main tabs
+**Expected:** Tab bar at bottom; 5 items: Home, Explore, [Plan FAB], Saved, You; Plan button is 56px saffron circle raised 20px above bar with saffron glow shadow; active tab turns saffron; inactive tabs use muted color
+**Pass =** Tapping Plan navigates to plan screen; tapping other tabs navigates correctly
+
+### TC-M-DS1-F06: Tab labels renamed
+**Expected:** Second tab shows "Explore" (not "Browse"); fifth tab shows "You" (not "Account")
+**Pass =** No "Browse" or "Account" labels visible in tab bar
+
+### TC-M-DS1-F07: Downloads tab hidden
+**Expected:** Only 5 tabs visible (Home, Explore, Plan, Saved, You); Downloads screen is NOT a tab
+**Pass =** Exactly 5 items in tab bar; no Downloads tab
+
+### TC-M-DS1-F08: Light mode default
+**Steps:**
+1. Set device to light mode; launch app fresh
+**Expected:** Auth screens show Paper (#FAF5EE) background; tab bar shows white background; text is Pine (#1D3A2E)
+**Pass =** No dark background on any auth or main screen in light mode
+
+### TC-M-DS1-F09: Dark mode — system-driven
+**Steps:**
+1. Set device to dark mode in iOS/Android Settings
+2. Launch app
+**Expected:** App automatically adapts: dark background (#0c0e14), white text, dark tab bar (#0f1117)
+**Pass =** Both auth screens and main screens flip to dark without layout breaks
+
+### TC-M-DS1-F10: Splash screen color
+**Steps:**
+1. Cold-launch the app from home screen
+**Expected:** Pine dark green (#1D3A2E) splash background appears before content loads
+**Pass =** Green splash (not near-black); consistent with brand
+
+---
+
 ## Blast Radius Assessment
 
 | Symbol | Risk | Impact |

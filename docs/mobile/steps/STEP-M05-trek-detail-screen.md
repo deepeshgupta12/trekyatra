@@ -1,6 +1,6 @@
 # STEP-M05 — Trek Detail Screen
 
-**Status:** Pending
+**Status:** Done ✓ (2026-06-10)
 **Phase:** Foundation
 **Dependencies:** STEP-M04 (offline engine + CMSContentRenderer)
 
@@ -271,6 +271,36 @@ Banner displayed below meta strip. Tapping it triggers a manual sync.
 ---
 
 ## Verification
+
+## Files Created
+| File | Purpose |
+|------|---------|
+| `apps/mobile/app/(tabs)/(home)/_layout.tsx` | Stack layout for home group — enables back-nav from trek detail |
+| `apps/mobile/app/(tabs)/(home)/trek/[slug].tsx` | Trek detail screen (hero, meta strip, tabs, sticky CTA) |
+| `apps/mobile/components/trek/TrekHero.tsx` | expo-image hero + LinearGradient overlay + title |
+| `apps/mobile/components/trek/TrekMetaStrip.tsx` | Duration/altitude/difficulty/season chips |
+| `apps/mobile/components/trek/TrekTabBar.tsx` | Guide/Packing/Permits/Costs tab switcher |
+| `apps/mobile/components/trek/TrekStickyBar.tsx` | "Plan with this trek" + Save button (auth-gated) |
+| `apps/mobile/components/trek/TrekCard.tsx` | Reusable trek card (shared with M06) |
+| `apps/mobile/components/trek/TrekRelatedRow.tsx` | Horizontal related treks scroll row |
+| `apps/mobile/hooks/useTrekDetail.ts` | TanStack Query: network-first + SQLite fallback |
+| `apps/mobile/lib/mobileApi.ts` | Bearer-token API client with auto-refresh |
+| `apps/mobile/lib/behaviorProfile.ts` | AsyncStorage ty_behavior_v1 read/write + recordTrekView() |
+
+## Files Modified
+| File | Change |
+|------|--------|
+| `apps/mobile/app/(tabs)/_layout.tsx` | Changed Home tab name from `"index"` to `"(home)"` |
+| `apps/mobile/app.config.ts` | Added `"expo-image"` to plugins |
+
+## Notes
+- `expo-image` and `expo-linear-gradient` installed (SDK 56-compatible versions)
+- Old placeholder `app/(tabs)/index.tsx` removed; home screen moved to `(home)/index.tsx` for stack nav
+- OfflineBadge uses `visible={fromCache}` prop (existing component API)
+- Sub-page tabs use `slug-packing`, `slug-permits`, `slug-costs` convention matching web CMS
+- `tsc --noEmit`: 0 errors
+
+---
 
 ### Manual smoke tests
 1. **TC-M05-01**: Open Kedarkantha trek detail → hero image, meta strip, CMS body all render
