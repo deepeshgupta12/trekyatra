@@ -1,13 +1,14 @@
 import { useState, useEffect } from "react";
-import { View, Text, TextInput, TouchableOpacity, Alert } from "react-native";
+import { View, Text, TextInput, TouchableOpacity, Alert, ScrollView, StatusBar } from "react-native";
 import { router } from "expo-router";
 import { useAuthRequest } from "expo-auth-session";
 import { SafeArea } from "@/components/ui/SafeArea";
 import { Button } from "@/components/ui/Button";
+import { Logo } from "@/components/ui/Logo";
 import { SocialSignInButtons } from "@/components/auth/SocialSignInButtons";
 import { useAuth } from "@/providers/AuthProvider";
 import { discovery, getGoogleAuthConfig } from "@/lib/googleAuth";
-import { colors } from "@/constants/theme";
+import { useTheme } from "@/hooks/useTheme";
 
 export default function SignInScreen() {
   const [email, setEmail] = useState("");
@@ -15,6 +16,7 @@ export default function SignInScreen() {
   const [emailLoading, setEmailLoading] = useState(false);
   const [socialLoading, setSocialLoading] = useState(false);
   const { signIn, signInWithGoogle } = useAuth();
+  const { isDark, colors } = useTheme();
 
   const googleConfig = getGoogleAuthConfig();
   const [, googleResponse, promptGoogle] = useAuthRequest(googleConfig, discovery);
@@ -51,73 +53,163 @@ export default function SignInScreen() {
 
   const busy = emailLoading || socialLoading;
 
+  const inputBg = isDark ? colors.surface : "#FFFFFF";
+  const inputBorder = isDark ? "rgba(255,255,255,0.10)" : "rgba(29,58,46,0.15)";
+  const inputText = isDark ? "#ffffff" : colors.pine;
+  const placeholderColor = isDark ? "rgba(255,255,255,0.35)" : "rgba(29,58,46,0.35)";
+  const dividerColor = isDark ? "rgba(255,255,255,0.10)" : "rgba(29,58,46,0.12)";
+  const mutedText = isDark ? "rgba(255,255,255,0.50)" : "rgba(29,58,46,0.50)";
+
   return (
     <SafeArea>
-      <View className="flex-1 px-6 justify-center">
-        <Text className="font-display text-3xl text-white mb-2">Welcome back</Text>
-        <Text className="text-white/50 text-base mb-10">Sign in to TrekYatra</Text>
+      <StatusBar barStyle={isDark ? "light-content" : "dark-content"} />
+      <ScrollView
+        contentContainerStyle={{ flexGrow: 1 }}
+        keyboardShouldPersistTaps="handled"
+        showsVerticalScrollIndicator={false}
+      >
+        <View style={{ flex: 1, paddingHorizontal: 24, justifyContent: "center", paddingVertical: 40 }}>
+          {/* Logo */}
+          <View style={{ marginBottom: 36 }}>
+            <Logo size="md" />
+          </View>
 
-        <TextInput
-          value={email}
-          onChangeText={setEmail}
-          placeholder="Email address"
-          placeholderTextColor={colors.textMuted}
-          keyboardType="email-address"
-          autoCapitalize="none"
-          autoComplete="email"
-          className="bg-surface border border-white/10 rounded-xl px-4 py-3.5 text-white text-base mb-3"
-          style={{ fontFamily: "Inter_400Regular" }}
-        />
-        <TextInput
-          value={password}
-          onChangeText={setPassword}
-          placeholder="Password"
-          placeholderTextColor={colors.textMuted}
-          secureTextEntry
-          className="bg-surface border border-white/10 rounded-xl px-4 py-3.5 text-white text-base mb-2"
-          style={{ fontFamily: "Inter_400Regular" }}
-        />
-
-        <TouchableOpacity
-          onPress={() => router.push("/(auth)/forgot-password")}
-          className="self-end mb-6"
-        >
-          <Text className="text-accent text-sm">Forgot password?</Text>
-        </TouchableOpacity>
-
-        <Button
-          variant="hero"
-          size="md"
-          onPress={handleSignIn}
-          loading={emailLoading}
-          disabled={!email.trim() || !password || busy}
-          accessibilityLabel="Sign in"
-        >
-          Sign in
-        </Button>
-
-        <View className="flex-row items-center my-6">
-          <View className="flex-1 h-px bg-white/10" />
-          <Text className="text-white/30 text-xs mx-3">or continue with</Text>
-          <View className="flex-1 h-px bg-white/10" />
-        </View>
-
-        <SocialSignInButtons
-          onGoogle={() => promptGoogle()}
-          loading={socialLoading}
-        />
-
-        <TouchableOpacity
-          onPress={() => router.push("/(auth)/sign-up")}
-          className="items-center mt-8"
-          disabled={busy}
-        >
-          <Text className="text-white/50 text-sm">
-            No account?{" "}
-            <Text className="text-accent font-semibold">Create one</Text>
+          <Text
+            style={{
+              fontFamily: "PlayfairDisplay_600SemiBold",
+              fontSize: 28,
+              color: isDark ? "#ffffff" : colors.pine,
+              marginBottom: 6,
+            }}
+          >
+            Welcome back
           </Text>
-        </TouchableOpacity>
-      </View>
+          <Text
+            style={{
+              fontFamily: "Inter_400Regular",
+              fontSize: 15,
+              color: mutedText,
+              marginBottom: 32,
+            }}
+          >
+            Sign in to TrekYatra
+          </Text>
+
+          <TextInput
+            value={email}
+            onChangeText={setEmail}
+            placeholder="Email address"
+            placeholderTextColor={placeholderColor}
+            keyboardType="email-address"
+            autoCapitalize="none"
+            autoComplete="email"
+            accessibilityLabel="Email address"
+            style={{
+              backgroundColor: inputBg,
+              borderWidth: 1,
+              borderColor: inputBorder,
+              borderRadius: 12,
+              paddingHorizontal: 16,
+              paddingVertical: 14,
+              color: inputText,
+              fontSize: 15,
+              fontFamily: "Inter_400Regular",
+              marginBottom: 12,
+            }}
+          />
+          <TextInput
+            value={password}
+            onChangeText={setPassword}
+            placeholder="Password"
+            placeholderTextColor={placeholderColor}
+            secureTextEntry
+            accessibilityLabel="Password"
+            style={{
+              backgroundColor: inputBg,
+              borderWidth: 1,
+              borderColor: inputBorder,
+              borderRadius: 12,
+              paddingHorizontal: 16,
+              paddingVertical: 14,
+              color: inputText,
+              fontSize: 15,
+              fontFamily: "Inter_400Regular",
+              marginBottom: 8,
+            }}
+          />
+
+          <TouchableOpacity
+            onPress={() => router.push("/(auth)/forgot-password")}
+            style={{ alignSelf: "flex-end", marginBottom: 24 }}
+          >
+            <Text
+              style={{
+                color: "#E8702A",
+                fontFamily: "Inter_500Medium",
+                fontSize: 13,
+              }}
+            >
+              Forgot password?
+            </Text>
+          </TouchableOpacity>
+
+          <Button
+            variant="hero"
+            size="md"
+            onPress={handleSignIn}
+            loading={emailLoading}
+            disabled={!email.trim() || !password || busy}
+            accessibilityLabel="Sign in"
+          >
+            Sign in
+          </Button>
+
+          <View
+            style={{
+              flexDirection: "row",
+              alignItems: "center",
+              marginVertical: 24,
+            }}
+          >
+            <View style={{ flex: 1, height: 1, backgroundColor: dividerColor }} />
+            <Text
+              style={{
+                color: mutedText,
+                fontSize: 12,
+                fontFamily: "Inter_400Regular",
+                marginHorizontal: 12,
+              }}
+            >
+              or continue with
+            </Text>
+            <View style={{ flex: 1, height: 1, backgroundColor: dividerColor }} />
+          </View>
+
+          <SocialSignInButtons
+            onGoogle={() => promptGoogle()}
+            loading={socialLoading}
+          />
+
+          <TouchableOpacity
+            onPress={() => router.push("/(auth)/sign-up")}
+            style={{ alignItems: "center", marginTop: 32 }}
+            disabled={busy}
+          >
+            <Text
+              style={{
+                color: mutedText,
+                fontFamily: "Inter_400Regular",
+                fontSize: 14,
+              }}
+            >
+              No account?{" "}
+              <Text style={{ color: "#E8702A", fontFamily: "Inter_600SemiBold" }}>
+                Create one
+              </Text>
+            </Text>
+          </TouchableOpacity>
+        </View>
+      </ScrollView>
     </SafeArea>
   );
 }

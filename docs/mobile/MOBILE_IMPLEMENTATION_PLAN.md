@@ -60,6 +60,16 @@ These rules apply to every mobile step, in addition to the project-wide rules in
 - `get_current_user_bearer` dependency for Authorization: Bearer auth
 - 11 backend tests; all pass; full suite regression-free
 
+### Step M-DS1 — Mobile Design System Overhaul [DONE — 2026-06-10]
+- Pine/Saffron/Sky/Earth/Mist/Paper brand tokens + dark mode (system + user toggle)
+- ThemeProvider + useTheme() hook (NativeWind v4 setColorScheme, AsyncStorage persistence)
+- 4-slide full-bleed photo carousel onboarding (onboarding-1–4.jpg)
+- CustomTabBar with raised 56px saffron FAB Plan button; downloads tab hidden
+- Auth screens (sign-in + sign-up) redesigned to light language with TrekYatra logo
+- SafeArea, Button, Logo components all theme-aware
+- Splash: Pine #1D3A2E; userInterfaceStyle: automatic
+- tsc --noEmit: 0 errors
+
 ### Step M04 — CMS Offline Content Engine [DONE — 2026-06-10]
 - `expo-sqlite` database (`trekyatra.db`) with Drizzle ORM schema
 - Tables: `cms_pages` (slug, title, body_json, page_type, hero_image_url, synced_at, is_downloaded), `sync_meta` (last_sync_at, total_pages)

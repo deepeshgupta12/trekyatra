@@ -115,6 +115,7 @@ All V0 foundations are shipped. The stack is live locally with:
 | **Step M02 — Mobile Auth** (2026-06-08) | **done** |
 | **Step M03 — Backend Mobile Extensions** (2026-06-08) | **done** |
 | **Step M04 — CMS Offline Content Engine** (2026-06-10) | **done** |
+| **Step M-DS1 — Mobile Design System Overhaul** (2026-06-10) | **done** |
 | Step M05 — Trek Detail Screen | pending |
 
 ### Step M01 — Done (2026-06-03)
@@ -228,6 +229,25 @@ The following gaps were identified and resolved during a full cross-check of all
 - `services/api/.env.example` — added MOBILE_TOKEN_EXPIRE_DAYS=30
 - **11/11 new tests pass; 4 pre-existing failures confirmed unchanged**
 - 4 new Celery beat tasks (M14×2, M18×1, M19×1) — require celery-beat restart after each mobile step deploys
+
+### Step M-DS1 — Mobile Design System Overhaul — Done (2026-06-10)
+- `apps/mobile/constants/theme.ts` — Full rewrite: `lightColors` (Pine/Saffron/Sky/Earth/Mist/Paper), `darkColors` (existing dark + saffron accent), backward-compat `colors` alias
+- `apps/mobile/tailwind.config.js` — New tokens (pine, saffron, sky, earth, mist, paper) + `darkMode: 'class'`
+- `apps/mobile/providers/ThemeProvider.tsx` (NEW) — NativeWind v4 `useColorScheme()` hook-based theme provider; `setTheme()` + `toggleTheme()` wired to AsyncStorage
+- `apps/mobile/hooks/useTheme.ts` (NEW) — `useTheme()` hook: `isDark`, `colors`, `toggleTheme`, `setTheme`, `colorScheme`
+- `apps/mobile/components/ui/Logo.tsx` (NEW) — TrekYatra logo component using `assets/logo.png` (copied from web)
+- `apps/mobile/components/tabs/CustomTabBar.tsx` (NEW) — FAB tab bar: center Plan button as 56px saffron circle raised -20px; light/dark aware bg + border + icon colors; theme-aware shadows
+- `apps/mobile/app/(auth)/welcome.tsx` — Full rewrite: 4-slide full-bleed mountain photography carousel (onboarding-1–4.jpg); Pine/Saffron/Sky/Earth icon colors per slide; saffron CTAs; progress dots
+- `apps/mobile/app/(tabs)/_layout.tsx` — CustomTabBar wired via `tabBar` prop; downloads hidden with `href: null`; Browse→Explore, Account→You labels
+- `apps/mobile/app/(auth)/sign-in.tsx` — Light design (Paper/white bg, Pine text, Saffron CTAs); `useTheme()` aware; Logo component at top
+- `apps/mobile/app/(auth)/sign-up.tsx` — Same light design; Logo at top; `useTheme()` aware
+- `apps/mobile/components/ui/SafeArea.tsx` — Now uses `useTheme()` for `backgroundColor` (Paper in light, #0c0e14 in dark)
+- `apps/mobile/components/ui/Button.tsx` — `bg-saffron` hero variant; `useTheme()` aware text colors; saffron shadow on hero
+- `apps/mobile/app/_layout.tsx` — ThemeProvider wrapped around entire app
+- `apps/mobile/app.config.ts` — `splash.backgroundColor: "#1D3A2E"` (Pine); `userInterfaceStyle: "automatic"`
+- Assets bundled: `onboarding-1–4.jpg` (himalaya dawn, kashmir, ladakh, uttarakhand snow), `logo.png`
+- **tsc --noEmit: 0 errors**
+- No backend changes. No web-next changes.
 
 ### Step M04 — CMS Offline Content Engine — Done (2026-06-10)
 - `apps/mobile/db/schema.ts` — Drizzle schema: `cmsPages` + `syncMeta` tables

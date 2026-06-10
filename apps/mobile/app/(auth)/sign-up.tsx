@@ -1,10 +1,11 @@
 import { useState } from "react";
-import { View, Text, TextInput, TouchableOpacity, Alert } from "react-native";
+import { View, Text, TextInput, TouchableOpacity, Alert, ScrollView, StatusBar } from "react-native";
 import { router } from "expo-router";
 import { SafeArea } from "@/components/ui/SafeArea";
 import { Button } from "@/components/ui/Button";
+import { Logo } from "@/components/ui/Logo";
 import { useAuth } from "@/providers/AuthProvider";
-import { colors } from "@/constants/theme";
+import { useTheme } from "@/hooks/useTheme";
 
 export default function SignUpScreen() {
   const [fullName, setFullName] = useState("");
@@ -12,6 +13,7 @@ export default function SignUpScreen() {
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const { signUp } = useAuth();
+  const { isDark, colors } = useTheme();
 
   async function handleSignUp() {
     if (!email.trim() || !password) return;
@@ -30,66 +32,143 @@ export default function SignUpScreen() {
     }
   }
 
+  const inputBg = isDark ? colors.surface : "#FFFFFF";
+  const inputBorder = isDark ? "rgba(255,255,255,0.10)" : "rgba(29,58,46,0.15)";
+  const inputText = isDark ? "#ffffff" : colors.pine;
+  const placeholderColor = isDark ? "rgba(255,255,255,0.35)" : "rgba(29,58,46,0.35)";
+  const mutedText = isDark ? "rgba(255,255,255,0.50)" : "rgba(29,58,46,0.50)";
+
   return (
     <SafeArea>
-      <View className="flex-1 px-6 justify-center">
-        <Text className="font-display text-3xl text-white mb-2">Join TrekYatra</Text>
-        <Text className="text-white/50 text-base mb-10">Create your account</Text>
+      <StatusBar barStyle={isDark ? "light-content" : "dark-content"} />
+      <ScrollView
+        contentContainerStyle={{ flexGrow: 1 }}
+        keyboardShouldPersistTaps="handled"
+        showsVerticalScrollIndicator={false}
+      >
+        <View style={{ flex: 1, paddingHorizontal: 24, justifyContent: "center", paddingVertical: 40 }}>
+          {/* Logo */}
+          <View style={{ marginBottom: 36 }}>
+            <Logo size="md" />
+          </View>
 
-        <TextInput
-          value={fullName}
-          onChangeText={setFullName}
-          placeholder="Full name (optional)"
-          placeholderTextColor={colors.textMuted}
-          autoCapitalize="words"
-          autoComplete="name"
-          className="bg-surface border border-white/10 rounded-xl px-4 py-3.5 text-white text-base mb-3"
-          style={{ fontFamily: "Inter_400Regular" }}
-        />
-        <TextInput
-          value={email}
-          onChangeText={setEmail}
-          placeholder="Email address"
-          placeholderTextColor={colors.textMuted}
-          keyboardType="email-address"
-          autoCapitalize="none"
-          autoComplete="email"
-          className="bg-surface border border-white/10 rounded-xl px-4 py-3.5 text-white text-base mb-3"
-          style={{ fontFamily: "Inter_400Regular" }}
-        />
-        <TextInput
-          value={password}
-          onChangeText={setPassword}
-          placeholder="Password (min 8 characters)"
-          placeholderTextColor={colors.textMuted}
-          secureTextEntry
-          autoComplete="new-password"
-          className="bg-surface border border-white/10 rounded-xl px-4 py-3.5 text-white text-base mb-6"
-          style={{ fontFamily: "Inter_400Regular" }}
-        />
-
-        <Button
-          variant="hero"
-          size="md"
-          onPress={handleSignUp}
-          loading={loading}
-          disabled={!email.trim() || !password || loading}
-          accessibilityLabel="Create account"
-        >
-          Create account
-        </Button>
-
-        <TouchableOpacity
-          onPress={() => router.push("/(auth)/sign-in")}
-          className="items-center mt-8"
-          disabled={loading}
-        >
-          <Text className="text-white/50 text-sm">
-            Already have an account?{" "}
-            <Text className="text-accent font-semibold">Sign in</Text>
+          <Text
+            style={{
+              fontFamily: "PlayfairDisplay_600SemiBold",
+              fontSize: 28,
+              color: isDark ? "#ffffff" : colors.pine,
+              marginBottom: 6,
+            }}
+          >
+            Join TrekYatra
           </Text>
-        </TouchableOpacity>
-      </View>
+          <Text
+            style={{
+              fontFamily: "Inter_400Regular",
+              fontSize: 15,
+              color: mutedText,
+              marginBottom: 32,
+            }}
+          >
+            Create your account
+          </Text>
+
+          <TextInput
+            value={fullName}
+            onChangeText={setFullName}
+            placeholder="Full name (optional)"
+            placeholderTextColor={placeholderColor}
+            autoCapitalize="words"
+            autoComplete="name"
+            accessibilityLabel="Full name"
+            style={{
+              backgroundColor: inputBg,
+              borderWidth: 1,
+              borderColor: inputBorder,
+              borderRadius: 12,
+              paddingHorizontal: 16,
+              paddingVertical: 14,
+              color: inputText,
+              fontSize: 15,
+              fontFamily: "Inter_400Regular",
+              marginBottom: 12,
+            }}
+          />
+          <TextInput
+            value={email}
+            onChangeText={setEmail}
+            placeholder="Email address"
+            placeholderTextColor={placeholderColor}
+            keyboardType="email-address"
+            autoCapitalize="none"
+            autoComplete="email"
+            accessibilityLabel="Email address"
+            style={{
+              backgroundColor: inputBg,
+              borderWidth: 1,
+              borderColor: inputBorder,
+              borderRadius: 12,
+              paddingHorizontal: 16,
+              paddingVertical: 14,
+              color: inputText,
+              fontSize: 15,
+              fontFamily: "Inter_400Regular",
+              marginBottom: 12,
+            }}
+          />
+          <TextInput
+            value={password}
+            onChangeText={setPassword}
+            placeholder="Password (min 8 characters)"
+            placeholderTextColor={placeholderColor}
+            secureTextEntry
+            autoComplete="new-password"
+            accessibilityLabel="Password"
+            style={{
+              backgroundColor: inputBg,
+              borderWidth: 1,
+              borderColor: inputBorder,
+              borderRadius: 12,
+              paddingHorizontal: 16,
+              paddingVertical: 14,
+              color: inputText,
+              fontSize: 15,
+              fontFamily: "Inter_400Regular",
+              marginBottom: 28,
+            }}
+          />
+
+          <Button
+            variant="hero"
+            size="md"
+            onPress={handleSignUp}
+            loading={loading}
+            disabled={!email.trim() || !password || loading}
+            accessibilityLabel="Create account"
+          >
+            Create account
+          </Button>
+
+          <TouchableOpacity
+            onPress={() => router.push("/(auth)/sign-in")}
+            style={{ alignItems: "center", marginTop: 28 }}
+            disabled={loading}
+          >
+            <Text
+              style={{
+                color: mutedText,
+                fontFamily: "Inter_400Regular",
+                fontSize: 14,
+              }}
+            >
+              Already have an account?{" "}
+              <Text style={{ color: "#E8702A", fontFamily: "Inter_600SemiBold" }}>
+                Sign in
+              </Text>
+            </Text>
+          </TouchableOpacity>
+        </View>
+      </ScrollView>
     </SafeArea>
   );
 }

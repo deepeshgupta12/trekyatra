@@ -1488,3 +1488,25 @@ Both web-next file changes are **compile-time type annotations only**. They do n
 | `apps/mobile/app.config.ts` | Added expo-sqlite plugin | LOW — additive plugin config |
 
 **No backend changes.** All M04 work is mobile-only (apps/mobile). Zero blast radius on web-next or services/api.
+
+---
+
+### Step M-DS1 — Mobile Design System Overhaul blast radius
+| File | Purpose | Blast Radius |
+|------|---------|-------------|
+| `apps/mobile/constants/theme.ts` | Full rewrite — lightColors + darkColors + backward-compat `colors` alias | MEDIUM — `colors` alias preserves backward compat; new light/dark palettes used by ThemeProvider |
+| `apps/mobile/tailwind.config.js` | New tokens (pine, saffron, sky, earth, mist, paper) + darkMode:class | MEDIUM — NativeWind CSS class compilation for all components |
+| `apps/mobile/providers/ThemeProvider.tsx` | NEW — NativeWind v4 `setColorScheme` + AsyncStorage preference | LOW — new provider; wraps app in _layout.tsx |
+| `apps/mobile/hooks/useTheme.ts` | NEW — `isDark`, `colors`, `toggleTheme` | LOW — new hook; consumed by auth screens + UI components |
+| `apps/mobile/components/ui/Logo.tsx` | NEW — TrekYatra logo (assets/logo.png) | LOW — leaf component |
+| `apps/mobile/components/tabs/CustomTabBar.tsx` | NEW — FAB tab bar (Plan as saffron FAB) | LOW — leaf component; replaces default tab bar in _layout.tsx |
+| `apps/mobile/app/(auth)/welcome.tsx` | Full rewrite — 4-slide photo carousel | LOW — leaf screen; no upstream callers |
+| `apps/mobile/app/(tabs)/_layout.tsx` | CustomTabBar prop; href:null on downloads; label renames | LOW — only affects tab bar visual + downloads visibility |
+| `apps/mobile/app/(auth)/sign-in.tsx` | Light design + Logo + useTheme | LOW — leaf screen |
+| `apps/mobile/app/(auth)/sign-up.tsx` | Light design + Logo + useTheme | LOW — leaf screen |
+| `apps/mobile/components/ui/SafeArea.tsx` | useTheme() background color | LOW — leaf component |
+| `apps/mobile/components/ui/Button.tsx` | bg-saffron hero + useTheme text colors | LOW — leaf component |
+| `apps/mobile/app/_layout.tsx` | ThemeProvider wrapper added | LOW — additive wrapper |
+| `apps/mobile/app.config.ts` | splash.backgroundColor Pine + userInterfaceStyle: automatic | LOW — config only |
+
+**No backend changes. No web-next changes.** All M-DS1 work is mobile-only. Zero blast radius on production website.

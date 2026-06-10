@@ -7,37 +7,67 @@ import {
   NativeSyntheticEvent,
   NativeScrollEvent,
   TouchableOpacity,
+  ImageBackground,
+  StatusBar,
+  type ImageSourcePropType,
 } from "react-native";
 import { router } from "expo-router";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import { SafeArea } from "@/components/ui/SafeArea";
-import { Button } from "@/components/ui/Button";
-import { colors } from "@/constants/theme";
+import { Ionicons } from "@expo/vector-icons";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 
-const { width: SCREEN_W } = Dimensions.get("window");
+const { width: SCREEN_W, height: SCREEN_H } = Dimensions.get("window");
 const ONBOARDING_KEY = "trekyatra_onboarding_done";
+const SAFFRON = "#E8702A";
+const PINE = "#1D3A2E";
+const SKY = "#5298C9";
+const EARTH = "#6B4929";
 
-const SLIDES = [
+type IoniconName = React.ComponentProps<typeof Ionicons>["name"];
+
+interface Slide {
+  headline: string;
+  subtext: string;
+  icon: IoniconName;
+  iconColor: string;
+  photo: ImageSourcePropType;
+}
+
+const SLIDES: Slide[] = [
   {
-    headline: "250+ trek guides, offline",
-    subtext: "Download complete guides for trails with no signal.",
-    emoji: "🏔️",
+    headline: "250+ India-first trek guides",
+    subtext: "Curated by editors who've been there — from Sahyadris to Sikkim",
+    icon: "compass",
+    iconColor: SAFFRON,
+    photo: require("@/assets/onboarding-1.jpg") as ImageSourcePropType,
   },
   {
-    headline: "Plan your perfect trek",
-    subtext: "Answer 6 questions. Get matched to the right trail for you.",
-    emoji: "✨",
+    headline: "Trust-first safety intel",
+    subtext: "Permits, weather windows, AMS, and risk grades verified by certified guides",
+    icon: "shield-checkmark",
+    iconColor: PINE,
+    photo: require("@/assets/onboarding-2.jpg") as ImageSourcePropType,
   },
   {
-    headline: "Permit alerts & conditions",
-    subtext: "Get notified before permit windows close.",
-    emoji: "🔔",
+    headline: "Offline maps & GPX",
+    subtext: "Download routes, elevation profiles & camp coords. Trail-ready, no signal",
+    icon: "map",
+    iconColor: SKY,
+    photo: require("@/assets/onboarding-3.jpg") as ImageSourcePropType,
+  },
+  {
+    headline: "Plan in 60 seconds",
+    subtext: "AI matches you to the right trek by season, fitness, budget & start city",
+    icon: "sparkles",
+    iconColor: EARTH,
+    photo: require("@/assets/onboarding-4.jpg") as ImageSourcePropType,
   },
 ];
 
 export default function WelcomeScreen() {
   const [currentIndex, setCurrentIndex] = useState(0);
   const scrollRef = useRef<ScrollView>(null);
+  const insets = useSafeAreaInsets();
 
   function handleScroll(e: NativeSyntheticEvent<NativeScrollEvent>) {
     const index = Math.round(e.nativeEvent.contentOffset.x / SCREEN_W);
@@ -54,87 +84,215 @@ export default function WelcomeScreen() {
     router.replace("/(auth)/sign-in");
   }
 
+  function goToNext() {
+    const next = currentIndex + 1;
+    scrollRef.current?.scrollTo({ x: SCREEN_W * next, animated: true });
+    setCurrentIndex(next);
+  }
+
   const isLast = currentIndex === SLIDES.length - 1;
 
   return (
-    <SafeArea>
-      <View className="flex-1">
-        {/* Slides */}
-        <ScrollView
-          ref={scrollRef}
-          horizontal
-          pagingEnabled
-          showsHorizontalScrollIndicator={false}
-          onMomentumScrollEnd={handleScroll}
-          className="flex-1"
-        >
-          {SLIDES.map((slide, i) => (
-            <View
-              key={i}
-              style={{ width: SCREEN_W }}
-              className="flex-1 items-center justify-center px-8"
-            >
-              <Text className="text-7xl mb-8">{slide.emoji}</Text>
-              <Text className="font-display text-3xl text-white text-center mb-4 leading-tight">
-                {slide.headline}
-              </Text>
-              <Text className="text-white/60 text-base text-center leading-relaxed">
-                {slide.subtext}
-              </Text>
-            </View>
-          ))}
-        </ScrollView>
+    <View style={{ flex: 1, backgroundColor: PINE }}>
+      <StatusBar barStyle="light-content" translucent backgroundColor="transparent" />
 
-        {/* Dot indicators */}
-        <View className="flex-row justify-center gap-2 mb-8">
+      {/* Full-bleed photo carousel — positioned absolute to fill screen */}
+      <ScrollView
+        ref={scrollRef}
+        horizontal
+        pagingEnabled
+        showsHorizontalScrollIndicator={false}
+        onMomentumScrollEnd={handleScroll}
+        scrollEventThrottle={16}
+        style={{ position: "absolute", top: 0, left: 0, right: 0, bottom: 0 }}
+        bounces={false}
+      >
+        {SLIDES.map((slide, i) => (
+          <ImageBackground
+            key={i}
+            source={slide.photo}
+            style={{ width: SCREEN_W, height: SCREEN_H }}
+            resizeMode="cover"
+          >
+            {/* Layered dark gradient overlay from bottom for text legibility */}
+            {[0.05, 0.15, 0.3, 0.5, 0.65, 0.75, 0.85].map((opacity, idx) => (
+              <View
+                key={idx}
+                pointerEvents="none"
+                style={{
+                  position: "absolute",
+                  bottom: 0,
+                  left: 0,
+                  right: 0,
+                  height: `${(idx + 1) * (55 / 7)}%`,
+                  backgroundColor: `rgba(5,8,15,${opacity})`,
+                }}
+              />
+            ))}
+          </ImageBackground>
+        ))}
+      </ScrollView>
+
+      {/* Slide content overlay */}
+      <View
+        style={{
+          position: "absolute",
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          justifyContent: "flex-end",
+          paddingBottom: insets.bottom + 16,
+        }}
+        pointerEvents="box-none"
+      >
+        {/* Icon + text for current slide */}
+        <View style={{ paddingHorizontal: 28, marginBottom: 32 }}>
+          <View
+            style={{
+              width: 52,
+              height: 52,
+              borderRadius: 14,
+              backgroundColor: "rgba(255,255,255,0.15)",
+              alignItems: "center",
+              justifyContent: "center",
+              marginBottom: 20,
+            }}
+          >
+            <Ionicons
+              name={SLIDES[currentIndex].icon}
+              size={26}
+              color={SLIDES[currentIndex].iconColor}
+            />
+          </View>
+          <Text
+            style={{
+              fontFamily: "PlayfairDisplay_600SemiBold",
+              fontSize: 30,
+              lineHeight: 38,
+              color: "#ffffff",
+              marginBottom: 12,
+            }}
+          >
+            {SLIDES[currentIndex].headline}
+          </Text>
+          <Text
+            style={{
+              fontFamily: "Inter_400Regular",
+              fontSize: 15,
+              lineHeight: 22,
+              color: "rgba(255,255,255,0.72)",
+            }}
+          >
+            {SLIDES[currentIndex].subtext}
+          </Text>
+        </View>
+
+        {/* Progress dots */}
+        <View
+          style={{
+            flexDirection: "row",
+            paddingHorizontal: 28,
+            gap: 6,
+            marginBottom: 28,
+          }}
+        >
           {SLIDES.map((_, i) => (
             <View
               key={i}
               style={{
-                width: i === currentIndex ? 20 : 6,
+                width: i === currentIndex ? 22 : 6,
                 height: 6,
                 borderRadius: 3,
-                backgroundColor: i === currentIndex ? colors.accent : colors.textMuted,
+                backgroundColor:
+                  i === currentIndex ? SAFFRON : "rgba(255,255,255,0.35)",
               }}
             />
           ))}
         </View>
 
-        {/* CTA */}
-        <View className="px-6 pb-8 gap-3">
+        {/* CTA buttons */}
+        <View style={{ paddingHorizontal: 24, gap: 12 }}>
           {isLast ? (
             <>
-              <Button
-                variant="hero"
-                size="lg"
+              <TouchableOpacity
                 onPress={handleGetStarted}
-                accessibilityLabel="Get started"
+                accessibilityLabel="Start exploring TrekYatra"
+                accessibilityRole="button"
+                style={{
+                  backgroundColor: SAFFRON,
+                  borderRadius: 14,
+                  paddingVertical: 15,
+                  alignItems: "center",
+                  shadowColor: SAFFRON,
+                  shadowOffset: { width: 0, height: 4 },
+                  shadowOpacity: 0.45,
+                  shadowRadius: 12,
+                  elevation: 6,
+                }}
               >
-                Get Started
-              </Button>
-              <TouchableOpacity onPress={handleSignIn} className="items-center py-2">
-                <Text className="text-white/50 text-sm">
+                <Text
+                  style={{
+                    fontFamily: "Inter_600SemiBold",
+                    fontSize: 16,
+                    color: "#ffffff",
+                    letterSpacing: 0.2,
+                  }}
+                >
+                  Start exploring →
+                </Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                onPress={handleSignIn}
+                accessibilityLabel="Sign in to existing account"
+                accessibilityRole="button"
+                style={{ alignItems: "center", paddingVertical: 10 }}
+              >
+                <Text
+                  style={{
+                    fontFamily: "Inter_400Regular",
+                    fontSize: 14,
+                    color: "rgba(255,255,255,0.55)",
+                  }}
+                >
                   Already have an account?{" "}
-                  <Text className="text-accent font-semibold">Sign in</Text>
+                  <Text style={{ color: SAFFRON, fontFamily: "Inter_600SemiBold" }}>
+                    Sign in
+                  </Text>
                 </Text>
               </TouchableOpacity>
             </>
           ) : (
-            <Button
-              variant="ghost"
-              size="md"
-              onPress={() => {
-                const next = currentIndex + 1;
-                scrollRef.current?.scrollTo({ x: SCREEN_W * next, animated: true });
-                setCurrentIndex(next);
-              }}
+            <TouchableOpacity
+              onPress={goToNext}
               accessibilityLabel="Next slide"
+              accessibilityRole="button"
+              style={{
+                backgroundColor: SAFFRON,
+                borderRadius: 14,
+                paddingVertical: 15,
+                alignItems: "center",
+                shadowColor: SAFFRON,
+                shadowOffset: { width: 0, height: 4 },
+                shadowOpacity: 0.4,
+                shadowRadius: 10,
+                elevation: 6,
+              }}
             >
-              Next →
-            </Button>
+              <Text
+                style={{
+                  fontFamily: "Inter_600SemiBold",
+                  fontSize: 16,
+                  color: "#ffffff",
+                  letterSpacing: 0.2,
+                }}
+              >
+                Next →
+              </Text>
+            </TouchableOpacity>
           )}
         </View>
       </View>
-    </SafeArea>
+    </View>
   );
 }

@@ -1,13 +1,17 @@
 import type { ConfigContext, ExpoConfig } from "expo/config";
 
-export default ({ config }: ConfigContext): ExpoConfig => ({
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export default ({ config }: ConfigContext): any => ({
   ...config,
   name: "TrekYatra",
   slug: "trekyatra",
   version: "1.0.0",
   orientation: "portrait",
   icon: "./assets/icon.png",
-  userInterfaceStyle: "dark",
+  userInterfaceStyle: "automatic",
+  splash: {
+    backgroundColor: "#1D3A2E",
+  },
   ios: {
     supportsTablet: false,
     bundleIdentifier: "in.co.trekyatra.app",
