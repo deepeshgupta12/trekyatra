@@ -28,6 +28,57 @@ export interface TrekListItem {
   trek_season: string | null;
 }
 
+// Shape returned by /api/v1/cms/pages/trending and /api/v1/treks/seasonal
+interface CMSPageResponseLike {
+  slug: string;
+  title: string;
+  hero_image_url: string | null;
+  trek_state: string | null;
+  trek_difficulty: string | null;
+  trek_duration: string | null;
+  trek_season: string | null;
+}
+
+// Shape returned by /api/v1/recommendations and /api/v1/account/recommendations
+interface RecommendationItem {
+  id: string;
+  slug: string;
+  title: string;
+  page_type: string;
+  hero_image_url: string | null;
+  seo_description: string | null;
+  published_at: string | null;
+}
+
+interface RecommendationsResponse {
+  personalised: boolean;
+  items: RecommendationItem[];
+}
+
+function mapCmsPageToTrekListItem(page: CMSPageResponseLike): TrekListItem {
+  return {
+    slug: page.slug,
+    title: page.title,
+    trek_state: page.trek_state,
+    trek_difficulty: page.trek_difficulty,
+    trek_duration: page.trek_duration,
+    hero_image_url: page.hero_image_url,
+    trek_season: page.trek_season,
+  };
+}
+
+function mapRecommendationToTrekListItem(item: RecommendationItem): TrekListItem {
+  return {
+    slug: item.slug,
+    title: item.title,
+    trek_state: null,
+    trek_difficulty: null,
+    trek_duration: null,
+    hero_image_url: item.hero_image_url,
+    trek_season: null,
+  };
+}
+
 async function getAccessToken(): Promise<string | null> {
   const { access } = await loadTokens();
   return access;
@@ -93,20 +144,27 @@ export class NotFoundError extends Error {
 export const contentApi = {
   getCmsPage: (slug: string) => apiGet<CMSPage>(`/api/v1/cms/pages/${slug}`),
 
-  getTrendingTreks: () => apiGet<TrekListItem[]>("/api/v1/treks/trending"),
-
-  getSeasonalTreks: (month?: number) => {
-    const m = month ?? new Date().getMonth() + 1;
-    return apiGet<TrekListItem[]>(`/api/v1/treks/seasonal?month=${m}`);
+  getTrendingTreks: async () => {
+    const pages = await apiGet<CMSPageResponseLike[]>("/api/v1/cms/pages/trending");
+    return pages.map(mapCmsPageToTrekListItem);
   },
 
-  getAnonymousRecommendations: (regions: string[], difficulties: string[]) =>
-    apiGet<TrekListItem[]>(
-      `/api/v1/recommendations/anonymous?regions=${regions.join(",")}&difficulties=${difficulties.join(",")}`
-    ),
+  getSeasonalTreks: async (month?: number) => {
+    const m = month ?? new Date().getMonth() + 1;
+    const pages = await apiGet<CMSPageResponseLike[]>(`/api/v1/treks/seasonal?month=${m}`);
+    return pages.map(mapCmsPageToTrekListItem);
+  },
 
-  getPersonalisedRecommendations: () =>
-    apiGet<TrekListItem[]>("/api/v1/recommendations/personalised"),
+  getAnonymousRecommendations: async () => {
+    const res = await apiGet<RecommendationsResponse>("/api/v1/recommendations");
+    return res.items.map(mapRecommendationToTrekListItem);
+  },
 
-  saveTrek: (slug: string) => apiPost<{ saved: boolean }>("/api/v1/account/saved", { slug }),
+  getPersonalisedRecommendations: async () => {
+    const res = await apiGet<RecommendationsResponse>("/api/v1/account/recommendations");
+    return res.items.map(mapRecommendationToTrekListItem);
+  },
+
+  saveTrek: (slug: string) =>
+    apiPost<{ id: string }>("/api/v1/account/bookmarks/by-slug", { trek_slug: slug }),
 };

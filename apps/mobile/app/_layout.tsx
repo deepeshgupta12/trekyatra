@@ -11,6 +11,7 @@ import {
 } from "@expo-google-fonts/inter";
 import {
   PlayfairDisplay_600SemiBold,
+  PlayfairDisplay_700Bold,
 } from "@expo-google-fonts/playfair-display";
 import {
   JetBrainsMono_400Regular,
@@ -77,7 +78,7 @@ function AuthGate({ children }: { children: ReactNode }) {
     if (!isAuthenticated && !inAuthGroup) {
       router.replace("/(auth)/sign-in");
     } else if (isAuthenticated && inAuthGroup) {
-      router.replace("/(tabs)");
+      router.replace("/(tabs)/(home)");
     }
   }, [isLoading, isAuthenticated, segments, onboardingChecked, onboardingDone]);
 
@@ -90,6 +91,7 @@ export default Sentry.wrap(function RootLayout() {
     Inter_500Medium,
     Inter_600SemiBold,
     PlayfairDisplay_600SemiBold,
+    PlayfairDisplay_700Bold,
     JetBrainsMono_400Regular,
   });
 

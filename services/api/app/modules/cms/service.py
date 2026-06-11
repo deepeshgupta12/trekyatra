@@ -92,6 +92,53 @@ def list_pages(
     return list(db.scalars(q).all())
 
 
+_MONTH_ABBR = {
+    "jan": 1, "feb": 2, "mar": 3, "apr": 4, "may": 5, "jun": 6,
+    "jul": 7, "aug": 8, "sep": 9, "oct": 10, "nov": 11, "dec": 12,
+}
+
+
+def _parse_season_range(season: str) -> tuple[int, int] | None:
+    """Parse a free-text season string like 'Sep - Oct' or 'Dec-Apr' into a (start_month, end_month) tuple."""
+    parts = re.split(r"[-–—]", season)
+    if len(parts) != 2:
+        return None
+    months: list[int] = []
+    for part in parts:
+        key = part.strip()[:3].lower()
+        if key not in _MONTH_ABBR:
+            return None
+        months.append(_MONTH_ABBR[key])
+    return months[0], months[1]
+
+
+def _month_in_season(month: int, season_range: tuple[int, int]) -> bool:
+    start, end = season_range
+    if start <= end:
+        return start <= month <= end
+    # Wrap-around season (e.g. Dec-Apr spans the year boundary)
+    return month >= start or month <= end
+
+
+def get_seasonal_pages(db: Session, *, month: int, limit: int = 6) -> list[CMSPage]:
+    """Return published trek_guide pages whose trek_season covers the given month (1-12)."""
+    pages = list(
+        db.scalars(
+            select(CMSPage).where(
+                CMSPage.page_type == "trek_guide",
+                CMSPage.status == "published",
+                CMSPage.trek_season.isnot(None),
+            )
+        ).all()
+    )
+    matches = []
+    for page in pages:
+        season_range = _parse_season_range(page.trek_season or "")
+        if season_range and _month_in_season(month, season_range):
+            matches.append(page)
+    return matches[:limit]
+
+
 def update_page(db: Session, *, page: CMSPage, patch: CMSPagePatch) -> CMSPage:
     updates = patch.model_dump(exclude_unset=True)
     if "content_json" in updates:

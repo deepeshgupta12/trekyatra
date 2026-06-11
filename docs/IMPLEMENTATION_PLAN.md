@@ -657,3 +657,18 @@ Implemented (2026-06-03):
 Files to modify: `globals.css`, `layout.tsx`, `tailwind.config.ts`, `next.config.mjs`, `app/(public)/page.tsx`, `app/(public)/trek/[slug]/page.tsx`
 
 Expected after: Mobile 82–88, Desktop 88–92; LCP < 2.5 s; FCP < 1.8 s mobile
+
+---
+
+### Mobile Crosscheck Bugfix Pass (Steps M-DS1–M06) [DONE — 2026-06-11]
+
+Spec: ad-hoc bugfix pass requested after manual QA of M-DS1–M06 surfaced 4 issues (splash/animations, broken login/onboarding UI, broken home + bottom nav, "(home)" trek-state pill linking to a "coming in M03" placeholder).
+
+- `services/api/app/api/routes/treks.py` + `services/api/app/modules/cms/service.py` — NEW `GET /api/v1/treks/seasonal?month=&limit=` endpoint (mirrors web seasonal-trek logic); 7 new tests in `services/api/tests/test_treks_seasonal.py`, all pass; full suite 637 passed / 1 skipped (2 pre-existing unrelated failures in `test_refresh.py`, confirmed via stash)
+- `apps/mobile/lib/mobileApi.ts` — rewired `contentApi` to real backend endpoints + added response-shape mappers (`mapCmsPageToTrekListItem`, `mapRecommendationToTrekListItem`): trending → `/cms/pages/trending`, seasonal → `/treks/seasonal`, anonymous recs → `/recommendations`, personalised recs → `/account/recommendations`, save → `/account/bookmarks/by-slug`
+- `apps/mobile/hooks/useHomeData.ts` — `getAnonymousRecommendations()` no longer passed unsupported params
+- `apps/mobile/components/tabs/CustomTabBar.tsx` — fixed `getIconName`/`getLabelText` switch cases from `"index"` → `"(home)"` (Home tab icon/label were broken since M05's route-group rename); added `options.href === null` filter so the `downloads` tab (hidden via `_layout.tsx`) no longer renders as a 6th broken tab
+- `apps/mobile/app/(tabs)/browse.tsx` — placeholder text corrected "coming in M03" → "coming in M07" (M03 was already implemented)
+- `apps/mobile/app/_layout.tsx` — added missing `PlayfairDisplay_700Bold`/`PlayfairDisplay_600SemiBold` to `useFonts()` (was silently falling back to system font on Home header + section headings); fixed post-login redirect `router.replace("/(tabs)")` → `router.replace("/(tabs)/(home)")` (invalid route since M05's `(home)` rename — root cause of "login does nothing" bug)
+- `.claude/skills/mobile-design-system/SKILL.md` (NEW) — design-system skill doc covering theme tokens, font-loading checklist, tab-bar route-name conventions, API contract discipline; referenced from root `CLAUDE.md` Pre-Step Checklist (item 9) and CLI table
+- **tsc --noEmit: 0 errors** | Backend: 637 passed, 1 skipped (2 pre-existing unrelated failures) | No web-next changes — zero blast radius on production website

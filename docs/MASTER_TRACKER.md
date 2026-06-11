@@ -118,6 +118,7 @@ All V0 foundations are shipped. The stack is live locally with:
 | **Step M-DS1 — Mobile Design System Overhaul** (2026-06-10) | **done** |
 | **Step M05 — Trek Detail Screen** (2026-06-10) | **done** |
 | **Step M06 — Home Screen + 4-State Personalisation** (2026-06-10) | **done** |
+| **Mobile Crosscheck Bugfix Pass (M-DS1–M06)** (2026-06-11) | **done** |
 | Step M07 — Explore & Search | pending |
 
 ### Step M01 — Done (2026-06-03)
@@ -281,6 +282,22 @@ The following gaps were identified and resolved during a full cross-check of all
 - `apps/mobile/hooks/useHomeData.ts` (NEW) — Parallel `useQueries`: trending (10min stale), seasonal (1hr stale), recs (5min stale)
 - Old `apps/mobile/app/(tabs)/index.tsx` placeholder removed (replaced by `(home)/index.tsx`)
 - **tsc --noEmit: 0 errors** | No backend changes | No web-next changes
+
+### Mobile Crosscheck Bugfix Pass (M-DS1–M06) — Done (2026-06-11)
+User QA reported 4 bugs after M05+M06: (1) splash/animations not working, (2) login appearing to do nothing (no success message, broken UI on splash/onboarding/login), (3) home screen + bottom nav broken, (4) tapping a trek-state pill showed "coming in M03" placeholder despite M03 being implemented.
+
+- **Backend**: NEW `GET /api/v1/treks/seasonal?month=&limit=` endpoint (`api/routes/treks.py` + `modules/cms/service.py::get_seasonal_pages`) — mirrors web seasonal-trek season-range matching logic; 7 new tests in `tests/test_treks_seasonal.py`, all pass; full suite 637 passed/1 skipped (2 pre-existing `test_refresh.py` failures confirmed unrelated via stash)
+- **Root cause of bug #2 (login)**: `apps/mobile/app/_layout.tsx` `AuthGate` redirected to `router.replace("/(tabs)")` after login — an invalid route since M05 renamed `(tabs)/index.tsx` → `(tabs)/(home)/index.tsx`. Fixed to `router.replace("/(tabs)/(home)")`. Caught via `tsc --noEmit` (TS2345).
+- **Bug #1 (splash/fonts)**: `apps/mobile/app/_layout.tsx` was missing `PlayfairDisplay_700Bold`/`PlayfairDisplay_600SemiBold` in `useFonts()` despite being referenced via `fontFamily` in Home header/section headings — RN silently falls back to system font with no error. Both weights added.
+- **Bug #3 (home + bottom nav)**:
+  - `apps/mobile/components/tabs/CustomTabBar.tsx` `getIconName`/`getLabelText` still switched on `"index"` (pre-M05 route name) instead of `"(home)"` — Home tab showed default `ellipse-outline` icon + raw "(home)" label. Fixed.
+  - Same file: `state.routes.map(...)` rendered ALL tab routes including `downloads` (which has `options.href: null` in `(tabs)/_layout.tsx` to hide it) — appeared as a stray 6th tab with broken icon/label. Added `if (options.href === null) return null;` filter.
+  - `apps/mobile/lib/mobileApi.ts` — `contentApi` was calling endpoints/params that don't exist on the backend (silently returning empty data, making Home sections look "broken"/empty). Rewired: trending → `GET /cms/pages/trending`, seasonal → `GET /treks/seasonal?month=`, anonymous recs → `GET /recommendations`, personalised recs → `GET /account/recommendations`, save → `POST /account/bookmarks/by-slug`; added `mapCmsPageToTrekListItem`/`mapRecommendationToTrekListItem` to convert backend response shapes to mobile `TrekListItem`.
+  - `apps/mobile/hooks/useHomeData.ts` — `getAnonymousRecommendations()` no longer passed unsupported `topRegions`/`topDifficulties` args.
+- **Bug #4**: `apps/mobile/app/(tabs)/browse.tsx` placeholder text "Trek explorer — coming in M03" → "coming in M07" (M03 backend extensions were already implemented; M07 Explore & Search is the actual pending screen).
+- **Process**: created `.claude/skills/mobile-design-system/SKILL.md` per user request — covers theme tokens, MANDATORY font-loading check, tab-bar route-name conventions ((home) not index), and API contract discipline (backend route + response-shape mapping). Referenced from root `CLAUDE.md` CLI table + added as Pre-Step Checklist item 9 for all `apps/mobile/` work going forward.
+- **Verification**: `tsc --noEmit` → 0 errors. Backend full suite 637 passed/1 skipped (2 pre-existing unrelated failures). Simulator screenshot confirmed Home header font, "Trending this month" populated with real data, "Explore by Region" chips, and corrected Home tab icon/label render correctly via Fast Refresh.
+- **No web-next changes** — zero blast radius on production website (desktop + mobile web).
 
 ### Step M04 — CMS Offline Content Engine — Done (2026-06-10)
 - `apps/mobile/db/schema.ts` — Drizzle schema: `cmsPages` + `syncMeta` tables

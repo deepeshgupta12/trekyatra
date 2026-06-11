@@ -215,26 +215,114 @@ Expo Router handles these via `scheme: "trekyatra"` in `app.config.ts`.
 - PersonalisedFeedSection calls `/recommendations/personalised` for State B, `/recommendations/anonymous` for A/D
 - `tsc --noEmit`: 0 errors
 
+### Bugfix Pass (2026-06-11) — Mobile Crosscheck (M-DS1–M06)
+QA found Home + bottom nav broken and trending/seasonal/recs sections empty. Root cause: `apps/mobile/lib/mobileApi.ts`'s `contentApi` was calling endpoints/params that don't exist on the backend, so `useHomeData` queries silently returned empty arrays. Fixed (see `docs/MASTER_TRACKER.md` for full details):
+- `getTrendingTreks()` → `GET /api/v1/cms/pages/trending`
+- `getSeasonalTreks(month?)` → **NEW** `GET /api/v1/treks/seasonal?month=` (backend endpoint added in this pass — `api/routes/treks.py` + `modules/cms/service.py::get_seasonal_pages`, 7 tests in `tests/test_treks_seasonal.py`)
+- `getAnonymousRecommendations()` → `GET /api/v1/recommendations` (no params; `useHomeData.ts` updated to stop passing `topRegions`/`topDifficulties` as args)
+- `getPersonalisedRecommendations()` → `GET /api/v1/account/recommendations`
+- `saveTrek(slug)` → `POST /api/v1/account/bookmarks/by-slug`
+- Added `mapCmsPageToTrekListItem`/`mapRecommendationToTrekListItem` to convert `CMSPageResponse`/`RecommendationItem` shapes to mobile `TrekListItem`
+- Bottom nav: `CustomTabBar` `getIconName`/`getLabelText` `"index"` → `"(home)"`, plus `options.href === null` filter to hide the `downloads` tab (was rendering as a stray 6th tab)
+- Verified via `tsc --noEmit` (0 errors) + simulator screenshot showing populated "Trending this month" and corrected Home tab
+
 ---
 
 ## Verification
 
-### Manual smoke tests (one per state)
+## Frontend Test Cases (Pending Manual Verification)
 
-**State A** (sign up fresh account, no viewed treks):
-1. **TC-M06-01**: Sign up → home screen → welcome banner visible + "Popular treks" heading in feed
+Run: `cd apps/mobile && npx expo start` (open in iOS Simulator or Expo Go)
 
-**State B** (signed-in, browse 3+ treks):
-2. **TC-M06-02**: Browse Kedarkantha + Hampta + Valley from trek detail → return to home → recently viewed chips in banner; personalised feed heading shows "For {name}"
+### TC-M06-F01: State A — New logged-in user (no behavior)
+**Setup:** Create a fresh account (or clear AsyncStorage `ty_behavior_v1`). Sign in.
+**Steps:**
+1. Sign up with a new email
+2. Complete onboarding → land on Home tab
+**Expected:** "👋 Welcome, {firstName}" banner at top with Pine/mist background; "Browse popular treks →" CTA link; "Trending this month" horizontal trek row; Regions row; Seasonal picks row; Feed section heading "Popular treks" / "Most loved by our community". No "Recently Viewed" row.
+**Pass =** Banner visible with correct first name; feed heading is "Popular treks" not "For {name}"
 
-**State C** (fresh install, not signed in):
-3. **TC-M06-03**: Fresh install, not signed in, no browsed treks → no welcome banner, no feed section → only trending + regions + seasonal
+---
 
-**State D** (not signed in, browsed treks):
-4. **TC-M06-04**: Browse 3 treks (not signed in) → return to home → "Recently viewed" row shows correct treks; feed section shows "Continue exploring"
+### TC-M06-F02: State B — Repeat logged-in user (has behavior)
+**Setup:** Sign in with an existing account. Open 3+ trek detail screens (each records a view).
+**Steps:**
+1. Open Kedarkantha trek detail → go back
+2. Open Hampta Pass trek detail → go back
+3. Open Valley of Flowers trek detail → go back
+4. Tap the Home tab
+**Expected:** "👋 Welcome back, {name}" banner; view count shown (e.g. "You've browsed 3 treks"); up to 3 recently-viewed chips (Kedarkantha / Hampta / Valley) tappable; feed section heading shows "For {firstName}" / "Based on your browsing history".
+**Pass =** Banner shows view count; chips present; feed heading is personalised
 
-**General:**
-5. **TC-M06-05**: Pull-to-refresh → data reloads + sync triggers
-6. **TC-M06-06**: Skeleton loads shown on first open before data arrives
-7. **TC-M06-07**: Tap trending trek card → navigates to trek detail screen
-8. **TC-M06-08**: Tap region chip (e.g., "Himachal Pradesh") → navigates to region screen
+---
+
+### TC-M06-F03: State C — Fresh logged-out (no behavior)
+**Setup:** Clear app data OR manually delete `ty_behavior_v1` from AsyncStorage. Do NOT sign in.
+**Steps:**
+1. Launch fresh (no account, no viewed treks)
+2. Land on Home tab
+**Expected:** NO welcome banner. NO personalised feed section. Only: Trending treks row + Regions row + Seasonal picks row. Heading is "Trending this month".
+**Pass =** 3 sections visible; no banner; no feed grid
+
+---
+
+### TC-M06-F04: State D — Repeat logged-out (has behavior)
+**Setup:** Do NOT sign in. Open 3 trek detail screens to build behavior data.
+**Steps:**
+1. Open 3 trek pages while logged out
+2. Return to Home tab
+**Expected:** "Recently Viewed" compact card row appears; feed section shows "Continue exploring" / "Treks based on your browsing history"; feed calls anonymous recommendations API with your top regions.
+**Pass =** Recently viewed row shows correct slugs; feed heading is "Continue exploring"
+
+---
+
+### TC-M06-F05: Pull-to-refresh
+**Steps:**
+1. On Home tab, pull down (scroll down past top)
+2. Wait for spinner
+**Expected:** Saffron spinner appears; data refreshes; trending/seasonal/recs all reload.
+**Pass =** Spinner visible in saffron colour; content updates after release
+
+---
+
+### TC-M06-F06: Skeleton loading state
+**Steps:**
+1. Enable slow network (Network Link Conditioner or airplane mode briefly) OR cold launch
+2. Watch Home tab during load
+**Expected:** Pulse-animated grey skeleton blocks visible for banner, trending row, and feed grid before real data arrives. Skeleton replaces once data loads.
+**Pass =** Skeleton pulse visible; no blank white screen; replaced by real content
+
+---
+
+### TC-M06-F07: Trek card navigation from home
+**Steps:**
+1. On Home tab, tap any trek card in the Trending row
+**Expected:** Trek detail screen opens with back arrow ("‹") in header. Tapping back returns to Home tab.
+**Pass =** Navigation works; back button returns to home without resetting scroll
+
+---
+
+### TC-M06-F08: Region chip navigation
+**Steps:**
+1. On Home tab, scroll to "Explore by Region" row
+2. Tap "Himachal Pradesh"
+**Expected:** Navigates to Browse (Explore) tab. Region filter should be pre-applied or browse screen opens.
+**Pass =** Navigation to browse tab triggered; no crash
+
+---
+
+### TC-M06-F09: Home screen light/dark mode
+**Steps:**
+1. Set device to Light mode → open Home tab
+2. Switch device to Dark mode → return to Home tab
+**Expected:** Light mode: Paper (#FAF5EE) background, Pine text, white card surfaces. Dark mode: near-black background (#0c0e14), white text, dark card surfaces. All sections adapt.
+**Pass =** No hardcoded colours bleeding through; welcome banner, cards, and skeleton all adapt to mode
+
+---
+
+### TC-M06-F10: Home screen — empty trending (API down)
+**Steps:**
+1. Set device to airplane mode + clear SQLite cache (uninstall/reinstall)
+2. Open Home tab
+**Expected:** Skeleton fades in; after timeout, sections show empty states gracefully (no crash, no error screen). Pull-to-refresh available.
+**Pass =** App does not crash; no unhandled red-screen error

@@ -25,7 +25,7 @@ export function useHomeData({ topRegions, topDifficulties, isLoggedIn }: HomeDat
         queryFn: () =>
           isLoggedIn
             ? contentApi.getPersonalisedRecommendations()
-            : contentApi.getAnonymousRecommendations(topRegions, topDifficulties),
+            : contentApi.getAnonymousRecommendations(),
         staleTime: 5 * 60 * 1000,
         enabled: true,
       },

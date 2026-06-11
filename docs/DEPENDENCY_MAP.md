@@ -1549,3 +1549,21 @@ Both web-next file changes are **compile-time type annotations only**. They do n
 | `apps/mobile/components/home/HomeSkeleton.tsx` | NEW — Pulse skeleton loader | LOW — leaf component |
 
 **No backend changes. No web-next changes.** All M06 work is mobile-only. Zero blast radius on production website.
+
+---
+
+### Mobile Crosscheck Bugfix Pass (M-DS1–M06) blast radius — Done (2026-06-11)
+| File | Purpose | Blast Radius |
+|------|---------|-------------|
+| `services/api/app/api/routes/treks.py` | NEW `GET /api/v1/treks/seasonal` route, registered before `/{slug}` | LOW — additive route; `gitnexus_detect_changes` confirmed no impact on `/treks/{slug}` or `/treks/filter-facets` |
+| `services/api/app/modules/cms/service.py` | NEW `get_seasonal_pages()` + `_parse_season_range()`/`_month_in_season()` helpers | LOW — additive functions; no existing callers modified |
+| `services/api/tests/test_treks_seasonal.py` | NEW — 7 tests for `/treks/seasonal` | LOW — new test file |
+| `apps/mobile/lib/mobileApi.ts` | Rewired `contentApi` (trending/seasonal/recommendations/save) to real backend endpoints + response mappers | MEDIUM — consumed by `useHomeData`, `useTrekDetail`, `TrekStickyBar`; all call sites already expected `TrekListItem[]`/save semantics, so shape is unchanged at the call site |
+| `apps/mobile/hooks/useHomeData.ts` | `getAnonymousRecommendations()` call no longer passes `topRegions`/`topDifficulties` (backend doesn't accept them; kept in queryKey only) | LOW — query result shape unchanged |
+| `apps/mobile/components/tabs/CustomTabBar.tsx` | `getIconName`/`getLabelText` `"index"` → `"(home)"`; added `options.href === null` filter to hide `downloads` tab | LOW — restores intended M-DS1/M05 tab-bar behaviour; impact analysis (`gitnexus_impact`, downstream) shows only internal helper calls (`useTheme`, `getIconName`, `getLabelText`) |
+| `apps/mobile/app/(tabs)/browse.tsx` | Placeholder text "coming in M03" → "coming in M07" | LOW — copy-only change |
+| `apps/mobile/app/_layout.tsx` | Added `PlayfairDisplay_700Bold`/`_600SemiBold` to `useFonts()`; fixed post-login redirect `"/(tabs)"` → `"/(tabs)/(home)"` | MEDIUM — root layout; redirect fix restores navigation after login (was a dead route since M05's `(home)` rename) |
+| `.claude/skills/mobile-design-system/SKILL.md` | NEW — mobile design-system skill doc | LOW — documentation only |
+| Root `CLAUDE.md` | Added skill to CLI table + Pre-Step Checklist item 9 | LOW — process documentation only |
+
+**No web-next changes.** Zero blast radius on production website (desktop + mobile web unaffected).

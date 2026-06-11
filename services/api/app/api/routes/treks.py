@@ -7,6 +7,7 @@ from sqlalchemy.orm import Session
 
 from app.db.session import get_db
 from app.modules.treks.service import get_trek_by_slug, list_treks
+from app.schemas.cms import CMSPageResponse
 from app.schemas.treks import TrekDetailResponse, TrekListResponse, TrekSummary
 
 router = APIRouter(prefix="/treks", tags=["treks"])
@@ -74,6 +75,25 @@ def get_filter_facets(db: Session = Depends(get_db)) -> FilterFacets:
         suitabilities = distinct(3),
         durations     = _bucket_durations(raw_durations),
     )
+
+
+@router.get("/seasonal", response_model=list[CMSPageResponse])
+def get_seasonal_treks(
+    month: int | None = Query(default=None, ge=1, le=12),
+    limit: int = Query(default=6, ge=1, le=20),
+    db: Session = Depends(get_db),
+) -> list[CMSPageResponse]:
+    """Return published trek_guide pages whose trek_season covers the given month.
+
+    Defaults to the current month if not provided.
+    """
+    from datetime import datetime
+
+    from app.modules.cms import service as cms_service
+
+    target_month = month or datetime.now().month
+    pages = cms_service.get_seasonal_pages(db, month=target_month, limit=limit)
+    return [CMSPageResponse.model_validate(p) for p in pages]
 
 
 @router.get("", response_model=TrekListResponse)

@@ -444,6 +444,7 @@ cd apps/web-next && npm run build
 | Trek alert digest | Celery: `account.send_trek_alerts` (daily beat, 08:00 IST) | Scheduled — no HTTP route |
 | Operators (public) | `/api/v1/operators/*`, `/api/v1/inquiries` | Public + optional user auth (reviews require user auth) |
 | Trip planning | `/api/v1/plan/generate`, `/api/v1/plan/{id}`, `/api/v1/plan/{id}/email` | Public + optional user auth |
+| Seasonal treks (mobile Home) | `GET /api/v1/treks/seasonal?month=&limit=` | Public |
 | Subscriptions | `/api/v1/subscriptions/create-checkout`, `/status`, `/cancel`, `/webhook` | User auth (webhook: no auth) |
 | Translation | `/api/v1/admin/cms/{slug}/translate` | Admin auth required |
 | Hindi sitemap data | `GET /api/v1/public/sitemap-pages/hindi` | Public |
@@ -514,10 +515,14 @@ Full API docs available at http://localhost:8000/docs when the backend is runnin
 | `packages/types/` — shared Trek, CMSPage, User TypeScript types | Done (M01) |
 | expo-secure-store token persistence | Done (M01) |
 | Sentry v8 error tracking init | Done (M01) |
-| Mobile Auth — sign-in/up screens, Google, Apple, biometric | Pending (M02) |
-| Trek list + detail screens | Pending (M03–M05) |
-| Offline sync (expo-sqlite) | Pending (M04) |
-| Trek planning wizard | Pending (M08) |
+| Mobile Auth — sign-in/up screens, JWT (Google OAuth docs ready) | Done (M02) |
+| Backend mobile extensions (bearer auth, mobile-shaped endpoints) | Done (M03) |
+| Offline sync (expo-sqlite, CMS content cache) | Done (M04) |
+| Mobile design system overhaul (Pine/Saffron palette, theming, FAB tab bar) | Done (M-DS1) |
+| Trek detail screen (hero, meta, tabs, related, sticky CTA) | Done (M05) |
+| Home screen — 4-state personalisation, trending/seasonal/recommendations | Done (M06) |
+| Explore & Search | Pending (M07) |
+| Trek planning wizard | Pending (M09) |
 | Push notifications | Pending (M14) |
 
 ---
@@ -538,6 +543,10 @@ Full API docs available at http://localhost:8000/docs when the backend is runnin
 | **Step 66 — Homepage Section Logic by User State** | 4-state personalisation (New/Repeat × LoggedIn/LoggedOut): welcome banner, personalized trending header, recently-viewed section, 4-state PersonalisedFeed, preferred-difficulty pre-select | Done — 2026-05-29 |
 | **Step 71 — Core Web Vitals Optimisation** | next/font self-hosted fonts (−3–5 s FCP), Next.js image optimisation + AVIF/WebP (−6 s LCP), hero `<Image priority>`, favicon 301KB→3KB, preconnect hints, dynamic imports, .browserslistrc modern targets (−11KB polyfills), GA4 lazyOnload, 8 static images converted to WebP, accessibility aria-labels | Done — 2026-06-03 |
 | **Step M01 — Expo Mobile Bootstrap** | `apps/mobile/` workspace (Expo SDK 56, RN 0.85.3, React 19); Expo Router v56 5-tab nav; NativeWind v4 design system; Button/Badge/Card/Typography/SkeletonLoader; TanStack Query v5 + Zustand v5 auth store; `packages/types/` shared types; tsc 0 errors + expo export ✓ | Done — 2026-06-03 |
+| **Step M-DS1 — Mobile Design System Overhaul** | Pine/Saffron/Sky/Earth/Mist/Paper palette, ThemeProvider + useTheme, FAB-style CustomTabBar, photo-carousel onboarding | Done — 2026-06-10 |
+| **Step M05 — Trek Detail Screen** | Hero/meta/tab bar/related/sticky CTA, offline-first via SQLite, behavior tracking | Done — 2026-06-10 |
+| **Step M06 — Home Screen + 4-State Personalisation** | 4-state Home (A/B/C/D), trending/seasonal/recommendations rows, skeleton loader | Done — 2026-06-10 |
+| **Mobile Crosscheck Bugfix Pass (M-DS1–M06)** | Fixed splash/font loading, login redirect (`/(tabs)` → `/(tabs)/(home)`), broken Home/bottom-nav (route-name + downloads-tab + API contract fixes), browse.tsx M03→M07 copy; new `GET /api/v1/treks/seasonal` endpoint + 7 tests; new mobile-design-system skill doc | Done — 2026-06-11 |
 
 ## Production Infrastructure
 

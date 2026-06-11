@@ -14,6 +14,7 @@ interface TabDescriptorOptions {
   tabBarLabel?: any;
   title?: string;
   tabBarAccessibilityLabel?: string;
+  href?: string | null;
 }
 
 interface TabBarProps {
@@ -59,6 +60,7 @@ export function CustomTabBar({ state, descriptors, navigation }: TabBarProps) {
     >
       {state.routes.map((route, index) => {
         const { options } = descriptors[route.key];
+        if (options.href === null) return null;
         const isFocused = state.index === index;
         const isCenter = route.name === "plan";
 
@@ -153,7 +155,7 @@ function getIconName(
   focused: boolean
 ): React.ComponentProps<typeof Ionicons>["name"] {
   switch (routeName) {
-    case "index":
+    case "(home)":
       return focused ? "home" : "home-outline";
     case "browse":
       return focused ? "compass" : "compass-outline";
@@ -168,7 +170,7 @@ function getIconName(
 
 function getLabelText(routeName: string): string {
   switch (routeName) {
-    case "index":
+    case "(home)":
       return "Home";
     case "browse":
       return "Explore";

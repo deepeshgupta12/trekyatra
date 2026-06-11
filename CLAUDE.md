@@ -1,7 +1,7 @@
 <!-- gitnexus:start -->
 # GitNexus — Code Intelligence
 
-This project is indexed by GitNexus as **trekyatra** (466841 symbols, 761633 relationships, 300 execution flows). Use the GitNexus MCP tools to understand code, assess impact, and navigate safely.
+This project is indexed by GitNexus as **trekyatra** (457953 symbols, 744667 relationships, 300 execution flows). Use the GitNexus MCP tools to understand code, assess impact, and navigate safely.
 
 > If any GitNexus tool warns the index is stale, run `npx gitnexus analyze` in terminal first.
 
@@ -39,6 +39,7 @@ This project is indexed by GitNexus as **trekyatra** (466841 symbols, 761633 rel
 | Rename / extract / split / refactor | `.claude/skills/gitnexus/gitnexus-refactoring/SKILL.md` |
 | Tools, resources, schema reference | `.claude/skills/gitnexus/gitnexus-guide/SKILL.md` |
 | Index, status, clean, wiki CLI commands | `.claude/skills/gitnexus/gitnexus-cli/SKILL.md` |
+| Mobile UI/screen work (apps/mobile) — theme, fonts, tab bar, API contracts | `.claude/skills/mobile-design-system/SKILL.md` |
 
 <!-- gitnexus:end -->
 
@@ -62,6 +63,7 @@ Run all of these before touching a single file:
 6. Run `gitnexus_query` and `gitnexus_impact` on every symbol you plan to modify — report blast radius before coding
 7. Confirm all required local services are running (Postgres, Redis, WordPress as needed)
 8. Confirm the previous step's tests still pass (`make test`) before starting new work
+9. For any `apps/mobile/` step or screen change, also read `.claude/skills/mobile-design-system/SKILL.md` — confirms theme tokens, font loading, tab-bar route-name conventions, and API contract checks
 
 Do not begin implementation until all 8 checks are complete.
 

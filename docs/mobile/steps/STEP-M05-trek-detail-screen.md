@@ -300,16 +300,109 @@ Banner displayed below meta strip. Tapping it triggers a manual sync.
 - Sub-page tabs use `slug-packing`, `slug-permits`, `slug-costs` convention matching web CMS
 - `tsc --noEmit`: 0 errors
 
+### Bugfix Pass (2026-06-11) — Mobile Crosscheck (M-DS1–M06)
+The `"index"` → `"(home)"` route rename above had two downstream consequences not caught at the time, both fixed in this pass (see `docs/MASTER_TRACKER.md` "Mobile Crosscheck Bugfix Pass" for full details):
+- `apps/mobile/app/_layout.tsx` `AuthGate` still redirected to the now-invalid `"/(tabs)"` route after login — fixed to `"/(tabs)/(home)"` (caught via `tsc --noEmit` TS2345; this was the root cause of "login does nothing").
+- `apps/mobile/components/tabs/CustomTabBar.tsx` `getIconName`/`getLabelText` still switched on the old `"index"` route name — Home tab showed default icon + raw "(home)" label. Fixed to `"(home)"`.
+
 ---
 
-### Manual smoke tests
-1. **TC-M05-01**: Open Kedarkantha trek detail → hero image, meta strip, CMS body all render
-2. **TC-M05-02**: Tap "Packing" tab → packing guide content loads
-3. **TC-M05-03**: Tap "Permits" tab → permit guide content loads
-4. **TC-M05-04**: Tap "Costs" tab → cost guide content loads
-5. **TC-M05-05**: Tap share button → native share sheet appears with web URL
-6. **TC-M05-06**: Tap "Save" → bookmark created → button fills (auth required)
-7. **TC-M05-07**: Enable airplane mode, open previously-synced trek → content renders from SQLite + offline badge shows
-8. **TC-M05-08**: Trek with no packing guide → Packing tab shows "No guide available" empty state
-9. **TC-M05-09**: Table of contents entries → tapping scrolls to correct section
-10. **TC-M05-10**: Behavior profile in AsyncStorage updated after viewing trek
+## Frontend Test Cases (Pending Manual Verification)
+
+Run: `cd apps/mobile && npx expo start` (open in iOS Simulator or Expo Go)
+
+### TC-M05-F01: Trek detail — hero image + meta strip
+**Setup:** Be signed in. Tap any TrekCard on the home or browse screen.
+**Steps:**
+1. Tap a trek card (e.g. Kedarkantha)
+2. Wait for screen to load
+**Expected:** Full-bleed hero image loads (blur placeholder → full image within 300ms); LinearGradient title overlay shows trek name + state at bottom of hero; meta chip row below hero shows duration, altitude, difficulty, season chips with colour coding (green for Easy, amber for Moderate, red for Difficult).
+**Pass =** All 4 data chips visible; hero fills full width; no layout shift after image loads
+
+---
+
+### TC-M05-F02: Trek detail — Guide tab CMS content
+**Steps:**
+1. Open any trek detail
+2. Verify default tab is "Guide"
+**Expected:** CMS body renders below tab bar — paragraphs, headings, callout blocks, lists, images visible depending on content. Active tab has saffron underline indicator.
+**Pass =** Body renders; "Guide" tab is active (saffron underline); no blank screen
+
+---
+
+### TC-M05-F03: Trek detail — tab switching (Packing / Permits / Costs)
+**Steps:**
+1. Open Kedarkantha trek detail
+2. Tap "Packing" tab → wait 1s
+3. Tap "Permits" tab → wait 1s
+4. Tap "Costs" tab → wait 1s
+**Expected:** Each tab loads its sub-page content (`kedarkantha-packing`, `kedarkantha-permits`, `kedarkantha-costs` slugs). If CMS page doesn't exist, shows "📋 No packing guide available yet" empty state with grey subtitle.
+**Pass =** No crash on any tab; either content or graceful empty state on each
+
+---
+
+### TC-M05-F04: Trek detail — sticky CTA bar (Plan + Save)
+**Steps:**
+1. Open any trek detail
+2. Scroll down
+3. Tap "✦ Plan with this trek"
+4. Go back → tap heart icon (while signed in)
+**Expected:** CTA bar stays pinned at bottom; "Plan" navigates to Plan tab; heart fills to orange (♥) after tap; no sign-in redirect when already authenticated.
+**Pass =** CTA visible at all scroll positions; navigation works; heart state changes
+
+---
+
+### TC-M05-F05: Trek detail — save while unauthenticated
+**Steps:**
+1. Sign out
+2. Open any trek detail
+3. Tap heart icon
+**Expected:** App redirects to sign-in screen (no crash, no silent failure).
+**Pass =** Sign-in screen appears after tapping save while logged out
+
+---
+
+### TC-M05-F06: Trek detail — share sheet
+**Steps:**
+1. Open any trek detail
+2. Tap the ⬆ button (top-right, overlaid on header)
+**Expected:** Native iOS/Android share sheet appears with message "Check out the {trek name} trek guide on TrekYatra" and URL `https://trekyatra.co.in/trek/{slug}`.
+**Pass =** Share sheet opens; URL contains `/trek/` (not `/treks/`)
+
+---
+
+### TC-M05-F07: Trek detail — offline fallback
+**Steps:**
+1. Open a trek detail while online (data loads and caches to SQLite)
+2. Enable airplane mode (iOS Settings → Airplane Mode)
+3. Kill the app and reopen it
+4. Navigate to the same trek
+**Expected:** Trek content renders from SQLite cache; orange offline badge appears below meta strip ("📵 Offline").
+**Pass =** Content visible without network; offline badge shown
+
+---
+
+### TC-M05-F08: Trek detail — safety disclaimer for difficult treks
+**Steps:**
+1. Open a trek with difficulty "Challenging" or "Difficult" (e.g. Rupin Pass)
+**Expected:** Red warning banner "⚠️ Always trek with a certified guide. See safety guidelines →" appears below meta strip.
+**Pass =** Banner visible; not shown on Easy/Moderate treks
+
+---
+
+### TC-M05-F09: Trek detail — related treks row
+**Steps:**
+1. Open any trek detail
+2. Scroll to bottom of Guide tab
+**Expected:** "You might also like" section appears with a horizontal row of trek cards. Tapping a card navigates to that trek's detail.
+**Pass =** At least 2–4 related trek cards visible; navigation works; back arrow returns to previous trek
+
+---
+
+### TC-M05-F10: Behavior profile tracking
+**Steps:**
+1. Open any trek detail
+2. Go back to home screen
+3. Check AsyncStorage key `ty_behavior_v1` (via Expo Dev Tools or React Native Debugger)
+**Expected:** Entry exists with `slug`, `region`, `difficulty`, `season`, and `ts` (timestamp) fields.
+**Pass =** ty_behavior_v1 JSON has at least 1 view entry matching the trek you opened

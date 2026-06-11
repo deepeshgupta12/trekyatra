@@ -6,7 +6,7 @@ export default function BrowseScreen() {
     <SafeArea>
       <View className="flex-1 items-center justify-center">
         <Text className="font-display text-2xl text-white mb-2">Browse</Text>
-        <Text className="text-white/50 text-sm">Trek explorer — coming in M03</Text>
+        <Text className="text-white/50 text-sm">Trek explorer — coming in M07</Text>
       </View>
     </SafeArea>
   );
