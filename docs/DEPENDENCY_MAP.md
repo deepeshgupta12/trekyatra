@@ -1590,6 +1590,20 @@ Both web-next file changes are **compile-time type annotations only**. They do n
 | `.claude/CLAUDE.md` | Removed (tracked, `git rm`) | Held `vexp` MCP-pipeline instructions; vexp daemon was never running this session, instructions caused tool-selection hallucination (told agent to avoid Grep/Glob/Read) |
 | `.claude/hooks/vexp-guard.sh` | Removed (was untracked) | PreToolUse hook script for the vexp daemon |
 | `.claude/settings.json` | Removed (was untracked) | Its only hook entry pointed at the now-deleted `vexp-guard.sh` |
-| `CLAUDE.md` (root) | Modified | Restored an accidentally-dropped CLI table row referencing `.claude/skills/mobile-design-system/SKILL.md`; gitnexus symbol/relationship counts refreshed (486670 symbols / 778505 relationships) |
+| `CLAUDE.md` (root) | Modified | Restored an accidentally-dropped CLI table row referencing `.claude/skills/mobile-design-system/SKILL.md`; row was dropped a second time by a subsequent `npx gitnexus analyze --force` auto-regeneration (counts refreshed to 472099 symbols / 766819 relationships) and restored again on 2026-06-11 — this row appears to be silently removed by every gitnexus reindex and may need re-restoring after future reindexes |
 
 LOW — config/doc only, zero blast radius on `apps/mobile` or `apps/web-next` code.
+
+### Step M-DS2 — QA Follow-up Fixes blast radius — Done (2026-06-11)
+| File | Purpose | Blast Radius |
+|------|---------|-------------|
+| `apps/mobile/components/ui/AnimatedSplash.tsx` | Logo size 72×72 → 140×140 | LOW — `gitnexus_impact` upstream = 0 (only `_layout.tsx` imports it) |
+| `apps/mobile/providers/OnboardingProvider.tsx` | NEW — React Context wrapping `AsyncStorage` `trekyatra_onboarding_done`; exposes `{ isLoading, done, markDone }` | LOW — new leaf provider; consumed by `AuthGate` + `welcome.tsx`/`sign-in.tsx`/`sign-up.tsx` (all already in this pass) |
+| `apps/mobile/app/_layout.tsx` | `AuthGate` now reads `useOnboarding()` instead of local `AsyncStorage`-backed state; `RootLayout` wraps tree in `OnboardingProvider` | LOW — `gitnexus_impact` on `AuthGate` upstream = 0 (no other callers); fixes Skip → Home redirect loop |
+| `apps/mobile/app/(auth)/welcome.tsx` | Replaced 7-layer hard-edge overlay with single `LinearGradient` (`transparent → rgba(5,8,15,0.92)`); `handleGetStarted`/`handleSignIn` use `markDone()` | LOW — leaf onboarding screen, no downstream consumers |
+| `apps/mobile/app/(auth)/sign-in.tsx` | `handleSkip` uses `markDone()` instead of direct `AsyncStorage.setItem` | LOW — leaf screen |
+| `apps/mobile/app/(auth)/sign-up.tsx` | `handleSkip` uses `markDone()` instead of direct `AsyncStorage.setItem` | LOW — leaf screen |
+
+**Native dev-client rebuild**: `apps/mobile/ios/` (gitignored, prebuilt EAS dev-client project) was rebuilt via `npx expo prebuild --platform ios` + `pod install` (added `RNSVG 15.15.4`, 118 total pods) + `npx expo run:ios` to link `react-native-svg`'s native module — fixes the "Unimplemented component: <RNSVGSvgView>" splash crash. No files under `apps/mobile/ios/` are tracked by git (`.gitignore: ios/`), so nothing to commit from the rebuild itself.
+
+**No backend changes. No web-next changes.** Zero blast radius on production website (desktop + mobile web unaffected).

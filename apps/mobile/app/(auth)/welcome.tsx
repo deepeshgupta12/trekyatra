@@ -12,13 +12,12 @@ import {
   type ImageSourcePropType,
 } from "react-native";
 import { router } from "expo-router";
-import AsyncStorage from "@react-native-async-storage/async-storage";
 import { Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { useOnboarding } from "@/providers/OnboardingProvider";
 
 const { width: SCREEN_W, height: SCREEN_H } = Dimensions.get("screen");
-const ONBOARDING_KEY = "trekyatra_onboarding_done";
 const SAFFRON = "#E8702A";
 const PINE = "#1D3A2E";
 
@@ -62,6 +61,7 @@ export default function WelcomeScreen() {
   const [currentIndex, setCurrentIndex] = useState(0);
   const scrollRef = useRef<ScrollView>(null);
   const insets = useSafeAreaInsets();
+  const { markDone } = useOnboarding();
 
   function handleScroll(e: NativeSyntheticEvent<NativeScrollEvent>) {
     const index = Math.round(e.nativeEvent.contentOffset.x / SCREEN_W);
@@ -69,12 +69,12 @@ export default function WelcomeScreen() {
   }
 
   async function handleGetStarted() {
-    await AsyncStorage.setItem(ONBOARDING_KEY, "1");
+    await markDone();
     router.replace("/(auth)/sign-up");
   }
 
   async function handleSignIn() {
-    await AsyncStorage.setItem(ONBOARDING_KEY, "1");
+    await markDone();
     router.replace("/(auth)/sign-in");
   }
 
@@ -115,21 +115,24 @@ export default function WelcomeScreen() {
             style={{ width: SCREEN_W, height: SCREEN_H }}
             resizeMode="cover"
           >
-            {/* Layered dark gradient overlay from bottom for text legibility */}
-            {[0.05, 0.15, 0.3, 0.5, 0.65, 0.75, 0.85].map((opacity, idx) => (
-              <View
-                key={idx}
-                pointerEvents="none"
-                style={{
-                  position: "absolute",
-                  bottom: 0,
-                  left: 0,
-                  right: 0,
-                  height: `${(idx + 1) * (55 / 7)}%`,
-                  backgroundColor: `rgba(5,8,15,${opacity})`,
-                }}
-              />
-            ))}
+            {/* Smooth dark gradient overlay from bottom for text legibility */}
+            <LinearGradient
+              colors={[
+                "transparent",
+                "rgba(5,8,15,0.25)",
+                "rgba(5,8,15,0.65)",
+                "rgba(5,8,15,0.92)",
+              ]}
+              locations={[0, 0.4, 0.7, 1]}
+              pointerEvents="none"
+              style={{
+                position: "absolute",
+                top: 0,
+                left: 0,
+                right: 0,
+                bottom: 0,
+              }}
+            />
           </ImageBackground>
         ))}
       </ScrollView>

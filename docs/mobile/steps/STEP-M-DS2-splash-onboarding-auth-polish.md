@@ -139,3 +139,38 @@ Run: `cd apps/mobile && npx expo start` (open in iOS Simulator or Expo Go)
 2. If the backend is unreachable or slow, wait
 **Expected:** Either sign-in succeeds and navigates to Home, or an error `Alert` appears (e.g. "Request timed out. Check your connection and try again.") within 15 seconds. The spinner never spins indefinitely.
 **Pass =** Spinner always resolves to either success navigation or a visible error within 15s
+
+---
+
+## Follow-up Fixes (2026-06-11)
+
+A second QA pass (with screenshots) on the rebuilt dev client found 4 remaining issues, all fixed in `apps/mobile/` only:
+
+1. **Splash logo too small** — `AnimatedSplash.tsx`: `logoWrap`/`logo` increased 72×72 → 140×140.
+2. **Skip → bounced back to onboarding** — `AuthGate` read `trekyatra_onboarding_done` into local state once on mount; `handleSkip` etc. wrote to `AsyncStorage` without updating that state, so the next `AuthGate` effect (triggered by the route change) still saw `onboardingDone=false` and redirected back to `/(auth)/welcome`. Fixed via new `apps/mobile/providers/OnboardingProvider.tsx` (Context wrapping `AsyncStorage`, exposes `{ isLoading, done, markDone }`); `AuthGate` now uses `useOnboarding()`, and `welcome.tsx`/`sign-in.tsx`/`sign-up.tsx` call `markDone()`.
+3. **Onboarding background — hard edge, not a gradient** — the "layered gradient" was 7 stacked solid `View`s; the largest+most-opaque layer (55% height, 0.85 opacity) rendered topmost and fully covered the others, producing one hard-edged solid block (looked like a fixed-height background with no blend). Replaced with a single `expo-linear-gradient` `LinearGradient` (`transparent → rgba(5,8,15,0.92)`, `locations=[0, 0.4, 0.7, 1]`) over the full `ImageBackground`.
+4. **Native dev-client rebuild for `react-native-svg`** — `apps/mobile/ios/` (gitignored, prebuilt) was rebuilt via `expo prebuild` + `pod install` (added `RNSVG 15.15.4`) + `expo run:ios` to link the native module — this fixed the "Unimplemented component: <RNSVGSvgView>" splash crash from the first QA pass.
+
+**Files Created**: `apps/mobile/providers/OnboardingProvider.tsx`
+**Files Modified**: `apps/mobile/components/ui/AnimatedSplash.tsx`, `apps/mobile/app/_layout.tsx`, `apps/mobile/app/(auth)/welcome.tsx`, `apps/mobile/app/(auth)/sign-in.tsx`, `apps/mobile/app/(auth)/sign-up.tsx`
+
+`tsc --noEmit`: 0 errors. No backend changes.
+
+### Frontend Test Cases — Follow-up Fixes
+
+### TC-M-DS2-FU01: Splash logo size
+**Steps:** Force-quit and relaunch the app.
+**Expected:** The TrekYatra logo at the peak of the splash animation is noticeably larger (140×140) than before, proportionate to the screen.
+**Pass =** Logo is clearly larger and well-proportioned, not tiny relative to the mountain silhouette.
+
+### TC-M-DS2-FU02: Skip → Home (no bounce-back)
+**Steps:**
+1. From onboarding, tap "Start exploring →" or "Already have an account? Sign in"
+2. On the sign-in (or sign-up) screen, tap "Skip"
+**Expected:** App navigates directly to `(tabs)/(home)` and stays there — does NOT bounce back to the onboarding/welcome screens.
+**Pass =** Home tab loads and remains; bottom tab navigation works while anonymous.
+
+### TC-M-DS2-FU03: Onboarding full-bleed gradient
+**Steps:** Clear `trekyatra_onboarding_done` (or fresh install), view the welcome carousel, swipe through all 4 slides.
+**Expected:** Each slide's photo fills the entire screen; a smooth gradient (not a hard line) darkens from transparent at top to near-opaque at the bottom, keeping headline/subtext legible against any photo.
+**Pass =** No visible hard edge/seam between photo and overlay; text legible on all 4 slides.

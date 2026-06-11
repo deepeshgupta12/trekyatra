@@ -16,10 +16,10 @@ import {
 import {
   JetBrainsMono_400Regular,
 } from "@expo-google-fonts/jetbrains-mono";
-import AsyncStorage from "@react-native-async-storage/async-storage";
 import { QueryProvider } from "@/providers/QueryProvider";
 import { AuthProvider, useAuth } from "@/providers/AuthProvider";
 import { ThemeProvider } from "@/providers/ThemeProvider";
+import { OnboardingProvider, useOnboarding } from "@/providers/OnboardingProvider";
 import { initDb } from "@/db/client";
 import { initBackgroundSync, destroyBackgroundSync } from "@/services/backgroundSync";
 import { useOfflineStore } from "@/stores/offlineStore";
@@ -34,14 +34,11 @@ Sentry.init({
 
 SplashScreen.preventAutoHideAsync();
 
-const ONBOARDING_KEY = "trekyatra_onboarding_done";
-
 function AuthGate({ children }: { children: ReactNode }) {
   const { isLoading, isAuthenticated, accessToken } = useAuth();
+  const { isLoading: onboardingLoading, done: onboardingDone } = useOnboarding();
   const segments = useSegments();
   const router = useRouter();
-  const [onboardingChecked, setOnboardingChecked] = useState(false);
-  const [onboardingDone, setOnboardingDone] = useState(false);
   const loadDownloaded = useOfflineStore((s) => s.loadDownloaded);
 
   // Initialise SQLite DB on first mount
@@ -61,14 +58,7 @@ function AuthGate({ children }: { children: ReactNode }) {
   }, []);
 
   useEffect(() => {
-    AsyncStorage.getItem(ONBOARDING_KEY).then((val) => {
-      setOnboardingDone(!!val);
-      setOnboardingChecked(true);
-    });
-  }, []);
-
-  useEffect(() => {
-    if (isLoading || !onboardingChecked) return;
+    if (isLoading || onboardingLoading) return;
     const inAuthGroup = segments[0] === "(auth)";
 
     if (!onboardingDone) {
@@ -81,7 +71,7 @@ function AuthGate({ children }: { children: ReactNode }) {
     if (isAuthenticated && inAuthGroup) {
       router.replace("/(tabs)/(home)");
     }
-  }, [isLoading, isAuthenticated, segments, onboardingChecked, onboardingDone]);
+  }, [isLoading, isAuthenticated, segments, onboardingLoading, onboardingDone]);
 
   return <>{children}</>;
 }
@@ -107,15 +97,17 @@ export default Sentry.wrap(function RootLayout() {
   return (
     <ThemeProvider>
       <QueryProvider>
-        <AuthProvider>
-          <AuthGate>
-            <Stack screenOptions={{ headerShown: false }}>
-              <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-              <Stack.Screen name="(auth)" options={{ headerShown: false }} />
-              <Stack.Screen name="+not-found" />
-            </Stack>
-          </AuthGate>
-        </AuthProvider>
+        <OnboardingProvider>
+          <AuthProvider>
+            <AuthGate>
+              <Stack screenOptions={{ headerShown: false }}>
+                <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+                <Stack.Screen name="(auth)" options={{ headerShown: false }} />
+                <Stack.Screen name="+not-found" />
+              </Stack>
+            </AuthGate>
+          </AuthProvider>
+        </OnboardingProvider>
       </QueryProvider>
       {(!animationDone || !fontsReady) && (
         <AnimatedSplash onFinish={() => setAnimationDone(true)} />

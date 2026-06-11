@@ -2,16 +2,14 @@ import { useState, useEffect } from "react";
 import { View, Text, TextInput, TouchableOpacity, Alert, ScrollView, StatusBar } from "react-native";
 import { router } from "expo-router";
 import { useAuthRequest } from "expo-auth-session";
-import AsyncStorage from "@react-native-async-storage/async-storage";
 import { SafeArea } from "@/components/ui/SafeArea";
 import { Button } from "@/components/ui/Button";
 import { Logo } from "@/components/ui/Logo";
 import { SocialSignInButtons } from "@/components/auth/SocialSignInButtons";
 import { useAuth } from "@/providers/AuthProvider";
+import { useOnboarding } from "@/providers/OnboardingProvider";
 import { discovery, getGoogleAuthConfig } from "@/lib/googleAuth";
 import { useTheme } from "@/hooks/useTheme";
-
-const ONBOARDING_KEY = "trekyatra_onboarding_done";
 
 export default function SignInScreen() {
   const [email, setEmail] = useState("");
@@ -19,6 +17,7 @@ export default function SignInScreen() {
   const [emailLoading, setEmailLoading] = useState(false);
   const [socialLoading, setSocialLoading] = useState(false);
   const { signIn, signInWithGoogle } = useAuth();
+  const { markDone } = useOnboarding();
   const { isDark, colors } = useTheme();
 
   const googleConfig = getGoogleAuthConfig();
@@ -55,7 +54,7 @@ export default function SignInScreen() {
   }
 
   async function handleSkip() {
-    await AsyncStorage.setItem(ONBOARDING_KEY, "1");
+    await markDone();
     router.replace("/(tabs)/(home)");
   }
 

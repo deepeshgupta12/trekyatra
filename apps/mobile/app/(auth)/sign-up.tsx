@@ -1,14 +1,12 @@
 import { useState } from "react";
 import { View, Text, TextInput, TouchableOpacity, Alert, ScrollView, StatusBar } from "react-native";
 import { router } from "expo-router";
-import AsyncStorage from "@react-native-async-storage/async-storage";
 import { SafeArea } from "@/components/ui/SafeArea";
 import { Button } from "@/components/ui/Button";
 import { Logo } from "@/components/ui/Logo";
 import { useAuth } from "@/providers/AuthProvider";
+import { useOnboarding } from "@/providers/OnboardingProvider";
 import { useTheme } from "@/hooks/useTheme";
-
-const ONBOARDING_KEY = "trekyatra_onboarding_done";
 
 export default function SignUpScreen() {
   const [fullName, setFullName] = useState("");
@@ -16,6 +14,7 @@ export default function SignUpScreen() {
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const { signUp } = useAuth();
+  const { markDone } = useOnboarding();
   const { isDark, colors } = useTheme();
 
   async function handleSignUp() {
@@ -36,7 +35,7 @@ export default function SignUpScreen() {
   }
 
   async function handleSkip() {
-    await AsyncStorage.setItem(ONBOARDING_KEY, "1");
+    await markDone();
     router.replace("/(tabs)/(home)");
   }
 
