@@ -287,6 +287,8 @@ The following gaps were identified and resolved during a full cross-check of all
 ### Mobile Crosscheck Bugfix Pass (M-DS1–M06) — Done (2026-06-11)
 User QA reported 4 bugs after M05+M06: (1) splash/animations not working, (2) login appearing to do nothing (no success message, broken UI on splash/onboarding/login), (3) home screen + bottom nav broken, (4) tapping a trek-state pill showed "coming in M03" placeholder despite M03 being implemented.
 
+**Test Cases backfilled (2026-06-11)**: see `docs/mobile/steps/STEP-M-CROSSCHECK-bugfix-pass.md` for TC-B01–B07 (backend, `test_treks_seasonal.py`) and TC-F01–F07 (frontend) — pending user confirmation.
+
 - **Backend**: NEW `GET /api/v1/treks/seasonal?month=&limit=` endpoint (`api/routes/treks.py` + `modules/cms/service.py::get_seasonal_pages`) — mirrors web seasonal-trek season-range matching logic; 7 new tests in `tests/test_treks_seasonal.py`, all pass; full suite 637 passed/1 skipped (2 pre-existing `test_refresh.py` failures confirmed unrelated via stash)
 - **Root cause of bug #2 (login)**: `apps/mobile/app/_layout.tsx` `AuthGate` redirected to `router.replace("/(tabs)")` after login — an invalid route since M05 renamed `(tabs)/index.tsx` → `(tabs)/(home)/index.tsx`. Fixed to `router.replace("/(tabs)/(home)")`. Caught via `tsc --noEmit` (TS2345).
 - **Bug #1 (splash/fonts)**: `apps/mobile/app/_layout.tsx` was missing `PlayfairDisplay_700Bold`/`PlayfairDisplay_600SemiBold` in `useFonts()` despite being referenced via `fontFamily` in Home header/section headings — RN silently falls back to system font with no error. Both weights added.
@@ -313,6 +315,10 @@ QA pass on M-DS1–M06 (with screenshots) surfaced 6 new issues, all fixed in th
 - **Apple Sign-In backend integration explicitly deferred** — UI-only for this pass (no Apple Developer credentials, no `/api/v1/auth/apple` endpoint, no `expo-apple-authentication` plugin entry).
 - **tsc --noEmit: 0 errors** | Backend: 637 passed, 1 skipped (same 2 pre-existing `test_refresh.py` failures, unrelated) | No web-next changes — zero blast radius on production website.
 - `gitnexus_detect_changes(scope: all)`: 39 changed symbols / 15 files, risk **medium**, 2 affected processes (`SignInScreen → ApiGet`, `SignInScreen → UseThemeContext`) — both expected from the Skip + timeout changes. `npx gitnexus analyze --force` ran long (>20 min, pre-existing FTS read-only-DB issue) and was non-blocking.
+
+### Repo Housekeeping — Done (2026-06-11)
+- Removed `.claude/CLAUDE.md` (vexp pipeline instructions), `.claude/hooks/vexp-guard.sh`, and `.claude/settings.json` (its only hook pointed at the now-deleted `vexp-guard.sh`) — per user request, these were causing tool-selection hallucination (instructing the agent to avoid Grep/Glob/Read in favour of an unavailable `vexp` MCP daemon).
+- Restored an accidentally-dropped row in root `CLAUDE.md`'s gitnexus-managed CLI table (`Mobile UI/screen work (apps/mobile) ... | .claude/skills/mobile-design-system/SKILL.md`), which a prior `npx gitnexus analyze --force` auto-regeneration had silently removed despite the skill file still existing and being actively referenced by the Pre-Step Checklist.
 
 ### Step M04 — CMS Offline Content Engine — Done (2026-06-10)
 - `apps/mobile/db/schema.ts` — Drizzle schema: `cmsPages` + `syncMeta` tables

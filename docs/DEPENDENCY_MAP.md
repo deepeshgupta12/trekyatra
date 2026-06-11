@@ -1583,3 +1583,13 @@ Both web-next file changes are **compile-time type annotations only**. They do n
 | `apps/mobile/package.json` / `package-lock.json` | Added `react-native-svg` | LOW — new SDK 56-compatible native module, `npx expo install` |
 
 **No backend changes. No web-next changes.** All M-DS2 work is mobile-only. Zero blast radius on production website (desktop + mobile web unaffected).
+
+### Repo Housekeeping — removed files (2026-06-11)
+| File | Status | Note |
+|------|--------|------|
+| `.claude/CLAUDE.md` | Removed (tracked, `git rm`) | Held `vexp` MCP-pipeline instructions; vexp daemon was never running this session, instructions caused tool-selection hallucination (told agent to avoid Grep/Glob/Read) |
+| `.claude/hooks/vexp-guard.sh` | Removed (was untracked) | PreToolUse hook script for the vexp daemon |
+| `.claude/settings.json` | Removed (was untracked) | Its only hook entry pointed at the now-deleted `vexp-guard.sh` |
+| `CLAUDE.md` (root) | Modified | Restored an accidentally-dropped CLI table row referencing `.claude/skills/mobile-design-system/SKILL.md`; gitnexus symbol/relationship counts refreshed (486670 symbols / 778505 relationships) |
+
+LOW — config/doc only, zero blast radius on `apps/mobile` or `apps/web-next` code.
