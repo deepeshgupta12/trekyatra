@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { View, Text, TextInput, TouchableOpacity, Alert, ScrollView, StatusBar } from "react-native";
 import { router } from "expo-router";
 import { useAuthRequest } from "expo-auth-session";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 import { SafeArea } from "@/components/ui/SafeArea";
 import { Button } from "@/components/ui/Button";
 import { Logo } from "@/components/ui/Logo";
@@ -9,6 +10,8 @@ import { SocialSignInButtons } from "@/components/auth/SocialSignInButtons";
 import { useAuth } from "@/providers/AuthProvider";
 import { discovery, getGoogleAuthConfig } from "@/lib/googleAuth";
 import { useTheme } from "@/hooks/useTheme";
+
+const ONBOARDING_KEY = "trekyatra_onboarding_done";
 
 export default function SignInScreen() {
   const [email, setEmail] = useState("");
@@ -51,6 +54,18 @@ export default function SignInScreen() {
     }
   }
 
+  async function handleSkip() {
+    await AsyncStorage.setItem(ONBOARDING_KEY, "1");
+    router.replace("/(tabs)/(home)");
+  }
+
+  function handleAppleComingSoon() {
+    Alert.alert(
+      "Coming soon",
+      "Apple Sign-In will be available in a future update. Please use email or Google sign-in."
+    );
+  }
+
   const busy = emailLoading || socialLoading;
 
   const inputBg = isDark ? colors.surface : "#FFFFFF";
@@ -69,6 +84,18 @@ export default function SignInScreen() {
         showsVerticalScrollIndicator={false}
       >
         <View style={{ flex: 1, paddingHorizontal: 24, justifyContent: "center", paddingVertical: 40 }}>
+          {/* Skip — continue as guest */}
+          <TouchableOpacity
+            onPress={handleSkip}
+            accessibilityLabel="Skip sign in"
+            accessibilityRole="button"
+            style={{ position: "absolute", top: 8, right: 24, zIndex: 1 }}
+          >
+            <Text style={{ color: mutedText, fontFamily: "Inter_500Medium", fontSize: 14 }}>
+              Skip
+            </Text>
+          </TouchableOpacity>
+
           {/* Logo */}
           <View style={{ marginBottom: 36 }}>
             <Logo size="md" />
@@ -187,6 +214,7 @@ export default function SignInScreen() {
 
           <SocialSignInButtons
             onGoogle={() => promptGoogle()}
+            onApple={handleAppleComingSoon}
             loading={socialLoading}
           />
 

@@ -119,6 +119,7 @@ All V0 foundations are shipped. The stack is live locally with:
 | **Step M05 — Trek Detail Screen** (2026-06-10) | **done** |
 | **Step M06 — Home Screen + 4-State Personalisation** (2026-06-10) | **done** |
 | **Mobile Crosscheck Bugfix Pass (M-DS1–M06)** (2026-06-11) | **done** |
+| **Step M-DS2 — Splash, Onboarding & Auth Polish** (2026-06-11) | **done** |
 | Step M07 — Explore & Search | pending |
 
 ### Step M01 — Done (2026-06-03)
@@ -298,6 +299,20 @@ User QA reported 4 bugs after M05+M06: (1) splash/animations not working, (2) lo
 - **Process**: created `.claude/skills/mobile-design-system/SKILL.md` per user request — covers theme tokens, MANDATORY font-loading check, tab-bar route-name conventions ((home) not index), and API contract discipline (backend route + response-shape mapping). Referenced from root `CLAUDE.md` CLI table + added as Pre-Step Checklist item 9 for all `apps/mobile/` work going forward.
 - **Verification**: `tsc --noEmit` → 0 errors. Backend full suite 637 passed/1 skipped (2 pre-existing unrelated failures). Simulator screenshot confirmed Home header font, "Trending this month" populated with real data, "Explore by Region" chips, and corrected Home tab icon/label render correctly via Fast Refresh.
 - **No web-next changes** — zero blast radius on production website (desktop + mobile web).
+
+### Step M-DS2 — Splash, Onboarding & Auth Polish — Done (2026-06-11)
+QA pass on M-DS1–M06 (with screenshots) surfaced 6 new issues, all fixed in this combined pass. See `docs/mobile/steps/STEP-M-DS2-splash-onboarding-auth-polish.md` for full detail. Numbered `M-DS2` (not `M07`) since `M07` is reserved for "Explore & Search".
+
+- **NEW `apps/mobile/components/ui/AnimatedSplash.tsx`** — "Trail Comes Alive" cinematic splash: SVG dawn mountain silhouette fades in, saffron trail line draws upward (`react-native-svg` `Path` + `strokeDashoffset` via Reanimated), tent/leaf/sparkle waypoint icons fade in, trail fades as the TrekYatra logo settles at the peak with a `RadialGradient` sunrise glow, tagline "Explore. Dream. Discover." fades in, whole sequence fades out (~4.1s total). New dependency: `react-native-svg`.
+- `apps/mobile/app/_layout.tsx` — renders `<AnimatedSplash>` as an overlay until fonts load AND the animation finishes; `AuthGate` no longer redirects unauthenticated users to sign-in — anonymous users can browse all `(tabs)` (matches M06 States C/D). `useRequireAuth` continues to gate `account.tsx`/`saved.tsx`.
+- `apps/mobile/app.config.ts` — native `splash.backgroundColor` `#1D3A2E` → `#0c0e14` to match `AnimatedSplash`'s first frame.
+- `apps/mobile/app/(auth)/welcome.tsx` — `Dimensions.get("window")` → `Dimensions.get("screen")` (full-bleed fix); icon badges now white-on-`rgba(13,20,16,0.55)` for contrast in light/dark photo regions; added top gradient + back-chevron (hidden on slide 1); rewrote slides 3 & 4 to cover AI trip planner + personalised recs ("Plan in 60 seconds — picked for you") and offline maps + operator booking ("Trek offline. Book with trusted operators").
+- `apps/mobile/app/(auth)/sign-in.tsx` + `sign-up.tsx` — added "Skip" button (top-right) → sets onboarding flag, routes to `/(tabs)/(home)` for anonymous browsing.
+- `apps/mobile/components/auth/SocialSignInButtons.tsx` + `Button.tsx` — Google button now shows `Ionicons name="logo-google"`; Apple button always renders on iOS (`isAppleAuthAvailable()`) with `Ionicons name="logo-apple"` and a "coming soon" alert (`onApple` defaults to local handler if not passed). `Button` gained an optional leading `icon` prop.
+- `apps/mobile/lib/authApi.ts` — `apiPost`/`apiGet` now route through `fetchWithTimeout` (15s `AbortController`); guarantees the sign-in/sign-up spinner resolves to a visible error instead of spinning forever.
+- **Apple Sign-In backend integration explicitly deferred** — UI-only for this pass (no Apple Developer credentials, no `/api/v1/auth/apple` endpoint, no `expo-apple-authentication` plugin entry).
+- **tsc --noEmit: 0 errors** | Backend: 637 passed, 1 skipped (same 2 pre-existing `test_refresh.py` failures, unrelated) | No web-next changes — zero blast radius on production website.
+- `gitnexus_detect_changes(scope: all)`: 39 changed symbols / 15 files, risk **medium**, 2 affected processes (`SignInScreen → ApiGet`, `SignInScreen → UseThemeContext`) — both expected from the Skip + timeout changes. `npx gitnexus analyze --force` ran long (>20 min, pre-existing FTS read-only-DB issue) and was non-blocking.
 
 ### Step M04 — CMS Offline Content Engine — Done (2026-06-10)
 - `apps/mobile/db/schema.ts` — Drizzle schema: `cmsPages` + `syncMeta` tables

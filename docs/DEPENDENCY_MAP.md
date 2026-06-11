@@ -1567,3 +1567,19 @@ Both web-next file changes are **compile-time type annotations only**. They do n
 | Root `CLAUDE.md` | Added skill to CLI table + Pre-Step Checklist item 9 | LOW — process documentation only |
 
 **No web-next changes.** Zero blast radius on production website (desktop + mobile web unaffected).
+
+### Step M-DS2 — Splash, Onboarding & Auth Polish blast radius — Done (2026-06-11)
+| File | Purpose | Blast Radius |
+|------|---------|-------------|
+| `apps/mobile/components/ui/AnimatedSplash.tsx` | NEW — "Trail Comes Alive" cinematic splash (`react-native-svg` + `react-native-reanimated`) | LOW — new leaf component; `gitnexus_impact` upstream = 0 callers (only imported by `_layout.tsx`) |
+| `apps/mobile/app/_layout.tsx` | Renders `AnimatedSplash` overlay; `AuthGate` no longer redirects unauthenticated users to `(auth)/sign-in` | MEDIUM — root layout; `gitnexus_impact` on `AuthGate` (upstream) = 0 (no other callers); anonymous users now reach `(tabs)`, but `useRequireAuth()` (used by `account.tsx`/`saved.tsx`) is unchanged and continues to gate those screens |
+| `apps/mobile/app.config.ts` | `splash.backgroundColor` `#1D3A2E` → `#0c0e14` | LOW — native splash background color only |
+| `apps/mobile/app/(auth)/welcome.tsx` | Full-bleed (`Dimensions.get("screen")`), contrast fix, back-chevron, new slide 3/4 copy | LOW — leaf onboarding screen, no downstream consumers |
+| `apps/mobile/app/(auth)/sign-in.tsx` | Skip button + `onApple` handler | LOW — leaf screen |
+| `apps/mobile/app/(auth)/sign-up.tsx` | Skip button | LOW — leaf screen |
+| `apps/mobile/components/auth/SocialSignInButtons.tsx` | Google/Apple icons; Apple button always renders with default "coming soon" handler | LOW — `gitnexus_impact` upstream = 0 (used only by sign-in.tsx) |
+| `apps/mobile/components/ui/Button.tsx` | Added optional `icon?: React.ReactNode` prop | LOW — additive optional prop; `gitnexus_impact` upstream = 0 in graph (widely used via JSX, existing call sites unaffected since `icon` is optional) |
+| `apps/mobile/lib/authApi.ts` | `apiPost`/`apiGet` → `fetchWithTimeout` (15s `AbortController`) | HIGH (graph) but contained — `gitnexus_impact` upstream shows `signIn`, `signUp`, `refreshAccessToken`, `forgotPassword`, `resetPassword`, `mobileApi.fetchWithAuth`, `forgot-password.tsx`/`reset-password.tsx` handlers, all within `apps/mobile`; signature/return type unchanged, purely additive timeout wrapper |
+| `apps/mobile/package.json` / `package-lock.json` | Added `react-native-svg` | LOW — new SDK 56-compatible native module, `npx expo install` |
+
+**No backend changes. No web-next changes.** All M-DS2 work is mobile-only. Zero blast radius on production website (desktop + mobile web unaffected).

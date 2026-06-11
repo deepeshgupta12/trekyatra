@@ -672,3 +672,19 @@ Spec: ad-hoc bugfix pass requested after manual QA of M-DS1–M06 surfaced 4 iss
 - `apps/mobile/app/_layout.tsx` — added missing `PlayfairDisplay_700Bold`/`PlayfairDisplay_600SemiBold` to `useFonts()` (was silently falling back to system font on Home header + section headings); fixed post-login redirect `router.replace("/(tabs)")` → `router.replace("/(tabs)/(home)")` (invalid route since M05's `(home)` rename — root cause of "login does nothing" bug)
 - `.claude/skills/mobile-design-system/SKILL.md` (NEW) — design-system skill doc covering theme tokens, font-loading checklist, tab-bar route-name conventions, API contract discipline; referenced from root `CLAUDE.md` Pre-Step Checklist (item 9) and CLI table
 - **tsc --noEmit: 0 errors** | Backend: 637 passed, 1 skipped (2 pre-existing unrelated failures) | No web-next changes — zero blast radius on production website
+
+---
+
+### Step M-DS2 — Splash, Onboarding & Auth Polish [DONE — 2026-06-11]
+
+Spec: ad-hoc combined polish pass requested after manual QA (with screenshots) of M-DS1–M06 surfaced 6 issues (splash had no animation and showed a redundant text label, onboarding background/contrast/back-nav/USP-coverage issues, no guest "Skip" path, missing Google/Apple sign-in icons, sign-in spinner could hang forever, splash needed a "WOW" cinematic feel). Numbered `M-DS2` (not `M07`, which is reserved for "Explore & Search").
+
+- **NEW** `apps/mobile/components/ui/AnimatedSplash.tsx` — code-based "Trail Comes Alive" splash sequence using `react-native-svg` (mountain silhouette, animated trail `Path` via `strokeDashoffset`, `RadialGradient` sunrise glow) + `react-native-reanimated` (fade/scale/spring sequencing) + `Ionicons` waypoint icons; ~4.1s, fades into the app. New dependency: `react-native-svg`.
+- `apps/mobile/app/_layout.tsx` — renders `AnimatedSplash` as an overlay until fonts ready + animation done; `AuthGate` relaxed — anonymous users can browse `(tabs)` (no forced redirect to sign-in); `useRequireAuth` still gates `account.tsx`/`saved.tsx`.
+- `apps/mobile/app.config.ts` — `splash.backgroundColor` `#1D3A2E` → `#0c0e14`.
+- `apps/mobile/app/(auth)/welcome.tsx` — `Dimensions.get("screen")` for full-bleed; white-on-`rgba(13,20,16,0.55)` icon badges + top gradient for contrast in light/dark; back-chevron navigation; slides 3 & 4 rewritten to cover AI trip planner + personalised recs, and offline maps + operator/community booking.
+- `apps/mobile/app/(auth)/sign-in.tsx` + `sign-up.tsx` — "Skip" button → anonymous Home; `onApple={handleAppleComingSoon}` wired into sign-in.
+- `apps/mobile/components/auth/SocialSignInButtons.tsx` + `apps/mobile/components/ui/Button.tsx` — Google icon, always-rendered Apple button (UI-only "coming soon"), optional `Button` leading `icon` prop.
+- `apps/mobile/lib/authApi.ts` — `apiPost`/`apiGet` now use `fetchWithTimeout` (15s `AbortController` timeout) so the sign-in spinner can never hang indefinitely.
+- **tsc --noEmit: 0 errors** | Backend: 637 passed, 1 skipped (same 2 pre-existing unrelated `test_refresh.py` failures) | No web-next changes — zero blast radius on production website
+- Apple Sign-In backend (new endpoint + Apple Developer credentials + config plugin) explicitly deferred to a future step.

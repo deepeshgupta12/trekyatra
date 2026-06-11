@@ -521,6 +521,7 @@ Full API docs available at http://localhost:8000/docs when the backend is runnin
 | Mobile design system overhaul (Pine/Saffron palette, theming, FAB tab bar) | Done (M-DS1) |
 | Trek detail screen (hero, meta, tabs, related, sticky CTA) | Done (M05) |
 | Home screen — 4-state personalisation, trending/seasonal/recommendations | Done (M06) |
+| Cinematic animated splash, onboarding polish, guest Skip, Google/Apple sign-in icons | Done (M-DS2) |
 | Explore & Search | Pending (M07) |
 | Trek planning wizard | Pending (M09) |
 | Push notifications | Pending (M14) |
@@ -547,6 +548,7 @@ Full API docs available at http://localhost:8000/docs when the backend is runnin
 | **Step M05 — Trek Detail Screen** | Hero/meta/tab bar/related/sticky CTA, offline-first via SQLite, behavior tracking | Done — 2026-06-10 |
 | **Step M06 — Home Screen + 4-State Personalisation** | 4-state Home (A/B/C/D), trending/seasonal/recommendations rows, skeleton loader | Done — 2026-06-10 |
 | **Mobile Crosscheck Bugfix Pass (M-DS1–M06)** | Fixed splash/font loading, login redirect (`/(tabs)` → `/(tabs)/(home)`), broken Home/bottom-nav (route-name + downloads-tab + API contract fixes), browse.tsx M03→M07 copy; new `GET /api/v1/treks/seasonal` endpoint + 7 tests; new mobile-design-system skill doc | Done — 2026-06-11 |
+| **Step M-DS2 — Splash, Onboarding & Auth Polish** | Cinematic SVG/Reanimated "Trail Comes Alive" splash; onboarding full-bleed/contrast/back-nav + 6-USP slide rewrite; guest "Skip" → anonymous browsing (AuthGate relaxed); Google/Apple sign-in icons (Apple UI-only, backend deferred); 15s request timeout fixes sign-in spinner hang | Done — 2026-06-11 |
 
 ## Production Infrastructure
 

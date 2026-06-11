@@ -23,6 +23,7 @@ import { ThemeProvider } from "@/providers/ThemeProvider";
 import { initDb } from "@/db/client";
 import { initBackgroundSync, destroyBackgroundSync } from "@/services/backgroundSync";
 import { useOfflineStore } from "@/stores/offlineStore";
+import { AnimatedSplash } from "@/components/ui/AnimatedSplash";
 
 Sentry.init({
   dsn: process.env.EXPO_PUBLIC_SENTRY_DSN,
@@ -75,9 +76,9 @@ function AuthGate({ children }: { children: ReactNode }) {
       return;
     }
 
-    if (!isAuthenticated && !inAuthGroup) {
-      router.replace("/(auth)/sign-in");
-    } else if (isAuthenticated && inAuthGroup) {
+    // Anonymous browsing is allowed for (tabs) — auth-gated screens use
+    // useRequireAuth() to redirect individually (e.g. account, saved).
+    if (isAuthenticated && inAuthGroup) {
       router.replace("/(tabs)/(home)");
     }
   }, [isLoading, isAuthenticated, segments, onboardingChecked, onboardingDone]);
@@ -94,16 +95,14 @@ export default Sentry.wrap(function RootLayout() {
     PlayfairDisplay_700Bold,
     JetBrainsMono_400Regular,
   });
+  const [animationDone, setAnimationDone] = useState(false);
+  const fontsReady = fontsLoaded || fontError;
 
   useEffect(() => {
-    if (fontsLoaded || fontError) {
+    if (fontsReady) {
       SplashScreen.hideAsync();
     }
-  }, [fontsLoaded, fontError]);
-
-  if (!fontsLoaded && !fontError) {
-    return null;
-  }
+  }, [fontsReady]);
 
   return (
     <ThemeProvider>
@@ -118,6 +117,9 @@ export default Sentry.wrap(function RootLayout() {
           </AuthGate>
         </AuthProvider>
       </QueryProvider>
+      {(!animationDone || !fontsReady) && (
+        <AnimatedSplash onFinish={() => setAnimationDone(true)} />
+      )}
     </ThemeProvider>
   );
 });

@@ -10,7 +10,7 @@ export default ({ config }: ConfigContext): any => ({
   icon: "./assets/icon.png",
   userInterfaceStyle: "automatic",
   splash: {
-    backgroundColor: "#1D3A2E",
+    backgroundColor: "#0c0e14",
   },
   ios: {
     supportsTablet: false,

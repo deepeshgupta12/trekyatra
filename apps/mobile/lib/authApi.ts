@@ -19,10 +19,27 @@ export interface MobileAuthResult {
   full_name: string | null;
 }
 
+const REQUEST_TIMEOUT_MS = 15000;
+
+async function fetchWithTimeout(input: string, init: RequestInit): Promise<Response> {
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS);
+  try {
+    return await fetch(input, { ...init, signal: controller.signal });
+  } catch (err: unknown) {
+    if (err instanceof Error && err.name === "AbortError") {
+      throw new Error("Request timed out. Check your connection and try again.");
+    }
+    throw err;
+  } finally {
+    clearTimeout(timeoutId);
+  }
+}
+
 async function apiPost<T>(path: string, body: unknown, bearerToken?: string): Promise<T> {
   const headers: Record<string, string> = { "Content-Type": "application/json" };
   if (bearerToken) headers["Authorization"] = `Bearer ${bearerToken}`;
-  const resp = await fetch(`${API_BASE}${path}`, {
+  const resp = await fetchWithTimeout(`${API_BASE}${path}`, {
     method: "POST",
     headers,
     body: JSON.stringify(body),
@@ -39,7 +56,7 @@ async function apiPost<T>(path: string, body: unknown, bearerToken?: string): Pr
 }
 
 async function apiGet<T>(path: string, bearerToken: string): Promise<T> {
-  const resp = await fetch(`${API_BASE}${path}`, {
+  const resp = await fetchWithTimeout(`${API_BASE}${path}`, {
     headers: { Authorization: `Bearer ${bearerToken}` },
   });
   if (!resp.ok) throw new Error("Request failed");

@@ -1,4 +1,4 @@
-import { Pressable, Text, ActivityIndicator, StyleSheet, type PressableProps, type ViewStyle } from "react-native";
+import { Pressable, Text, View, ActivityIndicator, StyleSheet, type PressableProps, type ViewStyle } from "react-native";
 import { useTheme } from "@/hooks/useTheme";
 
 type ButtonVariant = "hero" | "outline" | "ghost";
@@ -8,6 +8,7 @@ interface ButtonProps extends PressableProps {
   variant?: ButtonVariant;
   size?: ButtonSize;
   loading?: boolean;
+  icon?: React.ReactNode;
   children: React.ReactNode;
   accessibilityLabel: string;
 }
@@ -42,6 +43,7 @@ export function Button({
   variant = "hero",
   size = "md",
   loading = false,
+  icon,
   children,
   disabled,
   accessibilityLabel,
@@ -75,12 +77,15 @@ export function Button({
       {loading ? (
         <ActivityIndicator size="small" color={indicatorColor} />
       ) : (
-        <Text
-          style={{ fontFamily: "Inter_600SemiBold", color: textColor }}
-          className={textSizeClass[size]}
-        >
-          {children}
-        </Text>
+        <>
+          {icon && <View style={{ marginRight: 8 }}>{icon}</View>}
+          <Text
+            style={{ fontFamily: "Inter_600SemiBold", color: textColor }}
+            className={textSizeClass[size]}
+          >
+            {children}
+          </Text>
+        </>
       )}
     </Pressable>
   );

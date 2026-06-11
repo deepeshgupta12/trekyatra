@@ -14,14 +14,13 @@ import {
 import { router } from "expo-router";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { Ionicons } from "@expo/vector-icons";
+import { LinearGradient } from "expo-linear-gradient";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
-const { width: SCREEN_W, height: SCREEN_H } = Dimensions.get("window");
+const { width: SCREEN_W, height: SCREEN_H } = Dimensions.get("screen");
 const ONBOARDING_KEY = "trekyatra_onboarding_done";
 const SAFFRON = "#E8702A";
 const PINE = "#1D3A2E";
-const SKY = "#5298C9";
-const EARTH = "#6B4929";
 
 type IoniconName = React.ComponentProps<typeof Ionicons>["name"];
 
@@ -29,7 +28,6 @@ interface Slide {
   headline: string;
   subtext: string;
   icon: IoniconName;
-  iconColor: string;
   photo: ImageSourcePropType;
 }
 
@@ -38,28 +36,24 @@ const SLIDES: Slide[] = [
     headline: "250+ India-first trek guides",
     subtext: "Curated by editors who've been there — from Sahyadris to Sikkim",
     icon: "compass",
-    iconColor: SAFFRON,
     photo: require("@/assets/onboarding-1.jpg") as ImageSourcePropType,
   },
   {
     headline: "Trust-first safety intel",
     subtext: "Permits, weather windows, AMS, and risk grades verified by certified guides",
     icon: "shield-checkmark",
-    iconColor: PINE,
     photo: require("@/assets/onboarding-2.jpg") as ImageSourcePropType,
   },
   {
-    headline: "Offline maps & GPX",
-    subtext: "Download routes, elevation profiles & camp coords. Trail-ready, no signal",
-    icon: "map",
-    iconColor: SKY,
+    headline: "Plan in 60 seconds — picked for you",
+    subtext: "AI matches you to the right trek by season, fitness & budget — with personalised picks every time you open the app",
+    icon: "sparkles",
     photo: require("@/assets/onboarding-3.jpg") as ImageSourcePropType,
   },
   {
-    headline: "Plan in 60 seconds",
-    subtext: "AI matches you to the right trek by season, fitness, budget & start city",
-    icon: "sparkles",
-    iconColor: EARTH,
+    headline: "Trek offline. Book with trusted operators",
+    subtext: "Download routes, elevation profiles & camp coords for no-signal trails, then connect with verified local operators to book",
+    icon: "download",
     photo: require("@/assets/onboarding-4.jpg") as ImageSourcePropType,
   },
 ];
@@ -88,6 +82,13 @@ export default function WelcomeScreen() {
     const next = currentIndex + 1;
     scrollRef.current?.scrollTo({ x: SCREEN_W * next, animated: true });
     setCurrentIndex(next);
+  }
+
+  function goToPrev() {
+    const prev = currentIndex - 1;
+    if (prev < 0) return;
+    scrollRef.current?.scrollTo({ x: SCREEN_W * prev, animated: true });
+    setCurrentIndex(prev);
   }
 
   const isLast = currentIndex === SLIDES.length - 1;
@@ -133,6 +134,41 @@ export default function WelcomeScreen() {
         ))}
       </ScrollView>
 
+      {/* Top gradient — keeps status bar / back button legible over bright photos */}
+      <LinearGradient
+        colors={["rgba(5,8,15,0.45)", "transparent"]}
+        style={{
+          position: "absolute",
+          top: 0,
+          left: 0,
+          right: 0,
+          height: 140,
+        }}
+        pointerEvents="none"
+      />
+
+      {/* Back button — hidden on first slide */}
+      {currentIndex > 0 && (
+        <TouchableOpacity
+          onPress={goToPrev}
+          accessibilityLabel="Previous slide"
+          accessibilityRole="button"
+          style={{
+            position: "absolute",
+            top: insets.top + 12,
+            left: 20,
+            width: 40,
+            height: 40,
+            borderRadius: 20,
+            backgroundColor: "rgba(13,20,16,0.55)",
+            alignItems: "center",
+            justifyContent: "center",
+          }}
+        >
+          <Ionicons name="chevron-back" size={22} color="#ffffff" />
+        </TouchableOpacity>
+      )}
+
       {/* Slide content overlay */}
       <View
         style={{
@@ -153,7 +189,7 @@ export default function WelcomeScreen() {
               width: 52,
               height: 52,
               borderRadius: 14,
-              backgroundColor: "rgba(255,255,255,0.15)",
+              backgroundColor: "rgba(13,20,16,0.55)",
               alignItems: "center",
               justifyContent: "center",
               marginBottom: 20,
@@ -162,7 +198,7 @@ export default function WelcomeScreen() {
             <Ionicons
               name={SLIDES[currentIndex].icon}
               size={26}
-              color={SLIDES[currentIndex].iconColor}
+              color="#ffffff"
             />
           </View>
           <Text

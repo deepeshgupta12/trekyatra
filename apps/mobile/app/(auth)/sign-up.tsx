@@ -1,11 +1,14 @@
 import { useState } from "react";
 import { View, Text, TextInput, TouchableOpacity, Alert, ScrollView, StatusBar } from "react-native";
 import { router } from "expo-router";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 import { SafeArea } from "@/components/ui/SafeArea";
 import { Button } from "@/components/ui/Button";
 import { Logo } from "@/components/ui/Logo";
 import { useAuth } from "@/providers/AuthProvider";
 import { useTheme } from "@/hooks/useTheme";
+
+const ONBOARDING_KEY = "trekyatra_onboarding_done";
 
 export default function SignUpScreen() {
   const [fullName, setFullName] = useState("");
@@ -32,6 +35,11 @@ export default function SignUpScreen() {
     }
   }
 
+  async function handleSkip() {
+    await AsyncStorage.setItem(ONBOARDING_KEY, "1");
+    router.replace("/(tabs)/(home)");
+  }
+
   const inputBg = isDark ? colors.surface : "#FFFFFF";
   const inputBorder = isDark ? "rgba(255,255,255,0.10)" : "rgba(29,58,46,0.15)";
   const inputText = isDark ? "#ffffff" : colors.pine;
@@ -47,6 +55,18 @@ export default function SignUpScreen() {
         showsVerticalScrollIndicator={false}
       >
         <View style={{ flex: 1, paddingHorizontal: 24, justifyContent: "center", paddingVertical: 40 }}>
+          {/* Skip — continue as guest */}
+          <TouchableOpacity
+            onPress={handleSkip}
+            accessibilityLabel="Skip sign up"
+            accessibilityRole="button"
+            style={{ position: "absolute", top: 8, right: 24, zIndex: 1 }}
+          >
+            <Text style={{ color: mutedText, fontFamily: "Inter_500Medium", fontSize: 14 }}>
+              Skip
+            </Text>
+          </TouchableOpacity>
+
           {/* Logo */}
           <View style={{ marginBottom: 36 }}>
             <Logo size="md" />
