@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { View, Text, ScrollView, TouchableOpacity, ActivityIndicator, StyleSheet } from "react-native";
+import { useLocalSearchParams } from "expo-router";
 import { useTheme } from "@/hooks/useTheme";
 import { SafeArea } from "@/components/ui/SafeArea";
 import { contentApi, type TrekListItem } from "@/lib/mobileApi";
@@ -13,6 +14,7 @@ const ROWS: { key: keyof TrekListItem; label: string }[] = [
 
 export default function CompareScreen() {
   const { colors, isDark } = useTheme();
+  const { slug: preselectSlug } = useLocalSearchParams<{ slug?: string }>();
   const [treks, setTreks] = useState<TrekListItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [selected, setSelected] = useState<string[]>([]);
@@ -20,10 +22,15 @@ export default function CompareScreen() {
   useEffect(() => {
     contentApi
       .getTrendingTreks()
-      .then(setTreks)
+      .then((data) => {
+        setTreks(data);
+        if (preselectSlug && data.some((t) => t.slug === preselectSlug)) {
+          setSelected([preselectSlug]);
+        }
+      })
       .catch(() => {})
       .finally(() => setLoading(false));
-  }, []);
+  }, [preselectSlug]);
 
   function toggleSelect(slug: string) {
     if (selected.includes(slug)) {

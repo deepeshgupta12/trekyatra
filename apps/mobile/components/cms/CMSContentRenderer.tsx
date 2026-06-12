@@ -12,9 +12,10 @@ import { AffiliateCardBlock } from "./blocks/AffiliateCardBlock";
 
 interface Props {
   bodyJson: Block[] | null;
+  onHeadingLayout?: (id: string, y: number) => void;
 }
 
-export function CMSContentRenderer({ bodyJson }: Props) {
+export function CMSContentRenderer({ bodyJson, onHeadingLayout }: Props) {
   if (!bodyJson || bodyJson.length === 0) {
     return (
       <View className="py-8 items-center">
@@ -30,7 +31,19 @@ export function CMSContentRenderer({ bodyJson }: Props) {
           case "paragraph":
             return <ParagraphBlock key={i} content={block.content} />;
           case "heading":
-            return <HeadingBlock key={i} level={block.level} content={block.content} id={block.id} />;
+            return (
+              <HeadingBlock
+                key={i}
+                level={block.level}
+                content={block.content}
+                id={block.id}
+                onLayout={
+                  block.id && onHeadingLayout
+                    ? (e) => onHeadingLayout(block.id as string, e.nativeEvent.layout.y)
+                    : undefined
+                }
+              />
+            );
           case "image":
             return <ImageBlock key={i} url={block.url} alt={block.alt} caption={block.caption} />;
           case "list":

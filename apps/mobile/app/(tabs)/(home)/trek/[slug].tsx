@@ -8,13 +8,17 @@ import {
   ActivityIndicator,
 } from "react-native";
 import { useLocalSearchParams, router } from "expo-router";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useTrekDetail } from "@/hooks/useTrekDetail";
 import { TrekHero } from "@/components/trek/TrekHero";
 import { TrekMetaStrip } from "@/components/trek/TrekMetaStrip";
 import { TrekTabBar, type TrekTab } from "@/components/trek/TrekTabBar";
 import { TrekStickyBar } from "@/components/trek/TrekStickyBar";
 import { TrekRelatedRow } from "@/components/trek/TrekRelatedRow";
+import { TrekNewsSection } from "@/components/trek/TrekNewsSection";
+import { RelatedPagesSection } from "@/components/trek/RelatedPagesSection";
+import { TrustSignals } from "@/components/trek/TrustSignals";
+import { TrekContentsSheet, type ContentsHeading } from "@/components/trek/TrekContentsSheet";
 import { OfflineBadge } from "@/components/trek/OfflineBadge";
 import { CMSContentRenderer } from "@/components/cms/CMSContentRenderer";
 import { useTheme } from "@/hooks/useTheme";
@@ -29,6 +33,10 @@ export default function TrekDetailScreen() {
   const { colors, isDark } = useTheme();
   const [activeTab, setActiveTab] = useState<TrekTab>("guide");
   const [relatedTreks, setRelatedTreks] = useState<TrekListItem[]>([]);
+  const [contentsVisible, setContentsVisible] = useState(false);
+  const scrollViewRef = useRef<ScrollView>(null);
+  const headingOffsets = useRef<Record<string, number>>({});
+  const tabBodyOffset = useRef(0);
 
   const trek = data?.page;
   const fromCache = data?.fromCache ?? false;
@@ -63,6 +71,26 @@ export default function TrekDetailScreen() {
       case "packing": return packingData?.page.body_json as Block[] | null ?? null;
       case "permits": return permitsData?.page.body_json as Block[] | null ?? null;
       case "costs": return costsData?.page.body_json as Block[] | null ?? null;
+    }
+  }
+
+  function getContentsHeadings(): ContentsHeading[] {
+    const content = getTabContent();
+    if (!content) return [];
+    return content
+      .filter((block): block is Block & { type: "heading"; id: string } => block.type === "heading" && !!block.id)
+      .map((block) => ({ id: block.id, level: block.level, content: block.content }));
+  }
+
+  function handleHeadingLayout(id: string, y: number) {
+    headingOffsets.current[id] = y;
+  }
+
+  function handleSelectHeading(id: string) {
+    setContentsVisible(false);
+    const headingY = headingOffsets.current[id];
+    if (headingY !== undefined) {
+      scrollViewRef.current?.scrollTo({ y: tabBodyOffset.current + headingY - 60, animated: true });
     }
   }
 
@@ -113,6 +141,7 @@ export default function TrekDetailScreen() {
       </TouchableOpacity>
 
       <ScrollView
+        ref={scrollViewRef}
         style={styles.flex}
         stickyHeaderIndices={[2]}
         showsVerticalScrollIndicator={false}
@@ -133,6 +162,7 @@ export default function TrekDetailScreen() {
             difficulty={trek.trek_difficulty}
             season={trek.trek_season}
           />
+          <TrustSignals publishedAt={trek.published_at} updatedAt={trek.updated_at} />
           {isDifficultTrek && (
             <TouchableOpacity
               style={[styles.safetyBanner, { borderColor: isDark ? "rgba(220,38,38,0.25)" : "rgba(220,38,38,0.15)", backgroundColor: isDark ? "rgba(220,38,38,0.08)" : "rgba(220,38,38,0.05)" }]}
@@ -149,9 +179,29 @@ export default function TrekDetailScreen() {
         <TrekTabBar activeTab={activeTab} onTabChange={setActiveTab} />
 
         {/* Tab body */}
-        <View style={{ minHeight: 400, paddingBottom: 32 }}>
+        <View
+          style={{ minHeight: 400, paddingBottom: 32 }}
+          onLayout={(e) => { tabBodyOffset.current = e.nativeEvent.layout.y; }}
+        >
+          {activeTab === "guide" && getContentsHeadings().length >= 2 && (
+            <TouchableOpacity
+              style={[
+                styles.contentsPill,
+                {
+                  backgroundColor: isDark ? "rgba(255,255,255,0.06)" : "rgba(29,58,46,0.06)",
+                  borderColor: isDark ? "rgba(255,255,255,0.12)" : "rgba(29,58,46,0.12)",
+                },
+              ]}
+              onPress={() => setContentsVisible(true)}
+            >
+              <Text style={[styles.contentsPillText, { color: colors.textSecondary }]}>☰ Contents</Text>
+            </TouchableOpacity>
+          )}
           {getTabContent() ? (
-            <CMSContentRenderer bodyJson={getTabContent()} />
+            <CMSContentRenderer
+              bodyJson={getTabContent()}
+              onHeadingLayout={activeTab === "guide" ? handleHeadingLayout : undefined}
+            />
           ) : (
             <View style={styles.emptyTab}>
               <Text style={styles.emptyIcon}>📋</Text>
@@ -164,13 +214,25 @@ export default function TrekDetailScreen() {
             </View>
           )}
           {activeTab === "guide" && (
-            <TrekRelatedRow treks={relatedTreks} heading="You might also like" />
+            <>
+              <TrekRelatedRow treks={relatedTreks} heading="You might also like" />
+              <TrekNewsSection slug={trek.slug} />
+              <RelatedPagesSection slug={trek.slug} />
+            </>
           )}
         </View>
       </ScrollView>
 
       {/* Sticky CTA */}
       <TrekStickyBar slug={trek.slug} trekName={trek.title} />
+
+      {/* Table of contents bottom sheet */}
+      <TrekContentsSheet
+        visible={contentsVisible}
+        headings={getContentsHeadings()}
+        onSelect={handleSelectHeading}
+        onClose={() => setContentsVisible(false)}
+      />
     </View>
   );
 }
@@ -210,4 +272,17 @@ const styles = StyleSheet.create({
   emptyIcon: { fontSize: 36 },
   emptyTitle: { fontSize: 16, fontWeight: "600", textAlign: "center" },
   emptySubtitle: { fontSize: 13, textAlign: "center" },
+  contentsPill: {
+    alignSelf: "flex-start",
+    marginHorizontal: 16,
+    marginBottom: 12,
+    paddingHorizontal: 14,
+    paddingVertical: 7,
+    borderRadius: 20,
+    borderWidth: 1,
+  },
+  contentsPillText: {
+    fontSize: 13,
+    fontWeight: "600",
+  },
 });

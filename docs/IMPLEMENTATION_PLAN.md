@@ -702,3 +702,20 @@ Spec: QA on the M-DS1–M06 mobile app found the Home screen was missing most se
 - `apps/mobile/app/(tabs)/(home)/index.tsx` — new section order: WelcomeBanner → Trending → CategoryHubRow → Regions → DifficultyTabs → EditorialFeature → SeasonalPicks → RecentlyViewed (D) → PersonalisedFeed (A/B/D) → ComparisonCTA → Resources → OperatorsCTA. All new sections render for all 4 home states, matching web.
 - `apps/mobile/app/(tabs)/(home)/_layout.tsx` — registered Stack screens + titles for all new routes.
 - **tsc --noEmit: 0 errors** | Backend: 639 passed, 1 skipped (same 2 pre-existing unrelated `test_refresh.py` failures) | No web-next changes — zero blast radius on production website
+
+### Step M-DS4 — Trek Detail Screen Web-Parity [DONE — 2026-06-12]
+
+Spec: QA on the mobile trek detail screen (STEP-M05) found it missing several web-parity sections. User picked: Trust signals, Trek News, "In this cluster" related pages, Table of Contents (re-scoped to a native "Contents" bottom-sheet per user feedback — web's sticky-sidebar scroll-spy is not a mobile pattern), and a "Compare this trek" CTA. Excluded (flagged, not silently skipped): Breadcrumb (web-only concept), in-article ad slot (AdSense not native-app-appropriate, revisit with AdMob if ever needed), mobile news detail screen (News cards deep-link externally to `trekyatra.co.in/news/{slug}`).
+
+- **No backend changes** — `GET /api/v1/cms/pages/{slug}` already returns `published_at`/`updated_at`; `/api/v1/public/news/by-trek/{trek_slug}` and `/api/v1/links/suggestions/{slug}` already exist and are public.
+- `apps/mobile/lib/mobileApi.ts` — `CMSPage` gains `published_at`/`updated_at` (additive); new `NewsArticle`/`RelatedPage` interfaces; new `contentApi.getNewsByTrek(slug, limit)`/`contentApi.getRelatedPages(slug, limit)`.
+- `apps/mobile/hooks/useTrekDetail.ts` — `mapDbToPage` sets `published_at: null, updated_at: null` for the offline SQLite fallback to satisfy the extended `CMSPage` type.
+- **NEW** `apps/mobile/components/trek/TrustSignals.tsx` — "Updated/Published {date}" + author + fact-checked badge row, rendered under `TrekMetaStrip`.
+- **NEW** `apps/mobile/components/trek/TrekNewsSection.tsx` — horizontal news-article card row (fetches `getNewsByTrek`, hidden if empty, taps open `https://trekyatra.co.in/news/{slug}` externally).
+- **NEW** `apps/mobile/components/trek/RelatedPagesSection.tsx` — "In this cluster" vertical list (fetches `getRelatedPages`, hidden if empty; routes `trek_guide` → `/trek/{slug}`, others → `/guide/{slug}`).
+- **NEW** `apps/mobile/components/trek/TrekContentsSheet.tsx` — native "Contents" bottom-sheet modal (Wikipedia/Medium/Notion pattern) listing headings indented by level; tap scrolls to section + dismisses.
+- `apps/mobile/components/cms/blocks/HeadingBlock.tsx` + `CMSContentRenderer.tsx` — additive `onLayout`/`onHeadingLayout?: (id, y) => void` plumbing so anchored headings report their y-offset.
+- `apps/mobile/components/trek/TrekStickyBar.tsx` — 3rd icon button ("Compare", Ionicons `git-compare-outline`, same 48×48 style as Save) → `/compare?slug={slug}`.
+- `apps/mobile/app/(tabs)/(home)/compare.tsx` — reads `useLocalSearchParams<{slug?:string}>()`, pre-selects that trek on mount if present in the trending-treks list.
+- `apps/mobile/app/(tabs)/(home)/trek/[slug].tsx` — wires everything together: `TrustSignals` under meta strip; "☰ Contents" pill (Guide tab, ≥2 anchored headings) opens `TrekContentsSheet`; `scrollViewRef` + `tabBodyOffset`/`headingOffsets` refs for scroll-to-section; `TrekNewsSection` + `RelatedPagesSection` after "You might also like" (Guide tab only).
+- **tsc --noEmit: 0 errors** | `gitnexus_impact` upstream on all 7 target symbols — LOW (0 impacted) except `CMSPage` mobile interface (HIGH/54, pure file-import fan-out from 18 files; additive fields confirmed non-breaking via clean `tsc`) | `gitnexus_detect_changes(scope:"all")` → medium risk, 14 changed / 5 affected / 8 changed files, all expected | Backend: 639 passed, 1 skipped (same 2 pre-existing unrelated `test_refresh.py` failures, no backend files touched) | No web-next changes — zero blast radius on production website

@@ -16,6 +16,25 @@ export interface CMSPage {
   body_json: unknown[] | null;
   seo_description: string | null;
   is_published: boolean;
+  published_at: string | null;
+  updated_at: string | null;
+}
+
+// Shape returned by /api/v1/public/news/by-trek/{trek_slug}
+export interface NewsArticle {
+  slug: string;
+  title: string;
+  seo_description: string | null;
+  hero_image_url: string | null;
+  published_at: string | null;
+}
+
+// Shape returned by /api/v1/links/suggestions/{slug}
+export interface RelatedPage {
+  id: string;
+  slug: string;
+  title: string;
+  page_type: string;
 }
 
 export interface TrekListItem {
@@ -207,6 +226,12 @@ export const contentApi = {
 
   getOperators: (region?: string) =>
     apiGet<Operator[]>(`/api/v1/operators${region ? `?region=${encodeURIComponent(region)}` : ""}`),
+
+  getNewsByTrek: (slug: string, limit = 5) =>
+    apiGet<NewsArticle[]>(`/api/v1/public/news/by-trek/${slug}?limit=${limit}`),
+
+  getRelatedPages: (slug: string, limit = 5) =>
+    apiGet<RelatedPage[]>(`/api/v1/links/suggestions/${slug}?limit=${limit}`),
 };
 
 // Shape sent to /api/v1/plan/recommend

@@ -37,6 +37,8 @@ function mapDbToPage(row: typeof cmsPages.$inferSelect): CMSPage {
     body_json: row.bodyJson ? (JSON.parse(row.bodyJson) as unknown[]) : null,
     seo_description: row.seoDescription ?? null,
     is_published: true,
+    published_at: null,
+    updated_at: null,
   };
 }
 

@@ -121,6 +121,7 @@ All V0 foundations are shipped. The stack is live locally with:
 | **Mobile Crosscheck Bugfix Pass (M-DS1–M06)** (2026-06-11) | **done** |
 | **Step M-DS2 — Splash, Onboarding & Auth Polish** (2026-06-11) | **done** |
 | **Step M-DS3 — Home Screen Web-Parity + Content Hub Screens** (2026-06-12) | **done** |
+| **Step M-DS4 — Trek Detail Screen Web-Parity** (2026-06-12) | **done** |
 | Step M07 — Explore & Search | pending |
 | Step M08 — Trek Comparison (full attribute table + saved comparisons) | pending |
 
@@ -373,6 +374,21 @@ QA found the mobile Home screen was missing most of the sections present on the 
 **Mobile — `apps/mobile/app/(tabs)/(home)/index.tsx`:** rewired section order to mirror web: `HomeWelcomeBanner` (A/B) → `HomeTrendingSection` → `CategoryHubRow` → `RegionsRow` → `DifficultyTabsSection` → `EditorialFeatureCard` → `SeasonalPicksRow` → `RecentlyViewedRow` (D) → `PersonalisedFeedSection` (A/B/D) → `ComparisonCTACard` → `ResourcesRow` → `OperatorsCTACard`. New sections (CategoryHub/DifficultyTabs/Editorial/Comparison/Resources/Operators) render for **all** 4 home states, matching web.
 
 **Verification:** `cd apps/mobile && npx tsc --noEmit` → 0 errors. `PYTHONPATH=services/api .venv/bin/pytest services/api/tests/ -v` → 639 passed, 1 skipped (same 2 pre-existing unrelated `test_refresh.py` failures present on clean `main`). `gitnexus_detect_changes(scope:"all")` reviewed — changed/affected scope matches expected files (HomeScreen, mobileApi.ts, recommendations service/schema/tests). No `apps/web-next` files touched. `npx gitnexus analyze --force` re-index: 455,218 nodes | 750,719 edges | 3675 clusters | 300 flows.
+
+### Step M-DS4 — Trek Detail Screen Web-Parity — Done (2026-06-12)
+QA found the mobile trek detail screen (built in STEP-M05) missing several sections present on the production web trek detail page. User picked: Trust signals, Trek News, "In this cluster" related pages, Table of Contents (native bottom-sheet, not web sticky-sidebar), and a "Compare this trek" CTA. Excluded (flagged): Breadcrumb (web-only), in-article ad slot (AdSense not native-app-appropriate), mobile news detail screen (News cards deep-link externally). **No backend changes** — `published_at`/`updated_at` already returned by `GET /api/v1/cms/pages/{slug}`; news + related-pages endpoints already public. **Zero blast radius on `apps/web-next`**.
+
+**New components** (`apps/mobile/components/trek/`): `TrustSignals.tsx`, `TrekNewsSection.tsx`, `RelatedPagesSection.tsx`, `TrekContentsSheet.tsx` (native "Contents" bottom-sheet TOC).
+
+**Modified:**
+- `apps/mobile/lib/mobileApi.ts` — `CMSPage` +`published_at`/`updated_at` (additive); new `NewsArticle`/`RelatedPage` types; `contentApi.getNewsByTrek()`, `contentApi.getRelatedPages()`.
+- `apps/mobile/hooks/useTrekDetail.ts` — `mapDbToPage` sets `published_at: null, updated_at: null` for offline cache rows.
+- `apps/mobile/components/cms/blocks/HeadingBlock.tsx` + `CMSContentRenderer.tsx` — additive `onLayout`/`onHeadingLayout` plumbing so headings with stable `id`s can report their y-offset for scroll-to-section.
+- `apps/mobile/components/trek/TrekStickyBar.tsx` — 3rd icon button ("Compare", `git-compare-outline`) → `/compare?slug={slug}`.
+- `apps/mobile/app/(tabs)/(home)/compare.tsx` — reads `?slug=` param, pre-selects that trek on mount.
+- `apps/mobile/app/(tabs)/(home)/trek/[slug].tsx` — wires `TrustSignals` under meta strip; "☰ Contents" pill + `TrekContentsSheet` (Guide tab, ≥2 anchored headings); `TrekNewsSection` + `RelatedPagesSection` after "You might also like" (Guide tab only); `scrollViewRef` + offset refs for scroll-to-section.
+
+**Verification:** `cd apps/mobile && npx tsc --noEmit` → 0 errors. `gitnexus_impact` upstream on all 7 target symbols before editing — all LOW (0 impacted) except `CMSPage` mobile interface (HIGH/54, purely file-import fan-out from 18 files; additive fields confirmed non-breaking via clean `tsc`). `gitnexus_detect_changes(scope:"all")` → `medium` risk, 14 changed symbols / 5 affected / 8 changed files, all expected (`compare.tsx`, `trek/[slug].tsx`, `CMSContentRenderer.tsx`, `HeadingBlock.tsx`, `TrekStickyBar.tsx`, `useTrekDetail.ts`, `mobileApi.ts`, `CLAUDE.md` pre-existing). `PYTHONPATH=services/api .venv/bin/pytest services/api/tests/ -v` → 639 passed, 1 skipped (same 2 pre-existing unrelated `test_refresh.py` failures). No `apps/web-next` files touched.
 
 ### Step M04 — CMS Offline Content Engine — Done (2026-06-10)
 - `apps/mobile/db/schema.ts` — Drizzle schema: `cmsPages` + `syncMeta` tables

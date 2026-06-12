@@ -1,16 +1,17 @@
 import React from "react";
-import { Text, View } from "react-native";
+import { Text, View, type LayoutChangeEvent } from "react-native";
 
 interface Props {
   level: 2 | 3;
   content: string;
   id?: string;
+  onLayout?: (event: LayoutChangeEvent) => void;
 }
 
-export function HeadingBlock({ level, content }: Props) {
+export function HeadingBlock({ level, content, onLayout }: Props) {
   const isH2 = level === 2;
   return (
-    <View className={isH2 ? "mt-6 mb-2" : "mt-4 mb-1"}>
+    <View className={isH2 ? "mt-6 mb-2" : "mt-4 mb-1"} onLayout={onLayout}>
       <Text
         className={
           isH2

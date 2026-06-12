@@ -1631,3 +1631,24 @@ LOW — config/doc only, zero blast radius on `apps/mobile` or `apps/web-next` c
 `gitnexus_detect_changes(scope:"all")` confirmed changed/affected scope = `HomeScreen`, `mobileApi.ts`, recommendations service/schema/tests — matches expected files, no unexpected blast radius.
 
 **No `apps/web-next` files touched.** Zero blast radius on production website (desktop + mobile web unaffected).
+
+### Step M-DS4 — Trek Detail Screen Web-Parity blast radius — Done (2026-06-12)
+
+**Mobile-only — no backend changes:**
+| File | Purpose | Blast Radius |
+|------|---------|-------------|
+| `apps/mobile/lib/mobileApi.ts` | `CMSPage` gains `published_at`/`updated_at` (additive); new `NewsArticle`/`RelatedPage` interfaces; new `contentApi.getNewsByTrek`/`getRelatedPages` | HIGH/54 impacted via `gitnexus_impact` — purely file-import fan-out (18 files import from `mobileApi.ts`); change itself is additive (2 new optional fields), confirmed by 0 `tsc` errors across all consumers |
+| `apps/mobile/hooks/useTrekDetail.ts` | `mapDbToPage` (offline SQLite fallback) sets `published_at: null, updated_at: null` to satisfy extended `CMSPage` type | LOW — single internal mapper, 0 impacted |
+| `apps/mobile/components/trek/TrustSignals.tsx` (NEW) | "Updated/Published {date}" + author + fact-checked badge row | LOW — new leaf component |
+| `apps/mobile/components/trek/TrekNewsSection.tsx` (NEW) | Horizontal news-article card row for this trek (external deep link to `trekyatra.co.in/news/{slug}`) | LOW — new leaf component, fetches `/api/v1/public/news/by-trek/{slug}` |
+| `apps/mobile/components/trek/RelatedPagesSection.tsx` (NEW) | "In this cluster" vertical related-pages list | LOW — new leaf component, fetches `/api/v1/links/suggestions/{slug}` |
+| `apps/mobile/components/trek/TrekContentsSheet.tsx` (NEW) | Native "Contents" bottom-sheet modal (TOC) | LOW — new leaf component |
+| `apps/mobile/components/cms/blocks/HeadingBlock.tsx` | Accepts optional `onLayout` prop, passed through to wrapping `View` | LOW — 0 impacted, additive optional prop |
+| `apps/mobile/components/cms/CMSContentRenderer.tsx` | Accepts optional `onHeadingLayout?: (id, y) => void`, passed to `HeadingBlock` only when `block.id` set | LOW — 0 impacted, additive optional prop |
+| `apps/mobile/components/trek/TrekStickyBar.tsx` | Added third icon button (Ionicons `git-compare-outline`) → `/compare?slug={slug}` | LOW — 0 impacted |
+| `apps/mobile/app/(tabs)/(home)/compare.tsx` | Reads `?slug=` search param; pre-selects that trek on mount if present in trending-treks list | LOW — 0 impacted |
+| `apps/mobile/app/(tabs)/(home)/trek/[slug].tsx` | Wires in `TrustSignals`, "☰ Contents" pill + `TrekContentsSheet`, `TrekNewsSection` + `RelatedPagesSection`; `scrollViewRef` + `headingOffsets`/`tabBodyOffset` refs for scroll-to-section | LOW — 0 impacted, top-level route screen |
+
+`gitnexus_detect_changes(scope:"all")` confirmed `risk_level: "medium"`, 14 changed symbols / 5 affected / 8 changed files — all expected for this step (the 4 new components are picked up by `npx gitnexus analyze --force` re-index, not in `detect_changes`).
+
+**No `apps/web-next` files touched.** Zero blast radius on production website (desktop + mobile web unaffected).

@@ -1,5 +1,6 @@
 import { View, Text, TouchableOpacity, StyleSheet } from "react-native";
 import { router } from "expo-router";
+import { Ionicons } from "@expo/vector-icons";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useTheme } from "@/hooks/useTheme";
 import { useAuth } from "@/hooks/useAuth";
@@ -61,6 +62,13 @@ export function TrekStickyBar({ slug, trekName }: TrekStickyBarProps) {
         <Text style={{ fontSize: 18, color: saved ? "#E8702A" : colors.textMuted }}>
           {saved ? "♥" : "♡"}
         </Text>
+      </TouchableOpacity>
+      <TouchableOpacity
+        style={[styles.saveButton, { borderColor: isDark ? "rgba(255,255,255,0.18)" : "rgba(0,0,0,0.18)" }]}
+        activeOpacity={0.8}
+        onPress={() => router.push(`/compare?slug=${slug}` as never)}
+      >
+        <Ionicons name="git-compare-outline" size={20} color={colors.textMuted} />
       </TouchableOpacity>
     </View>
   );
