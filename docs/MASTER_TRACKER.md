@@ -123,6 +123,7 @@ All V0 foundations are shipped. The stack is live locally with:
 | **Step M-DS3 — Home Screen Web-Parity + Content Hub Screens** (2026-06-12) | **done** |
 | **Step M-DS4 — Trek Detail Screen Web-Parity** (2026-06-12) | **done** |
 | **Step M-DS5 — Splash Screen Rebuild (Static Background + Logo Card)** (2026-06-12) | **done** |
+| **Step M-DS6 — Splash→Onboarding Transition Animation + Onboarding Skip CTA** (2026-06-12) | **done** |
 | Step M07 — Explore & Search | pending |
 | Step M08 — Trek Comparison (full attribute table + saved comparisons) | pending |
 
@@ -395,6 +396,11 @@ QA found the mobile trek detail screen (built in STEP-M05) missing several secti
 Replaced `AnimatedSplash.tsx`'s cinematic SVG/Reanimated "Trail Comes Alive" sequence with a static composition, using a user-provided background photo: full-bleed background image (`apps/mobile/assets/splash-background.jpg`, 864×1821) + a centered white rounded-corner card (140×140) containing `logo.png`. Same `onFinish()` contract — fires via `setTimeout(1800ms)`, so `app/_layout.tsx` is unchanged. Removed `react-native-svg`/`react-native-reanimated` usage from this component (both remain used elsewhere in the app).
 
 **Verification:** `cd apps/mobile && npx tsc --noEmit` → 0 errors. `gitnexus_impact("AnimatedSplash", upstream)` → LOW, 0 impacted (leaf component, unchanged prop contract). `gitnexus_detect_changes(scope:"all")` → `low` risk, 5 changed symbols / 0 affected / 1 changed file (`AnimatedSplash.tsx`). No `apps/web-next` files touched.
+
+### Step M-DS6 — Splash→Onboarding Transition Animation + Onboarding Skip CTA — Done (2026-06-12)
+Re-added `react-native-reanimated` to `AnimatedSplash.tsx`: logo card fades in and scales (`0.85 → 1.08 → 1.0`) on mount, card/logo enlarged (152×152 / 110×110), and the whole overlay fades to opacity 0 over 350ms before calling `onFinish()` via `runOnJS` — produces a smooth crossfade into the onboarding screen mounted underneath (no `app/_layout.tsx` changes needed). Added a top-right "Skip" pill button to `(auth)/welcome.tsx`, shown on onboarding slides 1-3, that calls `markDone()` + `router.replace("/(auth)/sign-up")` to jump directly to the Sign up screen (distinct from the existing M-DS2 "Skip — continue as guest" buttons on sign-in/sign-up).
+
+**Verification:** `cd apps/mobile && npx tsc --noEmit` → 0 errors. `gitnexus_impact("AnimatedSplash", upstream)` and `gitnexus_impact("WelcomeScreen", upstream)` → both LOW, 0 impacted. `gitnexus_detect_changes(scope:"all")` → `low` risk, 14 changed symbols / 0 affected / 2 changed files (`AnimatedSplash.tsx`, `welcome.tsx`). No `apps/web-next` files touched.
 
 ### Step M04 — CMS Offline Content Engine — Done (2026-06-10)
 - `apps/mobile/db/schema.ts` — Drizzle schema: `cmsPages` + `syncMeta` tables

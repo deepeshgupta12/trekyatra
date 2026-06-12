@@ -525,6 +525,7 @@ Full API docs available at http://localhost:8000/docs when the backend is runnin
 | Home screen web-parity — Category Hub, Difficulty Tabs, Editorial Feature, Comparison/Resources/Operators CTAs, 9 new content-hub screens (Packing/Permits/Costs/Safety/Beginner/Plan-My-Trek/Compare/Products/Operators), recommendation trek tags fix | Done (M-DS3) |
 | Trek detail screen web-parity — Trust signals (fact-checked + updated/published date), Trek News row, "In this cluster" related pages, native Contents bottom-sheet TOC, Compare CTA on sticky bar | Done (M-DS4) |
 | Splash screen rebuild — static full-bleed background photo + centered white logo card, replacing cinematic SVG/Reanimated sequence | Done (M-DS5) |
+| Splash→onboarding transition animation (logo scale/fade + crossfade) and onboarding "Skip" CTA → direct to Sign up | Done (M-DS6) |
 | Explore & Search | Pending (M07) |
 | Trek planning wizard (full multi-step UI) | Pending (M09) |
 | Push notifications | Pending (M14) |

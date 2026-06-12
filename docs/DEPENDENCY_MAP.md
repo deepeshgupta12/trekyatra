@@ -1664,3 +1664,15 @@ LOW — config/doc only, zero blast radius on `apps/mobile` or `apps/web-next` c
 `gitnexus_detect_changes(scope:"all")` confirmed `risk_level: "low"`, 5 changed symbols / 0 affected / 1 changed file — all within `AnimatedSplash.tsx`, as expected.
 
 **No `apps/web-next` files touched.** Zero blast radius on production website (desktop + mobile web unaffected).
+
+### Step M-DS6 — Splash→Onboarding Transition + Onboarding Skip CTA blast radius — Done (2026-06-12)
+
+**Mobile-only — no backend changes:**
+| File | Purpose | Blast Radius |
+|------|---------|-------------|
+| `apps/mobile/components/ui/AnimatedSplash.tsx` | Re-added `react-native-reanimated` logo scale/fade-in + container fade-out before `onFinish()`; enlarged card (152×152) and logo (110×110) | LOW — `gitnexus_impact` upstream: 0 impacted; sole consumer `app/_layout.tsx` unchanged (prop contract identical) |
+| `apps/mobile/app/(auth)/welcome.tsx` | New `handleSkip()` + top-right "Skip" pill button (slides 1-3) → `markDone()` + `router.replace("/(auth)/sign-up")` | LOW — `gitnexus_impact` upstream: 0 impacted; leaf route screen |
+
+`gitnexus_detect_changes(scope:"all")` confirmed `risk_level: "low"`, 14 changed symbols / 0 affected / 2 changed files — all within `AnimatedSplash.tsx` and `welcome.tsx`, as expected.
+
+**No `apps/web-next` files touched.** Zero blast radius on production website (desktop + mobile web unaffected).

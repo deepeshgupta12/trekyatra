@@ -78,6 +78,11 @@ export default function WelcomeScreen() {
     router.replace("/(auth)/sign-in");
   }
 
+  async function handleSkip() {
+    await markDone();
+    router.replace("/(auth)/sign-up");
+  }
+
   function goToNext() {
     const next = currentIndex + 1;
     scrollRef.current?.scrollTo({ x: SCREEN_W * next, animated: true });
@@ -169,6 +174,36 @@ export default function WelcomeScreen() {
           }}
         >
           <Ionicons name="chevron-back" size={22} color="#ffffff" />
+        </TouchableOpacity>
+      )}
+
+      {/* Skip button — jumps straight to login/sign-up from any slide */}
+      {!isLast && (
+        <TouchableOpacity
+          onPress={handleSkip}
+          accessibilityLabel="Skip onboarding"
+          accessibilityRole="button"
+          style={{
+            position: "absolute",
+            top: insets.top + 12,
+            right: 20,
+            paddingHorizontal: 16,
+            height: 40,
+            borderRadius: 20,
+            backgroundColor: "rgba(13,20,16,0.55)",
+            alignItems: "center",
+            justifyContent: "center",
+          }}
+        >
+          <Text
+            style={{
+              fontFamily: "Inter_600SemiBold",
+              fontSize: 14,
+              color: "#ffffff",
+            }}
+          >
+            Skip
+          </Text>
         </TouchableOpacity>
       )}
 

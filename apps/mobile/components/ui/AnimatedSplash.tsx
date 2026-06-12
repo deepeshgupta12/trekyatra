@@ -1,34 +1,68 @@
 import { useEffect } from "react";
-import { Image, StyleSheet, View } from "react-native";
+import { Image, StyleSheet } from "react-native";
+import Animated, {
+  Easing,
+  runOnJS,
+  useAnimatedStyle,
+  useSharedValue,
+  withDelay,
+  withSequence,
+  withTiming,
+} from "react-native-reanimated";
 
 interface AnimatedSplashProps {
   onFinish: () => void;
 }
 
 const DISPLAY_DURATION_MS = 1800;
+const FADE_OUT_MS = 350;
 
 /**
- * Static splash composition: full-bleed background photo with a
- * white, rounded-corner card holding the logo, centered on screen.
- * Calls onFinish() after a fixed display duration.
+ * Splash composition: full-bleed background photo with a white,
+ * rounded-corner card holding the logo, centered on screen. The logo
+ * scales/fades in on mount, then the whole overlay fades out so it
+ * crossfades into the onboarding screen mounted underneath.
  */
 export function AnimatedSplash({ onFinish }: AnimatedSplashProps) {
+  const containerOpacity = useSharedValue(1);
+  const logoScale = useSharedValue(0.85);
+  const logoOpacity = useSharedValue(0);
+
   useEffect(() => {
-    const timer = setTimeout(onFinish, DISPLAY_DURATION_MS);
-    return () => clearTimeout(timer);
+    logoOpacity.value = withTiming(1, { duration: 450, easing: Easing.out(Easing.ease) });
+    logoScale.value = withSequence(
+      withTiming(1.08, { duration: 500, easing: Easing.out(Easing.cubic) }),
+      withTiming(1, { duration: 250, easing: Easing.inOut(Easing.ease) })
+    );
+
+    containerOpacity.value = withDelay(
+      DISPLAY_DURATION_MS - FADE_OUT_MS,
+      withTiming(0, { duration: FADE_OUT_MS, easing: Easing.in(Easing.ease) }, () => {
+        runOnJS(onFinish)();
+      })
+    );
   }, []);
 
+  const containerStyle = useAnimatedStyle(() => ({
+    opacity: containerOpacity.value,
+  }));
+
+  const logoStyle = useAnimatedStyle(() => ({
+    opacity: logoOpacity.value,
+    transform: [{ scale: logoScale.value }],
+  }));
+
   return (
-    <View style={styles.container} pointerEvents="none">
+    <Animated.View style={[styles.container, containerStyle]} pointerEvents="none">
       <Image
         source={require("@/assets/splash-background.jpg")}
         style={styles.background}
         resizeMode="cover"
       />
-      <View style={styles.card}>
+      <Animated.View style={[styles.card, logoStyle]}>
         <Image source={require("@/assets/logo.png")} style={styles.logo} resizeMode="contain" />
-      </View>
-    </View>
+      </Animated.View>
+    </Animated.View>
   );
 }
 
@@ -54,11 +88,11 @@ const styles = StyleSheet.create({
     position: "absolute",
     left: "50%",
     top: "50%",
-    marginLeft: -70,
-    marginTop: -70,
-    width: 140,
-    height: 140,
-    borderRadius: 24,
+    marginLeft: -76,
+    marginTop: -76,
+    width: 152,
+    height: 152,
+    borderRadius: 26,
     backgroundColor: "#FFFFFF",
     alignItems: "center",
     justifyContent: "center",
@@ -69,7 +103,7 @@ const styles = StyleSheet.create({
     elevation: 6,
   },
   logo: {
-    width: 100,
-    height: 100,
+    width: 110,
+    height: 110,
   },
 });
