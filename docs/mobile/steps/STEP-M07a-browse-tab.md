@@ -93,6 +93,7 @@
 - `cd apps/mobile && npx tsc --noEmit`: 0 errors.
 - `gitnexus_impact` upstream on `list_cms_pages`/`list_pages`: confirmed only `list_cms_pages` calls `list_pages` — LOW risk for additive optional params.
 - `gitnexus_detect_changes(scope:"all")`: risk "low", 36 changed symbols / 0 affected / 5 changed files (`mobileApi.ts`, `cms.py`, `cms/service.py`, `test_cms.py`, plus pre-existing `CLAUDE.md` touch). New mobile route files appear after `npx gitnexus analyze --force` re-index.
+- `npx gitnexus analyze --force` re-index after this step: **491,679 nodes | 788,324 edges | 3,709 clusters | 300 flows** (up from 491,612 nodes | 788,810 edges | 3,763 clusters at the start of this step).
 - No `apps/web-next` files touched — **zero blast radius on production website (desktop + mobile web)**.
 
 ### Pre-existing test failures flagged (not fixed in this step)
