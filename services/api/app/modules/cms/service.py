@@ -80,6 +80,11 @@ def list_pages(
     *,
     status: str | None = None,
     page_type: str | None = None,
+    trek_state: str | None = None,
+    trek_difficulty: str | None = None,
+    trek_season: str | None = None,
+    trek_duration_min: int | None = None,
+    trek_duration_max: int | None = None,
     limit: int = 50,
     offset: int = 0,
 ) -> list[CMSPage]:
@@ -88,6 +93,26 @@ def list_pages(
         q = q.where(CMSPage.status == status)
     if page_type:
         q = q.where(CMSPage.page_type == page_type)
+    if trek_state:
+        q = q.where(CMSPage.trek_state == trek_state)
+    if trek_difficulty:
+        q = q.where(CMSPage.trek_difficulty == trek_difficulty)
+    if trek_season:
+        q = q.where(CMSPage.trek_season.ilike(f"%{trek_season}%"))
+    if trek_duration_min is not None or trek_duration_max is not None:
+        # trek_duration is free text (e.g. "6 Days") — extract the leading
+        # integer day count and compare against the requested range.
+        from sqlalchemy import Integer, cast, func
+
+        duration_days = cast(
+            func.regexp_replace(CMSPage.trek_duration, r"[^0-9].*$", ""),
+            Integer,
+        )
+        q = q.where(CMSPage.trek_duration.op("~")(r"^[0-9]"))
+        if trek_duration_min is not None:
+            q = q.where(duration_days >= trek_duration_min)
+        if trek_duration_max is not None:
+            q = q.where(duration_days <= trek_duration_max)
     q = q.limit(limit).offset(offset)
     return list(db.scalars(q).all())
 

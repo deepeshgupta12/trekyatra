@@ -94,11 +94,27 @@ def trending_trek_pages(
 def list_cms_pages(
     status: str | None = Query(default=None),
     page_type: str | None = Query(default=None),
+    trek_state: str | None = Query(default=None),
+    trek_difficulty: str | None = Query(default=None),
+    trek_season: str | None = Query(default=None),
+    trek_duration_min: int | None = Query(default=None, ge=0),
+    trek_duration_max: int | None = Query(default=None, ge=0),
     limit: int = Query(default=50, ge=1, le=200),
     offset: int = Query(default=0, ge=0),
     db: Session = Depends(get_db),
 ) -> list[CMSPageResponse]:
-    pages = cms_service.list_pages(db, status=status, page_type=page_type, limit=limit, offset=offset)
+    pages = cms_service.list_pages(
+        db,
+        status=status,
+        page_type=page_type,
+        trek_state=trek_state,
+        trek_difficulty=trek_difficulty,
+        trek_season=trek_season,
+        trek_duration_min=trek_duration_min,
+        trek_duration_max=trek_duration_max,
+        limit=limit,
+        offset=offset,
+    )
     return [CMSPageResponse.model_validate(p) for p in pages]
 
 

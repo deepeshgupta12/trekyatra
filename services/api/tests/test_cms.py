@@ -100,6 +100,58 @@ def test_list_pages_filters_by_status():
     assert len(published) == before_published + 1
 
 
+def test_list_pages_filters_by_trek_state_and_difficulty():
+    with SessionLocal() as db:
+        db.add(CMSPage(
+            slug="filter-trek-a", page_type="trek_guide", title="Filter Trek A", status="published",
+            trek_state="Uttarakhand", trek_difficulty="Moderate", trek_duration="6 Days",
+        ))
+        db.add(CMSPage(
+            slug="filter-trek-b", page_type="trek_guide", title="Filter Trek B", status="published",
+            trek_state="Himachal Pradesh", trek_difficulty="Easy", trek_duration="3 Days",
+        ))
+        db.commit()
+
+        by_state = list_pages(db, trek_state="Uttarakhand", limit=10000)
+        by_difficulty = list_pages(db, trek_difficulty="Easy", limit=10000)
+        by_both = list_pages(db, trek_state="Uttarakhand", trek_difficulty="Moderate", limit=10000)
+        by_mismatch = list_pages(db, trek_state="Uttarakhand", trek_difficulty="Easy", limit=10000)
+
+    assert "filter-trek-a" in {p.slug for p in by_state}
+    assert "filter-trek-b" not in {p.slug for p in by_state}
+    assert "filter-trek-b" in {p.slug for p in by_difficulty}
+    assert "filter-trek-a" in {p.slug for p in by_both}
+    assert "filter-trek-a" not in {p.slug for p in by_mismatch}
+
+
+def test_list_pages_filters_by_trek_duration_range():
+    with SessionLocal() as db:
+        db.add(CMSPage(
+            slug="filter-trek-short", page_type="trek_guide", title="Short Trek", status="published",
+            trek_duration="2 Days",
+        ))
+        db.add(CMSPage(
+            slug="filter-trek-long", page_type="trek_guide", title="Long Trek", status="published",
+            trek_duration="10 Days",
+        ))
+        db.commit()
+
+        short_range = list_pages(db, trek_duration_min=1, trek_duration_max=3, limit=10000)
+        long_range = list_pages(db, trek_duration_min=8, trek_duration_max=12, limit=10000)
+
+    assert "filter-trek-short" in {p.slug for p in short_range}
+    assert "filter-trek-long" not in {p.slug for p in short_range}
+    assert "filter-trek-long" in {p.slug for p in long_range}
+    assert "filter-trek-short" not in {p.slug for p in long_range}
+
+
+def test_list_pages_no_filters_unchanged():
+    with SessionLocal() as db:
+        before = len(list_pages(db, limit=10000))
+        after = len(list_pages(db, status=None, page_type=None, trek_state=None, limit=10000))
+    assert before == after
+
+
 def test_update_page_sets_published_at_on_publish():
     with SessionLocal() as db:
         page = create_page(db, data=CMSPageCreate(slug="update-test", page_type="trek_guide", title="Update Test"))
@@ -189,6 +241,21 @@ def test_api_list_pages_returns_list():
     r = client.get("/api/v1/cms/pages")
     assert r.status_code == 200
     assert isinstance(r.json(), list)
+
+
+def test_api_list_pages_filters_by_trek_state():
+    client.post("/api/v1/cms/pages", json={
+        "slug": "api-filter-trek", "page_type": "trek_guide", "title": "API Filter Trek",
+        "status": "published",
+    })
+    client.patch("/api/v1/cms/pages/api-filter-trek", json={"trek_state": "Sikkim", "trek_difficulty": "Difficult"})
+    r = client.get("/api/v1/cms/pages", params={"trek_state": "Sikkim", "trek_difficulty": "Difficult"})
+    assert r.status_code == 200
+    slugs = {p["slug"] for p in r.json()}
+    assert "api-filter-trek" in slugs
+
+    r_mismatch = client.get("/api/v1/cms/pages", params={"trek_state": "Sikkim", "trek_difficulty": "Easy"})
+    assert "api-filter-trek" not in {p["slug"] for p in r_mismatch.json()}
 
 
 def test_api_create_page_201():

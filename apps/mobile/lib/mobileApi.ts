@@ -49,7 +49,33 @@ export interface TrekListItem {
   trek_season: string | null;
 }
 
-// Shape returned by /api/v1/cms/pages/trending and /api/v1/treks/seasonal
+// Shape returned by /api/v1/treks/filter-facets
+export interface FilterFacets {
+  states: string[];
+  difficulties: string[];
+  seasons: string[];
+  suitabilities: string[];
+  durations: string[];
+}
+
+// Shape returned by /api/v1/search/suggestions
+export interface SearchSuggestion {
+  slug: string;
+  title: string;
+  page_type: string;
+  hero_image_url: string | null;
+  seo_description: string | null;
+}
+
+export interface ExploreFilters {
+  trekState?: string | null;
+  trekDifficulty?: string | null;
+  trekSeason?: string | null;
+  trekDurationMin?: number | null;
+  trekDurationMax?: number | null;
+}
+
+// Shape returned by /api/v1/cms/pages and /api/v1/treks/seasonal
 interface CMSPageResponseLike {
   slug: string;
   title: string;
@@ -223,6 +249,28 @@ export const contentApi = {
 
   getCmsPagesByType: (pageType: string) =>
     apiGet<CMSPage[]>(`/api/v1/cms/pages?page_type=${encodeURIComponent(pageType)}`),
+
+  getFilterFacets: () => apiGet<FilterFacets>("/api/v1/treks/filter-facets"),
+
+  exploreTreks: async (filters: ExploreFilters, limit: number, offset: number) => {
+    const params = new URLSearchParams({
+      page_type: "trek_guide",
+      status: "published",
+      limit: String(limit),
+      offset: String(offset),
+    });
+    if (filters.trekState) params.set("trek_state", filters.trekState);
+    if (filters.trekDifficulty) params.set("trek_difficulty", filters.trekDifficulty);
+    if (filters.trekSeason) params.set("trek_season", filters.trekSeason);
+    if (filters.trekDurationMin != null) params.set("trek_duration_min", String(filters.trekDurationMin));
+    if (filters.trekDurationMax != null) params.set("trek_duration_max", String(filters.trekDurationMax));
+
+    const pages = await apiGet<CMSPageResponseLike[]>(`/api/v1/cms/pages?${params.toString()}`);
+    return pages.map(mapCmsPageToTrekListItem);
+  },
+
+  getSearchSuggestions: (q: string) =>
+    apiGet<SearchSuggestion[]>(`/api/v1/search/suggestions?q=${encodeURIComponent(q)}`),
 
   getProducts: () => apiGet<Product[]>("/api/v1/products"),
 

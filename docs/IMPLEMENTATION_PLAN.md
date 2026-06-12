@@ -748,3 +748,17 @@ Spec: QA on M-DS6 surfaced 4 bugs on Trek Detail + Home screens. Tiny, self-cont
 - `apps/mobile/app/(tabs)/(home)/trek/[slug].tsx` — removed dead 404-causing `${slug}-packing/-permits/-costs` sub-page fetches; Guide tab renders `body_json` else `content_html`; Packing/Permits/Costs tabs render `content_json.sections.{packing,permits,cost_estimate}` via `HtmlContentRenderer`.
 - **NEW** `apps/mobile/components/home/HomeHero.tsx` + **NEW** `apps/mobile/components/home/HomeSearchBar.tsx`; wired into `apps/mobile/app/(tabs)/(home)/index.tsx`, replacing the old plain-text `HomeHeader`.
 - **tsc --noEmit: 0 errors** | `gitnexus_impact` upstream on `CustomTabBar`, `CMSContentRenderer`, `useTrekDetail` → all LOW | `gitnexus_detect_changes(scope:"all")` → 11 changed / 10 affected / 9 changed files, all expected | No web-next changes — zero blast radius on production website
+
+### Step M07a — Browse Tab (grid, filters, regions/seasons, basic search) [DONE — 2026-06-12]
+
+Spec: first sub-step of M07 "Explore & Search", split into M07a (this step — grid/filters/regions/seasons/basic search), M07b (advanced search: semantic/voice/recent/trending — deferred), M07c (polish pass — deferred), per user-approved plan.
+
+- `services/api/app/api/routes/cms.py` `list_cms_pages` (`GET /api/v1/cms/pages`) — new optional query params `trek_state`, `trek_difficulty`, `trek_season`, `trek_duration_min`, `trek_duration_max` (all `None` by default, fully backward compatible).
+- `services/api/app/modules/cms/service.py` `list_pages()` — matching filter clauses; `trek_duration` (free text e.g. "6 Days") filtered via `regexp_replace` + `cast(..., Integer)` extraction of the leading day count, guarded by `trek_duration.op("~")(r"^[0-9]")`.
+- **NEW** `apps/mobile/stores/exploreStore.ts` — Zustand filter state (`trekState`/`trekDifficulty`/`trekSeason`/`durationBucket`) + `DURATION_BUCKETS` constant.
+- **NEW** `apps/mobile/hooks/useFilterFacets.ts` (GET `/api/v1/treks/filter-facets`) and `apps/mobile/hooks/useExplore.ts` (`useInfiniteQuery` over `GET /api/v1/cms/pages?page_type=trek_guide&status=published&...`).
+- `apps/mobile/lib/mobileApi.ts` — new `FilterFacets`, `SearchSuggestion`, `ExploreFilters` types + `contentApi.getFilterFacets`/`exploreTreks`/`getSearchSuggestions`.
+- **NEW** `apps/mobile/components/browse/SearchBar.tsx` (+ `SearchBarWrapper`), `TrekGrid.tsx`, `FilterChips.tsx`, `FilterSheet.tsx`; `HomeSearchBar.tsx` refactored to wrap the shared `SearchBar`.
+- Converted `apps/mobile/app/(tabs)/browse.tsx` placeholder into a stack: **NEW** `browse/_layout.tsx`, `browse/index.tsx` (rebuilt Browse screen), `browse/regions/[state].tsx`, `browse/seasons/[season].tsx`, `browse/search.tsx` (basic search only — recent/trending/semantic/voice deferred to M07b).
+- **4 new backend tests** in `test_cms.py` for the new filter query params.
+- **tsc --noEmit: 0 errors** | Backend: 7/7 relevant `test_cms.py` tests pass; full suite 643 pass, 2 pre-existing unrelated `test_refresh.py` failures (test-ordering issue, confirmed via `git stash`, reported separately) | `gitnexus_detect_changes(scope:"all")` → risk "low", 36 changed / 0 affected / 5 changed files | No web-next changes — zero blast radius on production website

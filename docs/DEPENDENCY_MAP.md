@@ -1696,3 +1696,34 @@ LOW — config/doc only, zero blast radius on `apps/mobile` or `apps/web-next` c
 `gitnexus_detect_changes(scope:"all")` confirmed 11 changed symbols / 10 affected / 9 changed files — all within the files above (plus a pre-existing unrelated `CLAUDE.md` touch from before this step). `npx tsc --noEmit` → 0 errors.
 
 **No `apps/web-next` files touched.** Zero blast radius on production website (desktop + mobile web unaffected).
+
+### Step M07a — Browse Tab blast radius — Done (2026-06-12)
+
+**Backend (additive only):**
+| File | Purpose | Blast Radius |
+|------|---------|-------------|
+| `services/api/app/api/routes/cms.py` | `list_cms_pages` (`GET /api/v1/cms/pages`) gains optional `trek_state`, `trek_difficulty`, `trek_season`, `trek_duration_min`, `trek_duration_max` query params, passed through to `list_pages()` | LOW — all new params default to `None`; existing callers (web-next CMS admin, mobile `getCmsPagesByType`/`getTrendingTreks`/`getSeasonalTreks`) unaffected |
+| `services/api/app/modules/cms/service.py` | `list_pages()` adds matching optional filter clauses; `trek_duration` range filter via `regexp_replace`/`cast(Integer)` extraction of leading day count, guarded by `~ '^[0-9]'` regex | LOW — `gitnexus_impact` upstream confirmed only `list_cms_pages` calls `list_pages`; new clauses only applied when params provided |
+
+**Mobile:**
+| File | Purpose | Blast Radius |
+|------|---------|-------------|
+| `apps/mobile/lib/mobileApi.ts` | New `FilterFacets`, `SearchSuggestion`, `ExploreFilters` types; new `contentApi.getFilterFacets`, `exploreTreks`, `getSearchSuggestions` | LOW — additive exports only |
+| `apps/mobile/stores/exploreStore.ts` (NEW) | Zustand store: `trekState`/`trekDifficulty`/`trekSeason`/`durationBucket` filter state, `DURATION_BUCKETS` constant | LOW — new isolated store |
+| `apps/mobile/hooks/useFilterFacets.ts` (NEW) | `useQuery` wrapper over `GET /api/v1/treks/filter-facets` | LOW — new leaf hook |
+| `apps/mobile/hooks/useExplore.ts` (NEW) | `useInfiniteQuery` wrapper over `GET /api/v1/cms/pages` with explore filters | LOW — new leaf hook |
+| `apps/mobile/components/browse/SearchBar.tsx` (NEW) | Shared tappable search pill (`SearchBar` + `SearchBarWrapper`), navigates to `/(tabs)/browse/search` | LOW — new leaf component |
+| `apps/mobile/components/home/HomeSearchBar.tsx` | Refactored to wrap shared `SearchBar` (same visual output via `marginTop: -24` override) | LOW — `gitnexus_impact` upstream: only `(home)/index.tsx`, no visual change |
+| `apps/mobile/components/browse/TrekGrid.tsx` (NEW) | 2-col `FlatList` of `TrekCard`, infinite scroll, empty/loading states, `ListHeaderComponent` | LOW — new component, reuses existing `TrekCard` |
+| `apps/mobile/components/browse/FilterChips.tsx` (NEW) | Horizontal active-filter chip row, opens `FilterSheet` | LOW — new component |
+| `apps/mobile/components/browse/FilterSheet.tsx` (NEW) | Full-screen Modal filter sheet (Region/Difficulty/Season/Duration), no new dependency | LOW — new component |
+| `apps/mobile/app/(tabs)/browse.tsx` (DELETED) | Old placeholder screen | LOW — replaced by `browse/` directory, Expo Router resolves automatically |
+| `apps/mobile/app/(tabs)/browse/_layout.tsx` (NEW) | Stack layout mirroring `(home)/_layout.tsx`, `headerBackButtonDisplayMode: "minimal"` | LOW — new route layout |
+| `apps/mobile/app/(tabs)/browse/index.tsx` (NEW) | Rebuilt Browse screen: title + `SearchBar` + `FilterChips` + Regions row + Seasons row + `TrekGrid` via `useExplore`; reads `?region=` param from existing Home `RegionsRow` | LOW — top-level route screen, 0 impacted |
+| `apps/mobile/app/(tabs)/browse/regions/[state].tsx` (NEW) | Region hub — `TrekGrid` filtered by `trek_state` via `useExplore` | LOW — new route screen |
+| `apps/mobile/app/(tabs)/browse/seasons/[season].tsx` (NEW) | Season hub — uses existing `GET /treks/seasonal?month=` via static slug→month map (Winter/Spring/Summer/Monsoon/Autumn) | LOW — new route screen, reuses existing `getSeasonalTreks` |
+| `apps/mobile/app/(tabs)/browse/search.tsx` (NEW) | Basic search via `GET /api/v1/search/suggestions?q=`; "Start typing to search" placeholder (recent/trending/semantic/voice deferred to M07b) | LOW — new route screen, reuses existing endpoint |
+
+`gitnexus_detect_changes(scope:"all")` confirmed `risk_level: "low"`, 36 changed symbols / 0 affected / 5 changed files — `mobileApi.ts`, `cms.py` (routes), `cms/service.py`, `test_cms.py`, `CLAUDE.md` (pre-existing). New mobile route files not yet reflected pending `npx gitnexus analyze --force` re-index. `npx tsc --noEmit` → 0 errors.
+
+**No `apps/web-next` files touched.** Zero blast radius on production website (desktop + mobile web unaffected).

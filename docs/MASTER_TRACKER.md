@@ -124,7 +124,9 @@ All V0 foundations are shipped. The stack is live locally with:
 | **Step M-DS4 — Trek Detail Screen Web-Parity** (2026-06-12) | **done** |
 | **Step M-DS5 — Splash Screen Rebuild (Static Background + Logo Card)** (2026-06-12) | **done** |
 | **Step M-DS6 — Splash→Onboarding Transition Animation + Onboarding Skip CTA** (2026-06-12) | **done** |
-| Step M07 — Explore & Search | pending |
+| **Step M07a — Browse Tab (grid, filters, regions/seasons, basic search)** (2026-06-12) | **done** |
+| Step M07b — Advanced Search (semantic, voice, recent, trending) | pending |
+| Step M07c — Browse/Search Polish Pass | pending |
 | Step M08 — Trek Comparison (full attribute table + saved comparisons) | pending |
 
 ### Step M01 — Done (2026-06-03)
@@ -410,6 +412,16 @@ QA on M-DS6 found 4 bugs. Fixes:
 4. **Home screen hero + search bar** — new `components/home/HomeHero.tsx` (full-width `onboarding-1.jpg` banner, pine gradient overlay, "TrekYatra" wordmark + tagline) and `components/home/HomeSearchBar.tsx` (tappable pill, saffron search icon, overlaps hero bottom edge, navigates to `/(tabs)/browse/search`), replacing the old plain-text `HomeHeader` in `(home)/index.tsx`.
 
 **Verification:** `cd apps/mobile && npx tsc --noEmit` → 0 errors. `gitnexus_impact` on `CustomTabBar`, `CMSContentRenderer`, `useTrekDetail` (upstream) → all LOW (0–1 impacted, only `TrekDetailScreen` as expected caller). `gitnexus_detect_changes(scope:"all")` → 11 changed symbols / 10 affected / 9 changed files, all within expected mobile files (`CustomTabBar.tsx`, `(home)/_layout.tsx`, `(home)/index.tsx`, `trek/[slug].tsx`, `useTrekDetail.ts`, `mobileApi.ts`) plus pre-existing unrelated `CLAUDE.md` touch. No `apps/web-next` files touched.
+
+### Step M07a — Browse Tab (grid, filters, regions/seasons, basic search) — Done (2026-06-12)
+First of the M07a/b/c split (advanced search + polish deferred to M07b/M07c per user decision).
+
+- **Backend (additive)**: `GET /api/v1/cms/pages` gains optional `trek_state`, `trek_difficulty`, `trek_season`, `trek_duration_min`, `trek_duration_max` query params (`services/api/app/api/routes/cms.py`, `services/api/app/modules/cms/service.py` `list_pages()`). `trek_duration` is free text (e.g. "6 Days") — `list_pages` extracts the leading integer day count via `regexp_replace` + `cast(..., Integer)`, guarded by `trek_duration.op("~")(r"^[0-9]")`. 4 new tests in `test_cms.py`.
+- **Mobile data layer**: `stores/exploreStore.ts` (Zustand — `trekState`/`trekDifficulty`/`trekSeason`/`durationBucket` filter state + `DURATION_BUCKETS` constant mirroring backend `_DURATION_BUCKETS`), `hooks/useFilterFacets.ts` (GET `/api/v1/treks/filter-facets`), `hooks/useExplore.ts` (`useInfiniteQuery` paginated GET `/api/v1/cms/pages?page_type=trek_guide&status=published&...filters`). `mobileApi.ts` gains `FilterFacets`, `SearchSuggestion`, `ExploreFilters` types + `contentApi.getFilterFacets`/`exploreTreks`/`getSearchSuggestions`.
+- **Shared components**: `components/browse/SearchBar.tsx` (+ `SearchBarWrapper`) — tappable pill navigating to `/(tabs)/browse/search`; `HomeSearchBar` refactored to wrap it (no visual change). `components/browse/TrekGrid.tsx` — 2-col `FlatList` of `TrekCard`, infinite scroll via `onEndReached`, empty/loading states, `ListHeaderComponent` for screen-level headers. `components/browse/FilterChips.tsx` — horizontal active-filter chip row + "Filters"/"Clear all". `components/browse/FilterSheet.tsx` — full-screen Modal (slide-up, no `@gorhom/bottom-sheet`) with Region/Difficulty/Season/Duration chip sections from `useFilterFacets` + `DURATION_BUCKETS`, draft state + Apply/Clear all.
+- **Screens**: converted `app/(tabs)/browse.tsx` (placeholder) into a stack — `browse/_layout.tsx` (mirrors `(home)/_layout.tsx`, `headerBackButtonDisplayMode: "minimal"`), `browse/index.tsx` (rebuilt Browse: title + SearchBar + FilterChips + Regions row + Seasons row + `TrekGrid` via `useExplore`, reads `?region=` param from existing Home `RegionsRow` for back-compat), `browse/regions/[state].tsx` (region hub via `useExplore({trekState})`), `browse/seasons/[season].tsx` (season hub via existing `GET /treks/seasonal?month=`, static slug→month map for Winter/Spring/Summer/Monsoon/Autumn), `browse/search.tsx` (basic search via `GET /api/v1/search/suggestions?q=`, "Start typing to search" placeholder — recent/trending/semantic/voice deferred to M07b).
+
+**Verification:** `cd apps/mobile && npx tsc --noEmit` → 0 errors. Backend: 7/7 relevant `test_cms.py` filter tests pass; full suite 643 pass, 2 pre-existing `test_refresh.py` failures (test-ordering issue, confirmed unrelated to this step via `git stash` — reported to user separately, not fixed here per scope discipline). `gitnexus_detect_changes(scope:"all")` → risk "low", 36 changed symbols / 0 affected / 5 changed files, all within expected backend filter files + earlier `mobileApi.ts` touch. No `apps/web-next` files touched.
 
 ### Step M04 — CMS Offline Content Engine — Done (2026-06-10)
 - `apps/mobile/db/schema.ts` — Drizzle schema: `cmsPages` + `syncMeta` tables
