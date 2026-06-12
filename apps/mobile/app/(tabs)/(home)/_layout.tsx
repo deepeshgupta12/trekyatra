@@ -7,6 +7,7 @@ export default function HomeStackLayout() {
     <Stack
       screenOptions={{
         headerShown: true,
+        headerBackButtonDisplayMode: "minimal",
         headerStyle: { backgroundColor: colors.surface },
         headerTintColor: colors.textPrimary,
         headerTitleStyle: { fontFamily: "PlayfairDisplay_700Bold", fontSize: 17 },

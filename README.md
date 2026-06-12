@@ -526,7 +526,9 @@ Full API docs available at http://localhost:8000/docs when the backend is runnin
 | Trek detail screen web-parity — Trust signals (fact-checked + updated/published date), Trek News row, "In this cluster" related pages, native Contents bottom-sheet TOC, Compare CTA on sticky bar | Done (M-DS4) |
 | Splash screen rebuild — static full-bleed background photo + centered white logo card, replacing cinematic SVG/Reanimated sequence | Done (M-DS5) |
 | Splash→onboarding transition animation (logo scale/fade + crossfade) and onboarding "Skip" CTA → direct to Sign up | Done (M-DS6) |
-| Explore & Search | Pending (M07) |
+| QA bugfix pass — tab bar ghost-tab fix, icon-only back button, trek detail Guide/Packing/Permits/Costs content via `content_html`/`content_json.sections` + `react-native-render-html`, Home hero + search bar | Done (M-DS7) |
+| Explore & Search — Browse tab (grid, filters, regions/seasons hubs, basic search) | Pending (M07a) |
+| Explore & Search — advanced search (semantic/voice/recent/trending) | Pending (M07b) |
 | Trek planning wizard (full multi-step UI) | Pending (M09) |
 | Push notifications | Pending (M14) |
 
@@ -553,6 +555,7 @@ Full API docs available at http://localhost:8000/docs when the backend is runnin
 | **Step M06 — Home Screen + 4-State Personalisation** | 4-state Home (A/B/C/D), trending/seasonal/recommendations rows, skeleton loader | Done — 2026-06-10 |
 | **Mobile Crosscheck Bugfix Pass (M-DS1–M06)** | Fixed splash/font loading, login redirect (`/(tabs)` → `/(tabs)/(home)`), broken Home/bottom-nav (route-name + downloads-tab + API contract fixes), browse.tsx M03→M07 copy; new `GET /api/v1/treks/seasonal` endpoint + 7 tests; new mobile-design-system skill doc | Done — 2026-06-11 |
 | **Step M-DS2 — Splash, Onboarding & Auth Polish** | Cinematic SVG/Reanimated "Trail Comes Alive" splash; onboarding full-bleed/contrast/back-nav + 6-USP slide rewrite; guest "Skip" → anonymous browsing (AuthGate relaxed); Google/Apple sign-in icons (Apple UI-only, backend deferred); 15s request timeout fixes sign-in spinner hang | Done — 2026-06-11 |
+| **Step M-DS7 — QA Bugfix Pass** | Tab bar ghost-tab fix, icon-only back button, Trek detail Guide/Packing/Permits/Costs render real `content_html`/`content_json.sections` via new `react-native-render-html`-based `HtmlContentRenderer`, Home hero + tappable search bar | Done — 2026-06-12 |
 
 ## Production Infrastructure
 

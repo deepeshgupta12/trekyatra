@@ -35,6 +35,9 @@ function mapDbToPage(row: typeof cmsPages.$inferSelect): CMSPage {
     trek_altitude: row.trekAltitude ?? null,
     trek_season: row.trekSeason ?? null,
     body_json: row.bodyJson ? (JSON.parse(row.bodyJson) as unknown[]) : null,
+    // Not cached offline (no SQLite columns) — offline pages fall back to empty state
+    content_html: "",
+    content_json: null,
     seo_description: row.seoDescription ?? null,
     is_published: true,
     published_at: null,

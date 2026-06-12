@@ -14,6 +14,8 @@ export interface CMSPage {
   trek_altitude: string | null;
   trek_season: string | null;
   body_json: unknown[] | null;
+  content_html: string;
+  content_json: { sections?: Record<string, string>; [key: string]: unknown } | null;
   seo_description: string | null;
   is_published: boolean;
   published_at: string | null;

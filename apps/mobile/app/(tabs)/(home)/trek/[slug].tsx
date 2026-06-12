@@ -21,6 +21,7 @@ import { TrustSignals } from "@/components/trek/TrustSignals";
 import { TrekContentsSheet, type ContentsHeading } from "@/components/trek/TrekContentsSheet";
 import { OfflineBadge } from "@/components/trek/OfflineBadge";
 import { CMSContentRenderer } from "@/components/cms/CMSContentRenderer";
+import { HtmlContentRenderer } from "@/components/cms/HtmlContentRenderer";
 import { useTheme } from "@/hooks/useTheme";
 import { recordTrekView } from "@/lib/behaviorProfile";
 import { contentApi } from "@/lib/mobileApi";
@@ -60,18 +61,25 @@ export default function TrekDetailScreen() {
       .catch(() => {});
   }, [slug]);
 
-  // Sub-page hooks for other tabs
-  const { data: packingData } = useTrekDetail(slug ? `${slug}-packing` : "");
-  const { data: permitsData } = useTrekDetail(slug ? `${slug}-permits` : "");
-  const { data: costsData } = useTrekDetail(slug ? `${slug}-costs` : "");
-
   function getTabContent(): Block[] | null {
-    switch (activeTab) {
-      case "guide": return trek?.body_json as Block[] | null ?? null;
-      case "packing": return packingData?.page.body_json as Block[] | null ?? null;
-      case "permits": return permitsData?.page.body_json as Block[] | null ?? null;
-      case "costs": return costsData?.page.body_json as Block[] | null ?? null;
+    if (activeTab === "guide") return (trek?.body_json as Block[] | null) ?? null;
+    return null;
+  }
+
+  const TAB_SECTION_KEYS: Record<TrekTab, string | null> = {
+    guide: null,
+    packing: "packing",
+    permits: "permits",
+    costs: "cost_estimate",
+  };
+
+  function getTabHtml(): string | null {
+    const sectionKey = TAB_SECTION_KEYS[activeTab];
+    if (sectionKey) {
+      return trek?.content_json?.sections?.[sectionKey] ?? null;
     }
+    // Guide tab: full article HTML
+    return trek?.content_html || null;
   }
 
   function getContentsHeadings(): ContentsHeading[] {
@@ -202,6 +210,8 @@ export default function TrekDetailScreen() {
               bodyJson={getTabContent()}
               onHeadingLayout={activeTab === "guide" ? handleHeadingLayout : undefined}
             />
+          ) : getTabHtml() ? (
+            <HtmlContentRenderer html={getTabHtml() as string} />
           ) : (
             <View style={styles.emptyTab}>
               <Text style={styles.emptyIcon}>📋</Text>

@@ -61,6 +61,7 @@ export function CustomTabBar({ state, descriptors, navigation }: TabBarProps) {
       {state.routes.map((route, index) => {
         const { options } = descriptors[route.key];
         if (options.href === null) return null;
+        if (route.name === "downloads") return null;
         const isFocused = state.index === index;
         const isCenter = route.name === "plan";
 

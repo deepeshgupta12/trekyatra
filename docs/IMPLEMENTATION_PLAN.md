@@ -735,3 +735,16 @@ Spec: Add a launch animation (logo scale/fade-in with overshoot, slightly larger
 - `apps/mobile/components/ui/AnimatedSplash.tsx` — re-added `react-native-reanimated` (`useSharedValue`, `useAnimatedStyle`, `withTiming`, `withSequence`, `withDelay`, `runOnJS`, `Easing`): logo fades in and scales `0.85 → 1.08 → 1.0` on mount; card enlarged 140×140 → 152×152, logo 100×100 → 110×110; container opacity fades 1 → 0 over 350ms before `onFinish()` fires via `runOnJS` — crossfades into the onboarding screen mounted underneath (same `{ onFinish: () => void }` contract, `app/_layout.tsx` unchanged).
 - `apps/mobile/app/(auth)/welcome.tsx` — new `handleSkip()` (calls `markDone()` + `router.replace("/(auth)/sign-up")`) and a top-right "Skip" pill button shown on onboarding slides 1-3 (hidden on the last slide, which already has direct Sign up/Sign in CTAs). Distinct from the M-DS2 "Skip — continue as guest" buttons on sign-in/sign-up (unchanged).
 - **tsc --noEmit: 0 errors** | `gitnexus_impact` upstream on `AnimatedSplash` and `WelcomeScreen` → both LOW, 0 impacted | `gitnexus_detect_changes(scope:"all")` → low risk, 14 changed / 0 affected / 2 changed files | No web-next changes — zero blast radius on production website
+
+### Step M-DS7 — QA Bugfix Pass: Tab Bar, Back Button, Trek Content Rendering, Home Hero [DONE — 2026-06-12]
+
+Spec: QA on M-DS6 surfaced 4 bugs on Trek Detail + Home screens. Tiny, self-contained polish step (M-DS1–M-DS7 family).
+
+- `apps/mobile/components/tabs/CustomTabBar.tsx` — added `if (route.name === "downloads") return null;` to remove the ghost 6th tab.
+- `apps/mobile/app/(tabs)/(home)/_layout.tsx` — added `headerBackButtonDisplayMode: "minimal"` to Stack `screenOptions` (icon-only back chevron, removes "< index" label).
+- **NEW dependency** `react-native-render-html` + **NEW** `apps/mobile/components/cms/HtmlContentRenderer.tsx` (theme-token styled `RenderHTML` wrapper).
+- `apps/mobile/lib/mobileApi.ts` — `CMSPage` gains `content_html: string` + `content_json: {sections?: Record<string,string>} | null` (additive).
+- `apps/mobile/hooks/useTrekDetail.ts` — `mapDbToPage` sets `content_html: ""`/`content_json: null` for offline-cached pages.
+- `apps/mobile/app/(tabs)/(home)/trek/[slug].tsx` — removed dead 404-causing `${slug}-packing/-permits/-costs` sub-page fetches; Guide tab renders `body_json` else `content_html`; Packing/Permits/Costs tabs render `content_json.sections.{packing,permits,cost_estimate}` via `HtmlContentRenderer`.
+- **NEW** `apps/mobile/components/home/HomeHero.tsx` + **NEW** `apps/mobile/components/home/HomeSearchBar.tsx`; wired into `apps/mobile/app/(tabs)/(home)/index.tsx`, replacing the old plain-text `HomeHeader`.
+- **tsc --noEmit: 0 errors** | `gitnexus_impact` upstream on `CustomTabBar`, `CMSContentRenderer`, `useTrekDetail` → all LOW | `gitnexus_detect_changes(scope:"all")` → 11 changed / 10 affected / 9 changed files, all expected | No web-next changes — zero blast radius on production website

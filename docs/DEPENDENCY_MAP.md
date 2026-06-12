@@ -1676,3 +1676,23 @@ LOW — config/doc only, zero blast radius on `apps/mobile` or `apps/web-next` c
 `gitnexus_detect_changes(scope:"all")` confirmed `risk_level: "low"`, 14 changed symbols / 0 affected / 2 changed files — all within `AnimatedSplash.tsx` and `welcome.tsx`, as expected.
 
 **No `apps/web-next` files touched.** Zero blast radius on production website (desktop + mobile web unaffected).
+
+### Step M-DS7 — QA Bugfix Pass blast radius — Done (2026-06-12)
+
+**Mobile-only — no backend changes:**
+| File | Purpose | Blast Radius |
+|------|---------|-------------|
+| `apps/mobile/components/tabs/CustomTabBar.tsx` | Added `if (route.name === "downloads") return null;` to the tab-route map, removing the ghost 6th tab | LOW — `gitnexus_impact` upstream: 0 impacted |
+| `apps/mobile/app/(tabs)/(home)/_layout.tsx` | Added `headerBackButtonDisplayMode: "minimal"` to Stack `screenOptions` — icon-only back chevron app-wide in this stack | LOW — single config line, no symbol-level callers |
+| `apps/mobile/package.json` | New dependency `react-native-render-html` (peer `react-native-svg` already present) | LOW — additive dependency |
+| `apps/mobile/components/cms/HtmlContentRenderer.tsx` (NEW) | Renders `content_html` string via `RenderHTML`, theme-token `tagsStyles` (PlayfairDisplay headings, Inter body, saffron links/blockquote) | LOW — new leaf component |
+| `apps/mobile/lib/mobileApi.ts` | `CMSPage` gains `content_html: string` + `content_json: {sections?: Record<string,string>} \| null` (additive) | LOW — `gitnexus_impact` upstream on `CMSContentRenderer`/`useTrekDetail`: 0–1 impacted (`TrekDetailScreen` only); 0 `tsc` errors across consumers |
+| `apps/mobile/hooks/useTrekDetail.ts` | `mapDbToPage` sets `content_html: ""`, `content_json: null` for offline-cached pages (not persisted to SQLite) | LOW — single internal mapper, 1 impacted (`TrekDetailScreen`, expected) |
+| `apps/mobile/app/(tabs)/(home)/trek/[slug].tsx` | Removed dead 404-causing `${slug}-packing/-permits/-costs` sub-page fetches; `getTabContent()` simplified to Guide-only `body_json`; new `getTabHtml()` maps Packing/Permits/Costs tabs to `content_json.sections.{packing,permits,cost_estimate}`, Guide tab falls back to full `content_html` via `HtmlContentRenderer` | LOW — top-level route screen, 0 impacted |
+| `apps/mobile/components/home/HomeHero.tsx` (NEW) | Full-width hero banner (`onboarding-1.jpg` + pine gradient + wordmark/tagline) | LOW — new leaf component |
+| `apps/mobile/components/home/HomeSearchBar.tsx` (NEW) | Tappable search pill, navigates to `/(tabs)/browse/search` (M07a) | LOW — new leaf component |
+| `apps/mobile/app/(tabs)/(home)/index.tsx` | Replaced `HomeHeader` with `<HomeHero />` + `<HomeSearchBar />` in both skeleton and loaded states; removed unused `HomeHeader`/styles | LOW — top-level route screen, 0 impacted |
+
+`gitnexus_detect_changes(scope:"all")` confirmed 11 changed symbols / 10 affected / 9 changed files — all within the files above (plus a pre-existing unrelated `CLAUDE.md` touch from before this step). `npx tsc --noEmit` → 0 errors.
+
+**No `apps/web-next` files touched.** Zero blast radius on production website (desktop + mobile web unaffected).

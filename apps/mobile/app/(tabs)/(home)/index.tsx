@@ -1,6 +1,5 @@
 import {
   View,
-  Text,
   ScrollView,
   RefreshControl,
   StyleSheet,
@@ -8,6 +7,8 @@ import {
 } from "react-native";
 import { useState, useCallback } from "react";
 import { SafeArea } from "@/components/ui/SafeArea";
+import { HomeHero } from "@/components/home/HomeHero";
+import { HomeSearchBar } from "@/components/home/HomeSearchBar";
 import { useAuth } from "@/hooks/useAuth";
 import { useBehaviorProfile } from "@/hooks/useBehaviorProfile";
 import { useHomeData } from "@/hooks/useHomeData";
@@ -41,7 +42,7 @@ function resolveState(
 
 export default function HomeScreen() {
   const { user } = useAuth();
-  const { colors, isDark } = useTheme();
+  const { isDark } = useTheme();
   const { profile, loaded: profileLoaded, hasBehavior, recentViews, topRegions, topDifficulties } =
     useBehaviorProfile();
   const [isRefreshing, setIsRefreshing] = useState(false);
@@ -82,7 +83,8 @@ export default function HomeScreen() {
     return (
       <SafeArea>
         <StatusBar barStyle={isDark ? "light-content" : "dark-content"} />
-        <HomeHeader colors={colors} />
+        <HomeHero />
+        <HomeSearchBar />
         <HomeSkeleton />
       </SafeArea>
     );
@@ -103,7 +105,8 @@ export default function HomeScreen() {
           />
         }
       >
-        <HomeHeader colors={colors} />
+        <HomeHero />
+        <HomeSearchBar />
 
         {/* Welcome Banner — States A + B */}
         {homeState === "A" && <HomeWelcomeBannerA firstName={firstName} />}
@@ -169,33 +172,8 @@ export default function HomeScreen() {
   );
 }
 
-function HomeHeader({ colors }: { colors: { textPrimary: string; textMuted: string } }) {
-  return (
-    <View style={styles.header}>
-      <Text style={[styles.logoText, { color: colors.textPrimary }]}>TrekYatra</Text>
-      <Text style={[styles.tagline, { color: colors.textMuted }]}>
-        India&apos;s trekking guide
-      </Text>
-    </View>
-  );
-}
-
 const styles = StyleSheet.create({
   scroll: { flex: 1 },
-  header: {
-    paddingHorizontal: 16,
-    paddingTop: 14,
-    paddingBottom: 4,
-    gap: 1,
-  },
-  logoText: {
-    fontSize: 22,
-    fontWeight: "700",
-    fontFamily: "PlayfairDisplay_700Bold",
-  },
-  tagline: {
-    fontSize: 12,
-  },
   bottomSpacer: {
     height: 32,
   },
