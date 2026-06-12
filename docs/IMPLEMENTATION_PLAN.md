@@ -719,3 +719,11 @@ Spec: QA on the mobile trek detail screen (STEP-M05) found it missing several we
 - `apps/mobile/app/(tabs)/(home)/compare.tsx` — reads `useLocalSearchParams<{slug?:string}>()`, pre-selects that trek on mount if present in the trending-treks list.
 - `apps/mobile/app/(tabs)/(home)/trek/[slug].tsx` — wires everything together: `TrustSignals` under meta strip; "☰ Contents" pill (Guide tab, ≥2 anchored headings) opens `TrekContentsSheet`; `scrollViewRef` + `tabBodyOffset`/`headingOffsets` refs for scroll-to-section; `TrekNewsSection` + `RelatedPagesSection` after "You might also like" (Guide tab only).
 - **tsc --noEmit: 0 errors** | `gitnexus_impact` upstream on all 7 target symbols — LOW (0 impacted) except `CMSPage` mobile interface (HIGH/54, pure file-import fan-out from 18 files; additive fields confirmed non-breaking via clean `tsc`) | `gitnexus_detect_changes(scope:"all")` → medium risk, 14 changed / 5 affected / 8 changed files, all expected | Backend: 639 passed, 1 skipped (same 2 pre-existing unrelated `test_refresh.py` failures, no backend files touched) | No web-next changes — zero blast radius on production website
+
+### Step M-DS5 — Splash Screen Rebuild (Static Background + Logo Card) [DONE — 2026-06-12]
+
+Spec: Replace `AnimatedSplash.tsx`'s cinematic SVG/Reanimated "Trail Comes Alive" sequence with a static composition, using a user-provided background image. Tiny, self-contained polish step (M-DS1–M-DS5 family).
+
+- **NEW** `apps/mobile/assets/splash-background.jpg` (864×1821, user-provided) — full-bleed splash background photo.
+- `apps/mobile/components/ui/AnimatedSplash.tsx` — rewritten as a static composition: full-bleed background image (`resizeMode="cover"`) + centered white rounded-corner card (140×140, `borderRadius: 24`) containing `logo.png` (100×100); `onFinish()` fires via `setTimeout(1800ms)` — same prop contract, so `app/_layout.tsx` is unchanged. Removed `react-native-svg`/`react-native-reanimated` usage from this component (both remain used elsewhere in the app).
+- **tsc --noEmit: 0 errors** | `gitnexus_impact("AnimatedSplash", upstream)` → LOW, 0 impacted (leaf component, unchanged prop contract) | `gitnexus_detect_changes(scope:"all")` → low risk, 5 changed / 0 affected / 1 changed file | No web-next changes — zero blast radius on production website

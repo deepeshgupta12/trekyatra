@@ -1652,3 +1652,15 @@ LOW — config/doc only, zero blast radius on `apps/mobile` or `apps/web-next` c
 `gitnexus_detect_changes(scope:"all")` confirmed `risk_level: "medium"`, 14 changed symbols / 5 affected / 8 changed files — all expected for this step (the 4 new components are picked up by `npx gitnexus analyze --force` re-index, not in `detect_changes`).
 
 **No `apps/web-next` files touched.** Zero blast radius on production website (desktop + mobile web unaffected).
+
+### Step M-DS5 — Splash Screen Rebuild blast radius — Done (2026-06-12)
+
+**Mobile-only — no backend changes:**
+| File | Purpose | Blast Radius |
+|------|---------|-------------|
+| `apps/mobile/assets/splash-background.jpg` (NEW) | Full-bleed splash background photo (user-provided) | LOW — static asset, only referenced by `AnimatedSplash.tsx` |
+| `apps/mobile/components/ui/AnimatedSplash.tsx` | Rewritten as static composition (background image + white logo card); same `onFinish()` contract | LOW — `gitnexus_impact` upstream: 0 impacted; sole consumer `app/_layout.tsx` unchanged (prop contract identical) |
+
+`gitnexus_detect_changes(scope:"all")` confirmed `risk_level: "low"`, 5 changed symbols / 0 affected / 1 changed file — all within `AnimatedSplash.tsx`, as expected.
+
+**No `apps/web-next` files touched.** Zero blast radius on production website (desktop + mobile web unaffected).

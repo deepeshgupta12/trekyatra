@@ -122,6 +122,7 @@ All V0 foundations are shipped. The stack is live locally with:
 | **Step M-DS2 — Splash, Onboarding & Auth Polish** (2026-06-11) | **done** |
 | **Step M-DS3 — Home Screen Web-Parity + Content Hub Screens** (2026-06-12) | **done** |
 | **Step M-DS4 — Trek Detail Screen Web-Parity** (2026-06-12) | **done** |
+| **Step M-DS5 — Splash Screen Rebuild (Static Background + Logo Card)** (2026-06-12) | **done** |
 | Step M07 — Explore & Search | pending |
 | Step M08 — Trek Comparison (full attribute table + saved comparisons) | pending |
 
@@ -389,6 +390,11 @@ QA found the mobile trek detail screen (built in STEP-M05) missing several secti
 - `apps/mobile/app/(tabs)/(home)/trek/[slug].tsx` — wires `TrustSignals` under meta strip; "☰ Contents" pill + `TrekContentsSheet` (Guide tab, ≥2 anchored headings); `TrekNewsSection` + `RelatedPagesSection` after "You might also like" (Guide tab only); `scrollViewRef` + offset refs for scroll-to-section.
 
 **Verification:** `cd apps/mobile && npx tsc --noEmit` → 0 errors. `gitnexus_impact` upstream on all 7 target symbols before editing — all LOW (0 impacted) except `CMSPage` mobile interface (HIGH/54, purely file-import fan-out from 18 files; additive fields confirmed non-breaking via clean `tsc`). `gitnexus_detect_changes(scope:"all")` → `medium` risk, 14 changed symbols / 5 affected / 8 changed files, all expected (`compare.tsx`, `trek/[slug].tsx`, `CMSContentRenderer.tsx`, `HeadingBlock.tsx`, `TrekStickyBar.tsx`, `useTrekDetail.ts`, `mobileApi.ts`, `CLAUDE.md` pre-existing). `PYTHONPATH=services/api .venv/bin/pytest services/api/tests/ -v` → 639 passed, 1 skipped (same 2 pre-existing unrelated `test_refresh.py` failures). No `apps/web-next` files touched.
+
+### Step M-DS5 — Splash Screen Rebuild (Static Background + Logo Card) — Done (2026-06-12)
+Replaced `AnimatedSplash.tsx`'s cinematic SVG/Reanimated "Trail Comes Alive" sequence with a static composition, using a user-provided background photo: full-bleed background image (`apps/mobile/assets/splash-background.jpg`, 864×1821) + a centered white rounded-corner card (140×140) containing `logo.png`. Same `onFinish()` contract — fires via `setTimeout(1800ms)`, so `app/_layout.tsx` is unchanged. Removed `react-native-svg`/`react-native-reanimated` usage from this component (both remain used elsewhere in the app).
+
+**Verification:** `cd apps/mobile && npx tsc --noEmit` → 0 errors. `gitnexus_impact("AnimatedSplash", upstream)` → LOW, 0 impacted (leaf component, unchanged prop contract). `gitnexus_detect_changes(scope:"all")` → `low` risk, 5 changed symbols / 0 affected / 1 changed file (`AnimatedSplash.tsx`). No `apps/web-next` files touched.
 
 ### Step M04 — CMS Offline Content Engine — Done (2026-06-10)
 - `apps/mobile/db/schema.ts` — Drizzle schema: `cmsPages` + `syncMeta` tables
