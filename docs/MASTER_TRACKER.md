@@ -120,7 +120,9 @@ All V0 foundations are shipped. The stack is live locally with:
 | **Step M06 — Home Screen + 4-State Personalisation** (2026-06-10) | **done** |
 | **Mobile Crosscheck Bugfix Pass (M-DS1–M06)** (2026-06-11) | **done** |
 | **Step M-DS2 — Splash, Onboarding & Auth Polish** (2026-06-11) | **done** |
+| **Step M-DS3 — Home Screen Web-Parity + Content Hub Screens** (2026-06-12) | **done** |
 | Step M07 — Explore & Search | pending |
+| Step M08 — Trek Comparison (full attribute table + saved comparisons) | pending |
 
 ### Step M01 — Done (2026-06-03)
 - Created `apps/mobile/` workspace with Expo SDK 56 (react-native 0.85.3, React 19)
@@ -332,6 +334,45 @@ Second QA pass (with screenshots) on the M-DS2 build found 4 remaining issues. A
 **Files Modified**: `apps/mobile/components/ui/AnimatedSplash.tsx`, `apps/mobile/app/_layout.tsx`, `apps/mobile/app/(auth)/welcome.tsx`, `apps/mobile/app/(auth)/sign-in.tsx`, `apps/mobile/app/(auth)/sign-up.tsx`
 
 `tsc --noEmit`: 0 errors. No backend changes — full backend suite not re-run (no backend files touched).
+
+### Step M-DS3 — Home Screen Web-Parity + Content Hub Screens — Done (2026-06-12)
+QA found the mobile Home screen was missing most of the sections present on the production web home page (`apps/web-next/app/(public)/page.tsx`). This step brings the mobile Home screen to full section parity with web and builds the content-hub destination screens those sections link to. Bundled with this step: a backend fix so recommendation-sourced trek cards show difficulty/state/duration/season tags (previously hardcoded to `null`). **Zero blast radius on `apps/web-next`** — additive backend response fields only, no existing endpoint contracts changed.
+
+**Backend (additive, bundled fix):**
+- `services/api/app/schemas/recommendations.py` — `RecommendationItem` gains `trek_difficulty`, `trek_state`, `trek_duration`, `trek_season` (all optional).
+- `services/api/app/modules/recommendations/service.py` — `_page_to_dict`, `find_similar_pages`, `find_similar_to_query`, `get_anonymous_recommendations`, `_row_to_dict` populate the 4 new fields from `CMSPage`.
+- `services/api/tests/test_recommendations.py` — TC-B16 `test_recommendation_items_include_trek_metadata`, TC-B17 `test_anonymous_recommendations_include_trek_metadata_keys`.
+
+**Mobile — `apps/mobile/lib/mobileApi.ts`:**
+- `RecommendationItem` interface gains the 4 new fields; `mapRecommendationToTrekListItem` now maps them through instead of hardcoding `null`.
+- New interfaces: `Product`, `Operator`, `PlanRecommendRequest`, `TrekRecommendation`, `PlanRecommendResponse`.
+- `contentApi` gains `getCmsPagesByType(pageType)`, `getProducts()`, `getOperators(region?)`.
+- New `planApi.recommend(payload)` → `POST /api/v1/plan/recommend`.
+
+**Mobile — new shared component:**
+- `apps/mobile/components/cms/CMSHubScreen.tsx` — generic CMS hub-list screen (loading/error/empty states, cards → `guide/[slug]`).
+
+**Mobile — new content-hub screens** under `apps/mobile/app/(tabs)/(home)/`:
+- `guide/[slug].tsx` — generic CMS page detail screen (renders `CMSContentRenderer`).
+- `permits.tsx`, `costs.tsx`, `safety.tsx`, `beginner.tsx` — `CMSHubScreen` over `permit_guide` / `cost_guide` / `safety_guide` / `beginner_guide` page types.
+- `packing.tsx` — static packing-system guide ported from `apps/web-next/app/(public)/packing/page.tsx`.
+- `plan-my-trek.tsx` — condensed Plan My Trek wizard (intent/months/duration/experience chips) calling `planApi.recommend`; gates submission on auth (`router.push("/(auth)/sign-in")` if logged out).
+- `compare.tsx` — lightweight 2-trek comparison over trending treks (region/difficulty/duration/season rows); full M08 attribute-table + saved-comparisons feature deferred to M08.
+- `products.tsx` — resources/products list from `contentApi.getProducts()`.
+- `operators.tsx` — verified operators list from `contentApi.getOperators()`.
+- `_layout.tsx` — `Stack.Screen` entries + titles registered for all of the above.
+
+**Mobile — new Home section components** under `apps/mobile/components/home/`:
+- `CategoryHubRow.tsx` — 5-card row → Packing/Permits/Costs/Safety/Plan My Trek.
+- `DifficultyTabsSection.tsx` — Easy/Moderate/Challenging tabs over deduped trending+seasonal treks, "View all" → Browse tab with `difficulty` filter.
+- `EditorialFeatureCard.tsx` — image+gradient card → `/beginner`.
+- `ComparisonCTACard.tsx` — static CTA with example trek pairs → `/compare`.
+- `ResourcesRow.tsx` — horizontal product cards (hides if empty) → `/products`.
+- `OperatorsCTACard.tsx` — static CTA → `/operators`.
+
+**Mobile — `apps/mobile/app/(tabs)/(home)/index.tsx`:** rewired section order to mirror web: `HomeWelcomeBanner` (A/B) → `HomeTrendingSection` → `CategoryHubRow` → `RegionsRow` → `DifficultyTabsSection` → `EditorialFeatureCard` → `SeasonalPicksRow` → `RecentlyViewedRow` (D) → `PersonalisedFeedSection` (A/B/D) → `ComparisonCTACard` → `ResourcesRow` → `OperatorsCTACard`. New sections (CategoryHub/DifficultyTabs/Editorial/Comparison/Resources/Operators) render for **all** 4 home states, matching web.
+
+**Verification:** `cd apps/mobile && npx tsc --noEmit` → 0 errors. `PYTHONPATH=services/api .venv/bin/pytest services/api/tests/ -v` → 639 passed, 1 skipped (same 2 pre-existing unrelated `test_refresh.py` failures present on clean `main`). `gitnexus_detect_changes(scope:"all")` reviewed — changed/affected scope matches expected files (HomeScreen, mobileApi.ts, recommendations service/schema/tests). No `apps/web-next` files touched. `npx gitnexus analyze --force` re-index: 455,218 nodes | 750,719 edges | 3675 clusters | 300 flows.
 
 ### Step M04 — CMS Offline Content Engine — Done (2026-06-10)
 - `apps/mobile/db/schema.ts` — Drizzle schema: `cmsPages` + `syncMeta` tables

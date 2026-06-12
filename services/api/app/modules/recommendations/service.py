@@ -19,6 +19,10 @@ def _page_to_dict(page: CMSPage) -> dict[str, Any]:
         "hero_image_url": page.hero_image_url,
         "seo_description": page.seo_description,
         "published_at": page.published_at.isoformat() if page.published_at else None,
+        "trek_difficulty": page.trek_difficulty,
+        "trek_state": page.trek_state,
+        "trek_duration": page.trek_duration,
+        "trek_season": page.trek_season,
     }
 
 
@@ -31,7 +35,8 @@ def find_similar_pages(db: Session, page_id: uuid.UUID, limit: int = 5) -> list[
     if page.embedding is not None:
         rows = db.execute(
             text(
-                "SELECT id, slug, title, page_type, hero_image_url, seo_description, published_at "
+                "SELECT id, slug, title, page_type, hero_image_url, seo_description, published_at, "
+                "trek_difficulty, trek_state, trek_duration, trek_season "
                 "FROM cms_pages "
                 "WHERE status = 'published' AND page_type != 'editorial' "
                 "AND id != :pid AND embedding IS NOT NULL "
@@ -61,7 +66,8 @@ def find_similar_to_query(db: Session, query_embedding: list[float], limit: int 
     """Vector search against query embedding."""
     rows = db.execute(
         text(
-            "SELECT id, slug, title, page_type, hero_image_url, seo_description, published_at "
+            "SELECT id, slug, title, page_type, hero_image_url, seo_description, published_at, "
+            "trek_difficulty, trek_state, trek_duration, trek_season "
             "FROM cms_pages "
             "WHERE status = 'published' AND page_type != 'editorial' AND embedding IS NOT NULL "
             "ORDER BY embedding <=> CAST(:emb AS vector(1536))"
@@ -116,7 +122,9 @@ def get_anonymous_recommendations(db: Session, limit: int = 6) -> list[dict]:
         text(
             "SELECT DISTINCT ON (c.cluster_id) "
             "c.id, c.slug, c.title, c.page_type, c.hero_image_url, "
-            "c.seo_description, c.published_at, c.cluster_id, "
+            "c.seo_description, c.published_at, "
+            "c.trek_difficulty, c.trek_state, c.trek_duration, c.trek_season, "
+            "c.cluster_id, "
             "COALESCE(v.view_count, 0) AS view_count "
             "FROM cms_pages c "
             "LEFT JOIN ("
@@ -139,6 +147,7 @@ def get_anonymous_recommendations(db: Session, limit: int = 6) -> list[dict]:
             text(
                 "SELECT c.id, c.slug, c.title, c.page_type, c.hero_image_url, "
                 "c.seo_description, c.published_at, "
+                "c.trek_difficulty, c.trek_state, c.trek_duration, c.trek_season, "
                 "COALESCE(v.view_count, 0) AS view_count "
                 "FROM cms_pages c "
                 "LEFT JOIN ("
@@ -173,6 +182,10 @@ def _row_to_dict(row: Any) -> dict:
         "hero_image_url": row[4],
         "seo_description": row[5],
         "published_at": row[6].isoformat() if row[6] else None,
+        "trek_difficulty": row[7],
+        "trek_state": row[8],
+        "trek_duration": row[9],
+        "trek_season": row[10],
     }
 
 

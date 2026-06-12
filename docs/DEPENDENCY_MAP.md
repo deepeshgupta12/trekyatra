@@ -1607,3 +1607,27 @@ LOW — config/doc only, zero blast radius on `apps/mobile` or `apps/web-next` c
 **Native dev-client rebuild**: `apps/mobile/ios/` (gitignored, prebuilt EAS dev-client project) was rebuilt via `npx expo prebuild --platform ios` + `pod install` (added `RNSVG 15.15.4`, 118 total pods) + `npx expo run:ios` to link `react-native-svg`'s native module — fixes the "Unimplemented component: <RNSVGSvgView>" splash crash. No files under `apps/mobile/ios/` are tracked by git (`.gitignore: ios/`), so nothing to commit from the rebuild itself.
 
 **No backend changes. No web-next changes.** Zero blast radius on production website (desktop + mobile web unaffected).
+
+### Step M-DS3 — Home Screen Web-Parity + Content Hub Screens blast radius — Done (2026-06-12)
+
+**Backend (additive only — no breaking changes to existing consumers):**
+| File | Purpose | Blast Radius |
+|------|---------|-------------|
+| `services/api/app/schemas/recommendations.py` | `RecommendationItem` gains 4 new optional fields: `trek_difficulty`, `trek_state`, `trek_duration`, `trek_season` | LOW — additive optional fields; existing consumers (`apps/web-next`, mobile) ignore unknown fields |
+| `services/api/app/modules/recommendations/service.py` | `_page_to_dict`, `find_similar_pages`, `find_similar_to_query`, `get_anonymous_recommendations`, `_row_to_dict` extended to SELECT + populate the 4 new `CMSPage` columns | MEDIUM upstream (feeds `/api/v1/recommendations`, `/api/v1/account/recommendations`) — verified via `gitnexus_impact`; response shape change is additive only |
+| `services/api/tests/test_recommendations.py` | +TC-B16, +TC-B17 (new fields populated, anonymous + personalised) | LOW — test-only |
+
+**Mobile (new files + Home rewiring):**
+| File | Purpose | Blast Radius |
+|------|---------|-------------|
+| `apps/mobile/lib/mobileApi.ts` | `RecommendationItem` +4 fields, `mapRecommendationToTrekListItem` maps them through; new `Product`/`Operator`/`PlanRecommendRequest`/`TrekRecommendation`/`PlanRecommendResponse` types; `contentApi.getCmsPagesByType/getProducts/getOperators`; new `planApi.recommend` | LOW — additive exports; `mapRecommendationToTrekListItem` change only affects display (now shows real tags instead of `null`) |
+| `apps/mobile/components/cms/CMSHubScreen.tsx` (NEW) | Shared CMS hub-list screen | LOW — new leaf component, used only by new hub screens |
+| `apps/mobile/app/(tabs)/(home)/guide/[slug].tsx` (NEW) | Generic CMS page detail screen | LOW — new route |
+| `apps/mobile/app/(tabs)/(home)/{packing,permits,costs,safety,beginner,plan-my-trek,compare,products,operators}.tsx` (NEW) | Content-hub destination screens | LOW — new routes, no existing screen depends on them |
+| `apps/mobile/app/(tabs)/(home)/_layout.tsx` | Added `Stack.Screen` registrations + titles for all new routes | LOW — additive registrations |
+| `apps/mobile/components/home/{CategoryHubRow,DifficultyTabsSection,EditorialFeatureCard,ComparisonCTACard,ResourcesRow,OperatorsCTACard}.tsx` (NEW) | New Home section components | LOW — new leaf components |
+| `apps/mobile/app/(tabs)/(home)/index.tsx` | Rewired section order to mirror web Home; added `dedupedTreks` (merge trending+seasonal) for `DifficultyTabsSection` | MEDIUM — `gitnexus_impact` upstream on `HomeScreen`/`resolveState` confirmed only `(tabs)/(home)` route consumes it; no other screen imports `HomeScreen` |
+
+`gitnexus_detect_changes(scope:"all")` confirmed changed/affected scope = `HomeScreen`, `mobileApi.ts`, recommendations service/schema/tests — matches expected files, no unexpected blast radius.
+
+**No `apps/web-next` files touched.** Zero blast radius on production website (desktop + mobile web unaffected).

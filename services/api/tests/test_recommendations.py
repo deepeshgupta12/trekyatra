@@ -208,6 +208,37 @@ def test_embed_page_exception_does_not_block(db, published_page):
     assert result is False
 
 
+# --- TC-B16: recommendation items include trek metadata tags ---
+def test_recommendation_items_include_trek_metadata(db, published_page):
+    """Verifies: _page_to_dict (used by find_similar_pages) includes trek_difficulty/trek_state/trek_duration/trek_season."""
+    from app.modules.recommendations.service import _page_to_dict
+
+    published_page.trek_difficulty = "Moderate"
+    published_page.trek_state = "Uttarakhand"
+    published_page.trek_duration = "5 days"
+    published_page.trek_season = "Mar-Jun, Sep-Nov"
+    db.add(published_page)
+    db.commit()
+    db.refresh(published_page)
+
+    item = _page_to_dict(published_page)
+    assert item["trek_difficulty"] == "Moderate"
+    assert item["trek_state"] == "Uttarakhand"
+    assert item["trek_duration"] == "5 days"
+    assert item["trek_season"] == "Mar-Jun, Sep-Nov"
+
+
+# --- TC-B17: anonymous recommendations SQL returns trek metadata keys ---
+def test_anonymous_recommendations_include_trek_metadata_keys(db):
+    """Verifies: get_anonymous_recommendations rows expose trek_difficulty/trek_state/trek_duration/trek_season keys."""
+    results = get_anonymous_recommendations(db, limit=6)
+    for item in results:
+        assert "trek_difficulty" in item
+        assert "trek_state" in item
+        assert "trek_duration" in item
+        assert "trek_season" in item
+
+
 # --- TC-B15: recommendation items exclude already-bookmarked pages ---
 def test_user_recommendations_excludes_bookmarks(db, test_user, published_page_with_embedding):
     """Verifies: pages already bookmarked by user are excluded from recommendations."""

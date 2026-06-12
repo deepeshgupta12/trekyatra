@@ -14,11 +14,18 @@ import { useHomeData } from "@/hooks/useHomeData";
 import { useTheme } from "@/hooks/useTheme";
 import { HomeWelcomeBannerA, HomeWelcomeBannerB } from "@/components/home/HomeWelcomeBanner";
 import { HomeTrendingSection } from "@/components/home/HomeTrendingSection";
+import { CategoryHubRow } from "@/components/home/CategoryHubRow";
 import { RegionsRow } from "@/components/home/RegionsRow";
+import { DifficultyTabsSection } from "@/components/home/DifficultyTabsSection";
+import { EditorialFeatureCard } from "@/components/home/EditorialFeatureCard";
 import { SeasonalPicksRow } from "@/components/home/SeasonalPicksRow";
 import { RecentlyViewedRow } from "@/components/home/RecentlyViewedRow";
 import { PersonalisedFeedSection } from "@/components/home/PersonalisedFeedSection";
+import { ComparisonCTACard } from "@/components/home/ComparisonCTACard";
+import { ResourcesRow } from "@/components/home/ResourcesRow";
+import { OperatorsCTACard } from "@/components/home/OperatorsCTACard";
 import { HomeSkeleton } from "@/components/home/HomeSkeleton";
+import type { TrekListItem } from "@/lib/mobileApi";
 
 type HomeState = "A" | "B" | "C" | "D";
 
@@ -57,6 +64,18 @@ export default function HomeScreen() {
   const firstName = user?.fullName?.split(" ")[0] ?? "there";
   const viewCount = profile?.views.length ?? 0;
   const topRegion = topRegions[0] ?? null;
+
+  const dedupedTreks: TrekListItem[] = (() => {
+    const seen = new Set<string>();
+    const merged: TrekListItem[] = [];
+    for (const trek of [...trending, ...seasonal]) {
+      if (!seen.has(trek.slug)) {
+        seen.add(trek.slug);
+        merged.push(trek);
+      }
+    }
+    return merged;
+  })();
 
   // Show skeleton on first load
   if (!homeState || (isLoading && trending.length === 0)) {
@@ -104,8 +123,17 @@ export default function HomeScreen() {
           loading={isLoading && trending.length === 0}
         />
 
+        {/* Category hub (packing/permits/costs/safety/plan) — all states */}
+        <CategoryHubRow />
+
         {/* Regions row — all states */}
         <RegionsRow />
+
+        {/* Treks by difficulty — all states */}
+        <DifficultyTabsSection treks={dedupedTreks} />
+
+        {/* Editorial feature → beginner guide — all states */}
+        <EditorialFeatureCard />
 
         {/* Seasonal picks — all states */}
         <SeasonalPicksRow
@@ -125,6 +153,15 @@ export default function HomeScreen() {
             loading={isLoading && recommendations.length === 0}
           />
         )}
+
+        {/* Comparison CTA — all states */}
+        <ComparisonCTACard />
+
+        {/* Resources row — all states */}
+        <ResourcesRow />
+
+        {/* Operators CTA — all states */}
+        <OperatorsCTACard />
 
         <View style={styles.bottomSpacer} />
       </ScrollView>

@@ -13,6 +13,10 @@ class RecommendationItem(BaseModel):
     hero_image_url: str | None = None
     seo_description: str | None = None
     published_at: str | None = None
+    trek_difficulty: str | None = None
+    trek_state: str | None = None
+    trek_duration: str | None = None
+    trek_season: str | None = None
 
 
 class SimilarPagesResponse(BaseModel):

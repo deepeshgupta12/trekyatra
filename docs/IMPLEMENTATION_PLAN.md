@@ -687,4 +687,18 @@ Spec: ad-hoc combined polish pass requested after manual QA (with screenshots) o
 - `apps/mobile/components/auth/SocialSignInButtons.tsx` + `apps/mobile/components/ui/Button.tsx` — Google icon, always-rendered Apple button (UI-only "coming soon"), optional `Button` leading `icon` prop.
 - `apps/mobile/lib/authApi.ts` — `apiPost`/`apiGet` now use `fetchWithTimeout` (15s `AbortController` timeout) so the sign-in spinner can never hang indefinitely.
 - **tsc --noEmit: 0 errors** | Backend: 637 passed, 1 skipped (same 2 pre-existing unrelated `test_refresh.py` failures) | No web-next changes — zero blast radius on production website
-- Apple Sign-In backend (new endpoint + Apple Developer credentials + config plugin) explicitly deferred to a future step.
+
+---
+
+### Step M-DS3 — Home Screen Web-Parity + Content Hub Screens [DONE — 2026-06-12]
+
+Spec: QA on the M-DS1–M06 mobile app found the Home screen was missing most sections/content hubs present on the production web home page. User decision: build full content-hub parity now (Packing/Permits/Costs/Safety/Plan/Beginner/Compare/Resources/Operators screens), and bundle the recommendation-tags backend fix (difficulty/state/duration/season were hardcoded `null` on recommendation-sourced trek cards).
+
+- **Backend** — `services/api/app/schemas/recommendations.py`: `RecommendationItem` gains `trek_difficulty`, `trek_state`, `trek_duration`, `trek_season` (all optional, additive). `services/api/app/modules/recommendations/service.py`: `_page_to_dict`, `find_similar_pages`, `find_similar_to_query`, `get_anonymous_recommendations`, `_row_to_dict` extended to populate the 4 new fields.
+- `apps/mobile/lib/mobileApi.ts` — `RecommendationItem` interface + `mapRecommendationToTrekListItem` now map the 4 tag fields through (previously hardcoded `null`); new `Product`/`Operator`/`PlanRecommendRequest`/`TrekRecommendation`/`PlanRecommendResponse` types; new `contentApi.getCmsPagesByType()`, `contentApi.getProducts()`, `contentApi.getOperators()`, `planApi.recommend()`.
+- **NEW** `apps/mobile/components/cms/CMSHubScreen.tsx` — shared CMS-page-list hub UI (used by permits/costs/safety/beginner).
+- **NEW content-hub screens** (all under `apps/mobile/app/(tabs)/(home)/`): `guide/[slug].tsx` (generic CMS page detail via `CMSContentRenderer`), `packing.tsx` (static checklist), `permits.tsx`/`costs.tsx`/`safety.tsx`/`beginner.tsx` (CMS hub lists via `CMSHubScreen`, page types `permit_guide`/`cost_guide`/`safety_guide`/`beginner_guide`), `plan-my-trek.tsx` (condensed wizard form → `POST /api/v1/plan/recommend`, auth-gated), `compare.tsx` (lightweight 2-trek attribute comparison — full M08 attribute-table/saved-comparisons feature remains a future step), `products.tsx` (`/api/v1/products`), `operators.tsx` (`/api/v1/operators`).
+- **NEW Home section components** (`apps/mobile/components/home/`): `CategoryHubRow.tsx`, `DifficultyTabsSection.tsx`, `EditorialFeatureCard.tsx`, `ComparisonCTACard.tsx`, `ResourcesRow.tsx`, `OperatorsCTACard.tsx`.
+- `apps/mobile/app/(tabs)/(home)/index.tsx` — new section order: WelcomeBanner → Trending → CategoryHubRow → Regions → DifficultyTabs → EditorialFeature → SeasonalPicks → RecentlyViewed (D) → PersonalisedFeed (A/B/D) → ComparisonCTA → Resources → OperatorsCTA. All new sections render for all 4 home states, matching web.
+- `apps/mobile/app/(tabs)/(home)/_layout.tsx` — registered Stack screens + titles for all new routes.
+- **tsc --noEmit: 0 errors** | Backend: 639 passed, 1 skipped (same 2 pre-existing unrelated `test_refresh.py` failures) | No web-next changes — zero blast radius on production website

@@ -443,7 +443,7 @@ cd apps/web-next && npm run build
 | Email verification | `POST /auth/send-verification`, `POST /auth/verify-email` | User auth (send), Public (verify) |
 | Trek alert digest | Celery: `account.send_trek_alerts` (daily beat, 08:00 IST) | Scheduled — no HTTP route |
 | Operators (public) | `/api/v1/operators/*`, `/api/v1/inquiries` | Public + optional user auth (reviews require user auth) |
-| Trip planning | `/api/v1/plan/generate`, `/api/v1/plan/{id}`, `/api/v1/plan/{id}/email` | Public + optional user auth |
+| Trip planning | `/api/v1/plan/generate`, `/api/v1/plan/recommend`, `/api/v1/plan/{id}`, `/api/v1/plan/{id}/email` | Public + optional user auth (recommend: user auth required, rate-limited 2/24h) |
 | Seasonal treks (mobile Home) | `GET /api/v1/treks/seasonal?month=&limit=` | Public |
 | Subscriptions | `/api/v1/subscriptions/create-checkout`, `/status`, `/cancel`, `/webhook` | User auth (webhook: no auth) |
 | Translation | `/api/v1/admin/cms/{slug}/translate` | Admin auth required |
@@ -522,8 +522,9 @@ Full API docs available at http://localhost:8000/docs when the backend is runnin
 | Trek detail screen (hero, meta, tabs, related, sticky CTA) | Done (M05) |
 | Home screen — 4-state personalisation, trending/seasonal/recommendations | Done (M06) |
 | Cinematic animated splash, onboarding polish, guest Skip, Google/Apple sign-in icons | Done (M-DS2) |
+| Home screen web-parity — Category Hub, Difficulty Tabs, Editorial Feature, Comparison/Resources/Operators CTAs, 9 new content-hub screens (Packing/Permits/Costs/Safety/Beginner/Plan-My-Trek/Compare/Products/Operators), recommendation trek tags fix | Done (M-DS3) |
 | Explore & Search | Pending (M07) |
-| Trek planning wizard | Pending (M09) |
+| Trek planning wizard (full multi-step UI) | Pending (M09) |
 | Push notifications | Pending (M14) |
 
 ---

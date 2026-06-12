@@ -48,11 +48,43 @@ interface RecommendationItem {
   hero_image_url: string | null;
   seo_description: string | null;
   published_at: string | null;
+  trek_difficulty: string | null;
+  trek_state: string | null;
+  trek_duration: string | null;
+  trek_season: string | null;
 }
 
 interface RecommendationsResponse {
   personalised: boolean;
   items: RecommendationItem[];
+}
+
+// Shape returned by /api/v1/products
+export interface Product {
+  id: string;
+  slug: string;
+  title: string;
+  description: string | null;
+  price_inr: number;
+  preview_image_url: string | null;
+  active: boolean;
+  sales_count: number;
+}
+
+// Shape returned by /api/v1/operators
+export interface Operator {
+  id: string;
+  name: string;
+  slug: string;
+  region: string | null;
+  trek_types: string[] | null;
+  phone: string | null;
+  website_url: string | null;
+  logo_url: string | null;
+  description_long: string | null;
+  rating_avg: number | null;
+  review_count: number;
+  active: boolean;
 }
 
 function mapCmsPageToTrekListItem(page: CMSPageResponseLike): TrekListItem {
@@ -71,11 +103,11 @@ function mapRecommendationToTrekListItem(item: RecommendationItem): TrekListItem
   return {
     slug: item.slug,
     title: item.title,
-    trek_state: null,
-    trek_difficulty: null,
-    trek_duration: null,
+    trek_state: item.trek_state,
+    trek_difficulty: item.trek_difficulty,
+    trek_duration: item.trek_duration,
     hero_image_url: item.hero_image_url,
-    trek_season: null,
+    trek_season: item.trek_season,
   };
 }
 
@@ -167,4 +199,49 @@ export const contentApi = {
 
   saveTrek: (slug: string) =>
     apiPost<{ id: string }>("/api/v1/account/bookmarks/by-slug", { trek_slug: slug }),
+
+  getCmsPagesByType: (pageType: string) =>
+    apiGet<CMSPage[]>(`/api/v1/cms/pages?page_type=${encodeURIComponent(pageType)}`),
+
+  getProducts: () => apiGet<Product[]>("/api/v1/products"),
+
+  getOperators: (region?: string) =>
+    apiGet<Operator[]>(`/api/v1/operators${region ? `?region=${encodeURIComponent(region)}` : ""}`),
+};
+
+// Shape sent to /api/v1/plan/recommend
+export interface PlanRecommendRequest {
+  intent: string[];
+  months: string[];
+  duration_min: number;
+  duration_max: number;
+  experience_level: string;
+  fitness_level: string;
+  region?: string;
+}
+
+// Shape returned by /api/v1/plan/recommend
+export interface TrekRecommendation {
+  slug: string;
+  name: string;
+  match_score: number;
+  category: string;
+  why_this_matches: string;
+  warnings: string[];
+  state: string | null;
+  difficulty: string | null;
+  duration: string | null;
+  season: string | null;
+}
+
+export interface PlanRecommendResponse {
+  recommendations: TrekRecommendation[];
+  total_treks_scored: number;
+  no_match: boolean;
+  no_match_message: string | null;
+}
+
+export const planApi = {
+  recommend: (payload: PlanRecommendRequest) =>
+    apiPost<PlanRecommendResponse>("/api/v1/plan/recommend", payload),
 };

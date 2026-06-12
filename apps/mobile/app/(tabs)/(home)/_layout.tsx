@@ -22,6 +22,16 @@ export default function HomeStackLayout() {
           headerTintColor: "#ffffff",
         }}
       />
+      <Stack.Screen name="guide/[slug]" options={{ title: "" }} />
+      <Stack.Screen name="packing" options={{ title: "Packing Guide" }} />
+      <Stack.Screen name="permits" options={{ title: "Permits" }} />
+      <Stack.Screen name="costs" options={{ title: "Trek Costs" }} />
+      <Stack.Screen name="safety" options={{ title: "Trek Safety" }} />
+      <Stack.Screen name="plan-my-trek" options={{ title: "Plan My Trek" }} />
+      <Stack.Screen name="beginner" options={{ title: "Beginner Treks" }} />
+      <Stack.Screen name="compare" options={{ title: "Compare Treks" }} />
+      <Stack.Screen name="products" options={{ title: "Resources" }} />
+      <Stack.Screen name="operators" options={{ title: "Operators" }} />
     </Stack>
   );
 }
