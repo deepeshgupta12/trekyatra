@@ -531,7 +531,7 @@ Full API docs available at http://localhost:8000/docs when the backend is runnin
 | QA bugfix pass — tab bar ghost-tab fix, icon-only back button, trek detail Guide/Packing/Permits/Costs content via `content_html`/`content_json.sections` + `react-native-render-html`, Home hero + search bar | Done (M-DS7) |
 | Explore & Search — Browse tab (grid, filters, regions/seasons hubs, basic search) | Done (M07a) |
 | Explore & Search — advanced search (semantic/voice/recent/trending) | Done (M07b) |
-| Explore & Search — Browse/Search polish pass | Pending (M07c) |
+| Home — Region tabs (5 trek cards per region + View all) and difficulty tabs fuzzy-matching fix | Done (M07c) |
 | Trek planning wizard (full multi-step UI) | Pending (M09) |
 | Push notifications | Pending (M14) |
 
@@ -561,6 +561,8 @@ Full API docs available at http://localhost:8000/docs when the backend is runnin
 | **Step M-DS7 — QA Bugfix Pass** | Tab bar ghost-tab fix, icon-only back button, Trek detail Guide/Packing/Permits/Costs render real `content_html`/`content_json.sections` via new `react-native-render-html`-based `HtmlContentRenderer`, Home hero + tappable search bar | Done — 2026-06-12 |
 | **Step M07a — Browse Tab** | `GET /api/v1/cms/pages` gains optional `trek_state`/`trek_difficulty`/`trek_season`/`trek_duration_min`/`trek_duration_max` filters; new `exploreStore`/`useFilterFacets`/`useExplore`; Browse tab rebuilt as a stack — grid (`TrekGrid`), `FilterChips`/`FilterSheet`, Regions/Seasons hub screens, basic search screen (`/browse/search`) | Done — 2026-06-12 |
 | **Step M07b — Advanced Search** | `/browse/search` gains Recent Searches (AsyncStorage) + Trending Searches chips, semantic search "Suggested for you" section via existing `POST /api/v1/search/semantic`, and voice search via new `expo-speech-recognition` dependency; new `useRecentSearches`/`useTrendingSearches`/`useSemanticSearch` hooks; `mobileApi.ts` gains `semanticSearch`/`getTrendingSearches`/`logSearch` | Done — 2026-06-14 |
+| **bugfix — Home difficulty tabs** | `DifficultyTabsSection` "Moderate" tab showed empty due to exact-match filter against a tiny trending/seasonal subset; new `useDifficultyTreks` hook queries `exploreTreks` with a fuzzy per-tab value list (mirrors web's substring matching) and merges/dedupes | Done — 2026-06-14 |
+| **Step M07c — Region Tabs with Trek Cards** | Home "Explore by Region" chips become selectable tabs (first region default), showing 5 `TrekCard`s for the active region via new `useRegionTreks` hook + "View all →" link to `/(tabs)/browse?region=<state>` (existing param handling) | Done — 2026-06-14 |
 
 ## Production Infrastructure
 

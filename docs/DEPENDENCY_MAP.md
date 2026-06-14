@@ -1742,6 +1742,20 @@ LOW — config/doc only, zero blast radius on `apps/mobile` or `apps/web-next` c
 | `apps/mobile/hooks/useSemanticSearch.ts` (NEW) | Debounced (800ms, >3-word) `useQuery` wrapper over `POST /api/v1/search/semantic` | LOW — new leaf hook |
 | `apps/mobile/app/(tabs)/browse/search.tsx` | Rewritten: Recent/Trending chip sections (empty query), mic-based voice input via `expo-speech-recognition`, "Suggested for you" semantic section with "Smart match" badge, `addRecentSearch`/`logSearch` on selection | LOW — leaf route screen, only consumer of new hooks |
 
+### bugfix + Step M07c — Home screen difficulty/region fixes — Done (2026-06-14)
+
+**Backend:** no changes — both fixes reuse the existing `contentApi.exploreTreks()` → `GET /api/v1/cms/pages?page_type=trek_guide&status=published&...` (added in M07a).
+
+| File | Purpose | Blast Radius |
+|------|---------|-------------|
+| `apps/mobile/hooks/useDifficultyTreks.ts` (NEW) | Per-tab `useQuery` over `exploreTreks({trekDifficulty: value})` for a fuzzy list of raw DB values (`Moderate` → `["Moderate","Moderate-Difficult"]`, etc.), merged + deduped | LOW — new leaf hook |
+| `apps/mobile/components/home/DifficultyTabsSection.tsx` | Dropped `treks` prop; now uses `useDifficultyTreks(activeTab)` directly, with a loading state | LOW — `gitnexus_impact` confirmed 0 upstream callers besides Home screen |
+| `apps/mobile/app/(tabs)/(home)/index.tsx` | Removed now-unused `dedupedTreks` computation and `treks` prop on `<DifficultyTabsSection />` | LOW — `dedupedTreks` was only consumed here |
+| `apps/mobile/hooks/useRegionTreks.ts` (NEW) | `useQuery` over `exploreTreks({trekState: region}, 5, 0)` | LOW — new leaf hook |
+| `apps/mobile/components/home/RegionsRow.tsx` | Region chips are now selectable tabs (default: first region); added "View all →" header link to `/(tabs)/browse?region=<activeRegion>` (Browse already reads this param); renders up to 5 `TrekCard`s or an empty state below the chips | LOW — `gitnexus_impact` confirmed 0 upstream callers besides Home screen |
+
+`gitnexus_detect_changes(scope:"all")` (pre-re-index, commit 1 only) → risk "low", 6 changed symbols / 0 affected / 3 changed files (`(home)/index.tsx`, `DifficultyTabsSection.tsx`, `RegionsRow.tsx`); new hook files appear after `npx gitnexus analyze --force`. No `apps/web-next` or backend files touched — zero blast radius on production website (desktop + mobile web).
+
 `gitnexus_detect_changes(scope:"all")` confirmed `risk_level: "low"`, 9 changed symbols / 0 affected / 6 changed files — `search.tsx`, `mobileApi.ts`, `CLAUDE.md` (pre-existing). New hook files + `app.config.ts`/`package.json` reflected after `npx gitnexus analyze --force` re-index. `npx tsc --noEmit` → 0 errors.
 
 **No `apps/web-next` files touched.** Zero blast radius on production website (desktop + mobile web unaffected).

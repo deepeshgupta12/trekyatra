@@ -126,7 +126,8 @@ All V0 foundations are shipped. The stack is live locally with:
 | **Step M-DS6 — Splash→Onboarding Transition Animation + Onboarding Skip CTA** (2026-06-12) | **done** |
 | **Step M07a — Browse Tab (grid, filters, regions/seasons, basic search)** (2026-06-12) | **done** |
 | **Step M07b — Advanced Search (semantic, voice, recent, trending)** (2026-06-14) | **done** |
-| Step M07c — Browse/Search Polish Pass | pending |
+| **bugfix — Home difficulty tabs showing empty Easy/Moderate** (2026-06-14) | **done** |
+| **Step M07c — Region Tabs with Trek Cards** (2026-06-14) | **done** |
 | Step M08 — Trek Comparison (full attribute table + saved comparisons) | pending |
 
 ### Step M01 — Done (2026-06-03)
@@ -435,6 +436,23 @@ Second of the M07a/b/c split. Polish pass remains in M07c.
 - `npx gitnexus analyze --force` re-index after this step: **465,306 nodes | 746,928 edges | 3,176 clusters | 300 flows** (from 491,679 / 788,324 / 3,709 / 300 at start of step — drop attributable to indexer scope-extraction/timeout fallbacks during this run, not a code deletion; mobile changes for this step are present in the new graph).
 
 **Verification:** `cd apps/mobile && npx tsc --noEmit` → 0 errors. `gitnexus_detect_changes(scope:"all")` → risk "low", 9 changed symbols / 0 affected / 6 changed files (`search.tsx`, `mobileApi.ts` plus pre-existing `CLAUDE.md` touch); new hook files + `app.config.ts`/`package.json` appear after re-index. Backend: full suite unchanged (no backend files touched) — baseline re-run to confirm the 2 pre-existing `test_refresh.py` failures from M07a are still the only failures. No `apps/web-next` files touched.
+
+### bugfix (2026-06-14) — Home difficulty tabs showing empty Easy/Moderate sections
+**Root cause**: `DifficultyTabsSection.tsx` (home screen, M06) filtered `dedupedTreks` (= `trending + seasonal`, a ~10-20 item subset from `useHomeData`) with exact equality `t.trek_difficulty === activeTab`. Published `trek_guide` CMS pages have `trek_difficulty` values of `null` (3290), `"Moderate-Difficult"` (31), or `"Moderate"` (10) — no page is exactly `"Easy"` or `"Challenging"`, and `"Moderate-Difficult"` never equals `"Moderate"`. So the "Moderate" tab (which DOES have data) rendered empty.
+**Fix**: New `apps/mobile/hooks/useDifficultyTreks.ts` queries `contentApi.exploreTreks({trekDifficulty: value}, 10, 0)` for a per-tab list of raw DB values (`Moderate` → `["Moderate", "Moderate-Difficult"]`, `Challenging` → `["Challenging", "Difficult", "Moderate-Difficult"]`, `Easy` → `["Easy"]`), merges + dedupes by slug — mirrors the fuzzy substring matching already used by `apps/web-next/components/home/DifficultyTabsSection.tsx`. `DifficultyTabsSection.tsx` now uses this hook directly (dropped the `treks` prop); `apps/mobile/app/(tabs)/(home)/index.tsx` no longer computes the now-unused `dedupedTreks`.
+**Result**: "Moderate" tab now shows up to 10 cards (41 published Moderate/Moderate-Difficult treks exist). "Easy"/"Challenging" still show the existing "No … treks to show right now" empty state — correct, since no published treks currently carry those exact difficulty labels (not a bug, a data gap).
+No backend or `apps/web-next` changes.
+
+### Step M07c — Region Tabs with Trek Cards — Done (2026-06-14)
+Redefines the previously-unscoped "M07c — Browse/Search Polish Pass" placeholder with a concrete, user-requested deliverable for the Home screen "Explore by Region" section (`apps/mobile/components/home/RegionsRow.tsx`, M06).
+
+- `RegionsRow` region chips are now selectable tabs (first region "Himachal Pradesh" selected by default), mirroring `DifficultyTabsSection`'s tab styling (saffron `#E8702A` active state).
+- New "View all →" link in the section header navigates to `/(tabs)/browse?region=<activeRegion>` (Browse screen already reads this param via `useExploreStore.setTrekState` — no Browse changes needed).
+- New `apps/mobile/hooks/useRegionTreks.ts` — `useQuery` over `contentApi.exploreTreks({trekState: region}, 5, 0)`, 10min staleTime. Renders up to 5 `TrekCard`s below the chip row, or "No treks for \<region\> yet." for regions without CMS data.
+- **Data reality**: only 2 of the 8 region chips ("Himachal Pradesh" ×31, "Uttarakhand" ×46) currently have published `trek_state` data; the other 6 show the empty state — expected, not a bug.
+- No backend or `apps/web-next` changes.
+
+**Verification:** `cd apps/mobile && npx tsc --noEmit` → 0 errors. Backend full suite unchanged (no backend files touched). `gitnexus_detect_changes` and re-index counts recorded below.
 
 ### Step M04 — CMS Offline Content Engine — Done (2026-06-10)
 - `apps/mobile/db/schema.ts` — Drizzle schema: `cmsPages` + `syncMeta` tables

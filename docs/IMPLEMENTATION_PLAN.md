@@ -773,3 +773,18 @@ Spec: second sub-step of M07 "Explore & Search", per user-approved plan. All fou
 - **NEW** `apps/mobile/hooks/useRecentSearches.ts` (AsyncStorage `ty_recent_searches`, max 8), `useTrendingSearches.ts`, `useSemanticSearch.ts` (800ms debounce, >3-word threshold).
 - `apps/mobile/app/(tabs)/browse/search.tsx` rewritten — Recent/Trending chip sections on empty query, mic-based voice input, "Suggested for you" semantic results section with "Smart match" badge, recent-search + search-log tracking on result selection.
 - **tsc --noEmit: 0 errors** | `gitnexus_detect_changes(scope:"all")` → risk "low", 9 changed / 0 affected / 6 changed files | Backend unchanged — full suite baseline re-confirmed | No web-next changes — zero blast radius on production website
+
+### bugfix (2026-06-14) — Home difficulty tabs showing empty Easy/Moderate sections [DONE — 2026-06-14]
+
+- Root cause: exact-equality difficulty filter against a tiny trending/seasonal subset; DB has no `"Easy"`/`"Challenging"` exactly, and `"Moderate-Difficult"` != `"Moderate"`.
+- Fix: new `apps/mobile/hooks/useDifficultyTreks.ts` queries `contentApi.exploreTreks({trekDifficulty: value}, 10, 0)` per a fuzzy value list per tab (mirrors web's substring matching), merged + deduped. `DifficultyTabsSection.tsx` uses it directly (dropped `treks` prop); `app/(tabs)/(home)/index.tsx` drops the now-unused `dedupedTreks`.
+- **tsc --noEmit: 0 errors** | No backend or web-next changes.
+
+### Step M07c — Region Tabs with Trek Cards [DONE — 2026-06-14]
+
+Redefines the previously-unscoped "Browse/Search Polish Pass" placeholder. User-requested: "Explore by Region" home section becomes tab-like (tap a chip → 5 trek cards for that state + "View all →" to `/(tabs)/browse?region=<state>`, which the Browse screen already handles).
+
+- `apps/mobile/components/home/RegionsRow.tsx` — chips are now selectable tabs (first region default-selected), styled like `DifficultyTabsSection`'s tabs; new "View all →" header link.
+- New `apps/mobile/hooks/useRegionTreks.ts` — `useQuery` over `contentApi.exploreTreks({trekState: region}, 5, 0)`.
+- Only 2/8 regions (Himachal Pradesh, Uttarakhand) currently have published CMS data; the other 6 show a "No treks for \<region\> yet." empty state (data gap, not a bug).
+- **tsc --noEmit: 0 errors** | No backend or web-next changes.
