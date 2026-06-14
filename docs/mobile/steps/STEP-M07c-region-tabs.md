@@ -66,7 +66,8 @@ User confirmed (via AskUserQuestion): region chips become **tab-like** — tappi
 - `cd apps/mobile && npx tsc --noEmit`: 0 errors.
 - Backend: full suite re-run — 643 pass, 2 pre-existing `test_refresh.py` failures (unrelated, unchanged baseline from M07a/b). No backend files touched.
 - `gitnexus_detect_changes(scope:"all")` (pre-re-index, after commit 1): risk "low", 6 changed symbols / 0 affected / 3 changed files (`(home)/index.tsx`, `DifficultyTabsSection.tsx`, `RegionsRow.tsx`).
-- `npx gitnexus analyze --force` re-index after both commits: <RUN_PENDING>
+- `npx gitnexus analyze --force` re-index after both commits: 491,841 nodes | 788,951 edges | 3,739 clusters | 300 flows (from 465,306/746,928/3,176/300 at start of step — increase reflects new hook files plus accumulated changes from prior steps since the last re-index)
+- `gitnexus_detect_changes(scope:"all")` post-re-index: risk "low", 1 changed symbol (pre-existing `CLAUDE.md` edit, unrelated to this step) / 0 affected processes / 1 changed file — confirms no unexpected scope.
 - No `apps/web-next` files touched — zero blast radius on production website (desktop + mobile web).
 
 ---

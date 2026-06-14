@@ -452,7 +452,9 @@ Redefines the previously-unscoped "M07c — Browse/Search Polish Pass" placehold
 - **Data reality**: only 2 of the 8 region chips ("Himachal Pradesh" ×31, "Uttarakhand" ×46) currently have published `trek_state` data; the other 6 show the empty state — expected, not a bug.
 - No backend or `apps/web-next` changes.
 
-**Verification:** `cd apps/mobile && npx tsc --noEmit` → 0 errors. Backend full suite unchanged (no backend files touched). `gitnexus_detect_changes` and re-index counts recorded below.
+- `npx gitnexus analyze --force` re-index after both commits: **491,841 nodes | 788,951 edges | 3,739 clusters | 300 flows** (from 465,306 / 746,928 / 3,176 / 300 at start of step — new hook files plus accumulated changes from prior steps since the last re-index).
+
+**Verification:** `cd apps/mobile && npx tsc --noEmit` → 0 errors. Backend full suite unchanged (no backend files touched). `gitnexus_detect_changes(scope:"all")` post-re-index → risk "low", 1 changed symbol (pre-existing `CLAUDE.md` touch, unrelated) / 0 affected / 1 changed file — confirms scope matches expectations.
 
 ### Step M04 — CMS Offline Content Engine — Done (2026-06-10)
 - `apps/mobile/db/schema.ts` — Drizzle schema: `cmsPages` + `syncMeta` tables
