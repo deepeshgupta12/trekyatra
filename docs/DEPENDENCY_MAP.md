@@ -1727,3 +1727,21 @@ LOW — config/doc only, zero blast radius on `apps/mobile` or `apps/web-next` c
 `gitnexus_detect_changes(scope:"all")` confirmed `risk_level: "low"`, 36 changed symbols / 0 affected / 5 changed files — `mobileApi.ts`, `cms.py` (routes), `cms/service.py`, `test_cms.py`, `CLAUDE.md` (pre-existing). New mobile route files not yet reflected pending `npx gitnexus analyze --force` re-index. `npx tsc --noEmit` → 0 errors.
 
 **No `apps/web-next` files touched.** Zero blast radius on production website (desktop + mobile web unaffected).
+
+### Step M07b — Advanced Search blast radius — Done (2026-06-14)
+
+**Backend:** no changes — `POST /api/v1/search/semantic`, `GET /api/v1/search/trending`, `POST /api/v1/search/log` (`services/api/app/api/routes/search.py`) already existed; only consumed from mobile.
+
+**Mobile:**
+| File | Purpose | Blast Radius |
+|------|---------|-------------|
+| `apps/mobile/package.json` / `app.config.ts` | New dependency `expo-speech-recognition@^56.0.1` + `plugins` entry (mic/speech usage strings, Android speech service package) | LOW — additive native module, requires existing `expo-dev-client`; gracefully hidden on Expo Go/web |
+| `apps/mobile/lib/mobileApi.ts` | New `SemanticSearchResult` type; new `contentApi.semanticSearch`, `getTrendingSearches`, `logSearch` | LOW — additive exports only |
+| `apps/mobile/hooks/useRecentSearches.ts` (NEW) | AsyncStorage-backed recent searches (`ty_recent_searches`, max 8) | LOW — new leaf hook |
+| `apps/mobile/hooks/useTrendingSearches.ts` (NEW) | `useQuery` wrapper over `GET /api/v1/search/trending` | LOW — new leaf hook |
+| `apps/mobile/hooks/useSemanticSearch.ts` (NEW) | Debounced (800ms, >3-word) `useQuery` wrapper over `POST /api/v1/search/semantic` | LOW — new leaf hook |
+| `apps/mobile/app/(tabs)/browse/search.tsx` | Rewritten: Recent/Trending chip sections (empty query), mic-based voice input via `expo-speech-recognition`, "Suggested for you" semantic section with "Smart match" badge, `addRecentSearch`/`logSearch` on selection | LOW — leaf route screen, only consumer of new hooks |
+
+`gitnexus_detect_changes(scope:"all")` confirmed `risk_level: "low"`, 9 changed symbols / 0 affected / 6 changed files — `search.tsx`, `mobileApi.ts`, `CLAUDE.md` (pre-existing). New hook files + `app.config.ts`/`package.json` reflected after `npx gitnexus analyze --force` re-index. `npx tsc --noEmit` → 0 errors.
+
+**No `apps/web-next` files touched.** Zero blast radius on production website (desktop + mobile web unaffected).

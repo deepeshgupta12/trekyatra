@@ -762,3 +762,14 @@ Spec: first sub-step of M07 "Explore & Search", split into M07a (this step — g
 - Converted `apps/mobile/app/(tabs)/browse.tsx` placeholder into a stack: **NEW** `browse/_layout.tsx`, `browse/index.tsx` (rebuilt Browse screen), `browse/regions/[state].tsx`, `browse/seasons/[season].tsx`, `browse/search.tsx` (basic search only — recent/trending/semantic/voice deferred to M07b).
 - **4 new backend tests** in `test_cms.py` for the new filter query params.
 - **tsc --noEmit: 0 errors** | Backend: 7/7 relevant `test_cms.py` tests pass; full suite 643 pass, 2 pre-existing unrelated `test_refresh.py` failures (test-ordering issue, confirmed via `git stash`, reported separately) | `gitnexus_detect_changes(scope:"all")` → risk "low", 36 changed / 0 affected / 5 changed files | No web-next changes — zero blast radius on production website
+
+### Step M07b — Advanced Search (semantic, voice, recent, trending) [DONE — 2026-06-14]
+
+Spec: second sub-step of M07 "Explore & Search", per user-approved plan. All four deferred features (semantic search, voice search, recent searches, trending searches) included per explicit user decision. M07c (polish pass) remains deferred.
+
+- Backend: no changes — `POST /api/v1/search/semantic`, `GET /api/v1/search/trending`, `POST /api/v1/search/log` already existed and fully functional.
+- New dependency `expo-speech-recognition@^56.0.1`, added to `apps/mobile/app.config.ts` `plugins` (microphone/speech-recognition usage strings, Android speech service package); requires `expo-dev-client` (already present), hidden gracefully on Expo Go/web via `isRecognitionAvailable()` guard.
+- `apps/mobile/lib/mobileApi.ts` — new `SemanticSearchResult` type + `contentApi.semanticSearch`/`getTrendingSearches`/`logSearch`.
+- **NEW** `apps/mobile/hooks/useRecentSearches.ts` (AsyncStorage `ty_recent_searches`, max 8), `useTrendingSearches.ts`, `useSemanticSearch.ts` (800ms debounce, >3-word threshold).
+- `apps/mobile/app/(tabs)/browse/search.tsx` rewritten — Recent/Trending chip sections on empty query, mic-based voice input, "Suggested for you" semantic results section with "Smart match" badge, recent-search + search-log tracking on result selection.
+- **tsc --noEmit: 0 errors** | `gitnexus_detect_changes(scope:"all")` → risk "low", 9 changed / 0 affected / 6 changed files | Backend unchanged — full suite baseline re-confirmed | No web-next changes — zero blast radius on production website

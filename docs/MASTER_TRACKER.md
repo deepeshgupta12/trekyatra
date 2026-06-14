@@ -125,7 +125,7 @@ All V0 foundations are shipped. The stack is live locally with:
 | **Step M-DS5 — Splash Screen Rebuild (Static Background + Logo Card)** (2026-06-12) | **done** |
 | **Step M-DS6 — Splash→Onboarding Transition Animation + Onboarding Skip CTA** (2026-06-12) | **done** |
 | **Step M07a — Browse Tab (grid, filters, regions/seasons, basic search)** (2026-06-12) | **done** |
-| Step M07b — Advanced Search (semantic, voice, recent, trending) | pending |
+| **Step M07b — Advanced Search (semantic, voice, recent, trending)** (2026-06-14) | **done** |
 | Step M07c — Browse/Search Polish Pass | pending |
 | Step M08 — Trek Comparison (full attribute table + saved comparisons) | pending |
 
@@ -423,6 +423,18 @@ First of the M07a/b/c split (advanced search + polish deferred to M07b/M07c per 
 - `npx gitnexus analyze --force` re-index after this step: **491,679 nodes | 788,324 edges | 3,709 clusters | 300 flows** (from 491,612 / 788,810 / 3,763 / 300 at start of step).
 
 **Verification:** `cd apps/mobile && npx tsc --noEmit` → 0 errors. Backend: 7/7 relevant `test_cms.py` filter tests pass; full suite 643 pass, 2 pre-existing `test_refresh.py` failures (test-ordering issue, confirmed unrelated to this step via `git stash` — reported to user separately, not fixed here per scope discipline). `gitnexus_detect_changes(scope:"all")` → risk "low", 36 changed symbols / 0 affected / 5 changed files, all within expected backend filter files + earlier `mobileApi.ts` touch. No `apps/web-next` files touched.
+
+### Step M07b — Advanced Search (semantic, voice, recent, trending) — Done (2026-06-14)
+Second of the M07a/b/c split. Polish pass remains in M07c.
+
+- **Backend**: no changes. `POST /api/v1/search/semantic`, `GET /api/v1/search/trending`, and `POST /api/v1/search/log` (`services/api/app/api/routes/search.py`) already existed and are fully functional — confirmed by reading the route file in full before starting.
+- **New dependency**: `expo-speech-recognition@^56.0.1` (jamsch, SDK-56-compatible) installed via `npx expo install`; added to `app.config.ts` `plugins` with `microphonePermission`/`speechRecognitionPermission` strings and `androidSpeechServicePackages`. Requires `expo-dev-client` (already present) — not available in Expo Go/web, guarded via `ExpoSpeechRecognitionModule.isRecognitionAvailable() && Platform.OS !== "web"` (mic icon hidden entirely when unsupported).
+- **`mobileApi.ts` (additive)**: new `SemanticSearchResult` interface; `contentApi.semanticSearch(q, page_type?, limit?)` → `POST /search/semantic`; `contentApi.getTrendingSearches(limit?)` → `GET /search/trending`; `contentApi.logSearch(query, clickedSlug?, clickedPageType?)` → `POST /search/log` (fire-and-forget, catches the 204-empty-body JSON parse error).
+- **New hooks**: `hooks/useRecentSearches.ts` (AsyncStorage key `ty_recent_searches`, max 8, de-duped, `addRecentSearch`/`removeRecentSearch`/`clearRecentSearches`); `hooks/useTrendingSearches.ts` (`useQuery` over `getTrendingSearches(8)`, 30min staleTime); `hooks/useSemanticSearch.ts` (800ms debounce, enabled only when debounced query has >3 words, `useQuery` over `semanticSearch`, 60s staleTime).
+- **`app/(tabs)/browse/search.tsx` rewrite**: empty/short query (<2 chars) now shows "Recent Searches" chips (with per-item remove + "Clear all") and "Trending Searches" chips (reusing `FilterChips`' rounded-pill chip style) instead of a bare placeholder; tapping either sets the query. Added a mic button (hidden when voice unsupported) using `useSpeechRecognitionEvent("result"/"start"/"end"/"error")` to fill the query live. For queries ≥2 chars, existing `/search/suggestions` results remain; if `useSemanticSearch` returns results (>3-word query) a "Suggested for you" section is shown above them, deduped by slug, with a "Smart match" badge when `matched_by !== "text"`. Selecting any result or submitting now calls `addRecentSearch(query)` and `contentApi.logSearch(query, slug, page_type)`.
+- `npx gitnexus analyze --force` re-index after this step: **465,306 nodes | 746,928 edges | 3,176 clusters | 300 flows** (from 491,679 / 788,324 / 3,709 / 300 at start of step — drop attributable to indexer scope-extraction/timeout fallbacks during this run, not a code deletion; mobile changes for this step are present in the new graph).
+
+**Verification:** `cd apps/mobile && npx tsc --noEmit` → 0 errors. `gitnexus_detect_changes(scope:"all")` → risk "low", 9 changed symbols / 0 affected / 6 changed files (`search.tsx`, `mobileApi.ts` plus pre-existing `CLAUDE.md` touch); new hook files + `app.config.ts`/`package.json` appear after re-index. Backend: full suite unchanged (no backend files touched) — baseline re-run to confirm the 2 pre-existing `test_refresh.py` failures from M07a are still the only failures. No `apps/web-next` files touched.
 
 ### Step M04 — CMS Offline Content Engine — Done (2026-06-10)
 - `apps/mobile/db/schema.ts` — Drizzle schema: `cmsPages` + `syncMeta` tables

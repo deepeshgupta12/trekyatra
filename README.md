@@ -455,6 +455,7 @@ cd apps/web-next && npm run build
 | Hubs | `/api/v1/admin/hubs/*` | Admin auth required |
 | Linking | `/api/v1/admin/links/*` | Admin auth required |
 | Search analytics | `POST /api/v1/search/log`, `GET /api/v1/search/suggestions`, `GET /api/v1/search/trending` | Public |
+| Semantic search (mobile advanced search, M07b) | `POST /api/v1/search/semantic` — pgvector + text hybrid search, intent detection | Public |
 | Page view tracking | `POST /api/v1/track/page-view` | Public (fire-and-forget) |
 | Saved comparisons | `GET/POST /api/v1/account/comparisons`, `DELETE /api/v1/account/comparisons/{id}` | User auth required |
 | News (public) | `GET /api/v1/public/news`, `GET /api/v1/public/news/{slug}`, `GET /api/v1/public/news/by-trek/{trek_slug}` | Public |
@@ -529,7 +530,7 @@ Full API docs available at http://localhost:8000/docs when the backend is runnin
 | Splash→onboarding transition animation (logo scale/fade + crossfade) and onboarding "Skip" CTA → direct to Sign up | Done (M-DS6) |
 | QA bugfix pass — tab bar ghost-tab fix, icon-only back button, trek detail Guide/Packing/Permits/Costs content via `content_html`/`content_json.sections` + `react-native-render-html`, Home hero + search bar | Done (M-DS7) |
 | Explore & Search — Browse tab (grid, filters, regions/seasons hubs, basic search) | Done (M07a) |
-| Explore & Search — advanced search (semantic/voice/recent/trending) | Pending (M07b) |
+| Explore & Search — advanced search (semantic/voice/recent/trending) | Done (M07b) |
 | Explore & Search — Browse/Search polish pass | Pending (M07c) |
 | Trek planning wizard (full multi-step UI) | Pending (M09) |
 | Push notifications | Pending (M14) |
@@ -559,6 +560,7 @@ Full API docs available at http://localhost:8000/docs when the backend is runnin
 | **Step M-DS2 — Splash, Onboarding & Auth Polish** | Cinematic SVG/Reanimated "Trail Comes Alive" splash; onboarding full-bleed/contrast/back-nav + 6-USP slide rewrite; guest "Skip" → anonymous browsing (AuthGate relaxed); Google/Apple sign-in icons (Apple UI-only, backend deferred); 15s request timeout fixes sign-in spinner hang | Done — 2026-06-11 |
 | **Step M-DS7 — QA Bugfix Pass** | Tab bar ghost-tab fix, icon-only back button, Trek detail Guide/Packing/Permits/Costs render real `content_html`/`content_json.sections` via new `react-native-render-html`-based `HtmlContentRenderer`, Home hero + tappable search bar | Done — 2026-06-12 |
 | **Step M07a — Browse Tab** | `GET /api/v1/cms/pages` gains optional `trek_state`/`trek_difficulty`/`trek_season`/`trek_duration_min`/`trek_duration_max` filters; new `exploreStore`/`useFilterFacets`/`useExplore`; Browse tab rebuilt as a stack — grid (`TrekGrid`), `FilterChips`/`FilterSheet`, Regions/Seasons hub screens, basic search screen (`/browse/search`) | Done — 2026-06-12 |
+| **Step M07b — Advanced Search** | `/browse/search` gains Recent Searches (AsyncStorage) + Trending Searches chips, semantic search "Suggested for you" section via existing `POST /api/v1/search/semantic`, and voice search via new `expo-speech-recognition` dependency; new `useRecentSearches`/`useTrendingSearches`/`useSemanticSearch` hooks; `mobileApi.ts` gains `semanticSearch`/`getTrendingSearches`/`logSearch` | Done — 2026-06-14 |
 
 ## Production Infrastructure
 

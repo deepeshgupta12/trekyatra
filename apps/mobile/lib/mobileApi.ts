@@ -67,6 +67,22 @@ export interface SearchSuggestion {
   seo_description: string | null;
 }
 
+// Shape returned by POST /api/v1/search/semantic
+export interface SemanticSearchResult {
+  slug: string;
+  title: string;
+  page_type: string;
+  hero_image_url: string | null;
+  seo_description: string | null;
+  trek_state: string | null;
+  trek_difficulty: string | null;
+  trek_duration: string | null;
+  trek_season: string | null;
+  trek_suitability: string | null;
+  score: number;
+  matched_by: "semantic" | "text" | "hybrid";
+}
+
 export interface ExploreFilters {
   trekState?: string | null;
   trekDifficulty?: string | null;
@@ -271,6 +287,23 @@ export const contentApi = {
 
   getSearchSuggestions: (q: string) =>
     apiGet<SearchSuggestion[]>(`/api/v1/search/suggestions?q=${encodeURIComponent(q)}`),
+
+  getTrendingSearches: (limit = 10) =>
+    apiGet<string[]>(`/api/v1/search/trending?limit=${limit}`),
+
+  semanticSearch: (q: string, pageType?: string, limit = 8) =>
+    apiPost<SemanticSearchResult[]>("/api/v1/search/semantic", {
+      q,
+      page_type: pageType ?? null,
+      limit,
+    }),
+
+  logSearch: (query: string, clickedSlug?: string, clickedPageType?: string) =>
+    apiPost<null>("/api/v1/search/log", {
+      query,
+      clicked_slug: clickedSlug ?? null,
+      clicked_page_type: clickedPageType ?? null,
+    }).catch(() => undefined),
 
   getProducts: () => apiGet<Product[]>("/api/v1/products"),
 

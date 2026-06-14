@@ -40,6 +40,14 @@ export default ({ config }: ConfigContext): any => ({
     "expo-local-authentication",
     "expo-sqlite",
     "expo-image",
+    [
+      "expo-speech-recognition",
+      {
+        microphonePermission: "Allow TrekYatra to use the microphone for voice search.",
+        speechRecognitionPermission: "Allow TrekYatra to use speech recognition for voice search.",
+        androidSpeechServicePackages: ["com.google.android.googlequicksearchbox"],
+      },
+    ],
   ],
   scheme: "trekyatra",
   experiments: {
