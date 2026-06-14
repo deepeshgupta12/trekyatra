@@ -1,24 +1,17 @@
-import { useMemo, useState } from "react";
+import { useState } from "react";
 import { View, Text, ScrollView, TouchableOpacity, StyleSheet } from "react-native";
 import { router } from "expo-router";
 import { TrekCard } from "@/components/trek/TrekCard";
-import type { TrekListItem } from "@/lib/mobileApi";
 import { useTheme } from "@/hooks/useTheme";
+import { useDifficultyTreks } from "@/hooks/useDifficultyTreks";
 
 const TABS = ["Easy", "Moderate", "Challenging"] as const;
 
-interface Props {
-  treks: TrekListItem[];
-}
-
-export function DifficultyTabsSection({ treks }: Props) {
+export function DifficultyTabsSection() {
   const { colors, isDark } = useTheme();
   const [activeTab, setActiveTab] = useState<(typeof TABS)[number]>("Easy");
 
-  const filtered = useMemo(
-    () => treks.filter((t) => t.trek_difficulty === activeTab),
-    [treks, activeTab]
-  );
+  const { data: filtered = [], isLoading } = useDifficultyTreks(activeTab);
 
   return (
     <View style={styles.container}>
@@ -54,7 +47,9 @@ export function DifficultyTabsSection({ treks }: Props) {
         })}
       </View>
 
-      {filtered.length === 0 ? (
+      {isLoading ? (
+        <Text style={[styles.emptyText, { color: colors.textMuted }]}>Loading…</Text>
+      ) : filtered.length === 0 ? (
         <Text style={[styles.emptyText, { color: colors.textMuted }]}>
           No {activeTab.toLowerCase()} treks to show right now.
         </Text>

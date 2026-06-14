@@ -26,7 +26,6 @@ import { ComparisonCTACard } from "@/components/home/ComparisonCTACard";
 import { ResourcesRow } from "@/components/home/ResourcesRow";
 import { OperatorsCTACard } from "@/components/home/OperatorsCTACard";
 import { HomeSkeleton } from "@/components/home/HomeSkeleton";
-import type { TrekListItem } from "@/lib/mobileApi";
 
 type HomeState = "A" | "B" | "C" | "D";
 
@@ -65,18 +64,6 @@ export default function HomeScreen() {
   const firstName = user?.fullName?.split(" ")[0] ?? "there";
   const viewCount = profile?.views.length ?? 0;
   const topRegion = topRegions[0] ?? null;
-
-  const dedupedTreks: TrekListItem[] = (() => {
-    const seen = new Set<string>();
-    const merged: TrekListItem[] = [];
-    for (const trek of [...trending, ...seasonal]) {
-      if (!seen.has(trek.slug)) {
-        seen.add(trek.slug);
-        merged.push(trek);
-      }
-    }
-    return merged;
-  })();
 
   // Show skeleton on first load
   if (!homeState || (isLoading && trending.length === 0)) {
@@ -133,7 +120,7 @@ export default function HomeScreen() {
         <RegionsRow />
 
         {/* Treks by difficulty — all states */}
-        <DifficultyTabsSection treks={dedupedTreks} />
+        <DifficultyTabsSection />
 
         {/* Editorial feature → beginner guide — all states */}
         <EditorialFeatureCard />
