@@ -19,6 +19,9 @@ export const lightColors = {
   accentGlow: "#F0934D",
   tabBar: "#FFFFFF",
   tabBarBorder: "rgba(0,0,0,0.08)",
+  glassTint: "rgba(29,58,46,0.06)",     // Pine-tinted glass (iOS GlassView tintColor)
+  glassBorder: "rgba(255,255,255,0.6)", // Frosted edge highlight
+  glassOverlay: "rgba(255,255,255,0.35)", // Android BlurView legibility overlay
 } as const;
 
 // Dark mode — existing dark palette
@@ -43,6 +46,9 @@ export const darkColors = {
   accentGlow: "#F0934D",
   tabBar: "#0f1117",
   tabBarBorder: "rgba(255,255,255,0.10)",
+  glassTint: "rgba(255,255,255,0.06)",    // Subtle light-tinted glass (iOS GlassView tintColor)
+  glassBorder: "rgba(255,255,255,0.18)",  // Frosted edge highlight
+  glassOverlay: "rgba(12,14,20,0.35)",    // Android BlurView legibility overlay
 } as const;
 
 // Backward-compat alias used by components not yet migrated to useTheme()
