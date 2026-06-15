@@ -788,3 +788,7 @@ Redefines the previously-unscoped "Browse/Search Polish Pass" placeholder. User-
 - New `apps/mobile/hooks/useRegionTreks.ts` — `useQuery` over `contentApi.exploreTreks({trekState: region}, 5, 0)`.
 - Only 2/8 regions (Himachal Pradesh, Uttarakhand) currently have published CMS data; the other 6 show a "No treks for \<region\> yet." empty state (data gap, not a bug).
 - **tsc --noEmit: 0 errors** | No backend or web-next changes.
+
+### bugfix (2026-06-15) — Voice search crash on mic tap [DONE — 2026-06-15]
+
+`apps/mobile/app/(tabs)/browse/search.tsx` — `handleMicPress` wrapped in `try/catch`; any native-module error from `expo-speech-recognition` (added M07b) is caught and logged instead of crashing the app. If voice search still doesn't trigger after this fix, the dev-client binary needs a rebuild to pick up the native module added in M07b. **tsc --noEmit: 0 errors** | No backend or web-next changes.

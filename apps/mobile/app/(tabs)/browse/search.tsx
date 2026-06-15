@@ -58,13 +58,18 @@ export default function SearchScreen() {
   });
 
   const handleMicPress = async () => {
-    if (isRecording) {
-      ExpoSpeechRecognitionModule.stop();
-      return;
+    try {
+      if (isRecording) {
+        ExpoSpeechRecognitionModule.stop();
+        return;
+      }
+      const permission = await ExpoSpeechRecognitionModule.requestPermissionsAsync();
+      if (!permission.granted) return;
+      ExpoSpeechRecognitionModule.start({ lang: "en-US", interimResults: true });
+    } catch (error) {
+      console.warn("Voice search unavailable:", error);
+      setIsRecording(false);
     }
-    const permission = await ExpoSpeechRecognitionModule.requestPermissionsAsync();
-    if (!permission.granted) return;
-    ExpoSpeechRecognitionModule.start({ lang: "en-US", interimResults: true });
   };
 
   const navigateToResult = (slug: string, pageType: string) => {

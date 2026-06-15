@@ -1758,4 +1758,12 @@ LOW — config/doc only, zero blast radius on `apps/mobile` or `apps/web-next` c
 
 `gitnexus_detect_changes(scope:"all")` confirmed `risk_level: "low"`, 9 changed symbols / 0 affected / 6 changed files — `search.tsx`, `mobileApi.ts`, `CLAUDE.md` (pre-existing). New hook files + `app.config.ts`/`package.json` reflected after `npx gitnexus analyze --force` re-index. `npx tsc --noEmit` → 0 errors.
 
+### bugfix (2026-06-15) — Voice search crash on Browse → Search mic tap
+
+| File | Purpose | Blast Radius |
+|------|---------|-------------|
+| `apps/mobile/app/(tabs)/browse/search.tsx` | `handleMicPress` body wrapped in `try/catch` — any error thrown by `ExpoSpeechRecognitionModule.requestPermissionsAsync()` / `.start()` / `.stop()` (native module not yet present in the installed dev-client binary, permission dialog errors, etc.) is now caught, logged via `console.warn`, and `isRecording` is reset, instead of propagating as an unhandled rejection that crashes the app | LOW — `gitnexus_impact` confirmed `SearchScreen` has 0 upstream callers; `gitnexus_detect_changes(scope:"all")` → risk "medium" (3-step process touch, expected for the screen's own functions), 7 changed symbols / 2 affected processes (both `SearchScreen`-rooted, step 1 only) / 2 changed files (`search.tsx`, pre-existing `CLAUDE.md`) |
+
+**Root cause note**: `expo-speech-recognition` was added as a new native module in M07b (2026-06-14). If the installed Expo dev-client binary was built before that step, `ExpoSpeechRecognitionModule` native calls throw at runtime on first use even though `isRecognitionAvailable()` (called at module-eval time) may still report `true`. The `try/catch` prevents this from crashing the app; if voice search still doesn't start after this fix, a new dev-client build (`eas build --profile development` or `npx expo run:ios`/`run:android`) is required to compile in the native module. No backend or `apps/web-next` changes.
+
 **No `apps/web-next` files touched.** Zero blast radius on production website (desktop + mobile web unaffected).

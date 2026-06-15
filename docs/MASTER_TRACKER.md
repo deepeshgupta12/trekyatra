@@ -128,6 +128,7 @@ All V0 foundations are shipped. The stack is live locally with:
 | **Step M07b — Advanced Search (semantic, voice, recent, trending)** (2026-06-14) | **done** |
 | **bugfix — Home difficulty tabs showing empty Easy/Moderate** (2026-06-14) | **done** |
 | **Step M07c — Region Tabs with Trek Cards** (2026-06-14) | **done** |
+| **bugfix — Voice search crash on mic tap** (2026-06-15) | **done** |
 | Step M08 — Trek Comparison (full attribute table + saved comparisons) | pending |
 
 ### Step M01 — Done (2026-06-03)
@@ -455,6 +456,12 @@ Redefines the previously-unscoped "M07c — Browse/Search Polish Pass" placehold
 - `npx gitnexus analyze --force` re-index after both commits: **491,841 nodes | 788,951 edges | 3,739 clusters | 300 flows** (from 465,306 / 746,928 / 3,176 / 300 at start of step — new hook files plus accumulated changes from prior steps since the last re-index).
 
 **Verification:** `cd apps/mobile && npx tsc --noEmit` → 0 errors. Backend full suite unchanged (no backend files touched). `gitnexus_detect_changes(scope:"all")` post-re-index → risk "low", 1 changed symbol (pre-existing `CLAUDE.md` touch, unrelated) / 0 affected / 1 changed file — confirms scope matches expectations.
+
+### bugfix (2026-06-15) — Voice search crash on Browse → Search mic tap
+**Root cause**: `expo-speech-recognition` (added in M07b) is a native module. `handleMicPress` in `apps/mobile/app/(tabs)/browse/search.tsx` called `ExpoSpeechRecognitionModule.requestPermissionsAsync()` / `.start()` / `.stop()` with no `try/catch` — any native-side error (permission dialog issue, or the dev-client binary not yet recompiled with the new native module from M07b) threw an unhandled rejection that crashed the app.
+**Fix**: wrapped the `handleMicPress` body in `try/catch` — errors are now caught, logged via `console.warn`, and `isRecording` is reset to `false`, so the app no longer crashes.
+**Note for user**: if voice search still doesn't start after this fix (mic icon does nothing, warning logged), the installed dev-client binary needs a rebuild (`eas build --profile development` or `npx expo run:ios`/`run:android`) to compile in the `expo-speech-recognition` native module added in M07b.
+`gitnexus_impact(SearchScreen, upstream)` → LOW, 0 callers. `gitnexus_detect_changes(scope:"all")` → risk "medium" (expected — 2 `SearchScreen`-rooted process touches, step 1 only), 7 changed symbols / 2 affected / 2 changed files (`search.tsx`, pre-existing `CLAUDE.md`). `npx tsc --noEmit` → 0 errors. No backend or `apps/web-next` changes.
 
 ### Step M04 — CMS Offline Content Engine — Done (2026-06-10)
 - `apps/mobile/db/schema.ts` — Drizzle schema: `cmsPages` + `syncMeta` tables

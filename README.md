@@ -563,6 +563,7 @@ Full API docs available at http://localhost:8000/docs when the backend is runnin
 | **Step M07b — Advanced Search** | `/browse/search` gains Recent Searches (AsyncStorage) + Trending Searches chips, semantic search "Suggested for you" section via existing `POST /api/v1/search/semantic`, and voice search via new `expo-speech-recognition` dependency; new `useRecentSearches`/`useTrendingSearches`/`useSemanticSearch` hooks; `mobileApi.ts` gains `semanticSearch`/`getTrendingSearches`/`logSearch` | Done — 2026-06-14 |
 | **bugfix — Home difficulty tabs** | `DifficultyTabsSection` "Moderate" tab showed empty due to exact-match filter against a tiny trending/seasonal subset; new `useDifficultyTreks` hook queries `exploreTreks` with a fuzzy per-tab value list (mirrors web's substring matching) and merges/dedupes | Done — 2026-06-14 |
 | **Step M07c — Region Tabs with Trek Cards** | Home "Explore by Region" chips become selectable tabs (first region default), showing 5 `TrekCard`s for the active region via new `useRegionTreks` hook + "View all →" link to `/(tabs)/browse?region=<state>` (existing param handling) | Done — 2026-06-14 |
+| **bugfix — Voice search crash on mic tap** | `handleMicPress` in `/browse/search` wrapped in `try/catch` — native errors from `expo-speech-recognition` (M07b) no longer crash the app; if voice still doesn't start, dev-client needs a rebuild to compile in the M07b native module | Done — 2026-06-15 |
 
 ## Production Infrastructure
 
