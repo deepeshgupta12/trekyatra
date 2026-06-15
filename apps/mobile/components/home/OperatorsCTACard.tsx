@@ -2,33 +2,26 @@ import { View, Text, TouchableOpacity, StyleSheet } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { router } from "expo-router";
 import { useTheme } from "@/hooks/useTheme";
+import { GlassSurface } from "@/components/ui/GlassSurface";
 
 export function OperatorsCTACard() {
-  const { colors, isDark } = useTheme();
+  const { colors } = useTheme();
 
   return (
     <View style={styles.container}>
-      <TouchableOpacity
-        activeOpacity={0.85}
-        style={[
-          styles.card,
-          {
-            backgroundColor: isDark ? "rgba(255,255,255,0.04)" : "rgba(29,58,46,0.04)",
-            borderColor: isDark ? "rgba(255,255,255,0.08)" : "rgba(29,58,46,0.1)",
-          },
-        ]}
-        onPress={() => router.push("/operators" as never)}
-      >
-        <View style={styles.iconWrap}>
-          <Ionicons name="people-outline" size={22} color="#E8702A" />
-        </View>
-        <View style={styles.textWrap}>
-          <Text style={[styles.title, { color: colors.textPrimary }]}>Book with trusted operators</Text>
-          <Text style={[styles.subtitle, { color: colors.textSecondary }]}>
-            Verified trek operators across India, rated by trekkers.
-          </Text>
-        </View>
-        <Ionicons name="chevron-forward" size={18} color={colors.textMuted} />
+      <TouchableOpacity activeOpacity={0.85} onPress={() => router.push("/operators" as never)}>
+        <GlassSurface rounded="lg" style={styles.card}>
+          <View style={styles.iconWrap}>
+            <Ionicons name="people-outline" size={22} color="#E8702A" />
+          </View>
+          <View style={styles.textWrap}>
+            <Text style={[styles.title, { color: colors.textPrimary }]}>Book with trusted operators</Text>
+            <Text style={[styles.subtitle, { color: colors.textSecondary }]}>
+              Verified trek operators across India, rated by trekkers.
+            </Text>
+          </View>
+          <Ionicons name="chevron-forward" size={18} color={colors.textMuted} />
+        </GlassSurface>
       </TouchableOpacity>
     </View>
   );
@@ -40,8 +33,6 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     gap: 12,
-    borderRadius: 16,
-    borderWidth: 1,
     padding: 16,
   },
   iconWrap: {

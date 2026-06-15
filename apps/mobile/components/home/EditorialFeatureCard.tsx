@@ -1,6 +1,7 @@
 import { View, Text, TouchableOpacity, ImageBackground, StyleSheet } from "react-native";
 import { router } from "expo-router";
 import { LinearGradient } from "expo-linear-gradient";
+import { GlassSurface } from "@/components/ui/GlassSurface";
 
 export function EditorialFeatureCard() {
   return (
@@ -12,12 +13,14 @@ export function EditorialFeatureCard() {
           imageStyle={styles.imageStyle}
         >
           <LinearGradient colors={["transparent", "rgba(5,8,15,0.9)"]} style={styles.gradient}>
-            <Text style={styles.eyebrow}>Editorial</Text>
-            <Text style={styles.title}>Your first trek — start here</Text>
-            <Text style={styles.subtitle}>
-              India-specific, no-nonsense guides for first-time trekkers.
-            </Text>
-            <Text style={styles.cta}>Read the guide →</Text>
+            <GlassSurface rounded="lg" bordered={false} style={styles.textPanel}>
+              <Text style={styles.eyebrow}>Editorial</Text>
+              <Text style={styles.title}>Your first trek — start here</Text>
+              <Text style={styles.subtitle}>
+                India-specific, no-nonsense guides for first-time trekkers.
+              </Text>
+              <Text style={styles.cta}>Read the guide →</Text>
+            </GlassSurface>
           </LinearGradient>
         </ImageBackground>
       </TouchableOpacity>
@@ -32,8 +35,10 @@ const styles = StyleSheet.create({
   gradient: {
     flex: 1,
     justifyContent: "flex-end",
-    padding: 16,
     borderRadius: 16,
+  },
+  textPanel: {
+    padding: 16,
   },
   eyebrow: { color: "#E8702A", fontSize: 11, fontWeight: "700", letterSpacing: 2, textTransform: "uppercase" },
   title: { color: "#fff", fontSize: 20, fontWeight: "700", fontFamily: "PlayfairDisplay_700Bold", marginTop: 4 },

@@ -2,6 +2,7 @@ import { View, Text, TouchableOpacity, StyleSheet } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { router } from "expo-router";
 import { useTheme } from "@/hooks/useTheme";
+import { GlassSurface } from "@/components/ui/GlassSurface";
 
 const EXAMPLE_PAIRS = [
   ["Hampta Pass", "Kedarkantha"],
@@ -15,40 +16,32 @@ export function ComparisonCTACard() {
 
   return (
     <View style={styles.container}>
-      <TouchableOpacity
-        activeOpacity={0.85}
-        style={[
-          styles.card,
-          {
-            backgroundColor: isDark ? "rgba(255,255,255,0.04)" : "rgba(29,58,46,0.04)",
-            borderColor: isDark ? "rgba(255,255,255,0.08)" : "rgba(29,58,46,0.1)",
-          },
-        ]}
-        onPress={() => router.push("/compare" as never)}
-      >
-        <View style={styles.iconWrap}>
-          <Ionicons name="git-compare-outline" size={22} color="#E8702A" />
-        </View>
-        <Text style={[styles.title, { color: colors.textPrimary }]}>Can't decide between two treks?</Text>
-        <Text style={[styles.subtitle, { color: colors.textSecondary }]}>
-          Compare difficulty, duration, cost, and season side by side.
-        </Text>
-        <View style={styles.pairRow}>
-          {EXAMPLE_PAIRS.map(([a, b]) => (
-            <View
-              key={a}
-              style={[
-                styles.pairChip,
-                { borderColor: isDark ? "rgba(255,255,255,0.1)" : "rgba(29,58,46,0.12)" },
-              ]}
-            >
-              <Text style={[styles.pairText, { color: colors.textSecondary }]}>
-                {a} vs {b}
-              </Text>
-            </View>
-          ))}
-        </View>
-        <Text style={styles.cta}>Compare treks →</Text>
+      <TouchableOpacity activeOpacity={0.85} onPress={() => router.push("/compare" as never)}>
+        <GlassSurface rounded="lg" style={styles.card}>
+          <View style={styles.iconWrap}>
+            <Ionicons name="git-compare-outline" size={22} color="#E8702A" />
+          </View>
+          <Text style={[styles.title, { color: colors.textPrimary }]}>Can't decide between two treks?</Text>
+          <Text style={[styles.subtitle, { color: colors.textSecondary }]}>
+            Compare difficulty, duration, cost, and season side by side.
+          </Text>
+          <View style={styles.pairRow}>
+            {EXAMPLE_PAIRS.map(([a, b]) => (
+              <View
+                key={a}
+                style={[
+                  styles.pairChip,
+                  { borderColor: isDark ? "rgba(255,255,255,0.1)" : "rgba(29,58,46,0.12)" },
+                ]}
+              >
+                <Text style={[styles.pairText, { color: colors.textSecondary }]}>
+                  {a} vs {b}
+                </Text>
+              </View>
+            ))}
+          </View>
+          <Text style={styles.cta}>Compare treks →</Text>
+        </GlassSurface>
       </TouchableOpacity>
     </View>
   );
@@ -56,7 +49,7 @@ export function ComparisonCTACard() {
 
 const styles = StyleSheet.create({
   container: { marginTop: 24, paddingHorizontal: 16 },
-  card: { borderRadius: 16, borderWidth: 1, padding: 16, gap: 8 },
+  card: { padding: 16, gap: 8 },
   iconWrap: {
     width: 40,
     height: 40,

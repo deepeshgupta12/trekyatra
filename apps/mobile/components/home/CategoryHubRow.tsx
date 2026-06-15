@@ -2,6 +2,7 @@ import { View, Text, ScrollView, TouchableOpacity, StyleSheet } from "react-nati
 import { Ionicons } from "@expo/vector-icons";
 import { router } from "expo-router";
 import { useTheme } from "@/hooks/useTheme";
+import { GlassSurface } from "@/components/ui/GlassSurface";
 
 const CATEGORIES = [
   { label: "Packing", icon: "bag-handle-outline", route: "/packing" },
@@ -12,7 +13,7 @@ const CATEGORIES = [
 ] as const;
 
 export function CategoryHubRow() {
-  const { colors, isDark } = useTheme();
+  const { colors } = useTheme();
 
   return (
     <View style={styles.container}>
@@ -21,20 +22,16 @@ export function CategoryHubRow() {
         {CATEGORIES.map((cat) => (
           <TouchableOpacity
             key={cat.route}
-            style={[
-              styles.card,
-              {
-                backgroundColor: isDark ? "rgba(255,255,255,0.04)" : "rgba(29,58,46,0.04)",
-                borderColor: isDark ? "rgba(255,255,255,0.08)" : "rgba(29,58,46,0.1)",
-              },
-            ]}
+            style={styles.cardTouchable}
             activeOpacity={0.8}
             onPress={() => router.push(cat.route as never)}
           >
-            <View style={styles.iconWrap}>
-              <Ionicons name={cat.icon} size={22} color="#E8702A" />
-            </View>
-            <Text style={[styles.cardLabel, { color: colors.textPrimary }]}>{cat.label}</Text>
+            <GlassSurface rounded="md" style={styles.card}>
+              <View style={styles.iconWrap}>
+                <Ionicons name={cat.icon} size={22} color="#E8702A" />
+              </View>
+              <Text style={[styles.cardLabel, { color: colors.textPrimary }]}>{cat.label}</Text>
+            </GlassSurface>
           </TouchableOpacity>
         ))}
       </ScrollView>
@@ -51,10 +48,8 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
   },
   row: { paddingHorizontal: 16, gap: 10 },
+  cardTouchable: { width: 96 },
   card: {
-    width: 96,
-    borderRadius: 14,
-    borderWidth: 1,
     paddingVertical: 14,
     alignItems: "center",
     gap: 8,

@@ -3,9 +3,10 @@ import { View, Text, ScrollView, TouchableOpacity, Image, StyleSheet } from "rea
 import { router } from "expo-router";
 import { contentApi, type Product } from "@/lib/mobileApi";
 import { useTheme } from "@/hooks/useTheme";
+import { GlassSurface } from "@/components/ui/GlassSurface";
 
 export function ResourcesRow() {
-  const { colors, isDark } = useTheme();
+  const { colors } = useTheme();
   const [products, setProducts] = useState<Product[]>([]);
 
   useEffect(() => {
@@ -29,23 +30,19 @@ export function ResourcesRow() {
         {products.map((p) => (
           <TouchableOpacity
             key={p.slug}
-            style={[
-              styles.card,
-              {
-                backgroundColor: isDark ? "rgba(255,255,255,0.04)" : "rgba(29,58,46,0.04)",
-                borderColor: isDark ? "rgba(255,255,255,0.08)" : "rgba(29,58,46,0.1)",
-              },
-            ]}
+            style={styles.cardTouchable}
             activeOpacity={0.85}
             onPress={() => router.push("/products" as never)}
           >
-            {p.preview_image_url && <Image source={{ uri: p.preview_image_url }} style={styles.cardImage} />}
-            <View style={styles.cardBody}>
-              <Text style={[styles.cardTitle, { color: colors.textPrimary }]} numberOfLines={2}>
-                {p.title}
-              </Text>
-              <Text style={styles.price}>{p.price_inr > 0 ? `₹${p.price_inr.toLocaleString("en-IN")}` : "Free"}</Text>
-            </View>
+            <GlassSurface rounded="md" style={styles.card}>
+              {p.preview_image_url && <Image source={{ uri: p.preview_image_url }} style={styles.cardImage} />}
+              <View style={styles.cardBody}>
+                <Text style={[styles.cardTitle, { color: colors.textPrimary }]} numberOfLines={2}>
+                  {p.title}
+                </Text>
+                <Text style={styles.price}>{p.price_inr > 0 ? `₹${p.price_inr.toLocaleString("en-IN")}` : "Free"}</Text>
+              </View>
+            </GlassSurface>
           </TouchableOpacity>
         ))}
       </ScrollView>
@@ -64,7 +61,8 @@ const styles = StyleSheet.create({
   heading: { fontSize: 18, fontWeight: "700", fontFamily: "PlayfairDisplay_700Bold" },
   viewAll: { fontSize: 12, fontWeight: "600", color: "#E8702A" },
   row: { paddingHorizontal: 16, gap: 12 },
-  card: { width: 150, borderRadius: 14, borderWidth: 1, overflow: "hidden" },
+  cardTouchable: { width: 150 },
+  card: { overflow: "hidden" },
   cardImage: { width: "100%", height: 90 },
   cardBody: { padding: 10, gap: 4 },
   cardTitle: { fontSize: 13, fontWeight: "600" },

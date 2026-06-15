@@ -2,6 +2,7 @@ import { View, Text, ScrollView, TouchableOpacity, StyleSheet } from "react-nati
 import { router } from "expo-router";
 import { useTheme } from "@/hooks/useTheme";
 import type { TrekViewEntry } from "@/lib/behaviorProfile";
+import { GlassSurface } from "@/components/ui/GlassSurface";
 
 interface StateAProps {
   firstName: string;
@@ -15,9 +16,9 @@ interface StateBProps {
 }
 
 export function HomeWelcomeBannerA({ firstName }: StateAProps) {
-  const { colors, isDark } = useTheme();
+  const { colors } = useTheme();
   return (
-    <View style={[styles.banner, { backgroundColor: isDark ? "#14161f" : "#F0F7F4", borderColor: isDark ? "rgba(29,58,46,0.3)" : "rgba(29,58,46,0.15)" }]}>
+    <GlassSurface rounded="lg" style={styles.banner}>
       <Text style={[styles.greeting, { color: colors.textPrimary }]}>
         👋 Welcome, {firstName}
       </Text>
@@ -31,14 +32,14 @@ export function HomeWelcomeBannerA({ firstName }: StateAProps) {
       >
         <Text style={styles.ctaText}>Browse popular treks →</Text>
       </TouchableOpacity>
-    </View>
+    </GlassSurface>
   );
 }
 
 export function HomeWelcomeBannerB({ firstName, viewCount, topRegion, recentViews }: StateBProps) {
-  const { colors, isDark } = useTheme();
+  const { colors } = useTheme();
   return (
-    <View style={[styles.banner, { backgroundColor: isDark ? "#14161f" : "#F0F7F4", borderColor: isDark ? "rgba(29,58,46,0.3)" : "rgba(29,58,46,0.15)" }]}>
+    <GlassSurface rounded="lg" style={styles.banner}>
       <Text style={[styles.greeting, { color: colors.textPrimary }]}>
         👋 Welcome back, {firstName}
       </Text>
@@ -65,7 +66,7 @@ export function HomeWelcomeBannerB({ firstName, viewCount, topRegion, recentView
           ))}
         </ScrollView>
       )}
-    </View>
+    </GlassSurface>
   );
 }
 
@@ -74,8 +75,6 @@ const styles = StyleSheet.create({
     marginHorizontal: 16,
     marginTop: 16,
     padding: 16,
-    borderRadius: 16,
-    borderWidth: 1,
     gap: 6,
   },
   greeting: {
