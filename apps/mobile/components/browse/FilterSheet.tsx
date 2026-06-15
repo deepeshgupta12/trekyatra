@@ -3,6 +3,7 @@ import { Modal, View, Text, TouchableOpacity, ScrollView, StyleSheet, Pressable 
 import { useTheme } from "@/hooks/useTheme";
 import { useFilterFacets } from "@/hooks/useFilterFacets";
 import { useExploreStore, DURATION_BUCKETS, type DurationBucket } from "@/stores/exploreStore";
+import { GlassSurface } from "@/components/ui/GlassSurface";
 
 interface FilterSheetProps {
   visible: boolean;
@@ -41,7 +42,7 @@ function Chip({
 }
 
 export function FilterSheet({ visible, onClose }: FilterSheetProps) {
-  const { colors, isDark } = useTheme();
+  const { colors } = useTheme();
   const { facets } = useFilterFacets();
   const store = useExploreStore();
 
@@ -77,7 +78,7 @@ export function FilterSheet({ visible, onClose }: FilterSheetProps) {
   return (
     <Modal visible={visible} animationType="slide" transparent onRequestClose={onClose}>
       <Pressable style={styles.backdrop} onPress={onClose} />
-      <View style={[styles.sheet, { backgroundColor: isDark ? "#16181f" : colors.surface }]}>
+      <GlassSurface rounded="none" bordered={false} style={styles.sheet}>
         <View style={styles.handle} />
         <Text style={[styles.title, { color: colors.textPrimary }]}>Filters</Text>
         <ScrollView style={styles.body} showsVerticalScrollIndicator={false}>
@@ -141,7 +142,7 @@ export function FilterSheet({ visible, onClose }: FilterSheetProps) {
             <Text style={styles.applyText}>Apply</Text>
           </TouchableOpacity>
         </View>
-      </View>
+      </GlassSurface>
     </Modal>
   );
 }

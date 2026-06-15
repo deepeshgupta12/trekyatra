@@ -1,5 +1,6 @@
 import { View, Text, StyleSheet, ScrollView } from "react-native";
 import { useTheme } from "@/hooks/useTheme";
+import { GlassSurface } from "@/components/ui/GlassSurface";
 
 interface TrekMetaStripProps {
   duration?: string | null;
@@ -39,21 +40,23 @@ export function TrekMetaStrip({ duration, altitude, difficulty, season }: TrekMe
   if (chips.length === 0) return null;
 
   return (
-    <ScrollView
-      horizontal
-      showsHorizontalScrollIndicator={false}
-      contentContainerStyle={styles.row}
-    >
-      {chips.map((chip, i) => (
-        <View
-          key={i}
-          style={[styles.chip, { backgroundColor: chip.color + "18", borderColor: chip.color + "40" }]}
-        >
-          <Text style={styles.chipIcon}>{chip.icon}</Text>
-          <Text style={[styles.chipLabel, { color: chip.color }]}>{chip.label}</Text>
-        </View>
-      ))}
-    </ScrollView>
+    <GlassSurface rounded="none" bordered={false}>
+      <ScrollView
+        horizontal
+        showsHorizontalScrollIndicator={false}
+        contentContainerStyle={styles.row}
+      >
+        {chips.map((chip, i) => (
+          <View
+            key={i}
+            style={[styles.chip, { backgroundColor: chip.color + "18", borderColor: chip.color + "40" }]}
+          >
+            <Text style={styles.chipIcon}>{chip.icon}</Text>
+            <Text style={[styles.chipLabel, { color: chip.color }]}>{chip.label}</Text>
+          </View>
+        ))}
+      </ScrollView>
+    </GlassSurface>
   );
 }
 

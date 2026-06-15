@@ -4,9 +4,10 @@ import { Ionicons } from "@expo/vector-icons";
 import { useTheme } from "@/hooks/useTheme";
 import { useExploreStore } from "@/stores/exploreStore";
 import { FilterSheet } from "@/components/browse/FilterSheet";
+import { GlassSurface } from "@/components/ui/GlassSurface";
 
 export function FilterChips() {
-  const { colors, isDark } = useTheme();
+  const { colors } = useTheme();
   const [sheetVisible, setSheetVisible] = useState(false);
   const { trekState, trekDifficulty, trekSeason, durationBucket, setTrekState, setTrekDifficulty, setTrekSeason, setDurationBucket, clearAll } =
     useExploreStore();
@@ -26,38 +27,30 @@ export function FilterChips() {
         showsHorizontalScrollIndicator={false}
         contentContainerStyle={styles.row}
       >
-        <TouchableOpacity
-          style={[
-            styles.filterChip,
-            {
-              backgroundColor: hasActive ? colors.saffron + "22" : (isDark ? "rgba(255,255,255,0.06)" : "rgba(29,58,46,0.06)"),
-              borderColor: hasActive ? colors.saffron : colors.border,
-            },
-          ]}
-          activeOpacity={0.7}
-          onPress={() => setSheetVisible(true)}
-        >
-          <Ionicons name="options-outline" size={14} color={hasActive ? colors.saffron : colors.textSecondary} />
-          <Text style={[styles.chipText, { color: hasActive ? colors.saffron : colors.textSecondary }]}>
-            Filters
-          </Text>
-        </TouchableOpacity>
+        {hasActive ? (
+          <TouchableOpacity
+            style={[styles.filterChip, { backgroundColor: colors.saffron + "22", borderColor: colors.saffron }]}
+            activeOpacity={0.7}
+            onPress={() => setSheetVisible(true)}
+          >
+            <Ionicons name="options-outline" size={14} color={colors.saffron} />
+            <Text style={[styles.chipText, { color: colors.saffron }]}>Filters</Text>
+          </TouchableOpacity>
+        ) : (
+          <TouchableOpacity activeOpacity={0.7} onPress={() => setSheetVisible(true)}>
+            <GlassSurface rounded="xl" style={styles.filterChip}>
+              <Ionicons name="options-outline" size={14} color={colors.textSecondary} />
+              <Text style={[styles.chipText, { color: colors.textSecondary }]}>Filters</Text>
+            </GlassSurface>
+          </TouchableOpacity>
+        )}
 
         {activeChips.map((chip) => (
-          <TouchableOpacity
-            key={chip.key}
-            style={[
-              styles.chip,
-              {
-                backgroundColor: isDark ? "rgba(255,255,255,0.06)" : "rgba(29,58,46,0.06)",
-                borderColor: colors.border,
-              },
-            ]}
-            activeOpacity={0.7}
-            onPress={chip.onClear}
-          >
-            <Text style={[styles.chipText, { color: colors.textSecondary }]}>{chip.label}</Text>
-            <Ionicons name="close" size={14} color={colors.textMuted} />
+          <TouchableOpacity key={chip.key} activeOpacity={0.7} onPress={chip.onClear}>
+            <GlassSurface rounded="xl" style={styles.chip}>
+              <Text style={[styles.chipText, { color: colors.textSecondary }]}>{chip.label}</Text>
+              <Ionicons name="close" size={14} color={colors.textMuted} />
+            </GlassSurface>
           </TouchableOpacity>
         ))}
 

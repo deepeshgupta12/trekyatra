@@ -3,6 +3,7 @@ import { Image } from "expo-image";
 import { router } from "expo-router";
 import type { TrekListItem } from "@/lib/mobileApi";
 import { useTheme } from "@/hooks/useTheme";
+import { GlassSurface } from "@/components/ui/GlassSurface";
 
 interface TrekCardProps {
   trek: TrekListItem;
@@ -13,7 +14,7 @@ interface TrekCardProps {
 const FALLBACK_BLUR = "L6PZfSi_.AyE_3t7t7R**0o#DgR4";
 
 export function TrekCard({ trek, width = 180, showMeta = true }: TrekCardProps) {
-  const { colors, isDark } = useTheme();
+  const { colors } = useTheme();
 
   const difficultyColor =
     trek.trek_difficulty === "Easy"
@@ -24,7 +25,7 @@ export function TrekCard({ trek, width = 180, showMeta = true }: TrekCardProps) 
 
   return (
     <TouchableOpacity
-      style={[styles.card, { width, backgroundColor: isDark ? "#14161f" : colors.surface }]}
+      style={[styles.card, { width }]}
       activeOpacity={0.88}
       onPress={() => router.push(`/(tabs)/(home)/trek/${trek.slug}` as never)}
     >
@@ -40,7 +41,7 @@ export function TrekCard({ trek, width = 180, showMeta = true }: TrekCardProps) 
           <Text style={[styles.diffText, { color: difficultyColor }]}>{trek.trek_difficulty}</Text>
         </View>
       )}
-      <View style={styles.info}>
+      <GlassSurface rounded="none" bordered={false} style={styles.info}>
         <Text style={[styles.name, { color: colors.textPrimary }]} numberOfLines={2}>
           {trek.title}
         </Text>
@@ -52,7 +53,7 @@ export function TrekCard({ trek, width = 180, showMeta = true }: TrekCardProps) 
         {trek.trek_duration && (
           <Text style={[styles.meta, { color: colors.textMuted }]}>{trek.trek_duration}</Text>
         )}
-      </View>
+      </GlassSurface>
     </TouchableOpacity>
   );
 }

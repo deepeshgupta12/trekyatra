@@ -1,5 +1,6 @@
 import { Modal, View, Text, TouchableOpacity, ScrollView, StyleSheet, Pressable } from "react-native";
 import { useTheme } from "@/hooks/useTheme";
+import { GlassSurface } from "@/components/ui/GlassSurface";
 
 export interface ContentsHeading {
   id: string;
@@ -15,17 +16,12 @@ interface TrekContentsSheetProps {
 }
 
 export function TrekContentsSheet({ visible, headings, onSelect, onClose }: TrekContentsSheetProps) {
-  const { colors, isDark } = useTheme();
+  const { colors } = useTheme();
 
   return (
     <Modal visible={visible} animationType="slide" transparent onRequestClose={onClose}>
       <Pressable style={styles.backdrop} onPress={onClose} />
-      <View
-        style={[
-          styles.sheet,
-          { backgroundColor: isDark ? "#16181f" : colors.surface },
-        ]}
-      >
+      <GlassSurface rounded="none" bordered={false} style={styles.sheet}>
         <View style={styles.handle} />
         <Text style={[styles.title, { color: colors.textPrimary }]}>Contents</Text>
         <ScrollView style={styles.list} showsVerticalScrollIndicator={false}>
@@ -47,7 +43,7 @@ export function TrekContentsSheet({ visible, headings, onSelect, onClose }: Trek
             </TouchableOpacity>
           ))}
         </ScrollView>
-      </View>
+      </GlassSurface>
     </Modal>
   );
 }

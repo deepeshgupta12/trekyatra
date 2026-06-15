@@ -2,13 +2,14 @@ import { View, Text, ScrollView, TouchableOpacity, StyleSheet } from "react-nati
 import { router } from "expo-router";
 import { useTheme } from "@/hooks/useTheme";
 import type { TrekViewEntry } from "@/lib/behaviorProfile";
+import { GlassSurface } from "@/components/ui/GlassSurface";
 
 interface Props {
   views: TrekViewEntry[];
 }
 
 export function RecentlyViewedRow({ views }: Props) {
-  const { colors, isDark } = useTheme();
+  const { colors } = useTheme();
 
   if (views.length === 0) return null;
 
@@ -23,21 +24,20 @@ export function RecentlyViewedRow({ views }: Props) {
         {views.map((v) => (
           <TouchableOpacity
             key={v.slug}
-            style={[
-              styles.card,
-              { backgroundColor: isDark ? "#14161f" : colors.surface, borderColor: isDark ? "rgba(255,255,255,0.08)" : "rgba(0,0,0,0.06)" },
-            ]}
+            style={styles.cardTouchable}
             activeOpacity={0.8}
             onPress={() => router.push(`/(tabs)/(home)/trek/${v.slug}` as never)}
           >
-            <Text style={[styles.name, { color: colors.textPrimary }]} numberOfLines={2}>
-              {v.slug.replace(/-/g, " ")}
-            </Text>
-            {v.region && (
-              <Text style={[styles.region, { color: colors.textMuted }]} numberOfLines={1}>
-                {v.region}
+            <GlassSurface rounded="md" style={styles.card}>
+              <Text style={[styles.name, { color: colors.textPrimary }]} numberOfLines={2}>
+                {v.slug.replace(/-/g, " ")}
               </Text>
-            )}
+              {v.region && (
+                <Text style={[styles.region, { color: colors.textMuted }]} numberOfLines={1}>
+                  {v.region}
+                </Text>
+              )}
+            </GlassSurface>
           </TouchableOpacity>
         ))}
       </ScrollView>
@@ -60,11 +60,9 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     gap: 10,
   },
+  cardTouchable: { width: 140 },
   card: {
-    width: 140,
     padding: 12,
-    borderRadius: 12,
-    borderWidth: 1,
     gap: 4,
   },
   name: {
