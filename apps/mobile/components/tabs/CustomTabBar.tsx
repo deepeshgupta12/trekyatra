@@ -1,6 +1,7 @@
-import { View, TouchableOpacity, Text, Platform } from "react-native";
+import { View, TouchableOpacity, Text, Platform, StyleSheet } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { useTheme } from "@/hooks/useTheme";
+import { GlassSurface } from "@/components/ui/GlassSurface";
 
 // Inline type — avoids importing from expo-router's internal build path
 interface TabRoute {
@@ -34,7 +35,6 @@ const TAB_HEIGHT = Platform.OS === "ios" ? 64 : 56;
 export function CustomTabBar({ state, descriptors, navigation }: TabBarProps) {
   const { isDark } = useTheme();
 
-  const bgColor = isDark ? "#0f1117" : "#ffffff";
   const borderColor = isDark ? "rgba(255,255,255,0.10)" : "rgba(0,0,0,0.08)";
   const inactiveColor = isDark ? "rgba(255,255,255,0.40)" : "rgba(29,58,46,0.45)";
   const paddingBottom = Platform.OS === "ios" ? 20 : 8;
@@ -42,14 +42,7 @@ export function CustomTabBar({ state, descriptors, navigation }: TabBarProps) {
   return (
     <View
       style={{
-        flexDirection: "row",
-        backgroundColor: bgColor,
-        borderTopWidth: 1,
-        borderTopColor: borderColor,
         height: TAB_HEIGHT + (Platform.OS === "ios" ? 20 : 0),
-        paddingBottom,
-        paddingTop: 8,
-        alignItems: "flex-end",
         shadowColor: "#000",
         shadowOffset: { width: 0, height: -2 },
         shadowOpacity: isDark ? 0.3 : 0.08,
@@ -58,6 +51,20 @@ export function CustomTabBar({ state, descriptors, navigation }: TabBarProps) {
       }}
       accessibilityRole="tablist"
     >
+      <GlassSurface
+        rounded="none"
+        bordered={false}
+        style={[StyleSheet.absoluteFill, { borderTopWidth: 1, borderTopColor: borderColor }]}
+      />
+      <View
+        style={{
+          flexDirection: "row",
+          paddingBottom,
+          paddingTop: 8,
+          alignItems: "flex-end",
+          flex: 1,
+        }}
+      >
       {state.routes.map((route, index) => {
         const { options } = descriptors[route.key];
         if (options.href === null) return null;
@@ -147,6 +154,7 @@ export function CustomTabBar({ state, descriptors, navigation }: TabBarProps) {
           </TouchableOpacity>
         );
       })}
+      </View>
     </View>
   );
 }

@@ -6,6 +6,7 @@ import { useTheme } from "@/hooks/useTheme";
 import { useAuth } from "@/hooks/useAuth";
 import { contentApi } from "@/lib/mobileApi";
 import { useState } from "react";
+import { GlassSurface } from "@/components/ui/GlassSurface";
 
 interface TrekStickyBarProps {
   slug: string;
@@ -36,40 +37,40 @@ export function TrekStickyBar({ slug, trekName }: TrekStickyBarProps) {
     }
   }
 
+  const borderColor = isDark ? "rgba(255,255,255,0.10)" : "rgba(0,0,0,0.08)";
+
   return (
-    <View
-      style={[
-        styles.bar,
-        {
-          backgroundColor: isDark ? "#0f1117" : colors.surface,
-          borderTopColor: isDark ? "rgba(255,255,255,0.10)" : "rgba(0,0,0,0.08)",
-          paddingBottom: insets.bottom + 8,
-        },
-      ]}
-    >
-      <TouchableOpacity
-        style={styles.planButton}
-        activeOpacity={0.85}
-        onPress={() => router.push("/(tabs)/plan")}
-      >
-        <Text style={styles.planText}>✦ Plan with this trek</Text>
-      </TouchableOpacity>
-      <TouchableOpacity
-        style={[styles.saveButton, { borderColor: saved ? "#E8702A" : isDark ? "rgba(255,255,255,0.18)" : "rgba(0,0,0,0.18)" }]}
-        activeOpacity={0.8}
-        onPress={handleSave}
-      >
-        <Text style={{ fontSize: 18, color: saved ? "#E8702A" : colors.textMuted }}>
-          {saved ? "♥" : "♡"}
-        </Text>
-      </TouchableOpacity>
-      <TouchableOpacity
-        style={[styles.saveButton, { borderColor: isDark ? "rgba(255,255,255,0.18)" : "rgba(0,0,0,0.18)" }]}
-        activeOpacity={0.8}
-        onPress={() => router.push(`/compare?slug=${slug}` as never)}
-      >
-        <Ionicons name="git-compare-outline" size={20} color={colors.textMuted} />
-      </TouchableOpacity>
+    <View style={{ paddingBottom: insets.bottom + 8 }}>
+      <GlassSurface
+        rounded="none"
+        bordered={false}
+        style={[StyleSheet.absoluteFill, { borderTopWidth: 1, borderTopColor: borderColor }]}
+      />
+      <View style={styles.bar}>
+        <TouchableOpacity
+          style={styles.planButton}
+          activeOpacity={0.85}
+          onPress={() => router.push("/(tabs)/plan")}
+        >
+          <Text style={styles.planText}>✦ Plan with this trek</Text>
+        </TouchableOpacity>
+        <TouchableOpacity
+          style={[styles.saveButton, { borderColor: saved ? "#E8702A" : isDark ? "rgba(255,255,255,0.18)" : "rgba(0,0,0,0.18)" }]}
+          activeOpacity={0.8}
+          onPress={handleSave}
+        >
+          <Text style={{ fontSize: 18, color: saved ? "#E8702A" : colors.textMuted }}>
+            {saved ? "♥" : "♡"}
+          </Text>
+        </TouchableOpacity>
+        <TouchableOpacity
+          style={[styles.saveButton, { borderColor: isDark ? "rgba(255,255,255,0.18)" : "rgba(0,0,0,0.18)" }]}
+          activeOpacity={0.8}
+          onPress={() => router.push(`/compare?slug=${slug}` as never)}
+        >
+          <Ionicons name="git-compare-outline" size={20} color={colors.textMuted} />
+        </TouchableOpacity>
+      </View>
     </View>
   );
 }
@@ -81,7 +82,6 @@ const styles = StyleSheet.create({
     gap: 10,
     paddingHorizontal: 16,
     paddingTop: 12,
-    borderTopWidth: 1,
   },
   planButton: {
     flex: 1,

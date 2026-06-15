@@ -1,5 +1,6 @@
 import { View, Text, TouchableOpacity, StyleSheet } from "react-native";
 import { useTheme } from "@/hooks/useTheme";
+import { GlassSurface } from "@/components/ui/GlassSurface";
 
 export type TrekTab = "guide" | "packing" | "permits" | "costs";
 
@@ -19,7 +20,12 @@ export function TrekTabBar({ activeTab, onTabChange }: TrekTabBarProps) {
   const { colors, isDark } = useTheme();
 
   return (
-    <View style={[styles.container, { backgroundColor: isDark ? "#14161f" : colors.surface, borderBottomColor: isDark ? "rgba(255,255,255,0.08)" : "rgba(0,0,0,0.08)" }]}>
+    <View style={styles.container}>
+      <GlassSurface
+        rounded="none"
+        bordered={false}
+        style={[StyleSheet.absoluteFill, { borderBottomWidth: 1, borderBottomColor: isDark ? "rgba(255,255,255,0.08)" : "rgba(0,0,0,0.08)" }]}
+      />
       {TABS.map((tab) => {
         const active = tab.key === activeTab;
         return (
@@ -51,7 +57,6 @@ export function TrekTabBar({ activeTab, onTabChange }: TrekTabBarProps) {
 const styles = StyleSheet.create({
   container: {
     flexDirection: "row",
-    borderBottomWidth: 1,
   },
   tab: {
     flex: 1,
