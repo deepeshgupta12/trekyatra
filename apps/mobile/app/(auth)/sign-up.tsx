@@ -7,6 +7,7 @@ import { Logo } from "@/components/ui/Logo";
 import { useAuth } from "@/providers/AuthProvider";
 import { useOnboarding } from "@/providers/OnboardingProvider";
 import { useTheme } from "@/hooks/useTheme";
+import { GlassSurface } from "@/components/ui/GlassSurface";
 
 export default function SignUpScreen() {
   const [fullName, setFullName] = useState("");
@@ -39,8 +40,6 @@ export default function SignUpScreen() {
     router.replace("/(tabs)/(home)");
   }
 
-  const inputBg = isDark ? colors.surface : "#FFFFFF";
-  const inputBorder = isDark ? "rgba(255,255,255,0.10)" : "rgba(29,58,46,0.15)";
   const inputText = isDark ? "#ffffff" : colors.pine;
   const placeholderColor = isDark ? "rgba(255,255,255,0.35)" : "rgba(29,58,46,0.35)";
   const mutedText = isDark ? "rgba(255,255,255,0.50)" : "rgba(29,58,46,0.50)";
@@ -92,70 +91,61 @@ export default function SignUpScreen() {
             Create your account
           </Text>
 
-          <TextInput
-            value={fullName}
-            onChangeText={setFullName}
-            placeholder="Full name (optional)"
-            placeholderTextColor={placeholderColor}
-            autoCapitalize="words"
-            autoComplete="name"
-            accessibilityLabel="Full name"
-            style={{
-              backgroundColor: inputBg,
-              borderWidth: 1,
-              borderColor: inputBorder,
-              borderRadius: 12,
-              paddingHorizontal: 16,
-              paddingVertical: 14,
-              color: inputText,
-              fontSize: 15,
-              fontFamily: "Inter_400Regular",
-              marginBottom: 12,
-            }}
-          />
-          <TextInput
-            value={email}
-            onChangeText={setEmail}
-            placeholder="Email address"
-            placeholderTextColor={placeholderColor}
-            keyboardType="email-address"
-            autoCapitalize="none"
-            autoComplete="email"
-            accessibilityLabel="Email address"
-            style={{
-              backgroundColor: inputBg,
-              borderWidth: 1,
-              borderColor: inputBorder,
-              borderRadius: 12,
-              paddingHorizontal: 16,
-              paddingVertical: 14,
-              color: inputText,
-              fontSize: 15,
-              fontFamily: "Inter_400Regular",
-              marginBottom: 12,
-            }}
-          />
-          <TextInput
-            value={password}
-            onChangeText={setPassword}
-            placeholder="Password (min 8 characters)"
-            placeholderTextColor={placeholderColor}
-            secureTextEntry
-            autoComplete="new-password"
-            accessibilityLabel="Password"
-            style={{
-              backgroundColor: inputBg,
-              borderWidth: 1,
-              borderColor: inputBorder,
-              borderRadius: 12,
-              paddingHorizontal: 16,
-              paddingVertical: 14,
-              color: inputText,
-              fontSize: 15,
-              fontFamily: "Inter_400Regular",
-              marginBottom: 28,
-            }}
-          />
+          <GlassSurface rounded="md" style={{ marginBottom: 12 }}>
+            <TextInput
+              value={fullName}
+              onChangeText={setFullName}
+              placeholder="Full name (optional)"
+              placeholderTextColor={placeholderColor}
+              autoCapitalize="words"
+              autoComplete="name"
+              accessibilityLabel="Full name"
+              style={{
+                paddingHorizontal: 16,
+                paddingVertical: 14,
+                color: inputText,
+                fontSize: 15,
+                fontFamily: "Inter_400Regular",
+              }}
+            />
+          </GlassSurface>
+          <GlassSurface rounded="md" style={{ marginBottom: 12 }}>
+            <TextInput
+              value={email}
+              onChangeText={setEmail}
+              placeholder="Email address"
+              placeholderTextColor={placeholderColor}
+              keyboardType="email-address"
+              autoCapitalize="none"
+              autoComplete="email"
+              accessibilityLabel="Email address"
+              style={{
+                paddingHorizontal: 16,
+                paddingVertical: 14,
+                color: inputText,
+                fontSize: 15,
+                fontFamily: "Inter_400Regular",
+              }}
+            />
+          </GlassSurface>
+          <GlassSurface rounded="md" style={{ marginBottom: 28 }}>
+            <TextInput
+              value={password}
+              onChangeText={setPassword}
+              placeholder="Password (min 8 characters)"
+              placeholderTextColor={placeholderColor}
+              secureTextEntry
+              autoComplete="new-password"
+              accessibilityLabel="Password"
+              style={{
+                paddingHorizontal: 16,
+                paddingVertical: 14,
+                color: inputText,
+                fontSize: 15,
+                fontFamily: "Inter_400Regular",
+              }}
+            />
+          </GlassSurface>
 
           <Button
             variant="hero"

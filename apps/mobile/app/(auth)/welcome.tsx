@@ -16,6 +16,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useOnboarding } from "@/providers/OnboardingProvider";
+import { GlassSurface } from "@/components/ui/GlassSurface";
 
 const { width: SCREEN_W, height: SCREEN_H } = Dimensions.get("screen");
 const SAFFRON = "#E8702A";
@@ -165,15 +166,14 @@ export default function WelcomeScreen() {
             position: "absolute",
             top: insets.top + 12,
             left: 20,
-            width: 40,
-            height: 40,
-            borderRadius: 20,
-            backgroundColor: "rgba(13,20,16,0.55)",
-            alignItems: "center",
-            justifyContent: "center",
           }}
         >
-          <Ionicons name="chevron-back" size={22} color="#ffffff" />
+          <GlassSurface
+            rounded="xl"
+            style={{ width: 40, height: 40, alignItems: "center", justifyContent: "center" }}
+          >
+            <Ionicons name="chevron-back" size={22} color="#ffffff" />
+          </GlassSurface>
         </TouchableOpacity>
       )}
 
@@ -187,23 +187,27 @@ export default function WelcomeScreen() {
             position: "absolute",
             top: insets.top + 12,
             right: 20,
-            paddingHorizontal: 16,
-            height: 40,
-            borderRadius: 20,
-            backgroundColor: "rgba(13,20,16,0.55)",
-            alignItems: "center",
-            justifyContent: "center",
           }}
         >
-          <Text
+          <GlassSurface
+            rounded="xl"
             style={{
-              fontFamily: "Inter_600SemiBold",
-              fontSize: 14,
-              color: "#ffffff",
+              paddingHorizontal: 16,
+              height: 40,
+              alignItems: "center",
+              justifyContent: "center",
             }}
           >
-            Skip
-          </Text>
+            <Text
+              style={{
+                fontFamily: "Inter_600SemiBold",
+                fontSize: 14,
+                color: "#ffffff",
+              }}
+            >
+              Skip
+            </Text>
+          </GlassSurface>
         </TouchableOpacity>
       )}
 
@@ -222,12 +226,11 @@ export default function WelcomeScreen() {
       >
         {/* Icon + text for current slide */}
         <View style={{ paddingHorizontal: 28, marginBottom: 32 }}>
-          <View
+          <GlassSurface
+            rounded="lg"
             style={{
               width: 52,
               height: 52,
-              borderRadius: 14,
-              backgroundColor: "rgba(13,20,16,0.55)",
               alignItems: "center",
               justifyContent: "center",
               marginBottom: 20,
@@ -238,7 +241,7 @@ export default function WelcomeScreen() {
               size={26}
               color="#ffffff"
             />
-          </View>
+          </GlassSurface>
           <Text
             style={{
               fontFamily: "PlayfairDisplay_600SemiBold",

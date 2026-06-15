@@ -5,6 +5,7 @@ import { SafeArea } from "@/components/ui/SafeArea";
 import { Button } from "@/components/ui/Button";
 import { forgotPassword } from "@/lib/authApi";
 import { colors } from "@/constants/theme";
+import { GlassSurface } from "@/components/ui/GlassSurface";
 
 export default function ForgotPasswordScreen() {
   const [email, setEmail] = useState("");
@@ -40,17 +41,19 @@ export default function ForgotPasswordScreen() {
           </View>
         ) : (
           <>
-            <TextInput
-              value={email}
-              onChangeText={setEmail}
-              placeholder="Email address"
-              placeholderTextColor={colors.textMuted}
-              keyboardType="email-address"
-              autoCapitalize="none"
-              autoComplete="email"
-              className="bg-surface border border-white/10 rounded-xl px-4 py-3.5 text-white text-base mb-4"
-              style={{ fontFamily: "Inter_400Regular" }}
-            />
+            <GlassSurface rounded="md" style={{ marginBottom: 16 }}>
+              <TextInput
+                value={email}
+                onChangeText={setEmail}
+                placeholder="Email address"
+                placeholderTextColor={colors.textMuted}
+                keyboardType="email-address"
+                autoCapitalize="none"
+                autoComplete="email"
+                className="text-white text-base px-4 py-3.5"
+                style={{ fontFamily: "Inter_400Regular" }}
+              />
+            </GlassSurface>
             <Button
               variant="hero"
               size="md"

@@ -5,6 +5,7 @@ import { SafeArea } from "@/components/ui/SafeArea";
 import { Button } from "@/components/ui/Button";
 import { resetPassword } from "@/lib/authApi";
 import { colors } from "@/constants/theme";
+import { GlassSurface } from "@/components/ui/GlassSurface";
 
 export default function ResetPasswordScreen() {
   const { token } = useLocalSearchParams<{ token: string }>();
@@ -46,24 +47,28 @@ export default function ResetPasswordScreen() {
         <Text className="font-display text-3xl text-white mb-2">New password</Text>
         <Text className="text-white/50 text-base mb-10">Choose a strong password.</Text>
 
-        <TextInput
-          value={password}
-          onChangeText={setPassword}
-          placeholder="New password (min 8 chars)"
-          placeholderTextColor={colors.textMuted}
-          secureTextEntry
-          className="bg-surface border border-white/10 rounded-xl px-4 py-3.5 text-white text-base mb-3"
-          style={{ fontFamily: "Inter_400Regular" }}
-        />
-        <TextInput
-          value={confirm}
-          onChangeText={setConfirm}
-          placeholder="Confirm password"
-          placeholderTextColor={colors.textMuted}
-          secureTextEntry
-          className="bg-surface border border-white/10 rounded-xl px-4 py-3.5 text-white text-base mb-6"
-          style={{ fontFamily: "Inter_400Regular" }}
-        />
+        <GlassSurface rounded="md" style={{ marginBottom: 12 }}>
+          <TextInput
+            value={password}
+            onChangeText={setPassword}
+            placeholder="New password (min 8 chars)"
+            placeholderTextColor={colors.textMuted}
+            secureTextEntry
+            className="text-white text-base px-4 py-3.5"
+            style={{ fontFamily: "Inter_400Regular" }}
+          />
+        </GlassSurface>
+        <GlassSurface rounded="md" style={{ marginBottom: 24 }}>
+          <TextInput
+            value={confirm}
+            onChangeText={setConfirm}
+            placeholder="Confirm password"
+            placeholderTextColor={colors.textMuted}
+            secureTextEntry
+            className="text-white text-base px-4 py-3.5"
+            style={{ fontFamily: "Inter_400Regular" }}
+          />
+        </GlassSurface>
 
         <Button
           variant="hero"

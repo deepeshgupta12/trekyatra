@@ -10,6 +10,7 @@ import { useAuth } from "@/providers/AuthProvider";
 import { useOnboarding } from "@/providers/OnboardingProvider";
 import { discovery, getGoogleAuthConfig } from "@/lib/googleAuth";
 import { useTheme } from "@/hooks/useTheme";
+import { GlassSurface } from "@/components/ui/GlassSurface";
 
 export default function SignInScreen() {
   const [email, setEmail] = useState("");
@@ -67,8 +68,6 @@ export default function SignInScreen() {
 
   const busy = emailLoading || socialLoading;
 
-  const inputBg = isDark ? colors.surface : "#FFFFFF";
-  const inputBorder = isDark ? "rgba(255,255,255,0.10)" : "rgba(29,58,46,0.15)";
   const inputText = isDark ? "#ffffff" : colors.pine;
   const placeholderColor = isDark ? "rgba(255,255,255,0.35)" : "rgba(29,58,46,0.35)";
   const dividerColor = isDark ? "rgba(255,255,255,0.10)" : "rgba(29,58,46,0.12)";
@@ -121,48 +120,42 @@ export default function SignInScreen() {
             Sign in to TrekYatra
           </Text>
 
-          <TextInput
-            value={email}
-            onChangeText={setEmail}
-            placeholder="Email address"
-            placeholderTextColor={placeholderColor}
-            keyboardType="email-address"
-            autoCapitalize="none"
-            autoComplete="email"
-            accessibilityLabel="Email address"
-            style={{
-              backgroundColor: inputBg,
-              borderWidth: 1,
-              borderColor: inputBorder,
-              borderRadius: 12,
-              paddingHorizontal: 16,
-              paddingVertical: 14,
-              color: inputText,
-              fontSize: 15,
-              fontFamily: "Inter_400Regular",
-              marginBottom: 12,
-            }}
-          />
-          <TextInput
-            value={password}
-            onChangeText={setPassword}
-            placeholder="Password"
-            placeholderTextColor={placeholderColor}
-            secureTextEntry
-            accessibilityLabel="Password"
-            style={{
-              backgroundColor: inputBg,
-              borderWidth: 1,
-              borderColor: inputBorder,
-              borderRadius: 12,
-              paddingHorizontal: 16,
-              paddingVertical: 14,
-              color: inputText,
-              fontSize: 15,
-              fontFamily: "Inter_400Regular",
-              marginBottom: 8,
-            }}
-          />
+          <GlassSurface rounded="md" style={{ marginBottom: 12 }}>
+            <TextInput
+              value={email}
+              onChangeText={setEmail}
+              placeholder="Email address"
+              placeholderTextColor={placeholderColor}
+              keyboardType="email-address"
+              autoCapitalize="none"
+              autoComplete="email"
+              accessibilityLabel="Email address"
+              style={{
+                paddingHorizontal: 16,
+                paddingVertical: 14,
+                color: inputText,
+                fontSize: 15,
+                fontFamily: "Inter_400Regular",
+              }}
+            />
+          </GlassSurface>
+          <GlassSurface rounded="md" style={{ marginBottom: 8 }}>
+            <TextInput
+              value={password}
+              onChangeText={setPassword}
+              placeholder="Password"
+              placeholderTextColor={placeholderColor}
+              secureTextEntry
+              accessibilityLabel="Password"
+              style={{
+                paddingHorizontal: 16,
+                paddingVertical: 14,
+                color: inputText,
+                fontSize: 15,
+                fontFamily: "Inter_400Regular",
+              }}
+            />
+          </GlassSurface>
 
           <TouchableOpacity
             onPress={() => router.push("/(auth)/forgot-password")}
