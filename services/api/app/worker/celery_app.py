@@ -20,6 +20,7 @@ celery_app = Celery(
         "app.modules.revenue.tasks",
         "app.worker.tasks.news",
         "app.worker.tasks.cdp",
+        "app.worker.tasks.trek_intelligence_tasks",
     ],
 )
 

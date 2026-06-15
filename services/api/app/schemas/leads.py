@@ -33,6 +33,7 @@ class LeadResponse(BaseModel):
     status: str = "new"
     assigned_operator_id: uuid.UUID | None = None
     status_history: list[dict] | None = None
+    details_json: dict | None = None
     created_at: datetime
 
     model_config = {"from_attributes": True}

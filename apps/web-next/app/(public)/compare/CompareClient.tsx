@@ -2,11 +2,12 @@
 
 import { useEffect, useState } from "react";
 import { useSearchParams } from "next/navigation";
-import { Award, CheckCircle2, Loader2, Plus, Save, Share2, Trash2 } from "lucide-react";
+import { Award, CheckCircle2, Loader2, Plus, Save, Share2, Sparkles, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
 import { useAuth } from "@/lib/auth-context";
 import AuthGateModal from "@/components/plan/AuthGateModal";
+import { compareTreks, type CompareTreksResponse } from "@/lib/api";
 
 export interface CompareTrek {
   slug: string;
@@ -36,6 +37,18 @@ const COMPARE_FIELDS: { label: string; key: keyof CompareTrek }[] = [
 ];
 
 const MAX_TREKS = 3;
+
+/** Format a value from a TrekComparisonRow for display in the comparison table. */
+function formatRowValue(field: string, value: string | number | boolean | null): string {
+  if (value === null || value === undefined || value === "") return "—";
+  if (typeof value === "boolean") return value ? "Yes" : "No";
+  if (typeof value === "number") {
+    if (field === "budget_min" || field === "budget_max") return `₹${value.toLocaleString("en-IN")}`;
+    if (field === "max_altitude_ft") return `${value.toLocaleString("en-IN")} ft`;
+    return String(value);
+  }
+  return String(value);
+}
 
 const selectCls =
   "w-full bg-card border border-border rounded-xl px-4 py-2.5 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-accent/40";
@@ -71,6 +84,31 @@ export function CompareClient({ initialTreks }: { initialTreks: CompareTrek[] })
     .filter(Boolean) as CompareTrek[];
 
   const colCount = selected.length;
+
+  const [compareData, setCompareData] = useState<CompareTreksResponse | null>(null);
+  const [compareLoading, setCompareLoading] = useState(false);
+
+  useEffect(() => {
+    if (selectedSlugs.length < 2) {
+      setCompareData(null);
+      return;
+    }
+    let cancelled = false;
+    setCompareLoading(true);
+    compareTreks(selectedSlugs)
+      .then((data) => {
+        if (!cancelled) setCompareData(data);
+      })
+      .catch(() => {
+        if (!cancelled) setCompareData(null);
+      })
+      .finally(() => {
+        if (!cancelled) setCompareLoading(false);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [selectedSlugs]);
 
   const [saving, setSaving] = useState(false);
   const [saveMsg, setSaveMsg] = useState("");
@@ -282,26 +320,63 @@ export function CompareClient({ initialTreks }: { initialTreks: CompareTrek[] })
 
         {/* Comparison table */}
         <div className="bg-card rounded-2xl border border-border overflow-hidden mt-4">
-          {COMPARE_FIELDS.map((field, i) => (
-            <div
-              key={field.key}
-              className={i > 0 ? "border-t border-border" : ""}
-              style={{ display: "grid", gridTemplateColumns: `1fr repeat(${colCount}, 2fr)` }}
-            >
-              <div className="px-4 py-3 text-xs text-muted-foreground font-medium bg-muted/30 flex items-center">
-                {field.label}
-              </div>
-              {selected.map((t) => (
-                <div
-                  key={t.slug}
-                  className="px-4 py-3 text-sm text-foreground border-l border-border flex items-center"
-                >
-                  {String(t[field.key] ?? "—")}
+          {compareData ? (
+            compareData.rows.map((row, i) => (
+              <div
+                key={row.field}
+                className={i > 0 ? "border-t border-border" : ""}
+                style={{ display: "grid", gridTemplateColumns: `1fr repeat(${colCount}, 2fr)` }}
+              >
+                <div className="px-4 py-3 text-xs text-muted-foreground font-medium bg-muted/30 flex items-center">
+                  {row.label}
                 </div>
-              ))}
-            </div>
-          ))}
+                {row.values.map((value, idx) => (
+                  <div
+                    key={idx}
+                    className="px-4 py-3 text-sm text-foreground border-l border-border flex items-center"
+                  >
+                    {formatRowValue(row.field, value)}
+                  </div>
+                ))}
+              </div>
+            ))
+          ) : (
+            COMPARE_FIELDS.map((field, i) => (
+              <div
+                key={field.key}
+                className={i > 0 ? "border-t border-border" : ""}
+                style={{ display: "grid", gridTemplateColumns: `1fr repeat(${colCount}, 2fr)` }}
+              >
+                <div className="px-4 py-3 text-xs text-muted-foreground font-medium bg-muted/30 flex items-center">
+                  {field.label}
+                </div>
+                {selected.map((t) => (
+                  <div
+                    key={t.slug}
+                    className="px-4 py-3 text-sm text-foreground border-l border-border flex items-center"
+                  >
+                    {String(t[field.key] ?? "—")}
+                  </div>
+                ))}
+              </div>
+            ))
+          )}
         </div>
+
+        {/* AI trade-off summary */}
+        {(compareLoading || compareData?.ai_summary) && (
+          <div className="bg-accent/5 border border-accent/20 rounded-2xl p-4 mt-4 flex gap-3">
+            <div className="h-8 w-8 rounded-full bg-accent/10 flex items-center justify-center text-accent flex-shrink-0">
+              <Sparkles className="h-4 w-4" />
+            </div>
+            <div className="text-sm leading-relaxed text-foreground/85 min-w-0">
+              <div className="text-xs font-semibold uppercase tracking-wide text-accent mb-1">
+                TrekSage's take
+              </div>
+              {compareLoading && !compareData ? "Comparing treks…" : compareData?.ai_summary}
+            </div>
+          </div>
+        )}
 
         {/* Description comparison */}
         <div

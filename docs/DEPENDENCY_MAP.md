@@ -1790,3 +1790,45 @@ LOW — config/doc only, zero blast radius on `apps/mobile` or `apps/web-next` c
 `gitnexus_detect_changes(scope:"all")` confirmed low/medium risk per commit (medium risk limited to expected `useTheme`-trace touches on edited screens), scope matched expected files each commit (plus pre-existing unrelated `CLAUDE.md` touch). `npx tsc --noEmit` → 0 errors after every commit.
 
 **No `apps/web-next` files touched.** Zero blast radius on production website (desktop + mobile web unaffected).
+
+---
+
+### Step 72 — "TrekSage" MCP Server + Trek Intelligence Data Layer + Datacenter Subdomain blast radius — Done (2026-06-15)
+
+New tables: `ai_interaction_logs`, `trek_qa_cache` (no existing readers — zero blast radius). New `cms_pages` columns (`trek_region`, `trek_max_altitude_ft`, `trek_duration_days_min/max`, `trek_best_months`/`trek_open_months`/`trek_avoid_months`, `trek_permit_required`/`trek_permit_notes`, `trek_budget_min/max`, `trek_themes`, `trek_crowd_level`, `trek_beginner_friendly`/`trek_solo_friendly`/`trek_family_friendly`, `trek_operator_available`, `trek_is_unsafe_closed`, `trek_data_confidence`, `trek_last_verified_at`) are all nullable/defaulted — existing `CMSPage` readers unaffected. New `lead_submissions.details_json` (nullable) — existing `LeadSubmission` readers unaffected.
+
+| File | Purpose | Blast Radius |
+|------|---------|-------------|
+| `services/api/alembic/versions/20260615_0043_step72_trek_intelligence.py` (NEW) | Migration: 16 `cms_pages.trek_*` cols, `ai_interaction_logs`, `trek_qa_cache`, `lead_submissions.details_json` | LOW — additive, nullable/defaulted |
+| `services/api/app/modules/trek_intelligence/` (NEW: `models.py`, `matching.py`, `service.py`, `__init__.py`) | `AIInteractionLog`/`TrekQACache` ORM models (registered in `app/db/base.py`); deterministic matching refinements; 10 PRD-tool functions shared by REST + MCP | LOW — new module, registered in `db/base.py` only |
+| `services/api/app/schemas/trek_intelligence.py` (NEW) | `TrekProfile`, `CompareTreksRequest/Response`, `AskTrekQuestionRequest/Response`, `OperatorHelpLeadRequest`, `TrekMetaPatch`, `TrekDataQualityRow`, etc. | LOW — new schema file |
+| `services/api/app/modules/plan/service.py` | `recommend_treks` now delegates season/budget scoring to `trek_intelligence/matching.py`; response shape unchanged (`PlanRecommendResponse` additive fields only) | LOW — `gitnexus_impact` upstream on `recommend_treks` = LOW, only called from `plan` routes |
+| `services/api/app/schemas/plan.py` | `PlanRecommendResponse` — additive fields (budget/permit/themes) | LOW — additive |
+| `services/api/app/api/routes/treks.py` | NEW `GET /treks/{slug}/profile`, `POST /treks/compare`, `POST /treks/{slug}/ask`, `GET /treks/{slug}/content`; NEW `FilterFacets` fields (`states`, `difficulties`, `seasons`, `suitabilities`) | LOW — additive routes/fields; static routes registered before `{slug}` dynamic routes per CLAUDE.md §16 |
+| `services/api/app/api/routes/leads.py`, `app/schemas/leads.py`, `app/modules/leads/models.py` | NEW `POST /leads/operator-help` (`create_trek_plan_lead`, 422 without `consent`); `LeadSubmission.details_json` | LOW — additive route + nullable column |
+| `services/api/app/api/routes/ai_log.py` (NEW) | `POST /ai/log` — fire-and-forget `log_ai_interaction`, never raises | LOW — new leaf route |
+| `services/api/app/api/routes/admin_treks.py` (NEW) | Admin `GET /admin/treks/data-quality`, `PATCH /admin/treks/{slug}/meta`, `POST /admin/treks/{slug}/backfill`, `GET /admin/treks/ai-logs` — gated by existing `get_current_admin` | LOW — new admin module, static routes before `{slug}` |
+| `services/api/app/api/router.py` | Registers `ai_log` + `admin_treks` routers | LOW — additive registration |
+| `services/api/app/mcp_server.py` (NEW) | `FastMCP("TrekSage")` — 8 tools wrapping `trek_intelligence/service.py`; 3 gated by `X-MCP-Key`/`MCP_SHARED_SECRET` | LOW — new module |
+| `services/api/app/main.py` | Mounts MCP sub-app at `/mcp` (Streamable HTTP), `lifespan` starts MCP session manager | LOW — additive sub-app mount, existing routes/middleware unaffected |
+| `services/api/app/core/config.py` | NEW `mcp_shared_secret: str \| None = None` | LOW — additive Settings field |
+| `services/api/app/worker/tasks/trek_intelligence_tasks.py` (NEW), `app/worker/celery_app.py` | NEW Celery task `trek_intelligence.backfill_trek_meta` registered in include list — **worker restart required** | LOW — additive task; restart required for pickup (no impact on existing tasks) |
+| `services/api/pyproject.toml` | Added `mcp` SDK dependency | LOW — additive dependency |
+| `services/api/tests/test_trek_intelligence.py` (NEW) | Full coverage: matching (unsafe/closed + avoid-month exclusion, budget scoring), compare (2/3/4 treks, invalid slug), ask (cached/cold/missing-data disclaimer), operator-help lead consent gate, ai-log, admin data-quality/meta-patch/backfill/ai-logs (TC-B17–B22) | — |
+| `apps/web-next/components/trek/TrekAskAI.tsx` (NEW) | "Ask AI" card, 4 suggested prompts, "not verified yet" styling | LOW — new leaf component |
+| `apps/web-next/app/(public)/trek/[slug]/page.tsx` | Mounts `<TrekAskAI>`; surfaces new structured fields when present | LOW — `gitnexus_impact` upstream = LOW; affects existing `proc_108_trekdetailpage`/`proc_109_trekdetailpage` flows (step 1 only, consistent with prior steps touching this page) |
+| `apps/web-next/app/(public)/compare/CompareClient.tsx` | Replaced frontend-only CMS fetch with `POST /treks/compare`; renders comparison table + cached AI summary | LOW — `gitnexus_impact` upstream = LOW |
+| `apps/web-next/components/plan/RecommendationCard.tsx` | Surfaces budget/permit/themes when present | LOW — additive rendering |
+| `apps/web-next/lib/api.ts` | NEW: `TrekProfile`, `fetchTrekProfile`, `askTrekQuestion`, `compareTreks`, `TrekDataQualityRow`, `fetchTrekDataQuality`, `TrekMetaPatch`, `updateTrekMeta`, `BackfillTriggerResponse`, `triggerTrekBackfill`, `AIInteractionLogEntry`, `fetchAiInteractionLogs` | LOW — additive exports |
+| `apps/web-next/app/datacenter/` (NEW: `layout.tsx`, `page.tsx`, `trek-guide/[slug]/page.tsx`) | New route group — datacenter index + full `TrekProfile` definition-list view, `noindex` | LOW — new isolated route group |
+| `apps/web-next/middleware.ts` | Host-based rewrite for `datacenter.trekyatra.co.in` → `/datacenter/*`; all other hosts unaffected | LOW — additive host check, early-return for non-datacenter hosts |
+| `apps/web-next/app/(admin)/admin/trek-data/page.tsx` (NEW) | Admin data-quality dashboard, inline field editor, backfill trigger, AI log viewer | LOW — new admin leaf page |
+| `apps/web-next/app/(admin)/admin/layout.tsx` | NEW "Trek Data" nav entry (System group) | LOW — additive nav array entry |
+| `docs/URL_MAP.md` | NEW section "TrekSage MCP Server & Datacenter Subdomain (Step 72)" — documents `datacenter.trekyatra.co.in/trek-guide/[slug]`, `/mcp`, and new `/api/v1/treks/*`/`/leads/operator-help`/`/ai/log` routes | — |
+| `apps/mobile/app/(tabs)/plan.tsx` | Replaced dead "coming in M08" stub with re-export of `(home)/plan-my-trek.tsx` | LOW — `gitnexus_impact` upstream = LOW, 0 impacted (file-based routing) |
+| `apps/mobile/components/trek/TrekAskAI.tsx` (NEW) | GlassSurface "Ask TrekSage" card, mirrors web `TrekAskAI` | LOW — new leaf component |
+| `apps/mobile/app/(tabs)/(home)/trek/[slug].tsx` | Mounts `<TrekAskAI>` in guide tab | LOW — `gitnexus_impact` upstream = LOW |
+| `apps/mobile/app/(tabs)/(home)/compare.tsx` | Full rewrite — `trekIntelligenceApi.compare()`, dynamic comparison table, AI summary card, `MAX_SELECTION` 2→3 | LOW — `gitnexus_impact` upstream = LOW |
+| `apps/mobile/lib/mobileApi.ts` | NEW `trekIntelligenceApi` (`ask`, `compare`) + `TrekProfile`, `AskTrekQuestionResponse`, `CompareTreksResponse`, `TrekComparisonRow` types | LOW — additive exports |
+
+`gitnexus_detect_changes(scope:"all")` after Commit 9: `risk_level: "high"` (cumulative across all 25 uncommitted Step 72 files / 57 symbols — expected given scope), 9 affected processes — all leaf screen-component traces (`CompareScreen → UseThemeContext`, `TrekDetailScreen → *`, `TrekDetailPage → ApiFetch`/`MergeImage`), consistent with per-commit LOW `gitnexus_impact` checks on every touched symbol; no new HIGH/CRITICAL beyond expected leaf-screen touches. `next build` ✅ zero errors (193+ pages incl. `/admin/trek-data` 6.04 kB, `/datacenter/*`). `npx tsc --noEmit` (mobile) ✅ zero errors. Backend: 665/665 pass, 1 skipped (2 pre-existing `test_refresh.py` failures, unrelated baseline).

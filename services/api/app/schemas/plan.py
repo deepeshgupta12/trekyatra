@@ -90,6 +90,12 @@ class TrekRecommendation(BaseModel):
     hero_image_url: str | None = None
     seo_description: str | None = None
     suitability: str | None = None
+    # Step 72 — structured trek intelligence fields (when verified/drafted)
+    budget_min: int | None = None
+    budget_max: int | None = None
+    themes: list[str] | None = None
+    permit_required: bool | None = None
+    crowd_level: str | None = None
 
 
 class PlanRecommendResponse(BaseModel):

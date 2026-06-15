@@ -6,9 +6,17 @@ from sqlalchemy import select, text
 from sqlalchemy.orm import Session
 
 from app.db.session import get_db
+from app.modules.trek_intelligence import service as trek_intel_service
 from app.modules.treks.service import get_trek_by_slug, list_treks
 from app.schemas.cms import CMSPageResponse
 from app.schemas.treks import TrekDetailResponse, TrekListResponse, TrekSummary
+from app.schemas.trek_intelligence import (
+    AskTrekQuestionRequest,
+    AskTrekQuestionResponse,
+    CompareTreksRequest,
+    CompareTreksResponse,
+    TrekProfile,
+)
 
 router = APIRouter(prefix="/treks", tags=["treks"])
 
@@ -107,6 +115,48 @@ def get_treks(
         treks=[TrekSummary(**vars(t)) for t in treks],
         total=len(treks),
     )
+
+
+@router.post("/compare", response_model=CompareTreksResponse)
+def compare_treks(payload: CompareTreksRequest, db: Session = Depends(get_db)) -> CompareTreksResponse:
+    """Step 72: compare 2-4 trek_guide CMS pages with a cached AI trade-off summary."""
+    try:
+        return trek_intel_service.compare_treks(db, payload.slugs)
+    except ValueError as exc:
+        raise HTTPException(status_code=404, detail=str(exc))
+
+
+@router.get("/{slug}/profile", response_model=TrekProfile)
+def get_trek_profile(slug: str, db: Session = Depends(get_db)) -> TrekProfile:
+    """Step 72: full structured trek profile (used by datacenter subdomain + MCP)."""
+    profile = trek_intel_service.get_trek_details(db, slug)
+    if profile is None:
+        raise HTTPException(status_code=404, detail="Trek not found")
+    return profile
+
+
+@router.get("/{slug}/content")
+def get_trek_content_section(
+    slug: str,
+    section: str = Query(..., description="content_json section, e.g. itinerary|packing|faqs"),
+    db: Session = Depends(get_db),
+):
+    """Step 72: fetch a single content_json section for grounding (e.g. itinerary)."""
+    content = trek_intel_service.get_trek_content(db, slug, section)
+    if content is None:
+        raise HTTPException(status_code=404, detail="Trek or section not found")
+    return {"slug": slug, "section": section, "content": content}
+
+
+@router.post("/{slug}/ask", response_model=AskTrekQuestionResponse)
+def ask_trek_question(
+    slug: str, payload: AskTrekQuestionRequest, db: Session = Depends(get_db)
+) -> AskTrekQuestionResponse:
+    """Step 72: Trek Detail Q&A — cached, Haiku-backed, never invents facts."""
+    try:
+        return trek_intel_service.ask_trek_question(db, slug, payload.question)
+    except ValueError as exc:
+        raise HTTPException(status_code=404, detail=str(exc))
 
 
 @router.get("/{slug}", response_model=TrekDetailResponse)

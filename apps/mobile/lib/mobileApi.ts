@@ -353,3 +353,68 @@ export const planApi = {
   recommend: (payload: PlanRecommendRequest) =>
     apiPost<PlanRecommendResponse>("/api/v1/plan/recommend", payload),
 };
+
+// ---------------------------------------------------------------------------
+// Step 72 — TrekSage trek intelligence: Trek Detail Q&A + compare
+// ---------------------------------------------------------------------------
+
+export interface TrekProfile {
+  slug: string;
+  name: string;
+  title: string;
+  state: string | null;
+  region: string | null;
+  difficulty: string | null;
+  duration: string | null;
+  duration_days_min: number | null;
+  duration_days_max: number | null;
+  season: string | null;
+  best_months: number[] | null;
+  open_months: number[] | null;
+  avoid_months: number[] | null;
+  max_altitude_ft: number | null;
+  permit_required: boolean | null;
+  permit_notes: string | null;
+  budget_min: number | null;
+  budget_max: number | null;
+  themes: string[] | null;
+  crowd_level: string | null;
+  beginner_friendly: boolean | null;
+  solo_friendly: boolean | null;
+  family_friendly: boolean | null;
+  operator_available: boolean;
+  is_unsafe_closed: boolean;
+  suitability: string | null;
+  seo_description: string | null;
+  hero_image_url: string | null;
+  data_confidence: Record<string, string>;
+  last_verified_at: string | null;
+}
+
+export interface AskTrekQuestionResponse {
+  answer: string;
+  cached: boolean;
+  not_verified: boolean;
+}
+
+export interface TrekComparisonRow {
+  field: string;
+  label: string;
+  values: (string | number | boolean | null)[];
+}
+
+export interface CompareTreksResponse {
+  treks: TrekProfile[];
+  rows: TrekComparisonRow[];
+  ai_summary: string | null;
+}
+
+export const trekIntelligenceApi = {
+  /** Ask TrekSage a question about one trek (Trek Detail Q&A). */
+  ask: (slug: string, question: string) =>
+    apiPost<AskTrekQuestionResponse>(`/api/v1/treks/${slug}/ask`, { question }),
+
+  /** Compare 2-4 trek_guide pages side-by-side with a cached AI trade-off summary. */
+  compare: (slugs: string[]) =>
+    apiPost<CompareTreksResponse>("/api/v1/treks/compare", { slugs }),
+};

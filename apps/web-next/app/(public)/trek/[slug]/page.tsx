@@ -4,7 +4,8 @@ import { notFound, permanentRedirect } from "next/navigation";
 import { TrekCard } from "@/components/trek/TrekCard";
 import { Button } from "@/components/ui/button";
 import { fetchTreks, fetchTrekBySlug } from "@/lib/trekApi";
-import { fetchCMSPage, fetchCMSPages, fetchRelatedPages, fetchNewsByTrek, type CMSPage, type FAQItem, type RelatedPage, type NewsArticle } from "@/lib/api";
+import { fetchCMSPage, fetchCMSPages, fetchRelatedPages, fetchNewsByTrek, fetchTrekProfile, type CMSPage, type FAQItem, type RelatedPage, type NewsArticle, type TrekProfile } from "@/lib/api";
+import TrekAskAI from "@/components/trek/TrekAskAI";
 import { TrekViewTracker } from "@/components/trek/TrekViewTracker";
 import TableOfContents from "@/components/content/TableOfContents";
 import RecommendedContent from "@/components/content/RecommendedContent";
@@ -159,6 +160,12 @@ export default async function TrekDetailPage({ params }: { params: { slug: strin
   try {
     trekNewsArticles = await fetchNewsByTrek(params.slug, 3);
   } catch { /* news section degrades gracefully */ }
+
+  // Step 72 — TrekSage structured profile (permits, budget, themes, crowd level, Ask AI)
+  let trekProfile: TrekProfile | null = null;
+  if (cmsPage) {
+    trekProfile = await fetchTrekProfile(cmsPage.slug);
+  }
   const facts = [
     { icon: Clock,      label: "Duration",    value: tf.duration    || trek.duration    || "—" },
     { icon: TrendingUp, label: "Max altitude", value: tf.altitude    || trek.altitude    || "—" },
@@ -395,6 +402,35 @@ export default async function TrekDetailPage({ params }: { params: { slug: strin
                   </div>
                 ))}
               </div>
+
+              {/* Step 72 — structured TrekSage facts (only shown when verified data exists) */}
+              {trekProfile && (trekProfile.budget_min || trekProfile.crowd_level || (trekProfile.themes?.length)) && (
+                <div className="not-prose flex flex-wrap gap-2 mt-3">
+                  {(trekProfile.budget_min || trekProfile.budget_max) && (
+                    <span className="px-3 py-1.5 rounded-full bg-surface-muted border border-border text-xs font-medium flex items-center gap-1.5">
+                      <Wallet className="h-3.5 w-3.5 text-accent" />
+                      {trekProfile.budget_min && trekProfile.budget_max
+                        ? `₹${trekProfile.budget_min.toLocaleString("en-IN")} – ₹${trekProfile.budget_max.toLocaleString("en-IN")}`
+                        : `From ₹${(trekProfile.budget_min ?? trekProfile.budget_max)!.toLocaleString("en-IN")}`}
+                    </span>
+                  )}
+                  {trekProfile.crowd_level && (
+                    <span className="px-3 py-1.5 rounded-full bg-surface-muted border border-border text-xs font-medium capitalize">
+                      {trekProfile.crowd_level} crowd
+                    </span>
+                  )}
+                  {trekProfile.themes?.map((theme) => (
+                    <span key={theme} className="px-3 py-1.5 rounded-full bg-surface-muted border border-border text-xs font-medium capitalize">
+                      {theme}
+                    </span>
+                  ))}
+                </div>
+              )}
+            </section>
+
+            {/* Step 72 — Trek Detail Q&A widget */}
+            <section className="mb-12">
+              <TrekAskAI slug={cmsPage?.slug ?? params.slug} trekName={cmsDisplayName ?? trek.name} />
             </section>
 
             <Block id="route-overview" eyebrow="Route overview" title="The route at a glance">
@@ -452,17 +488,37 @@ export default async function TrekDetailPage({ params }: { params: { slug: strin
             </Block>
 
             <Block id="permits" eyebrow="Permits" title="What permits you need">
+              {trekProfile?.permit_required != null && (
+                <div className={`not-prose p-5 rounded-2xl border flex gap-3 mb-4 ${trekProfile.permit_required ? "bg-warning/10 border-warning/30" : "bg-success/10 border-success/30"}`}>
+                  {trekProfile.permit_required ? <Info className="h-5 w-5 text-warning flex-shrink-0 mt-0.5" /> : <Check className="h-5 w-5 text-success flex-shrink-0 mt-0.5" />}
+                  <div className="text-sm min-w-0">
+                    {trekProfile.permit_required ? "A permit is required for this trek." : "No special permit is required for this trek."}
+                    {trekProfile.permit_notes && <span className="block mt-1 text-foreground/70">{trekProfile.permit_notes}</span>}
+                  </div>
+                </div>
+              )}
               {S("permits") ? (
                 <div className="not-prose cms-section" dangerouslySetInnerHTML={{ __html: S("permits")! }} />
-              ) : (
+              ) : trekProfile?.permit_required == null ? (
                 <div className="not-prose p-5 rounded-2xl bg-warning/10 border border-warning/30 flex gap-3 mb-4">
                   <Info className="h-5 w-5 text-warning flex-shrink-0 mt-0.5" />
                   <div className="text-sm min-w-0">Check with the local forest department for current permit requirements before starting the trek.</div>
                 </div>
-              )}
+              ) : null}
             </Block>
 
             <Block id="cost-estimate" eyebrow="Cost estimate" title="What this trek will cost you">
+              {(trekProfile?.budget_min || trekProfile?.budget_max) && (
+                <div className="not-prose p-5 rounded-2xl bg-accent/5 border border-accent/20 flex gap-3 mb-4">
+                  <Wallet className="h-5 w-5 text-accent flex-shrink-0 mt-0.5" />
+                  <div className="text-sm min-w-0">
+                    Typical cost for this trek: {trekProfile.budget_min && trekProfile.budget_max
+                      ? <strong>₹{trekProfile.budget_min.toLocaleString("en-IN")} – ₹{trekProfile.budget_max.toLocaleString("en-IN")}</strong>
+                      : <strong>From ₹{(trekProfile.budget_min ?? trekProfile.budget_max)!.toLocaleString("en-IN")}</strong>}
+                    {" "}per person, depending on operator and group size.
+                  </div>
+                </div>
+              )}
               {S("cost_estimate") ? (
                 <div className="not-prose cms-section" dangerouslySetInnerHTML={{ __html: S("cost_estimate")! }} />
               ) : (

@@ -31,6 +31,7 @@ class LeadSubmission(Base):
         UUID(as_uuid=True), ForeignKey("operators.id", ondelete="SET NULL"), nullable=True
     )
     status_history: Mapped[list | None] = mapped_column(JSON, nullable=True)
+    details_json: Mapped[dict | None] = mapped_column(JSON, nullable=True)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
 
     assigned_operator: Mapped[Operator | None] = relationship(

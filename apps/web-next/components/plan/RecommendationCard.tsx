@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { Mountain, Clock, TrendingUp, Calendar, FileCheck, MapPin, AlertTriangle, Star } from "lucide-react";
+import { Mountain, Clock, TrendingUp, Calendar, FileCheck, MapPin, AlertTriangle, Star, Wallet, Users } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import type { TrekRecommendation } from "@/lib/api";
 
@@ -63,6 +63,30 @@ export default function RecommendationCard({ rec, onAddToCompare, compareSelecte
           {rec.season && <span className="flex items-center gap-1"><Calendar className="h-3 w-3" /> {rec.season}</span>}
           {rec.permits && <span className="flex items-center gap-1 col-span-2"><FileCheck className="h-3 w-3" /> Permits: {rec.permits.length > 30 ? rec.permits.slice(0, 30) + "…" : rec.permits}</span>}
         </div>
+
+        {/* Step 72 — structured trek intelligence badges (budget, themes, crowd) */}
+        {((rec.budget_min || rec.budget_max) || rec.crowd_level || rec.themes?.length) && (
+          <div className="flex flex-wrap gap-1.5">
+            {(rec.budget_min || rec.budget_max) && (
+              <span className="flex items-center gap-1 text-[11px] font-medium px-2 py-1 rounded-full bg-accent/10 text-accent">
+                <Wallet className="h-3 w-3" />
+                {rec.budget_min && rec.budget_max
+                  ? `₹${rec.budget_min.toLocaleString("en-IN")} – ₹${rec.budget_max.toLocaleString("en-IN")}`
+                  : `From ₹${(rec.budget_min ?? rec.budget_max)!.toLocaleString("en-IN")}`}
+              </span>
+            )}
+            {rec.crowd_level && (
+              <span className="flex items-center gap-1 text-[11px] font-medium px-2 py-1 rounded-full bg-muted text-muted-foreground capitalize">
+                <Users className="h-3 w-3" /> {rec.crowd_level} crowd
+              </span>
+            )}
+            {rec.themes?.slice(0, 2).map((theme) => (
+              <span key={theme} className="text-[11px] font-medium px-2 py-1 rounded-full bg-muted text-muted-foreground capitalize">
+                {theme}
+              </span>
+            ))}
+          </div>
+        )}
 
         {/* Why this matches */}
         <p className="text-xs text-foreground/70 leading-relaxed border-l-2 border-accent/40 pl-3 italic">

@@ -804,3 +804,25 @@ Spec: user-requested app-wide "Glass UI" restyle, without hampering existing UX/
 - Commit 5: Auth screens — `welcome.tsx` chrome elements, `sign-in.tsx`/`sign-up.tsx`/`forgot-password.tsx`/`reset-password.tsx` form `TextInput`s → `GlassSurface`. `otp.tsx`/`SocialSignInButtons.tsx` unchanged.
 - New deps: `expo-glass-effect`, `expo-blur` (both native modules — require dev-client rebuild, cumulative with M07b's `expo-speech-recognition`).
 - **tsc --noEmit: 0 errors** after every commit | `gitnexus_impact` upstream on all touched shared components → all LOW | `gitnexus_detect_changes(scope:"all")` → low/medium per commit, scope as expected | No backend or web-next changes.
+
+---
+
+### Step 72 — "TrekSage" MCP Server + Trek Intelligence Data Layer + Datacenter Subdomain [DONE — 2026-06-15]
+
+Spec: `docs/steps/STEP-72-trekyatra-mcp-server.md`. PRD-driven: expose trek data/planning/comparison/Q&A to website, mobile app, ChatGPT and Claude via a new MCP server "TrekSage", with a new `datacenter.trekyatra.co.in/trek-guide/{slug}` subdomain serving the canonical structured `TrekProfile`. Token-minimization is binding: all ranking/matching/comparison stays deterministic Python (zero LLM); LLM (Claude Haiku, tight `max_tokens`, DB-cached) used only for Trek Detail Q&A, Compare trade-off summary, admin backfill drafts, and existing Hindi translation.
+
+10 commits, all done:
+1. Alembic `20260615_0043_step72_trek_intelligence.py` — 16 new `cms_pages.trek_*` structured fields + `ai_interaction_logs` + `trek_qa_cache` tables + `lead_submissions.details_json`.
+2. New `services/api/app/modules/trek_intelligence/` — `models.py` (`AIInteractionLog`, `TrekQACache`), `matching.py` (real budget/season scoring, hard exclusion of unsafe/closed + avoid-month treks), `service.py` (8 PRD tools + admin helpers `list_trek_data_quality`/`update_trek_meta`/`list_ai_interaction_logs`), `app/schemas/trek_intelligence.py`.
+3. REST routes: `GET /treks/{slug}/profile`, `POST /treks/compare`, `POST /treks/{slug}/ask`, `GET /treks/{slug}/content`, `POST /leads/operator-help`, `POST /ai/log` (`app/api/routes/treks.py`, `leads.py`, new `ai_log.py`); `services/api/tests/test_trek_intelligence.py`.
+4. MCP server "TrekSage" (`services/api/app/mcp_server.py`, `mcp` SDK) — 8 tools mounted at `/mcp` via `app/main.py` sub-app; 3 gated by `X-MCP-Key`/`MCP_SHARED_SECRET` (new `app/core/config.py` field + `.env.example`); new Celery task `trek_intelligence.backfill_trek_meta` (`app/worker/tasks/trek_intelligence_tasks.py`, registered in `celery_app.py` — **worker restart required**).
+5. Web Trek Detail — new `components/trek/TrekAskAI.tsx` "Ask AI" card (4 suggested prompts, "not verified yet" disclaimer styling); new structured fields surfaced in quick-facts/permits/cost blocks.
+6. Web Compare — `CompareClient.tsx` backend-wired to `/treks/compare` (comparison table + cached AI trade-off summary); `RecommendationCard.tsx`/`schemas/plan.py` surface budget/permit/themes.
+7. New `apps/web-next/app/datacenter/` route group (`layout.tsx`, `page.tsx` index, `trek-guide/[slug]/page.tsx`) + host-based rewrite in `middleware.ts` for `datacenter.trekyatra.co.in`; `docs/URL_MAP.md` updated.
+8. New admin `/admin/trek-data` dashboard (`apps/web-next/app/(admin)/admin/trek-data/page.tsx`) — data-quality KPIs, per-trek inline field editor (`TrekEditForm`, 16 fields + unsafe/closed toggle), "Backfill draft" trigger, AI interaction log table; backend `app/api/routes/admin_treks.py`; nav entry in `admin/layout.tsx`.
+9. Mobile: `app/(tabs)/plan.tsx` now renders `plan-my-trek.tsx` wizard (was dead M08 stub); new `components/trek/TrekAskAI.tsx` GlassSurface card mounted on trek detail guide tab; `app/(tabs)/(home)/compare.tsx` rewritten to call `trekIntelligenceApi.compare()` (now 2-3 treks + AI summary card); `lib/mobileApi.ts` gains `trekIntelligenceApi`.
+10. This doc + `MASTER_TRACKER.md`, `DEPENDENCY_MAP.md`, `README.md`, `.env.example` (`MCP_SHARED_SECRET`) updated.
+
+**Verification:** 665/665 backend pass, 1 skipped (2 pre-existing `test_refresh.py` failures, unrelated baseline) | `next build` ✅ zero errors | `npx tsc --noEmit` (mobile) ✅ zero errors | `gitnexus_detect_changes(scope:"all")` reviewed, no new HIGH/CRITICAL beyond expected leaf-screen touches.
+
+**Manual/infra follow-ups (user-performed, documented in step doc):** DO domain + GoDaddy CNAME for `datacenter.trekyatra.co.in`; `MCP_SHARED_SECRET` set in DO env; Celery worker restart; ChatGPT/Claude custom connector registration at `https://api.trekyatra.co.in/mcp`.

@@ -105,6 +105,10 @@ class Settings(BaseSettings):
     # Events from these IDs are marked is_internal=true and excluded from analytics by default.
     internal_anonymous_ids: list[str] = []
 
+    # Step 72 — TrekSage MCP server: shared secret gating write/LLM-cost tools
+    # (create_trek_plan_lead, translate_trek_content) when called via MCP.
+    mcp_shared_secret: str | None = None
+
     model_config = SettingsConfigDict(
         env_file=".env",
         env_file_encoding="utf-8",

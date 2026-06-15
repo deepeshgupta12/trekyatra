@@ -317,6 +317,20 @@ trekyatra/
 | AnalyticsProvider + ConsentBanner + ScrollDepthTracker components | Done |
 | Nightly trait refresh + GSC import + weekly event cleanup Celery tasks | Done |
 
+### Trek Intelligence + "TrekSage" MCP Server (Step 72)
+| Feature | Status |
+|---------|--------|
+| 16 new structured trek fields on `cms_pages` (region, altitude, duration days, best/open/avoid months, permits, budget, themes, crowd level, beginner/solo/family-friendly, operator_available, is_unsafe_closed, data_confidence, last_verified_at) | Done |
+| Deterministic matching refinements (real budget scoring, month-based season scoring, hard exclusion of unsafe/closed + avoid-month treks) | Done |
+| Trek Detail "Ask AI" Q&A widget (web + mobile, Claude Haiku, DB-cached, "not verified yet" disclaimer for unverified fields) | Done |
+| Compare page backend-wired to `/treks/compare` + cached AI trade-off summary (web + mobile, 2-4 treks) | Done |
+| "TrekSage" MCP server — 8 tools (search/get/recommend/compare/content/ask/lead/translate) mounted at `/mcp`, 3 gated by `X-MCP-Key` | Done |
+| `datacenter.trekyatra.co.in/trek-guide/[slug]` — full structured `TrekProfile`, human + AI readable, `noindex` | Done |
+| Admin trek data-quality dashboard (`/admin/trek-data`) — coverage KPIs, inline field editor, AI backfill trigger, AI interaction log viewer | Done |
+| AI interaction logging (`ai_interaction_logs` — web/mobile/chatgpt/claude sources) | Done |
+| Mobile Plan tab wired to Plan My Trek wizard (was dead placeholder) | Done |
+| Operator-help fallback lead capture (`POST /leads/operator-help`) | Done |
+
 ---
 
 ## Local Development Setup
@@ -476,6 +490,11 @@ cd apps/web-next && npm run build
 | CDP admin — gsc | `GET /api/v1/admin/cdp/gsc` | Admin auth |
 | CDP admin — suppressions | `GET /api/v1/admin/cdp/suppressions` | Admin auth |
 | DPDP compliance | `GET /api/v1/auth/me/data-export`, `DELETE /api/v1/auth/me/data` | User auth required |
+| Trek intelligence | `GET /api/v1/treks/{slug}/profile`, `POST /api/v1/treks/compare`, `POST /api/v1/treks/{slug}/ask`, `GET /api/v1/treks/{slug}/content` | Public |
+| Operator-help lead | `POST /api/v1/leads/operator-help` | Public |
+| AI interaction logging | `POST /api/v1/ai/log` | Public (fire-and-forget) |
+| Admin trek data | `GET /api/v1/admin/treks/data-quality`, `PATCH /api/v1/admin/treks/{slug}/meta`, `POST /api/v1/admin/treks/{slug}/backfill`, `GET /api/v1/admin/treks/ai-logs` | Admin auth required |
+| "TrekSage" MCP server | `https://api.trekyatra.co.in/mcp` (Streamable HTTP, 8 tools) | Read-only tools open; `create_trek_plan_lead`/`translate_trek_content` require `X-MCP-Key` |
 
 Full API docs available at http://localhost:8000/docs when the backend is running.
 
@@ -502,6 +521,8 @@ Full API docs available at http://localhost:8000/docs when the backend is runnin
 | Content QA | `cannibalization_issues`, `compliance_issues`, `refresh_logs` |
 | Analytics | `search_events`, `page_views` |
 | Trek metadata (on cms_pages) | `trek_state`, `trek_name`, `trek_difficulty`, `trek_duration`, `trek_season`, `trek_suitability` |
+| Trek intelligence (Step 72, on cms_pages) | `trek_region`, `trek_max_altitude_ft`, `trek_duration_days_min/max`, `trek_best/open/avoid_months`, `trek_permit_required/notes`, `trek_budget_min/max`, `trek_themes`, `trek_crowd_level`, `trek_beginner/solo/family_friendly`, `trek_operator_available`, `trek_is_unsafe_closed`, `trek_data_confidence`, `trek_last_verified_at` |
+| AI logging + Q&A cache (Step 72) | `ai_interaction_logs`, `trek_qa_cache`; `lead_submissions.details_json` (operator-help fields) |
 | CDP (Step 64) | `analytics_events`, `analytics_sessions`, `user_traits`, `attribution_touchpoints`, `gsc_performance` |
 
 ---
@@ -566,6 +587,7 @@ Full API docs available at http://localhost:8000/docs when the backend is runnin
 | **Step M07c — Region Tabs with Trek Cards** | Home "Explore by Region" chips become selectable tabs (first region default), showing 5 `TrekCard`s for the active region via new `useRegionTreks` hook + "View all →" link to `/(tabs)/browse?region=<state>` (existing param handling) | Done — 2026-06-14 |
 | **bugfix — Voice search crash on mic tap** | `handleMicPress` in `/browse/search` wrapped in `try/catch` — native errors from `expo-speech-recognition` (M07b) no longer crash the app; if voice still doesn't start, dev-client needs a rebuild to compile in the M07b native module | Done — 2026-06-15 |
 | **Step M-DS8 — Glass UI Overhaul** | New `GlassSurface` primitive (`expo-glass-effect` Liquid Glass on iOS 26+, `expo-blur` frosted elsewhere) + `glassTint`/`glassBorder`/`glassOverlay` theme tokens; app-wide pass across tab bar/sticky bars, home/browse/trek-detail surfaces, and auth screens; both new native modules require a dev-client rebuild | Done — 2026-06-15 |
+| **Step 72 — "TrekSage" MCP Server + Trek Intelligence Data Layer + Datacenter Subdomain** | 16 new `cms_pages.trek_*` structured fields, refined deterministic matching (real budget/season scoring, hard exclusion of unsafe/closed + avoid-month treks), Trek Detail Ask AI Q&A (web + mobile, Haiku, DB-cached), Compare page backend wiring + AI trade-off summary, "TrekSage" MCP server (8 tools at `/mcp`), `datacenter.trekyatra.co.in/trek-guide/[slug]`, admin trek data-quality dashboard, AI interaction logging, mobile Plan tab wiring, operator-help fallback lead | Done — 2026-06-15 |
 
 ## Production Infrastructure
 

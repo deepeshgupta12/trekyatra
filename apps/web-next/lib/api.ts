@@ -1986,6 +1986,12 @@ export interface TrekRecommendation {
   hero_image_url?: string;
   seo_description?: string;
   suitability?: string;
+  // Step 72 — structured trek intelligence fields (when verified/drafted)
+  budget_min?: number | null;
+  budget_max?: number | null;
+  themes?: string[] | null;
+  permit_required?: boolean | null;
+  crowd_level?: string | null;
 }
 
 export interface PlanRecommendResponse {
@@ -2141,5 +2147,189 @@ export async function generateTrekNews(trekSlug: string): Promise<{
     const body = await res.json().catch(() => ({}));
     throw new Error((body as { detail?: string }).detail ?? `Failed (${res.status})`);
   }
+  return res.json();
+}
+
+// ---------------------------------------------------------------------------
+// Step 72 — TrekSage trek intelligence: structured profile, compare, Q&A
+// ---------------------------------------------------------------------------
+
+export interface TrekProfile {
+  slug: string;
+  name: string;
+  title: string;
+  state: string | null;
+  region: string | null;
+  difficulty: string | null;
+  duration: string | null;
+  duration_days_min: number | null;
+  duration_days_max: number | null;
+  season: string | null;
+  best_months: number[] | null;
+  open_months: number[] | null;
+  avoid_months: number[] | null;
+  max_altitude_ft: number | null;
+  permit_required: boolean | null;
+  permit_notes: string | null;
+  budget_min: number | null;
+  budget_max: number | null;
+  themes: string[] | null;
+  crowd_level: string | null;
+  beginner_friendly: boolean | null;
+  solo_friendly: boolean | null;
+  family_friendly: boolean | null;
+  operator_available: boolean;
+  is_unsafe_closed: boolean;
+  suitability: string | null;
+  seo_description: string | null;
+  hero_image_url: string | null;
+  data_confidence: Record<string, string>;
+  last_verified_at: string | null;
+}
+
+/** Fetch the full structured TrekSage profile for one trek_guide page. Returns null if not found. */
+export async function fetchTrekProfile(slug: string): Promise<TrekProfile | null> {
+  try {
+    return await apiFetch<TrekProfile>(`/treks/${slug}/profile`);
+  } catch {
+    return null;
+  }
+}
+
+export interface AskTrekQuestionResponse {
+  answer: string;
+  cached: boolean;
+  not_verified: boolean;
+}
+
+/** Ask TrekSage a question about one trek (Trek Detail Q&A). */
+export async function askTrekQuestion(slug: string, question: string): Promise<AskTrekQuestionResponse> {
+  const res = await fetch(`/api/v1/treks/${slug}/ask`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ question }),
+  });
+  if (!res.ok) {
+    const body = await res.json().catch(() => ({}));
+    throw new Error((body as { detail?: string }).detail ?? `Failed (${res.status})`);
+  }
+  return res.json();
+}
+
+export interface TrekComparisonRow {
+  field: string;
+  label: string;
+  values: (string | number | boolean | null)[];
+}
+
+export interface CompareTreksResponse {
+  treks: TrekProfile[];
+  rows: TrekComparisonRow[];
+  ai_summary: string | null;
+}
+
+/** Compare 2-4 trek_guide pages side-by-side with a cached AI trade-off summary. */
+export async function compareTreks(slugs: string[]): Promise<CompareTreksResponse> {
+  const res = await fetch("/api/v1/treks/compare", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ slugs }),
+  });
+  if (!res.ok) {
+    const body = await res.json().catch(() => ({}));
+    throw new Error((body as { detail?: string }).detail ?? `Failed (${res.status})`);
+  }
+  return res.json();
+}
+
+// ---------------------------------------------------------------------------
+// Step 72 — Admin trek data-quality dashboard + AI interaction log viewer
+// ---------------------------------------------------------------------------
+
+export interface TrekDataQualityRow {
+  slug: string;
+  name: string;
+  verified_count: number;
+  draft_count: number;
+  missing_count: number;
+  is_unsafe_closed: boolean;
+  last_verified_at: string | null;
+}
+
+/** Admin: missing-fields report for every trek_guide page. */
+export async function fetchTrekDataQuality(): Promise<TrekDataQualityRow[]> {
+  const res = await fetch(`${apiBase}/api/v1/admin/treks/data-quality`, { credentials: "include" });
+  if (!res.ok) throw new Error(`API ${res.status}`);
+  return res.json();
+}
+
+export type TrekMetaPatch = Partial<{
+  trek_region: string | null;
+  trek_max_altitude_ft: number | null;
+  trek_duration_days_min: number | null;
+  trek_duration_days_max: number | null;
+  trek_best_months: number[] | null;
+  trek_open_months: number[] | null;
+  trek_avoid_months: number[] | null;
+  trek_permit_required: boolean | null;
+  trek_permit_notes: string | null;
+  trek_budget_min: number | null;
+  trek_budget_max: number | null;
+  trek_themes: string[] | null;
+  trek_crowd_level: string | null;
+  trek_beginner_friendly: boolean | null;
+  trek_solo_friendly: boolean | null;
+  trek_family_friendly: boolean | null;
+  trek_is_unsafe_closed: boolean;
+}>;
+
+/** Admin: edit structured trek fields — edited fields are marked "verified". */
+export async function updateTrekMeta(slug: string, patch: TrekMetaPatch): Promise<TrekProfile> {
+  const res = await fetch(`${apiBase}/api/v1/admin/treks/${slug}/meta`, {
+    method: "PATCH",
+    headers: { "Content-Type": "application/json" },
+    credentials: "include",
+    body: JSON.stringify(patch),
+  });
+  if (!res.ok) {
+    const body = await res.json().catch(() => ({}));
+    throw new Error((body as { detail?: string }).detail ?? `Failed (${res.status})`);
+  }
+  return res.json();
+}
+
+export interface BackfillTriggerResponse {
+  slug: string;
+  status: string;
+}
+
+/** Admin: queue an AI draft of missing structured fields for one trek. */
+export async function triggerTrekBackfill(slug: string): Promise<BackfillTriggerResponse> {
+  const res = await fetch(`${apiBase}/api/v1/admin/treks/${slug}/backfill`, {
+    method: "POST",
+    credentials: "include",
+  });
+  if (!res.ok) {
+    const body = await res.json().catch(() => ({}));
+    throw new Error((body as { detail?: string }).detail ?? `Failed (${res.status})`);
+  }
+  return res.json();
+}
+
+export interface AIInteractionLogEntry {
+  id: string;
+  source: string;
+  tool_name: string;
+  query_summary: string | null;
+  result_summary: string | null;
+  page_url: string | null;
+  trek_slugs: string[] | null;
+  created_at: string;
+}
+
+/** Admin: recent TrekSage / MCP tool usage across web, mobile, ChatGPT, Claude. */
+export async function fetchAiInteractionLogs(limit = 50): Promise<AIInteractionLogEntry[]> {
+  const res = await fetch(`${apiBase}/api/v1/admin/treks/ai-logs?limit=${limit}`, { credentials: "include" });
+  if (!res.ok) throw new Error(`API ${res.status}`);
   return res.json();
 }

@@ -64,6 +64,7 @@ const NAV_GROUPS = [
     label: "System",
     items: [
       { href: "/admin/cms", label: "Master CMS", icon: Database },
+      { href: "/admin/trek-data", label: "Trek Data", icon: Mountain },
       { href: "/admin/logs", label: "Agent Logs", icon: Terminal },
       { href: "/admin/settings", label: "Settings", icon: Settings },
     ],

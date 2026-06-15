@@ -19,6 +19,7 @@ import { TrekNewsSection } from "@/components/trek/TrekNewsSection";
 import { RelatedPagesSection } from "@/components/trek/RelatedPagesSection";
 import { TrustSignals } from "@/components/trek/TrustSignals";
 import { TrekContentsSheet, type ContentsHeading } from "@/components/trek/TrekContentsSheet";
+import { TrekAskAI } from "@/components/trek/TrekAskAI";
 import { OfflineBadge } from "@/components/trek/OfflineBadge";
 import { CMSContentRenderer } from "@/components/cms/CMSContentRenderer";
 import { HtmlContentRenderer } from "@/components/cms/HtmlContentRenderer";
@@ -225,6 +226,7 @@ export default function TrekDetailScreen() {
           )}
           {activeTab === "guide" && (
             <>
+              <TrekAskAI slug={trek.slug} trekName={trek.title} />
               <TrekRelatedRow treks={relatedTreks} heading="You might also like" />
               <TrekNewsSection slug={trek.slug} />
               <RelatedPagesSection slug={trek.slug} />

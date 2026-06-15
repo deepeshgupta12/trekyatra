@@ -10,6 +10,7 @@ from app.api.router import api_router
 from app.core.config import settings
 from app.core.logging import configure_logging, get_logger
 from app.db.session import SessionLocal
+from app.mcp_server import mcp as treksage_mcp
 
 configure_logging()
 logger = get_logger(__name__)
@@ -47,11 +48,15 @@ def _cancel_stale_runs() -> None:
         logger.warning("Startup cleanup failed (non-fatal): %s", exc)
 
 
+_mcp_app = treksage_mcp.streamable_http_app()
+
+
 @asynccontextmanager
 async def lifespan(_: FastAPI):
     logger.info("Starting %s in %s mode", settings.app_name, settings.app_env)
     _cancel_stale_runs()
-    yield
+    async with _mcp_app.router.lifespan_context(_mcp_app):
+        yield
     logger.info("Shutting down %s", settings.app_name)
 
 
@@ -96,3 +101,6 @@ app.include_router(api_router, prefix=settings.api_v1_prefix)
 _UPLOADS_DIR = "data/uploads"
 os.makedirs(_UPLOADS_DIR, exist_ok=True)
 app.mount("/uploads", StaticFiles(directory=_UPLOADS_DIR), name="uploads")
+
+# Step 72 — "TrekSage" MCP server (Streamable HTTP), consumable by ChatGPT/Claude/etc.
+app.mount("/mcp", _mcp_app)

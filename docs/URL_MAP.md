@@ -158,11 +158,25 @@ Last updated: 2026-05-27 (Step 64)
 | `/robots.txt` | Robots rules | Auto-generated from robots.ts |
 | `/api/revalidate` | Next.js cache revalidate | POST, internal |
 
+## TrekSage MCP Server & Datacenter Subdomain (Step 72)
+
+| URL Pattern | Page / Endpoint | Notes |
+|-------------|-----------------|-------|
+| `datacenter.trekyatra.co.in/` | Datacenter index | Lists all published trek_guide slugs; `apps/web-next/app/datacenter/page.tsx` |
+| `datacenter.trekyatra.co.in/trek-guide/[slug]` | Full structured `TrekProfile` | Human + AI readable; `apps/web-next/app/datacenter/trek-guide/[slug]/page.tsx`; rewritten from `/trek-guide/[slug]` via host check in `middleware.ts`; `noindex` |
+| `https://api.trekyatra.co.in/mcp` | TrekSage MCP server (Streamable HTTP) | 8 tools: search_treks, get_trek_details, recommend_treks, compare_treks, get_trek_content, ask_trek_question, create_trek_plan_lead, translate_trek_content. Mounted in `app/main.py` |
+
 ## API Routes (FastAPI — via DO ingress /api/)
 
 | Pattern | Notes |
 |---------|-------|
 | `/api/v1/health` | Health check |
+| `/api/v1/treks/{slug}/profile` | **Public GET** — full structured `TrekProfile`; Step 72 |
+| `/api/v1/treks/compare` | **Public POST** — compare 2-4 trek slugs, returns rows + cached AI trade-off summary; Step 72 |
+| `/api/v1/treks/{slug}/ask` | **Public POST** — Trek Detail Q&A (TrekSage), cached Haiku answers; Step 72 |
+| `/api/v1/treks/{slug}/content` | **Public GET** — one content_json section for grounding; Step 72 |
+| `/api/v1/leads/operator-help` | **Public POST** — operator-help fallback lead with details_json; Step 72 |
+| `/api/v1/ai/log` | **Public POST** — AI interaction logging (web/mobile/chatgpt/claude); Step 72 |
 | `/api/v1/public/sitemap-pages` | **Public** — returns slug/page_type/updated_at for published pages; used by sitemap.ts |
 | `/api/v1/search/log` | **Public POST** — fire-and-forget search event logging (query, clicks); Step 44 |
 | `/api/v1/search/suggestions?q=` | **Public GET** — CMS-powered autocomplete across all page types; Step 44 |

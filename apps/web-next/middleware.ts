@@ -39,8 +39,24 @@ const ADMIN_PREFIXES = ["/admin"];
 const ADMIN_PUBLIC_PATHS = ["/admin/sign-in"]; // exempt from admin auth check
 const GUEST_ONLY_PREFIXES = ["/auth/sign-in", "/auth/sign-up"];
 
+const DATACENTER_HOST = "datacenter.trekyatra.co.in";
+
 export function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
+
+  // ── Step 72 — datacenter.trekyatra.co.in subdomain rewrite ───────────────────
+  // Serves structured trek-guide data (TrekProfile) for TrekSage/MCP + humans,
+  // from app/datacenter/**, without exposing those paths on the main domains.
+  const host = request.headers.get("host") ?? "";
+  if (host === DATACENTER_HOST || host.startsWith(`${DATACENTER_HOST}:`)) {
+    const url = request.nextUrl.clone();
+    if (pathname === "/") {
+      url.pathname = "/datacenter";
+    } else {
+      url.pathname = `/datacenter${pathname}`;
+    }
+    return NextResponse.rewrite(url);
+  }
 
   // ── Deleted URL handling (MUST run before auth checks) ──────────────────────
   const deleted = checkDeletedRoute(pathname);
@@ -106,5 +122,7 @@ export const config = {
     "/admin/:path*",
     "/auth/sign-in",
     "/auth/sign-up",
+    "/",
+    "/trek-guide/:path*",
   ],
 };
