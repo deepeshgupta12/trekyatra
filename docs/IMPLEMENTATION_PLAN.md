@@ -792,3 +792,15 @@ Redefines the previously-unscoped "Browse/Search Polish Pass" placeholder. User-
 ### bugfix (2026-06-15) — Voice search crash on mic tap [DONE — 2026-06-15]
 
 `apps/mobile/app/(tabs)/browse/search.tsx` — `handleMicPress` wrapped in `try/catch`; any native-module error from `expo-speech-recognition` (added M07b) is caught and logged instead of crashing the app. If voice search still doesn't trigger after this fix, the dev-client binary needs a rebuild to pick up the native module added in M07b. **tsc --noEmit: 0 errors** | No backend or web-next changes.
+
+### Step M-DS8 — Glass UI Overhaul (platform-adaptive glassmorphism) [DONE — 2026-06-15]
+
+Spec: user-requested app-wide "Glass UI" restyle, without hampering existing UX/IA. User decisions: iOS → Apple "Liquid Glass" (`expo-glass-effect`); Android/web → `expo-blur` frosted; full app-wide pass in one step (not phased).
+
+- New `apps/mobile/components/ui/GlassSurface.tsx` — single reusable glass primitive (iOS 26+ `GlassView` via `expo-glass-effect`, `BlurView` fallback via `expo-blur`); new `glassTint`/`glassBorder`/`glassOverlay` tokens in `constants/theme.ts`.
+- Commit 2: `CustomTabBar.tsx`, `TrekStickyBar.tsx`, `TrekTabBar.tsx` → `GlassSurface` backgrounds. Stack header glass (`headerTransparent`) attempted, reverted as too high blast-radius; deferred.
+- Commit 3: Home surfaces (`HomeWelcomeBanner`, `CategoryHubRow`, `EditorialFeatureCard`, `ComparisonCTACard`, `OperatorsCTACard`, `ResourcesRow`, `SearchBar`/`HomeSearchBar`) → `GlassSurface`. Active tabs/chips stay solid saffron.
+- Commit 4: `FilterSheet`, `TrekContentsSheet`, `TrekMetaStrip`, `TrekCard` info footer, `RecentlyViewedRow`, `FilterChips` (inactive state) → `GlassSurface`.
+- Commit 5: Auth screens — `welcome.tsx` chrome elements, `sign-in.tsx`/`sign-up.tsx`/`forgot-password.tsx`/`reset-password.tsx` form `TextInput`s → `GlassSurface`. `otp.tsx`/`SocialSignInButtons.tsx` unchanged.
+- New deps: `expo-glass-effect`, `expo-blur` (both native modules — require dev-client rebuild, cumulative with M07b's `expo-speech-recognition`).
+- **tsc --noEmit: 0 errors** after every commit | `gitnexus_impact` upstream on all touched shared components → all LOW | `gitnexus_detect_changes(scope:"all")` → low/medium per commit, scope as expected | No backend or web-next changes.

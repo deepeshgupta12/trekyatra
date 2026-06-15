@@ -1767,3 +1767,26 @@ LOW — config/doc only, zero blast radius on `apps/mobile` or `apps/web-next` c
 **Root cause note**: `expo-speech-recognition` was added as a new native module in M07b (2026-06-14). If the installed Expo dev-client binary was built before that step, `ExpoSpeechRecognitionModule` native calls throw at runtime on first use even though `isRecognitionAvailable()` (called at module-eval time) may still report `true`. The `try/catch` prevents this from crashing the app; if voice search still doesn't start after this fix, a new dev-client build (`eas build --profile development` or `npx expo run:ios`/`run:android`) is required to compile in the native module. No backend or `apps/web-next` changes.
 
 **No `apps/web-next` files touched.** Zero blast radius on production website (desktop + mobile web unaffected).
+
+### Step M-DS8 — Glass UI Overhaul blast radius — Done (2026-06-15)
+
+**Mobile-only — no backend changes.** New dependencies: `expo-glass-effect`, `expo-blur` (both native modules, require dev-client rebuild).
+
+| File | Purpose | Blast Radius |
+|------|---------|-------------|
+| `apps/mobile/constants/theme.ts` | New `glassTint`/`glassBorder`/`glassOverlay` tokens in `lightColors`/`darkColors` | LOW — additive tokens |
+| `apps/mobile/components/ui/GlassSurface.tsx` (NEW) | Single reusable glass primitive — `GlassView` (expo-glass-effect, iOS 26+) / `BlurView` (expo-blur, fallback) | LOW — new leaf component |
+| `apps/mobile/components/tabs/CustomTabBar.tsx`, `components/trek/TrekStickyBar.tsx`, `components/trek/TrekTabBar.tsx` | Solid chrome backgrounds → `GlassSurface` absolute-fill, borders/shadows preserved | LOW — `gitnexus_impact` 0 callers each |
+| `apps/mobile/components/home/HomeWelcomeBanner.tsx`, `CategoryHubRow.tsx`, `EditorialFeatureCard.tsx`, `ComparisonCTACard.tsx`, `OperatorsCTACard.tsx`, `ResourcesRow.tsx`, `components/browse/SearchBar.tsx` | Surface containers → `GlassSurface` | LOW — leaf home-screen components |
+| `apps/mobile/components/browse/FilterSheet.tsx`, `components/trek/TrekContentsSheet.tsx` | Bottom-sheet modal backgrounds → `GlassSurface` (`rounded="none"` + top-corner-only radius override) | LOW — leaf modal components |
+| `apps/mobile/components/trek/TrekMetaStrip.tsx`, `components/trek/TrekCard.tsx`, `components/home/RecentlyViewedRow.tsx` | Meta strip / card info footer / recently-viewed cards → `GlassSurface` | LOW — `TrekCard` disambiguated via `target_uid` (3 same-named symbols across mobile/web-next); mobile `TrekCard` consumed by `SeasonalPicksRow`, `TrekRelatedRow`, `DifficultyTabsSection`, `RegionsRow` |
+| `apps/mobile/components/browse/FilterChips.tsx` | Inactive "Filters"/active-filter pills → `GlassSurface`; active "Filters" toggle (filters set) stays solid saffron | LOW — 0 callers |
+| `apps/mobile/app/(auth)/welcome.tsx` | Back button, skip pill, slide-icon chip (solid `rgba(13,20,16,0.55)` chrome over photo carousel) → `GlassSurface` | LOW — leaf route screen |
+| `apps/mobile/app/(auth)/sign-in.tsx`, `sign-up.tsx` | Email/password/name `TextInput`s wrapped in `GlassSurface` (rounded "md"), replacing solid `inputBg`/`inputBorder`; unused vars removed | LOW — leaf route screens |
+| `apps/mobile/app/(auth)/forgot-password.tsx`, `reset-password.tsx` | `TextInput`s wrapped in `GlassSurface`, replacing `bg-surface border border-white/10` className | LOW — leaf route screens; "sent" confirmation banner (forgot-password) kept solid pine-tinted (semantic color) |
+
+**Deferred**: stack header glass (`headerTransparent` + `headerBackground`) — attempted on `(home)/_layout.tsx`, reverted; every screen in the affected `Stack` would need new top-padding/safe-area handling to avoid content being covered, judged too high blast-radius for "without hampering UX".
+
+`gitnexus_detect_changes(scope:"all")` confirmed low/medium risk per commit (medium risk limited to expected `useTheme`-trace touches on edited screens), scope matched expected files each commit (plus pre-existing unrelated `CLAUDE.md` touch). `npx tsc --noEmit` → 0 errors after every commit.
+
+**No `apps/web-next` files touched.** Zero blast radius on production website (desktop + mobile web unaffected).

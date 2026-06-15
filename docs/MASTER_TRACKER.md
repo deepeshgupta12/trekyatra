@@ -463,6 +463,22 @@ Redefines the previously-unscoped "M07c — Browse/Search Polish Pass" placehold
 **Note for user**: if voice search still doesn't start after this fix (mic icon does nothing, warning logged), the installed dev-client binary needs a rebuild (`eas build --profile development` or `npx expo run:ios`/`run:android`) to compile in the `expo-speech-recognition` native module added in M07b.
 `gitnexus_impact(SearchScreen, upstream)` → LOW, 0 callers. `gitnexus_detect_changes(scope:"all")` → risk "medium" (expected — 2 `SearchScreen`-rooted process touches, step 1 only), 7 changed symbols / 2 affected / 2 changed files (`search.tsx`, pre-existing `CLAUDE.md`). `npx tsc --noEmit` → 0 errors. No backend or `apps/web-next` changes.
 
+### Step M-DS8 — Glass UI Overhaul (platform-adaptive glassmorphism) — Done (2026-06-15)
+App-wide glassmorphism pass per user decision: "For iOS — follow Apple's 'Liquid Glass' and for Android, use Expo-blur frosted", "Full app-wide pass in one step" (not phased). 6 commits.
+
+1. **Foundation** — `npx expo install expo-glass-effect expo-blur`; new theme tokens `glassTint`/`glassBorder`/`glassOverlay` in both `lightColors`/`darkColors` (`constants/theme.ts`); new `components/ui/GlassSurface.tsx` — the single reusable glass primitive. Props: `children`, `style?`, `rounded?` (default `"lg"`), `intensity?` (default 35), `glassStyle?: "regular"|"clear"` (default `"regular"`), `bordered?` (default `true`). iOS 26+ (`isLiquidGlassAvailable()`) renders `expo-glass-effect`'s `GlassView`; all other platforms render `expo-blur`'s `BlurView` + a `glassOverlay` tint `View` for legibility.
+2. **Global chrome** — `CustomTabBar.tsx`, `TrekStickyBar.tsx`, `TrekTabBar.tsx` backgrounds → `GlassSurface` absolute-fill, preserving existing borders/shadows. Stack header glass (`headerTransparent`) attempted and **reverted** — too high blast-radius (every screen in the affected stacks would need new top-padding/safe-area handling); explicitly deferred.
+3. **Home surfaces** — `HomeWelcomeBanner`, `CategoryHubRow`, `EditorialFeatureCard` (text panel over existing gradient), `ComparisonCTACard`, `OperatorsCTACard`, `ResourcesRow`, `SearchBar`/`HomeSearchBar` → `GlassSurface`. Active tab/chip states (`DifficultyTabsSection`, `RegionsRow`) left solid saffron — legibility/affordance rule.
+4. **Browse + Trek detail surfaces** — `FilterSheet`, `TrekContentsSheet` (bottom-sheet modals, `rounded="none"` + corner-radius style override for top-only rounding), `TrekMetaStrip`, `TrekCard` info footer, `RecentlyViewedRow` → `GlassSurface`. `FilterChips` — inactive "Filters"/active-filter pills → `GlassSurface`; the active "Filters" toggle (when filters are set) stays solid saffron.
+5. **Auth screens** — `welcome.tsx` (back button, skip pill, slide-icon chip — glass over photo carousel), `sign-in.tsx`/`sign-up.tsx` (email/password/name `TextInput`s wrapped in `GlassSurface`, replacing solid `inputBg`/`inputBorder`), `forgot-password.tsx`/`reset-password.tsx` (TextInputs wrapped in `GlassSurface`, replacing `bg-surface` className). `otp.tsx` has no form panel — unchanged. `SocialSignInButtons.tsx` stays solid (CTA legibility rule).
+6. **Docs + re-index** (this section).
+
+**Native module rebuild required**: `expo-glass-effect` and `expo-blur` are native modules — a new Expo dev-client build (`eas build --profile development` or `npx expo run:ios`/`run:android`) is required before Liquid Glass / frosted blur renders on-device. Cumulative with the `expo-speech-recognition` (M07b) rebuild requirement.
+
+**Verification:** `cd apps/mobile && npx tsc --noEmit` → 0 errors after every commit. `gitnexus_impact` upstream on every touched shared component → all LOW (0 callers, except expected leaf-screen self-references). `gitnexus_detect_changes(scope:"all")` → low/medium risk per commit, scope matched expected files each time (plus pre-existing unrelated `CLAUDE.md` touch). No `apps/web-next` or backend files touched — zero blast radius on production website (desktop + mobile web).
+
+**Re-index (`npx gitnexus analyze --force`):** 485,615 nodes | 767,598 edges | 3315 clusters | 300 flows. Final `gitnexus_detect_changes(scope:"all")` after docs commit: 14 changed symbols across 6 doc/md files, 0 affected processes, risk level low.
+
 ### Step M04 — CMS Offline Content Engine — Done (2026-06-10)
 - `apps/mobile/db/schema.ts` — Drizzle schema: `cmsPages` + `syncMeta` tables
 - `apps/mobile/db/client.ts` — expo-sqlite connection + `initDb()` DDL bootstrapper

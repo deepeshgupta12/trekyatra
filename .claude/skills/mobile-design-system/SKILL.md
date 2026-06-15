@@ -70,6 +70,19 @@ Mobile screens must call **endpoints that actually exist on the backend** — Ty
    - Anonymous/personalised recs → `GET /api/v1/recommendations` / `GET /api/v1/account/recommendations` (`RecommendationsResponse{personalised, items}`)
    - Save/bookmark a trek → `POST /api/v1/account/bookmarks/by-slug` body `{trek_slug}`
 
+## Glass UI (GlassSurface)
+
+Since M-DS8, the app uses a platform-adaptive "Glass UI" aesthetic via a single reusable primitive: `apps/mobile/components/ui/GlassSurface.tsx`.
+
+- **Always use `GlassSurface` instead of a one-off `BlurView`/`GlassView`.** Props: `children`, `style?`, `rounded?: keyof typeof radius | "none"` (default `"lg"`), `intensity?` (default 35, Android blur intensity), `glassStyle?: "regular"|"clear"` (default `"regular"`), `bordered?: boolean` (default `true`).
+- **Platform branching is automatic**: on `Platform.OS === "ios" && isLiquidGlassAvailable()` it renders `expo-glass-effect`'s `GlassView` (native Apple Liquid Glass, iOS 26+); everywhere else it renders `expo-blur`'s `BlurView` with a `colors.glassOverlay` tint `View` underneath for text legibility.
+- **Theme tokens**: `glassTint`, `glassBorder`, `glassOverlay` exist in both `lightColors` and `darkColors` in `constants/theme.ts` — don't hardcode rgba values for glass surfaces.
+- **Corner radius on bottom sheets / partial rounding**: pass `rounded="none"` (sets `borderRadius: 0` on all corners as the base) then override only the corners you need in `style` (e.g. `borderTopLeftRadius`/`borderTopRightRadius: 20`) — RN merges per-property, so unset corners stay 0.
+- **Performance guardrail**: limit to ~2-3 stacked `GlassSurface` layers per screen — GPU blur cost compounds with each layer.
+- **Legibility/affordance rule**: active/selected states (active tab chips, the active "Filters" toggle, primary CTAs/buttons) stay **solid saffron** (`#E8702A`) — never glassed. Only "chrome/surface" containers (cards, bars, sheets, inactive chips, form inputs) get `GlassSurface`.
+- **Deferred**: stack header glass (`headerTransparent` + `headerBackground`) — not applied; would require top-padding/safe-area changes across every screen in the affected `Stack`. Don't add it without a dedicated step.
+- **Native module rebuild**: `expo-glass-effect` and `expo-blur` are native modules — a dev-client rebuild (`eas build --profile development` or `npx expo run:ios`/`run:android`) is required before glass effects render on-device (cumulative with the M07b `expo-speech-recognition` rebuild requirement).
+
 ## Process Hook
 
 This skill is referenced from the root `CLAUDE.md` "Pre-Step Checklist" for any mobile step (`docs/mobile/steps/STEP-M*.md`). Read it before implementing or modifying any `apps/mobile/` screen, and re-run the font/route-name/API-contract checks above as part of build validation (in addition to `tsc --noEmit`).

@@ -532,6 +532,7 @@ Full API docs available at http://localhost:8000/docs when the backend is runnin
 | Explore & Search — Browse tab (grid, filters, regions/seasons hubs, basic search) | Done (M07a) |
 | Explore & Search — advanced search (semantic/voice/recent/trending) | Done (M07b) |
 | Home — Region tabs (5 trek cards per region + View all) and difficulty tabs fuzzy-matching fix | Done (M07c) |
+| Glass UI overhaul — `GlassSurface` primitive (Liquid Glass on iOS 26+, expo-blur frosted elsewhere), app-wide pass: tab bar/sticky bars, home/browse/trek-detail surfaces, auth screens | Done (M-DS8) |
 | Trek planning wizard (full multi-step UI) | Pending (M09) |
 | Push notifications | Pending (M14) |
 
@@ -564,6 +565,7 @@ Full API docs available at http://localhost:8000/docs when the backend is runnin
 | **bugfix — Home difficulty tabs** | `DifficultyTabsSection` "Moderate" tab showed empty due to exact-match filter against a tiny trending/seasonal subset; new `useDifficultyTreks` hook queries `exploreTreks` with a fuzzy per-tab value list (mirrors web's substring matching) and merges/dedupes | Done — 2026-06-14 |
 | **Step M07c — Region Tabs with Trek Cards** | Home "Explore by Region" chips become selectable tabs (first region default), showing 5 `TrekCard`s for the active region via new `useRegionTreks` hook + "View all →" link to `/(tabs)/browse?region=<state>` (existing param handling) | Done — 2026-06-14 |
 | **bugfix — Voice search crash on mic tap** | `handleMicPress` in `/browse/search` wrapped in `try/catch` — native errors from `expo-speech-recognition` (M07b) no longer crash the app; if voice still doesn't start, dev-client needs a rebuild to compile in the M07b native module | Done — 2026-06-15 |
+| **Step M-DS8 — Glass UI Overhaul** | New `GlassSurface` primitive (`expo-glass-effect` Liquid Glass on iOS 26+, `expo-blur` frosted elsewhere) + `glassTint`/`glassBorder`/`glassOverlay` theme tokens; app-wide pass across tab bar/sticky bars, home/browse/trek-detail surfaces, and auth screens; both new native modules require a dev-client rebuild | Done — 2026-06-15 |
 
 ## Production Infrastructure
 
