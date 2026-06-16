@@ -340,6 +340,13 @@ export interface TrekRecommendation {
   difficulty: string | null;
   duration: string | null;
   season: string | null;
+  // Step 73: structured trek intelligence fields
+  budget_min?: number | null;
+  budget_max?: number | null;
+  themes?: string[] | null;
+  permit_required?: boolean | null;
+  crowd_level?: string | null;
+  permits?: string | null;
 }
 
 export interface PlanRecommendResponse {

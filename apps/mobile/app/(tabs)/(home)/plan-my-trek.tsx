@@ -196,6 +196,35 @@ export default function PlanMyTrekScreen() {
               <Text style={[styles.resultMeta, { color: colors.textMuted }]}>
                 {[rec.state, rec.difficulty, rec.duration, rec.season].filter(Boolean).join(" · ")}
               </Text>
+              {/* budget / crowd / themes / permit badges */}
+              {((rec.budget_min || rec.budget_max) || rec.crowd_level || rec.themes?.length || rec.permit_required) && (
+                <View style={styles.badgeRow}>
+                  {(rec.budget_min || rec.budget_max) && (
+                    <View style={styles.badge}>
+                      <Text style={styles.badgeText}>
+                        {rec.budget_min && rec.budget_max
+                          ? `₹${(rec.budget_min / 1000).toFixed(0)}k–₹${(rec.budget_max / 1000).toFixed(0)}k`
+                          : `From ₹${((rec.budget_min ?? rec.budget_max)! / 1000).toFixed(0)}k`}
+                      </Text>
+                    </View>
+                  )}
+                  {rec.crowd_level && (
+                    <View style={styles.badge}>
+                      <Text style={styles.badgeText}>{rec.crowd_level} crowd</Text>
+                    </View>
+                  )}
+                  {rec.permit_required && (
+                    <View style={[styles.badge, styles.badgeAmber]}>
+                      <Text style={[styles.badgeText, styles.badgeTextAmber]}>Permit req.</Text>
+                    </View>
+                  )}
+                  {rec.themes?.slice(0, 2).map((theme) => (
+                    <View key={theme} style={[styles.badge, styles.badgeAccent]}>
+                      <Text style={[styles.badgeText, styles.badgeTextAccent]}>{theme}</Text>
+                    </View>
+                  ))}
+                </View>
+              )}
               <Text style={[styles.resultWhy, { color: colors.textSecondary }]}>{rec.why_this_matches}</Text>
             </TouchableOpacity>
           ))}
@@ -230,4 +259,11 @@ const styles = StyleSheet.create({
   scoreText: { color: "#E8702A", fontSize: 11, fontWeight: "700" },
   resultMeta: { fontSize: 12 },
   resultWhy: { fontSize: 13, lineHeight: 18 },
+  badgeRow: { flexDirection: "row", flexWrap: "wrap", gap: 5, marginTop: 2 },
+  badge: { backgroundColor: "rgba(255,255,255,0.07)", borderRadius: 10, paddingHorizontal: 8, paddingVertical: 3, borderWidth: 1, borderColor: "rgba(255,255,255,0.12)" },
+  badgeText: { fontSize: 10, fontWeight: "600", color: "rgba(255,255,255,0.65)" },
+  badgeAmber: { backgroundColor: "rgba(245,158,11,0.10)", borderColor: "rgba(245,158,11,0.3)" },
+  badgeTextAmber: { color: "#F59E0B" },
+  badgeAccent: { backgroundColor: "rgba(232,112,42,0.10)", borderColor: "rgba(232,112,42,0.25)" },
+  badgeTextAccent: { color: "#E8702A" },
 });
