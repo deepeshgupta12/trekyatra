@@ -20,6 +20,7 @@ class TreksageChatResponse(BaseModel):
     session_key: str
     reply: str
     tool_calls: list[dict] = []
+    trek_cards: list[dict] = []
 
 
 class TreksageChatHistoryItem(BaseModel):
@@ -36,6 +37,7 @@ def chat(payload: TreksageChatRequest, db: Session = Depends(get_db)) -> Treksag
         session_key=result["session_key"],
         reply=result["reply"],
         tool_calls=result["tool_calls"],
+        trek_cards=result.get("trek_cards", []),
     )
 
 

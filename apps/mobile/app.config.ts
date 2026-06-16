@@ -18,6 +18,13 @@ export default ({ config }: ConfigContext): any => ({
     config: {
       usesNonExemptEncryption: false,
     },
+    infoPlist: {
+      // Required by expo-speech-recognition — without this the app crashes on first mic tap.
+      NSSpeechRecognitionUsageDescription:
+        "TrekYatra uses speech recognition to let you search for treks by voice.",
+      NSMicrophoneUsageDescription:
+        "TrekYatra needs microphone access for voice search.",
+    },
   },
   android: {
     adaptiveIcon: {

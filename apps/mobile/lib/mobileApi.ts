@@ -298,6 +298,22 @@ export const contentApi = {
       limit,
     }),
 
+  searchTreks: async (q: string, limit = 12) => {
+    const results = await apiPost<SemanticSearchResult[]>("/api/v1/search/semantic", {
+      q,
+      page_type: "trek_guide",
+      limit,
+    });
+    return results.map((r) => ({
+      slug: r.slug,
+      title: r.title,
+      hero_image_url: r.hero_image_url ?? null,
+      difficulty: r.trek_difficulty ?? null,
+      state: r.trek_state ?? null,
+      duration: r.trek_duration ?? null,
+    }));
+  },
+
   logSearch: (query: string, clickedSlug?: string, clickedPageType?: string) =>
     apiPost<null>("/api/v1/search/log", {
       query,
@@ -340,6 +356,7 @@ export interface TrekRecommendation {
   difficulty: string | null;
   duration: string | null;
   season: string | null;
+  hero_image_url?: string | null;
   // Step 73: structured trek intelligence fields
   budget_min?: number | null;
   budget_max?: number | null;

@@ -4,7 +4,7 @@ import TreksageChat from "./TreksageChat";
 export const metadata: Metadata = {
   title: "TrekSage AI — Plan Your Himalayan Trek | TrekYatra",
   description:
-    "Chat with Myra, TrekYatra's AI trek planning assistant. Plan a trek, compare options, check permits and packing — all in one conversation.",
+    "Chat with TrekSage, TrekYatra's AI trek planning assistant. Plan a trek, compare options, check permits and packing — all in one conversation.",
 };
 
 export default function TreksagePage() {
@@ -18,7 +18,7 @@ export default function TreksagePage() {
             Plan your perfect Himalayan trek
           </h1>
           <p className="text-white/50 text-sm max-w-md mx-auto">
-            Ask Myra anything — from choosing the right trek to comparing routes, permit requirements, packing lists, and more.
+            Ask TrekSage anything — from choosing the right trek to comparing routes, permit requirements, packing lists, and more.
           </p>
         </div>
 
@@ -28,7 +28,7 @@ export default function TreksagePage() {
         </div>
 
         <p className="text-center text-white/20 text-xs mt-4">
-          Myra uses real TrekYatra data. Always verify permits and safety conditions with the local forest department before trekking.
+          TrekSage uses real TrekYatra data. Always verify permits and safety conditions with the local forest department before trekking.
         </p>
       </div>
     </main>

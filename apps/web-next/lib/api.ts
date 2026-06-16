@@ -2333,6 +2333,16 @@ export interface TreksageChatResponse {
   session_key: string;
   reply: string;
   tool_calls: Array<{ tool: string; input: unknown; result: unknown }>;
+  trek_cards: Array<{
+    slug: string;
+    name: string;
+    state: string | null;
+    difficulty: string | null;
+    duration: string | null;
+    budget_min: number | null;
+    budget_max: number | null;
+    hero_image_url: string | null;
+  }>;
 }
 
 export interface TreksageChatHistoryItem {

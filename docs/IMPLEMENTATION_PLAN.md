@@ -849,3 +849,29 @@ New surfaces:
 **Verification:** 683/685 backend pass (2 pre-existing `test_refresh.py` failures, unrelated) | 18 new tests TC-B23–B40 | `next build` ✅ zero errors (`/treksage` 3.94 kB) | `npx tsc --noEmit` (mobile) ✅ zero errors.
 
 **Manual/infra follow-ups:** `alembic upgrade head` for `20260616_0044`; Celery worker restart; admin clicks "Backfill All Treks" once.
+
+---
+
+### Step 74 — Post-73 Bug Fixes + Mobile/TrekSage UI Revamp [DONE — 2026-06-16]
+
+Addresses 10 bugs and enhancement requests identified during user testing of Step 73. No new backend migrations or Celery tasks.
+
+Backend fixes:
+- **`treksage_agent.py`**: system prompt "Myra" → "TrekSage"; `tool_choice={"type":"none"}` on final round (fixes bot stopping mid-reply); `hero_image_url` added to `_slim_profile`; `trek_cards` extracted from last search/recommend result and returned with `chat()`.
+- **`routes/treksage.py`**: `TreksageChatResponse` extended with `trek_cards: list[dict] = []`.
+
+Web frontend fixes:
+- **`TreksageChat.tsx`**: "Myra" removed from header; `react-markdown` added for bot message rendering; `TrekCardsList` component renders trek cards (image + meta) below each assistant reply.
+- **`treksage/page.tsx`**: all "Myra" text replaced with "TrekSage".
+- **`lib/api.ts`**: `TreksageChatResponse.trek_cards` field typed.
+- **`page.tsx` (home)**: TrekSage AI promotional banner section added between TRENDING and CATEGORY HUB.
+
+Mobile fixes:
+- **`app.config.ts`**: `ios.infoPlist.NSSpeechRecognitionUsageDescription` + `NSMicrophoneUsageDescription` explicitly set (voice crash fix — dev client rebuild required).
+- **`mobileApi.ts`**: `hero_image_url` on `TrekRecommendation`; `contentApi.searchTreks()` via semantic search endpoint.
+- **`plan-my-trek.tsx`**: emoji intent chips; hint labels; hero image header on result cards; coloured match badge; improved result card layout.
+- **`compare.tsx`**: 2-column tile grid with trek images + checkmark overlay; selected-trek pill strip with thumbnails; debounced search input; trek image header row in comparison table; styled TrekSage AI summary card.
+
+**Verification:** 683/685 backend pass (2 pre-existing `test_refresh.py` failures, unrelated) | 0 new backend tests (no backend logic changes) | `next build` ✅ Compiled successfully | `npx tsc --noEmit` (mobile) ✅ zero errors.
+
+**User infra follow-ups:** (1) Rebuild iOS dev client for voice fix; (2) Add `datacenter.trekyatra.co.in` CNAME in DO + GoDaddy (TC-F18/F19/F20).

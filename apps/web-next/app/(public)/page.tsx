@@ -164,6 +164,55 @@ export default async function Home() {
         </div>
       </section>
 
+      {/* TREKSAGE AI BANNER */}
+      <section className="py-14 md:py-20 bg-[#0c0e14] border-y border-white/5">
+        <div className="container-wide">
+          <div className="flex flex-col lg:flex-row items-center gap-10 lg:gap-16">
+            <div className="flex-1 text-center lg:text-left">
+              <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-accent/10 border border-accent/20 text-accent text-[11px] uppercase tracking-widest mb-5">
+                <Sparkles className="h-3 w-3" />
+                AI-powered
+              </div>
+              <h2 className="font-display text-3xl md:text-4xl lg:text-5xl font-semibold text-white leading-tight mb-4">
+                Meet TrekSage.<br />
+                <span className="text-gradient-saffron">Your AI trek planner.</span>
+              </h2>
+              <p className="text-white/50 text-base max-w-lg mb-6 mx-auto lg:mx-0">
+                Compare treks, plan an itinerary, check permits, get packing advice — TrekSage uses real TrekYatra data to answer in seconds.
+              </p>
+              <Link href="/treksage">
+                <Button variant="hero" size="lg" className="gap-2">
+                  <Sparkles className="h-4 w-4" />
+                  Ask TrekSage
+                  <ArrowRight className="h-4 w-4" />
+                </Button>
+              </Link>
+            </div>
+            <div className="flex-1 w-full max-w-md lg:max-w-none">
+              <div className="bg-[#0f1117] rounded-2xl border border-white/10 p-4 space-y-2.5">
+                {[
+                  "Plan a Himalayan trek for July with 6 days",
+                  "Compare Hampta Pass vs Kedarkantha",
+                  "Best beginner treks in Uttarakhand under ₹10k",
+                ].map((prompt) => (
+                  <Link
+                    key={prompt}
+                    href="/treksage"
+                    className="flex items-center gap-3 p-3 rounded-xl bg-white/3 hover:bg-white/6 border border-white/8 hover:border-accent/30 transition-colors group"
+                  >
+                    <div className="h-6 w-6 rounded-full bg-accent/10 flex-shrink-0 flex items-center justify-center">
+                      <Sparkles className="h-3 w-3 text-accent" />
+                    </div>
+                    <span className="text-white/60 text-sm group-hover:text-white/90 transition-colors flex-1">{prompt}</span>
+                    <ArrowRight className="h-3 w-3 text-transparent group-hover:text-accent/60 transition-colors" />
+                  </Link>
+                ))}
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
       {/* CATEGORY HUB */}
       <section className="py-16 md:py-24 bg-surface-muted">
         <div className="container-wide">

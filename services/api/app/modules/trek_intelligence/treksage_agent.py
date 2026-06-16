@@ -30,6 +30,16 @@ _HAIKU_MODEL = "claude-haiku-4-5-20251001"
 MAX_TOOL_ROUNDS = 3
 MAX_HISTORY_MESSAGES = 10
 
+_SYSTEM_PROMPT = (
+    "You are TrekSage, TrekYatra's AI trek planning assistant. Help users plan Himalayan "
+    "treks, compare options, get permit and packing info, and find the perfect trek "
+    "for their fitness and travel dates. Use the available tools to look up real trek "
+    "data — never invent altitudes, permit requirements, or prices. Be friendly, "
+    "concise (under 150 words per reply), and always suggest a next step. "
+    "When tools return results, summarise the key highlights; do NOT repeat every raw field."
+)
+_TREK_CARD_TOOLS = {"search_treks", "recommend_treks"}
+
 # ── Tool schemas ──────────────────────────────────────────────────────────────
 
 _TOOLS = [
@@ -182,6 +192,7 @@ def _slim_profile(p: Any) -> dict:
         "beginner_friendly": p.beginner_friendly,
         "solo_friendly": p.solo_friendly,
         "family_friendly": p.family_friendly,
+        "hero_image_url": getattr(p, "hero_image_url", None),
     }
 
 # ── Session helpers ───────────────────────────────────────────────────────────
@@ -258,17 +269,16 @@ def chat(
     final_reply = ""
 
     for round_num in range(MAX_TOOL_ROUNDS + 1):
+        is_final_round = (round_num == MAX_TOOL_ROUNDS)
         response = client.messages.create(
             model=_HAIKU_MODEL,
-            max_tokens=600,
-            system=(
-                "You are Myra, TrekYatra's AI trek planning assistant. Help users plan Himalayan "
-                "treks, compare options, get permit and packing info, and find the perfect trek "
-                "for their fitness and travel dates. Use the available tools to look up real trek "
-                "data — never invent altitudes, permit requirements, or prices. Be friendly, "
-                "concise (under 120 words per reply), and always suggest a next step."
-            ),
+            max_tokens=800,
+            system=_SYSTEM_PROMPT,
             tools=_TOOLS,
+            # On the last round force a plain-text reply so the model cannot produce
+            # a truncated tool-call prefix (e.g. "Let me try a broader search:") as
+            # the final message.
+            tool_choice={"type": "none"} if is_final_round else {"type": "auto"},
             messages=messages,
         )
 
@@ -276,7 +286,7 @@ def chat(
         text_parts = [block.text for block in response.content if block.type == "text"]
         tool_use_blocks = [block for block in response.content if block.type == "tool_use"]
 
-        if not tool_use_blocks or round_num == MAX_TOOL_ROUNDS:
+        if not tool_use_blocks or is_final_round:
             final_reply = " ".join(text_parts).strip() or "I couldn't find an answer right now. Try rephrasing your question."
             break
 
@@ -293,9 +303,17 @@ def chat(
             })
         messages.append({"role": "user", "content": tool_results})
 
+    # Expose the last search/recommend result as structured trek cards for the UI.
+    trek_cards: list[dict] = []
+    for tc in reversed(tool_calls_log):
+        if tc["tool"] in _TREK_CARD_TOOLS and isinstance(tc["result"], list) and tc["result"]:
+            trek_cards = tc["result"]
+            break
+
     _persist_messages(db, session, user_message, final_reply, tool_calls_log or None)
     return {
         "reply": final_reply,
         "tool_calls": tool_calls_log,
+        "trek_cards": trek_cards,
         "session_key": session.session_key,
     }

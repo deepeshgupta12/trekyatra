@@ -344,8 +344,21 @@ trekyatra/
 | `treksage_chat_sessions` + `treksage_chat_messages` tables — persistent anonymous/user session transcript | Done |
 | `treksage_agent.py` — Haiku + tool-calling agent (5 MCP-equivalent tools, MAX_TOOL_ROUNDS=3, session history) | Done |
 | `POST /api/v1/treksage/chat` + `GET /api/v1/treksage/chat/{session_key}/history` | Done |
-| `/treksage` — Myra-style public AI chat page with session persistence (`localStorage` session_key) | Done |
+| `/treksage` — TrekSage AI public chat page with session persistence (`localStorage` session_key) | Done |
 | `datacenter.trekyatra.co.in?slug=<slug>` — full `TrekProfile` JSON viewer; `/trek-guide/[slug]` → 308 redirect | Done |
+
+### Post-73 Bug Fixes + Mobile/TrekSage UI Revamp (Step 74)
+| Feature | Status |
+|---------|--------|
+| TrekSage AI renamed throughout (Myra removed from system prompt, UI, metadata) | Done |
+| Bot-stopping fix — `tool_choice={"type":"none"}` on final tool round prevents truncated "Let me try..." replies | Done |
+| `react-markdown` rendering in TrekSage chat — bold, italic, lists, headings rendered correctly | Done |
+| Trek cards below assistant replies — up to 5 trek mini-cards (image, name, meta, budget) after search/recommend tool calls | Done |
+| TrekSage AI home page banner — between TRENDING and CATEGORY HUB with 3 sample prompts linking to `/treksage` | Done |
+| Voice search crash fix — `NSSpeechRecognitionUsageDescription` in `app.config.ts` iOS infoPlist (dev-client rebuild required) | Done |
+| Mobile Plan My Trek revamp — emoji option chips, hint labels, hero image on result cards, coloured match badge | Done |
+| Mobile Compare revamp — 2-col trek tile grid with images, debounced search input, selected-trek pill strip, trek image header in comparison table, styled "✨ TrekSage says" summary card | Done |
+| `contentApi.searchTreks()` — semantic search for trek selection in mobile compare screen | Done |
 
 ---
 
@@ -607,6 +620,7 @@ Full API docs available at http://localhost:8000/docs when the backend is runnin
 | **Step M-DS8 — Glass UI Overhaul** | New `GlassSurface` primitive (`expo-glass-effect` Liquid Glass on iOS 26+, `expo-blur` frosted elsewhere) + `glassTint`/`glassBorder`/`glassOverlay` theme tokens; app-wide pass across tab bar/sticky bars, home/browse/trek-detail surfaces, and auth screens; both new native modules require a dev-client rebuild | Done — 2026-06-15 |
 | **Step 72 — "TrekSage" MCP Server + Trek Intelligence Data Layer + Datacenter Subdomain** | 16 new `cms_pages.trek_*` structured fields, refined deterministic matching (real budget/season scoring, hard exclusion of unsafe/closed + avoid-month treks), Trek Detail Ask AI Q&A (web + mobile, Haiku, DB-cached), Compare page backend wiring + AI trade-off summary, "TrekSage" MCP server (8 tools at `/mcp`), `datacenter.trekyatra.co.in/trek-guide/[slug]`, admin trek data-quality dashboard, AI interaction logging, mobile Plan tab wiring, operator-help fallback lead | Done — 2026-06-15 |
 | **Step 73 — TrekSage Bugfix Pass + Conversational AI** | Bulk trek data backfill (fixes 0 verified / 805 missing fields, compare "—" rows, plan card empty badges); CMS-section grounding for Ask AI (packing/itinerary/safety/faq questions answered from real `content_json.sections`); conversational follow-ups via `history` param (web + mobile); richer compare AI summary (`_SUMMARY_PROMPT_VERSION="v2"` cache-bust); `TrekProfile` expanded with `content_sections`+`faqs`; new `treksage_chat_sessions`/`treksage_chat_messages` tables; `treksage_agent.py` (Haiku + tool-calling, 5 tools, MAX_TOOL_ROUNDS=3); `/treksage` Myra-style chat page; datacenter rewritten as `?slug=` JSON viewer with 308 redirect from `/trek-guide/[slug]`; 18 new tests (683/685 pass) | Done — 2026-06-16 |
+| **Step 74 — Post-73 Bug Fixes + Mobile/TrekSage UI Revamp** | TrekSage renamed (Myra removed); bot-stopping fix (`tool_choice={"type":"none"}` on final tool round); `react-markdown` for bot replies; trek card visuals in chat; TrekSage AI home page banner; voice-crash fix (`NSSpeechRecognitionUsageDescription` in `app.config.ts`, dev-client rebuild required); mobile Plan My Trek revamped (emoji chips, hero images, match badge); mobile Compare revamped (tile grid, search input, trek image header, styled AI summary); `searchTreks()` added to mobile API; 683/685 backend pass, `next build` ✅, `tsc --noEmit` ✅ | Done — 2026-06-16 |
 
 ## Production Infrastructure
 
