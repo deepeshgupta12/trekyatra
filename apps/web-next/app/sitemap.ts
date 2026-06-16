@@ -65,6 +65,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     url("/permits", 0.7, "weekly"),
     url("/guides", 0.7, "weekly"),
     url("/compare", 0.7, "weekly"),
+    url("/treksage", 0.8, "weekly"),
     url("/seasons", 0.7, "monthly"),
     url("/regions", 0.7, "weekly"),
     url("/plan", 0.8, "monthly"),

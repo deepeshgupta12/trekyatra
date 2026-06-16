@@ -1832,3 +1832,33 @@ New tables: `ai_interaction_logs`, `trek_qa_cache` (no existing readers — zero
 | `apps/mobile/lib/mobileApi.ts` | NEW `trekIntelligenceApi` (`ask`, `compare`) + `TrekProfile`, `AskTrekQuestionResponse`, `CompareTreksResponse`, `TrekComparisonRow` types | LOW — additive exports |
 
 `gitnexus_detect_changes(scope:"all")` after Commit 9: `risk_level: "high"` (cumulative across all 25 uncommitted Step 72 files / 57 symbols — expected given scope), 9 affected processes — all leaf screen-component traces (`CompareScreen → UseThemeContext`, `TrekDetailScreen → *`, `TrekDetailPage → ApiFetch`/`MergeImage`), consistent with per-commit LOW `gitnexus_impact` checks on every touched symbol; no new HIGH/CRITICAL beyond expected leaf-screen touches. `next build` ✅ zero errors (193+ pages incl. `/admin/trek-data` 6.04 kB, `/datacenter/*`). `npx tsc --noEmit` (mobile) ✅ zero errors. Backend: 665/665 pass, 1 skipped (2 pre-existing `test_refresh.py` failures, unrelated baseline).
+
+---
+
+### Step 73 — TrekSage Bugfix Pass blast radius — Done (2026-06-16)
+
+All changes are additive to Step 72's module. New tables have no existing readers. Modified service functions (`backfill_trek_meta`, `ask_trek_question`, `_get_or_create_compare_summary`, `page_to_profile`) only add/extend params — existing callers unaffected.
+
+| File | Purpose | Blast radius |
+|------|---------|-------------|
+| `services/api/app/modules/trek_intelligence/service.py` | Added `backfill_all_trek_meta`, extended `ask_trek_question` (history/section-grounding), richer `_get_or_create_compare_summary`, `page_to_profile` now populates `content_sections`/`faqs` | LOW — internal callers only, no cross-module callers |
+| `services/api/app/modules/trek_intelligence/treksage_agent.py` (NEW) | Tool-calling chat agent, MAX_TOOL_ROUNDS=3, wraps existing service functions | LOW — new module |
+| `services/api/app/modules/trek_intelligence/models.py` | Added `TreksageChatSession`, `TreksageChatMessage` ORM models | LOW — additive |
+| `services/api/alembic/versions/20260616_0044_step73_treksage_chat.py` (NEW) | `treksage_chat_sessions`, `treksage_chat_messages` tables | LOW — new tables, no existing readers |
+| `services/api/app/schemas/trek_intelligence.py` | Added `ChatTurn`, `BackfillAllTriggerResponse`, `content_sections`/`faqs` to `TrekProfile` | LOW — additive fields; existing consumers of `TrekProfile` unaffected |
+| `services/api/app/api/routes/admin_treks.py` | Added `POST /admin/treks/backfill-all` (static, before `/{slug}/backfill`) | LOW — additive route |
+| `services/api/app/api/routes/treksage.py` (NEW) | `POST /api/v1/treksage/chat`, `GET /api/v1/treksage/chat/{session_key}/history` | LOW — new routes |
+| `services/api/app/worker/tasks/trek_intelligence_tasks.py` | Added `backfill_all_trek_meta_task` (name `trek_intelligence.backfill_all_trek_meta`) | LOW — additive task; **worker restart required** |
+| `services/api/app/db/base.py` | Added `TreksageChatSession`, `TreksageChatMessage` to registry | LOW — additive imports |
+| `services/api/app/api/router.py` | Registered `treksage_router` | LOW — additive include |
+| `apps/web-next/lib/api.ts` | Added `ChatTurn`, `treksageChat`, `fetchTreksageChatHistory`, `triggerTrekBackfillAll`, `BackfillAllTriggerResponse`, `content_sections`/`faqs` to `TrekProfile` | LOW — additive |
+| `apps/web-next/app/(public)/treksage/page.tsx` (NEW) | `/treksage` public AI chat page | LOW — new page |
+| `apps/web-next/app/(public)/treksage/TreksageChat.tsx` (NEW) | Myra-style chat UI component | LOW — new component |
+| `apps/web-next/app/datacenter/page.tsx` | Rewritten as `?slug=` JSON viewer (formerly trek-list only) | LOW — isolated datacenter route |
+| `apps/web-next/app/datacenter/trek-guide/[slug]/page.tsx` | 308 `permanentRedirect` to `/?slug=` | LOW — no callers |
+| `apps/web-next/app/datacenter/trek-guide/[slug]/page.tsx` (extended) | Content-sections/faqs sections added | LOW — isolated datacenter route |
+| `apps/web-next/app/(admin)/admin/trek-data/page.tsx` | Added `handleBackfillAll` + "Backfill All Treks" button | LOW — isolated admin page |
+| `apps/web-next/components/trek/TrekAskAI.tsx` | History built from `exchanges` and sent with each request | LOW — leaf component |
+| `apps/mobile/components/trek/TrekAskAI.tsx` | History built from `exchanges` and sent with each request | LOW — leaf component |
+| `apps/mobile/lib/mobileApi.ts` | Added `MobileChatTurn`, updated `ask()` signature | LOW — additive param |
+| `apps/web-next/app/sitemap.ts` | Added `/treksage` entry | LOW — additive |

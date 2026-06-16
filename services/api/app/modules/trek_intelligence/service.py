@@ -89,7 +89,32 @@ def page_to_profile(page: CMSPage) -> TrekProfile:
         hero_image_url=page.hero_image_url,
         data_confidence=confidence,
         last_verified_at=page.trek_last_verified_at,
+        content_sections=_extract_content_sections(page),
+        faqs=_extract_faqs(page),
     )
+
+
+def _extract_content_sections(page: CMSPage) -> dict[str, str]:
+    """Strip HTML and truncate each section from content_json.sections for MCP/JSON bible."""
+    raw_sections = (page.content_json or {}).get("sections", {})
+    result: dict[str, str] = {}
+    for key, html in (raw_sections or {}).items():
+        if isinstance(html, str):
+            text = re.sub(r"<[^>]+>", " ", html).strip()
+            result[key] = text[:4000]
+    return result
+
+
+def _extract_faqs(page: CMSPage) -> list[dict[str, str]]:
+    """Return FAQ list from content_json.faqs (question + answer dicts)."""
+    raw = (page.content_json or {}).get("faqs")
+    if not isinstance(raw, list):
+        return []
+    return [
+        {"question": str(item.get("question", "")), "answer": str(item.get("answer", ""))}
+        for item in raw
+        if isinstance(item, dict)
+    ]
 
 
 def _cache_get(db: Session, cache_key: str) -> TrekQACache | None:
@@ -193,9 +218,16 @@ def compare_treks(db: Session, slugs: list[str]) -> CompareTreksResponse:
     return CompareTreksResponse(treks=profiles, rows=rows, ai_summary=ai_summary)
 
 
+# Bump this when the compare-summary prompt or its input facts change, so previously
+# cached (shallower) summaries are invalidated without a DB migration.
+_SUMMARY_PROMPT_VERSION = "v2"
+
+
 def _get_or_create_compare_summary(db: Session, profiles: list[TrekProfile]) -> str | None:
     sorted_slugs = sorted(p.slug for p in profiles)
-    cache_key = "compare:" + hashlib.sha256("|".join(sorted_slugs).encode()).hexdigest()[:32]
+    cache_key = "compare:" + hashlib.sha256(
+        f"{_SUMMARY_PROMPT_VERSION}|{'|'.join(sorted_slugs)}".encode()
+    ).hexdigest()[:32]
 
     cached = _cache_get(db, cache_key)
     if cached:
@@ -208,9 +240,13 @@ def _get_or_create_compare_summary(db: Session, profiles: list[TrekProfile]) -> 
     for p in profiles:
         facts_lines.append(
             f"- {p.name} ({p.slug}): difficulty={p.difficulty}, duration={p.duration}, "
-            f"season={p.season}, altitude_ft={p.max_altitude_ft}, "
-            f"budget={p.budget_min}-{p.budget_max} INR, crowd={p.crowd_level}, "
-            f"beginner_friendly={p.beginner_friendly}, family_friendly={p.family_friendly}"
+            f"season={p.season}, best_months={p.best_months}, avoid_months={p.avoid_months}, "
+            f"altitude_ft={p.max_altitude_ft}, "
+            f"permit_required={p.permit_required}, permit_notes={p.permit_notes}, "
+            f"budget={p.budget_min}-{p.budget_max} INR, themes={p.themes}, "
+            f"crowd={p.crowd_level}, "
+            f"beginner_friendly={p.beginner_friendly}, solo_friendly={p.solo_friendly}, "
+            f"family_friendly={p.family_friendly}, suitability={p.suitability}"
         )
 
     try:
@@ -220,10 +256,13 @@ def _get_or_create_compare_summary(db: Session, profiles: list[TrekProfile]) -> 
             max_tokens=300,
             system=(
                 "You are TrekSage, TrekYatra's trek comparison assistant. Given structured "
-                "facts about 2-4 Himalayan treks, write a concise (max 80 words) trade-off "
-                "summary highlighting which trek suits which kind of traveller. Only use the "
-                "facts given — never invent permits, prices, or safety claims. If a fact is "
-                "missing (None), do not mention it."
+                "facts about 2-4 Himalayan treks — including difficulty, duration, season "
+                "and best/avoid months, altitude, permit requirements, budget, themes, crowd "
+                "level, and beginner/solo/family suitability — write a concise (max 80 words) "
+                "trade-off summary weighing ALL of these attributes and highlighting which "
+                "trek suits which kind of traveller. Only use the facts given — never invent "
+                "permits, prices, or safety claims. If a fact is missing (None), do not "
+                "mention it."
             ),
             messages=[{"role": "user", "content": "\n".join(facts_lines)}],
         )
@@ -262,6 +301,25 @@ _QA_RELEVANT_FIELDS: dict[str, list[str]] = {
     "crowd": ["crowd_level"],
 }
 
+# Maps question keywords → content_json section keys (from CMS trek-guide pages).
+# When structured profile fields are missing but CMS section content exists, the section
+# text is used to ground the LLM answer instead of returning the canned "not verified" message.
+_QA_SECTION_KEYWORDS: dict[str, str] = {
+    "pack": "packing",
+    "carry": "packing",
+    "gear": "packing",
+    "clothing": "packing",
+    "itinerary": "itinerary",
+    "day": "itinerary",
+    "route": "itinerary",
+    "safety": "safety",
+    "altitude sickness": "safety",
+    "ams": "safety",
+    "risk": "safety",
+    "faq": "faqs",
+    "frequently asked": "faqs",
+}
+
 
 def _relevant_fields_for_question(question: str) -> list[str]:
     q = question.lower()
@@ -272,7 +330,21 @@ def _relevant_fields_for_question(question: str) -> list[str]:
     return fields
 
 
-def ask_trek_question(db: Session, slug: str, question: str) -> AskTrekQuestionResponse:
+def _matching_section_for_question(question: str) -> str | None:
+    q = question.lower()
+    for keyword, section_key in _QA_SECTION_KEYWORDS.items():
+        if keyword in q:
+            return section_key
+    return None
+
+
+def _strip_html(html: str) -> str:
+    return re.sub(r"<[^>]+>", " ", html).strip()
+
+
+def ask_trek_question(
+    db: Session, slug: str, question: str, history: list | None = None
+) -> AskTrekQuestionResponse:
     page = get_page_by_slug(db, slug)
     if page is None or page.page_type != "trek_guide":
         raise ValueError(f"Trek not found: {slug}")
@@ -286,21 +358,66 @@ def ask_trek_question(db: Session, slug: str, question: str) -> AskTrekQuestionR
         return getattr(profile, field, None) is None
 
     relevant = _relevant_fields_for_question(question)
-    if relevant and all(_is_missing(f) for f in relevant):
+    structured_missing = relevant and all(_is_missing(f) for f in relevant)
+
+    # Check if a CMS section can ground the answer when structured fields are absent.
+    section_text: str | None = None
+    if structured_missing or not relevant:
+        section_key = _matching_section_for_question(question)
+        if section_key:
+            content_json = page.content_json or {}
+            # CMS stores section HTML under content_json["sections"][key]; FAQs under ["faqs"].
+            if section_key == "faqs":
+                raw_section = content_json.get("faqs")
+            else:
+                raw_section = content_json.get("sections", {}).get(section_key)
+            if raw_section:
+                if isinstance(raw_section, str):
+                    section_text = _strip_html(raw_section)[:800]
+                elif isinstance(raw_section, list):
+                    section_text = "; ".join(
+                        str(item.get("question", "")) + ": " + str(item.get("answer", ""))
+                        for item in raw_section
+                    )[:800]
+
+    has_history = bool(history)
+
+    # If neither structured fields nor a matching CMS section has data, return canned message —
+    # but only when there's no conversation history that could supply the answer context.
+    if structured_missing and not section_text and not has_history:
         return AskTrekQuestionResponse(answer=_NOT_VERIFIED_MSG, cached=False, not_verified=True)
 
     normalized_q = re.sub(r"\s+", " ", question.strip().lower())
     cache_key = "qa:" + hashlib.sha256(f"{slug}|{normalized_q}".encode()).hexdigest()[:32]
 
-    cached = _cache_get(db, cache_key)
-    if cached:
-        return AskTrekQuestionResponse(answer=cached.answer_text, cached=True)
+    # Skip cache for history-bearing or section-grounded requests (context is dynamic).
+    if not section_text and not has_history:
+        cached = _cache_get(db, cache_key)
+        if cached:
+            return AskTrekQuestionResponse(answer=cached.answer_text, cached=True)
 
     if not settings.anthropic_api_key:
         return AskTrekQuestionResponse(answer=_NOT_VERIFIED_MSG, cached=False, not_verified=True)
 
     facts = profile.model_dump(exclude={"data_confidence"})
     facts_json = json.dumps({k: v for k, v in facts.items() if v is not None}, default=str)
+
+    # Build the first user message: trek facts context + optional section + the question.
+    first_user_content = f"TREK FACTS: {facts_json}"
+    if section_text:
+        first_user_content += f"\n\nCMS SECTION CONTENT:\n{section_text}"
+    first_user_content += f"\n\nQUESTION: {question}"
+
+    # Thread conversation history (capped at last 6 turns to control token usage).
+    messages: list[dict] = []
+    if has_history:
+        trimmed = (history or [])[-6:]
+        for turn in trimmed:
+            role = turn.role if hasattr(turn, "role") else turn.get("role", "user")
+            content = turn.content if hasattr(turn, "content") else turn.get("content", "")
+            messages.append({"role": role, "content": content})
+
+    messages.append({"role": "user", "content": first_user_content})
 
     try:
         client = get_anthropic_client()
@@ -309,19 +426,21 @@ def ask_trek_question(db: Session, slug: str, question: str) -> AskTrekQuestionR
             max_tokens=250,
             system=(
                 "You are TrekSage, TrekYatra's trek expert assistant. Answer the traveller's "
-                "question about this specific trek using ONLY the JSON facts provided. Keep "
-                "the answer under 80 words, friendly and practical. If the fact needed to "
-                f"answer isn't in the JSON, say: \"{_NOT_VERIFIED_MSG}\" — never invent "
-                "permits, prices, altitudes, or safety claims."
+                "question about this specific trek using ONLY the facts and CMS content "
+                "provided. Keep the answer under 80 words, friendly and practical. If the "
+                f"information needed isn't in the provided content, say: \"{_NOT_VERIFIED_MSG}\" "
+                "— never invent permits, prices, altitudes, or safety claims."
             ),
-            messages=[{"role": "user", "content": f"TREK FACTS: {facts_json}\n\nQUESTION: {question}"}],
+            messages=messages,
         )
         text = response.content[0].text.strip()
     except Exception as exc:
         logger.error("ask_trek_question failed (%s): %s", type(exc).__name__, exc)
         return AskTrekQuestionResponse(answer=_NOT_VERIFIED_MSG, cached=False, not_verified=True)
 
-    _cache_put(db, cache_key, text, _HAIKU_MODEL)
+    # Cache only first-turn (no history, no section text) answers.
+    if not section_text and not has_history:
+        _cache_put(db, cache_key, text, _HAIKU_MODEL)
     return AskTrekQuestionResponse(answer=text, cached=False)
 
 
@@ -473,6 +592,31 @@ def backfill_trek_meta(db: Session, slug: str) -> CMSPage:
     db.commit()
     db.refresh(page)
     return page
+
+
+def backfill_all_trek_meta(db: Session) -> dict:
+    """Run backfill_trek_meta across every published trek_guide, skipping fully-verified treks."""
+    pages = db.scalars(
+        select(CMSPage).where(CMSPage.page_type == "trek_guide", CMSPage.status == "published")
+    ).all()
+
+    processed: list[str] = []
+    skipped: list[str] = []
+    failed: list[dict] = []
+
+    for page in pages:
+        confidence = page.trek_data_confidence or {}
+        if all(confidence.get(field) == "verified" for field in _BACKFILL_FIELDS):
+            skipped.append(page.slug)
+            continue
+        try:
+            backfill_trek_meta(db, page.slug)
+            processed.append(page.slug)
+        except Exception as exc:
+            logger.error("backfill_all_trek_meta failed for %s: %s", page.slug, exc)
+            failed.append({"slug": page.slug, "error": str(exc)})
+
+    return {"processed": processed, "skipped": skipped, "failed": failed}
 
 
 # ── Admin: trek data-quality dashboard ───────────────────────────────────────

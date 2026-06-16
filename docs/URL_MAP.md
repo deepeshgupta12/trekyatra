@@ -16,6 +16,7 @@ Last updated: 2026-05-27 (Step 64)
 | `/explore` | Trek explorer | — | Full grid with filters |
 | `/search` | Search | — | Fuse.js fuzzy + semantic for long queries |
 | `/compare` | Trek comparison | — | Side-by-side compare tool |
+| `/treksage` | TrekSage AI chat assistant | — | Myra-style conversational assistant (code-defined, not CMS); session persisted via `treksage_chat_sessions`; calls `POST /api/v1/treksage/chat`; Step 73 |
 | `/plan` | Trip planning wizard | — | 6-step intent wizard — Step 57 (done) |
 | `/plan/results` | Trek recommendation output | — | Top 5 CMS treks with match scores + lead capture — Step 57 (done) |
 | `/trek/[slug]` | Trek detail | `trek_guide` | CMS-first, static fallback |
@@ -162,8 +163,8 @@ Last updated: 2026-05-27 (Step 64)
 
 | URL Pattern | Page / Endpoint | Notes |
 |-------------|-----------------|-------|
-| `datacenter.trekyatra.co.in/` | Datacenter index | Lists all published trek_guide slugs; `apps/web-next/app/datacenter/page.tsx` |
-| `datacenter.trekyatra.co.in/trek-guide/[slug]` | Full structured `TrekProfile` | Human + AI readable; `apps/web-next/app/datacenter/trek-guide/[slug]/page.tsx`; rewritten from `/trek-guide/[slug]` via host check in `middleware.ts`; `noindex` |
+| `datacenter.trekyatra.co.in/` | Datacenter index + JSON viewer | Shows trek list or, with `?slug=<slug>`, renders the full `TrekProfile` JSON bible (content_sections/faqs included) used by TrekSage MCP; Step 73 |
+| `datacenter.trekyatra.co.in/trek-guide/[slug]` | **308 redirect** to `/?slug=[slug]` | Old route preserved as permanent redirect; Step 73 |
 | `https://api.trekyatra.co.in/mcp` | TrekSage MCP server (Streamable HTTP) | 8 tools: search_treks, get_trek_details, recommend_treks, compare_treks, get_trek_content, ask_trek_question, create_trek_plan_lead, translate_trek_content. Mounted in `app/main.py` |
 
 ## API Routes (FastAPI — via DO ingress /api/)

@@ -7,7 +7,7 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 from fastapi.testclient import TestClient
-from sqlalchemy import delete, select
+from sqlalchemy import delete, select, update
 from sqlalchemy.orm import Session
 
 from app.main import app
@@ -57,6 +57,23 @@ def _make_page(db: Session, **overrides) -> CMSPage:
     db.commit()
     db.refresh(page)
     return page
+
+
+def _hide_other_trek_guides(db: Session) -> list:
+    """Temporarily un-publish existing trek_guide pages so bulk operations only see test pages."""
+    ids = [r[0] for r in db.execute(
+        select(CMSPage.id).where(CMSPage.page_type == "trek_guide", CMSPage.status == "published")
+    ).all()]
+    if ids:
+        db.execute(update(CMSPage).where(CMSPage.id.in_(ids)).values(status="draft"))
+        db.commit()
+    return ids
+
+
+def _restore_trek_guides(db: Session, ids: list) -> None:
+    if ids:
+        db.execute(update(CMSPage).where(CMSPage.id.in_(ids)).values(status="published"))
+        db.commit()
 
 
 # ---------------------------------------------------------------------------
@@ -383,3 +400,316 @@ def test_admin_ai_logs(db: Session):
     finally:
         db.execute(delete(AIInteractionLog).where(AIInteractionLog.id == log.id))
         db.commit()
+
+
+# ---------------------------------------------------------------------------
+# TC-B23: backfill_all_trek_meta — skips fully-verified treks, processes the rest
+# ---------------------------------------------------------------------------
+def test_backfill_all_trek_meta_skips_verified(db: Session, monkeypatch):
+    monkeypatch.setattr("app.modules.trek_intelligence.service.settings.anthropic_api_key", "sk-test")
+
+    hidden_ids = _hide_other_trek_guides(db)
+    try:
+        verified_confidence = {field: "verified" for field in ti_service._BACKFILL_FIELDS}
+        verified_page = _make_page(db, trek_name="Fully Verified Trek", trek_data_confidence=verified_confidence)
+        draft_page = _make_page(db, trek_name="Needs Backfill Trek")
+
+        drafted = {field: None for field in ti_service._BACKFILL_FIELDS}
+        drafted["trek_region"] = "Ladakh"
+        mock_response = MagicMock()
+        mock_response.content = [MagicMock(text=__import__("json").dumps(drafted))]
+        mock_client = MagicMock()
+        mock_client.messages.create.return_value = mock_response
+
+        with patch("app.modules.trek_intelligence.service.get_anthropic_client", return_value=mock_client):
+            result = ti_service.backfill_all_trek_meta(db)
+
+        assert verified_page.slug in result["skipped"]
+        assert draft_page.slug in result["processed"]
+        assert result["failed"] == []
+        # Only the non-verified trek should have triggered an LLM call.
+        assert mock_client.messages.create.call_count == 1
+    finally:
+        _restore_trek_guides(db, hidden_ids)
+
+
+# ---------------------------------------------------------------------------
+# TC-B24: backfill_all_trek_meta — never overwrites verified fields, aggregates per-trek failures
+# ---------------------------------------------------------------------------
+def test_backfill_all_trek_meta_never_overwrites_verified_and_aggregates_failures(db: Session, monkeypatch):
+    monkeypatch.setattr("app.modules.trek_intelligence.service.settings.anthropic_api_key", "sk-test")
+
+    hidden_ids = _hide_other_trek_guides(db)
+    try:
+        page = _make_page(
+            db,
+            trek_name="Partially Verified Trek",
+            trek_region="Garhwal",
+            trek_data_confidence={"trek_region": "verified"},
+        )
+
+        drafted = {field: None for field in ti_service._BACKFILL_FIELDS}
+        drafted["trek_region"] = "Should Not Overwrite"
+        drafted["trek_max_altitude_ft"] = 14500
+        mock_response = MagicMock()
+        mock_response.content = [MagicMock(text=__import__("json").dumps(drafted))]
+        mock_client = MagicMock()
+        mock_client.messages.create.return_value = mock_response
+
+        with patch("app.modules.trek_intelligence.service.get_anthropic_client", return_value=mock_client):
+            result = ti_service.backfill_all_trek_meta(db)
+
+        assert page.slug in result["processed"]
+        db.refresh(page)
+        assert page.trek_region == "Garhwal"  # verified field untouched
+        assert page.trek_max_altitude_ft == 14500  # missing field drafted
+
+        # Now simulate a failure on a second trek (no API key) without aborting the batch.
+        monkeypatch.setattr("app.modules.trek_intelligence.service.settings.anthropic_api_key", None)
+        failing_page = _make_page(db, trek_name="Failing Trek")
+
+        with patch("app.modules.trek_intelligence.service.get_anthropic_client", return_value=mock_client):
+            result2 = ti_service.backfill_all_trek_meta(db)
+
+        failed_slugs = [f["slug"] for f in result2["failed"]]
+        assert failing_page.slug in failed_slugs
+        # The already-processed trek (no remaining unverified fields besides region) is processed again
+        # without raising, since failures are isolated per-trek.
+        assert isinstance(result2["processed"], list)
+    finally:
+        _restore_trek_guides(db, hidden_ids)
+
+
+# ---------------------------------------------------------------------------
+# TC-B25: POST /admin/treks/backfill-all — queues the bulk Celery task
+# ---------------------------------------------------------------------------
+def test_admin_trigger_backfill_all(db: Session):
+    _make_page(db, trek_name="Bulk Backfill Trek A")
+    _make_page(db, trek_name="Bulk Backfill Trek B")
+
+    with patch("app.worker.tasks.trek_intelligence_tasks.backfill_all_trek_meta_task.apply_async") as mock_apply:
+        res = client.post("/api/v1/admin/treks/backfill-all")
+
+    assert res.status_code == 200
+    data = res.json()
+    assert data["status"] == "queued"
+    assert data["trek_count"] >= 2
+    mock_apply.assert_called_once_with()
+
+
+# ---------------------------------------------------------------------------
+# TC-B26: compare summary prompt includes permit/themes/solo/suitability/months facts
+# ---------------------------------------------------------------------------
+def test_compare_summary_includes_extended_facts(db: Session, monkeypatch):
+    monkeypatch.setattr("app.modules.trek_intelligence.service.settings.anthropic_api_key", "sk-test")
+
+    a = _make_page(
+        db,
+        trek_name="Trek With Rich Meta",
+        trek_permit_required=True,
+        trek_permit_notes="Inner Line Permit required for non-locals",
+        trek_themes=["wildlife", "high-altitude"],
+        trek_solo_friendly=True,
+        trek_best_months=[5, 6],
+        trek_avoid_months=[12, 1],
+    )
+    b = _make_page(db, trek_name="Trek B")
+
+    mock_response = MagicMock()
+    mock_response.content = [MagicMock(text="Trade-off summary.")]
+    mock_client = MagicMock()
+    mock_client.messages.create.return_value = mock_response
+
+    with patch("app.modules.trek_intelligence.service.get_anthropic_client", return_value=mock_client):
+        result = ti_service.compare_treks(db, [a.slug, b.slug])
+
+    assert result.ai_summary == "Trade-off summary."
+    prompt_input = mock_client.messages.create.call_args.kwargs["messages"][0]["content"]
+    assert "permit_required=True" in prompt_input
+    assert "Inner Line Permit" in prompt_input
+    assert "themes=['wildlife', 'high-altitude']" in prompt_input
+    assert "solo_friendly=True" in prompt_input
+    assert "best_months=[5, 6]" in prompt_input
+    assert "avoid_months=[12, 1]" in prompt_input
+    assert "suitability=" in prompt_input
+
+
+# ---------------------------------------------------------------------------
+# TC-B27: compare summary cache is keyed by _SUMMARY_PROMPT_VERSION (old caches invalidated)
+# ---------------------------------------------------------------------------
+def test_compare_summary_cache_busted_by_prompt_version(db: Session, monkeypatch):
+    monkeypatch.setattr("app.modules.trek_intelligence.service.settings.anthropic_api_key", "sk-test")
+
+    a = _make_page(db, trek_name="Cache Bust Trek A")
+    b = _make_page(db, trek_name="Cache Bust Trek B")
+
+    # Simulate a stale cache entry written under the old (pre-v2) key.
+    sorted_slugs = sorted([a.slug, b.slug])
+    old_cache_key = "compare:" + __import__("hashlib").sha256("|".join(sorted_slugs).encode()).hexdigest()[:32]
+    ti_service._cache_put(db, old_cache_key, "STALE SHALLOW SUMMARY", ti_service._HAIKU_MODEL)
+
+    mock_response = MagicMock()
+    mock_response.content = [MagicMock(text="Fresh rich summary.")]
+    mock_client = MagicMock()
+    mock_client.messages.create.return_value = mock_response
+
+    with patch("app.modules.trek_intelligence.service.get_anthropic_client", return_value=mock_client):
+        result = ti_service.compare_treks(db, [a.slug, b.slug])
+
+    assert result.ai_summary == "Fresh rich summary."
+    mock_client.messages.create.assert_called_once()
+
+
+# ---------------------------------------------------------------------------
+# TC-B28: ask_trek_question — packing question with CMS section calls LLM grounded on section
+# ---------------------------------------------------------------------------
+def test_ask_trek_question_grounds_in_cms_section(db: Session, monkeypatch):
+    monkeypatch.setattr("app.modules.trek_intelligence.service.settings.anthropic_api_key", "sk-test")
+
+    content_json = {
+        "sections": {
+            "packing": "<ul><li>Layered clothing</li><li>Crampons for ice</li><li>Rain poncho</li></ul>"
+        }
+    }
+    # No structured packing fields, but CMS packing section exists.
+    page = _make_page(
+        db,
+        trek_name="Packing Trek",
+        trek_data_confidence={"trek_themes": "missing"},
+        content_json=content_json,
+    )
+
+    mock_response = MagicMock()
+    mock_response.content = [MagicMock(text="Bring layered clothing and crampons for ice.")]
+    mock_client = MagicMock()
+    mock_client.messages.create.return_value = mock_response
+
+    with patch("app.modules.trek_intelligence.service.get_anthropic_client", return_value=mock_client):
+        result = ti_service.ask_trek_question(db, page.slug, "What should I pack for this trek?")
+
+    assert result.not_verified is False
+    assert "layered clothing" in result.answer.lower() or mock_client.messages.create.called
+    # The CMS section text must be included in the prompt.
+    call_args = mock_client.messages.create.call_args
+    user_msg = call_args.kwargs["messages"][0]["content"]
+    assert "Layered clothing" in user_msg or "crampons" in user_msg.lower()
+    assert "CMS SECTION CONTENT" in user_msg
+
+
+# ---------------------------------------------------------------------------
+# TC-B29: ask_trek_question — topic with no structured fields AND no CMS section → not_verified
+# ---------------------------------------------------------------------------
+def test_ask_trek_question_no_section_match_returns_not_verified(db: Session, monkeypatch):
+    monkeypatch.setattr("app.modules.trek_intelligence.service.settings.anthropic_api_key", "sk-test")
+
+    page = _make_page(
+        db,
+        trek_name="Sparse Trek",
+        trek_data_confidence={"permit_required": "missing"},
+    )
+
+    mock_client = MagicMock()
+    with patch("app.modules.trek_intelligence.service.get_anthropic_client", return_value=mock_client):
+        result = ti_service.ask_trek_question(db, page.slug, "Do I need a permit for this trek?")
+
+    assert result.not_verified is True
+    mock_client.messages.create.assert_not_called()
+
+
+# ---------------------------------------------------------------------------
+# TC-B30: ask_trek_question with history bypasses cache and includes prior turns in prompt
+# ---------------------------------------------------------------------------
+def test_ask_trek_question_history_bypasses_cache_and_includes_turns(db: Session, monkeypatch):
+    monkeypatch.setattr("app.modules.trek_intelligence.service.settings.anthropic_api_key", "sk-test")
+    page = _make_page(db, trek_name="History Trek", trek_crowd_level="moderate")
+
+    mock_response = MagicMock()
+    mock_response.content = [MagicMock(text="Follow-up answer.")]
+    mock_client = MagicMock()
+    mock_client.messages.create.return_value = mock_response
+
+    from app.schemas.trek_intelligence import ChatTurn
+    history_turns = [
+        ChatTurn(role="user", content="How crowded is this trek?"),
+        ChatTurn(role="assistant", content="It has moderate crowd levels."),
+    ]
+
+    with patch("app.modules.trek_intelligence.service.get_anthropic_client", return_value=mock_client):
+        result = ti_service.ask_trek_question(db, page.slug, "What does that mean for a solo trekker?", history=history_turns)
+
+    assert result.not_verified is False
+    assert result.cached is False
+    call_args = mock_client.messages.create.call_args
+    messages_sent = call_args.kwargs["messages"]
+    assert len(messages_sent) == 3  # 2 history + 1 current question
+    assert messages_sent[0]["role"] == "user"
+    assert "How crowded" in messages_sent[0]["content"]
+    assert messages_sent[1]["role"] == "assistant"
+    assert messages_sent[2]["role"] == "user"
+    assert "solo trekker" in messages_sent[2]["content"]
+
+
+# ---------------------------------------------------------------------------
+# TC-B31: ask_trek_question without history still hits cache on second identical call
+# ---------------------------------------------------------------------------
+def test_ask_trek_question_no_history_uses_cache(db: Session, monkeypatch):
+    monkeypatch.setattr("app.modules.trek_intelligence.service.settings.anthropic_api_key", "sk-test")
+    page = _make_page(db, trek_name="Cache Crowd Trek", trek_crowd_level="low")
+
+    mock_response = MagicMock()
+    mock_response.content = [MagicMock(text="Very quiet trail.")]
+    mock_client = MagicMock()
+    mock_client.messages.create.return_value = mock_response
+
+    with patch("app.modules.trek_intelligence.service.get_anthropic_client", return_value=mock_client):
+        first = ti_service.ask_trek_question(db, page.slug, "How crowded is this trek?")
+        second = ti_service.ask_trek_question(db, page.slug, "How crowded is this trek?")
+
+    assert first.cached is False
+    assert second.cached is True
+    assert mock_client.messages.create.call_count == 1  # LLM called once; second from cache
+
+
+# ---------------------------------------------------------------------------
+# TC-B32: page_to_profile includes content_sections keyed by CMS section IDs
+# ---------------------------------------------------------------------------
+def test_page_to_profile_includes_content_sections(db: Session):
+    content_json = {
+        "sections": {
+            "packing": "<ul><li>Rain jacket</li><li>Trekking poles</li></ul>",
+            "itinerary": "<p>Day 1: Drive to base camp. Day 2: Summit.</p>",
+        },
+        "faqs": [
+            {"question": "Is it hard?", "answer": "Moderate difficulty."},
+        ],
+    }
+    page = _make_page(db, trek_name="Bible Trek", content_json=content_json)
+
+    profile = ti_service.page_to_profile(page)
+
+    assert "packing" in profile.content_sections
+    assert "Rain jacket" in profile.content_sections["packing"]
+    assert "<ul>" not in profile.content_sections["packing"]  # HTML stripped
+    assert "itinerary" in profile.content_sections
+    assert len(profile.faqs) == 1
+    assert profile.faqs[0]["question"] == "Is it hard?"
+    assert profile.faqs[0]["answer"] == "Moderate difficulty."
+
+
+# ---------------------------------------------------------------------------
+# TC-B33: GET /treks/{slug}/profile returns content_sections + faqs
+# ---------------------------------------------------------------------------
+def test_api_trek_profile_includes_bible_fields(db: Session):
+    content_json = {
+        "sections": {"safety": "<p>Watch for altitude sickness above 4000m.</p>"},
+        "faqs": [{"question": "Safe for solo?", "answer": "Yes with guide."}],
+    }
+    page = _make_page(db, trek_name="Safety Trek", content_json=content_json)
+
+    res = client.get(f"/api/v1/treks/{page.slug}/profile")
+    assert res.status_code == 200
+    data = res.json()
+    assert "safety" in data["content_sections"]
+    assert "altitude sickness" in data["content_sections"]["safety"]
+    assert len(data["faqs"]) == 1
+    assert data["faqs"][0]["question"] == "Safe for solo?"

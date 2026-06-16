@@ -55,6 +55,7 @@ from app.api.routes.cdp import admin_router as cdp_admin_router
 from app.api.routes.mobile import router as mobile_router
 from app.api.routes.auth_mobile import router as auth_mobile_router
 from app.api.routes.ai_log import router as ai_log_router
+from app.api.routes.treksage import router as treksage_router
 
 api_router = APIRouter()
 api_router.include_router(health_router, tags=["health"])
@@ -67,6 +68,7 @@ api_router.include_router(publish_router)
 api_router.include_router(pipeline_router)
 api_router.include_router(treks_router)
 api_router.include_router(admin_treks_router)
+api_router.include_router(treksage_router)
 api_router.include_router(worker_router)
 api_router.include_router(agent_runs_router)
 api_router.include_router(agent_triggers_router)

@@ -12,6 +12,7 @@ import {
   fetchTrekProfile,
   updateTrekMeta,
   triggerTrekBackfill,
+  triggerTrekBackfillAll,
   fetchAiInteractionLogs,
 } from "@/lib/api";
 
@@ -242,6 +243,7 @@ export default function TrekDataPage() {
   const [loadingLogs, setLoadingLogs] = useState(true);
   const [expandedSlug, setExpandedSlug] = useState<string | null>(null);
   const [backfillingSlug, setBackfillingSlug] = useState<string | null>(null);
+  const [backfillingAll, setBackfillingAll] = useState(false);
   const [feedback, setFeedback] = useState<string | null>(null);
   const [feedbackError, setFeedbackError] = useState(false);
 
@@ -290,6 +292,23 @@ export default function TrekDataPage() {
     }
   }
 
+  async function handleBackfillAll() {
+    setBackfillingAll(true);
+    setFeedback(null);
+    setFeedbackError(false);
+    try {
+      const res = await triggerTrekBackfillAll();
+      setFeedback(
+        `Backfill queued for ${res.trek_count} trek(s). This runs in the background and may take several minutes — reload to see updated coverage.`
+      );
+    } catch (err: unknown) {
+      setFeedback(err instanceof Error ? err.message : "Backfill all failed");
+      setFeedbackError(true);
+    } finally {
+      setBackfillingAll(false);
+    }
+  }
+
   return (
     <div className="space-y-6">
       {/* Header */}
@@ -301,9 +320,15 @@ export default function TrekDataPage() {
           </p>
         </div>
         <div className="flex flex-col gap-2 sm:items-end">
-          <Button variant="outline" size="sm" className="border-white/20 text-white/60 hover:text-white w-fit" onClick={() => { loadRows(); loadLogs(); }}>
-            <RefreshCw className="h-3.5 w-3.5 mr-1.5" /> Reload
-          </Button>
+          <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
+            <Button variant="outline" size="sm" className="border-white/20 text-white/60 hover:text-white w-fit" onClick={() => { loadRows(); loadLogs(); }}>
+              <RefreshCw className="h-3.5 w-3.5 mr-1.5" /> Reload
+            </Button>
+            <Button variant="hero" size="sm" className="w-fit" disabled={backfillingAll} onClick={handleBackfillAll}>
+              <Sparkles className="h-3.5 w-3.5 mr-1.5" />
+              {backfillingAll ? "Queuing…" : "Backfill All Treks"}
+            </Button>
+          </div>
           {feedback && (
             <p className={`text-xs ${feedbackError ? "text-red-400" : "text-pine"}`}>{feedback}</p>
           )}

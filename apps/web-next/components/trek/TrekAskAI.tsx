@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { Sparkles, Send, Info } from "lucide-react";
-import { askTrekQuestion } from "@/lib/api";
+import { askTrekQuestion, ChatTurn } from "@/lib/api";
 
 interface Props {
   slug: string;
@@ -34,7 +34,14 @@ export default function TrekAskAI({ slug, trekName }: Props) {
     setLoading(true);
     setError(null);
     try {
-      const res = await askTrekQuestion(slug, trimmed);
+      // Build conversation history from existing exchanges (last 6 turns).
+      const history: ChatTurn[] = exchanges
+        .slice(-3)
+        .flatMap((ex) => [
+          { role: "user" as const, content: ex.question },
+          { role: "assistant" as const, content: ex.answer },
+        ]);
+      const res = await askTrekQuestion(slug, trimmed, history.length > 0 ? history : undefined);
       setExchanges((prev) => [...prev, { question: trimmed, answer: res.answer, notVerified: res.not_verified }]);
       setQuestion("");
     } catch {

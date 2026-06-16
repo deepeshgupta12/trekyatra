@@ -37,9 +37,11 @@ def _db():
 
 
 def _compact_profile(profile) -> dict[str, Any]:
-    """Trim a TrekProfile to the fields useful for search results (saves tokens)."""
+    """Trim a TrekProfile for search/list results — strips heavy fields to save tokens."""
     data = profile.model_dump(exclude_none=True)
     data.pop("data_confidence", None)
+    data.pop("content_sections", None)
+    data.pop("faqs", None)
     if "seo_description" in data and len(data["seo_description"]) > 200:
         data["seo_description"] = data["seo_description"][:200] + "..."
     return data

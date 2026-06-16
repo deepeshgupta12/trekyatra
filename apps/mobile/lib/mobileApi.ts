@@ -397,6 +397,11 @@ export interface AskTrekQuestionResponse {
   not_verified: boolean;
 }
 
+export interface MobileChatTurn {
+  role: "user" | "assistant";
+  content: string;
+}
+
 export interface TrekComparisonRow {
   field: string;
   label: string;
@@ -410,9 +415,12 @@ export interface CompareTreksResponse {
 }
 
 export const trekIntelligenceApi = {
-  /** Ask TrekSage a question about one trek (Trek Detail Q&A). */
-  ask: (slug: string, question: string) =>
-    apiPost<AskTrekQuestionResponse>(`/api/v1/treks/${slug}/ask`, { question }),
+  /** Ask TrekSage a question about one trek, optionally with conversation history. */
+  ask: (slug: string, question: string, history?: MobileChatTurn[]) =>
+    apiPost<AskTrekQuestionResponse>(`/api/v1/treks/${slug}/ask`, {
+      question,
+      history: history && history.length > 0 ? history : undefined,
+    }),
 
   /** Compare 2-4 trek_guide pages side-by-side with a cached AI trade-off summary. */
   compare: (slugs: string[]) =>

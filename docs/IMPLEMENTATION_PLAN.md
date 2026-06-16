@@ -826,3 +826,26 @@ Spec: `docs/steps/STEP-72-trekyatra-mcp-server.md`. PRD-driven: expose trek data
 **Verification:** 665/665 backend pass, 1 skipped (2 pre-existing `test_refresh.py` failures, unrelated baseline) | `next build` ✅ zero errors | `npx tsc --noEmit` (mobile) ✅ zero errors | `gitnexus_detect_changes(scope:"all")` reviewed, no new HIGH/CRITICAL beyond expected leaf-screen touches.
 
 **Manual/infra follow-ups (user-performed, documented in step doc):** DO domain + GoDaddy CNAME for `datacenter.trekyatra.co.in`; `MCP_SHARED_SECRET` set in DO env; Celery worker restart; ChatGPT/Claude custom connector registration at `https://api.trekyatra.co.in/mcp`.
+
+---
+
+### Step 73 — TrekSage Bugfix Pass [DONE — 2026-06-16]
+
+Spec: `docs/steps/STEP-73-treksage-bugfix-pass.md`. Fixes 7 production bugs identified after Step 72 shipped + adds 2 new surfaces (/treksage AI chat, datacenter JSON viewer).
+
+Root causes fixed:
+- **#1/#5/#6** (compare "—", 0 verified fields, plan card badges): structured trek fields not bulk-populated — new `backfill_all_trek_meta(db)` + Celery task + admin "Backfill All Treks" button.
+- **#2** (shallow compare summary): `_get_or_create_compare_summary` now includes permit/themes/solo/suitability/months in prompt + `_SUMMARY_PROMPT_VERSION = "v2"` cache-bust.
+- **#3** (Ask AI always "not verified"): `ask_trek_question` now grounds answers in `content_json.sections` via `_QA_SECTION_KEYWORDS` map — packing/itinerary/safety/faq questions answered from real CMS HTML.
+- **#4** (no conversational follow-ups): `ChatTurn` + `history` param on `AskTrekQuestionRequest` / `ask_trek_question`; cache skipped for history-bearing requests; web + mobile `TrekAskAI` send last 3 exchange turns.
+
+New surfaces:
+- **Commit 5**: `TrekProfile.content_sections`/`faqs` — full per-trek JSON bible; `_compact_profile` strips for token-light search tools.
+- **Commit 6**: `treksage_chat_sessions`/`treksage_chat_messages` tables; `treksage_agent.py` (Haiku + tool-calling, MAX_TOOL_ROUNDS=3); `POST /api/v1/treksage/chat` + `GET /api/v1/treksage/chat/{session_key}/history`.
+- **Commit 7**: `/treksage` public Myra-style chat page + `sitemap.ts` entry.
+- **Commit 8**: `datacenter/page.tsx` rewritten as `?slug=` JSON viewer; `/trek-guide/[slug]` → 308 `permanentRedirect`.
+- **Commit 9**: Mobile history parity — `MobileChatTurn` + updated `trekIntelligenceApi.ask()`.
+
+**Verification:** 683/685 backend pass (2 pre-existing `test_refresh.py` failures, unrelated) | 18 new tests TC-B23–B40 | `next build` ✅ zero errors (`/treksage` 3.94 kB) | `npx tsc --noEmit` (mobile) ✅ zero errors.
+
+**Manual/infra follow-ups:** `alembic upgrade head` for `20260616_0044`; Celery worker restart; admin clicks "Backfill All Treks" once.

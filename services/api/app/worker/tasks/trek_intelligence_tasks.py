@@ -21,3 +21,15 @@ def backfill_trek_meta_task(self, slug: str) -> dict:
         return {"slug": slug, "status": "error", "error": str(exc)}
     finally:
         db.close()
+
+
+@celery_app.task(bind=True, base=BaseTask, name="trek_intelligence.backfill_all_trek_meta")
+def backfill_all_trek_meta_task(self) -> dict:
+    db = SessionLocal()
+    try:
+        return ti_service.backfill_all_trek_meta(db)
+    except Exception as exc:
+        logger.error("backfill_all_trek_meta_task failed: %s", exc)
+        return {"processed": [], "skipped": [], "failed": [{"slug": "*", "error": str(exc)}]}
+    finally:
+        db.close()

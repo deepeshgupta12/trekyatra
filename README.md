@@ -331,6 +331,22 @@ trekyatra/
 | Mobile Plan tab wired to Plan My Trek wizard (was dead placeholder) | Done |
 | Operator-help fallback lead capture (`POST /leads/operator-help`) | Done |
 
+### TrekSage Bugfix Pass + Conversational AI (Step 73)
+| Feature | Status |
+|---------|--------|
+| Bulk trek data backfill — `backfill_all_trek_meta` + Celery task + admin "Backfill All Treks" button (fixes 0 verified / 805 missing fields across 51 trek guides) | Done |
+| Compare summary richer prompt — permit/themes/solo/suitability/best+avoid months in facts, `_SUMMARY_PROMPT_VERSION="v2"` cache-bust | Done |
+| CMS section grounding for Ask AI — `_QA_SECTION_KEYWORDS` maps packing/itinerary/safety/faq questions → `content_json.sections` keys | Done |
+| Conversational follow-ups — `ChatTurn` history param on `AskTrekQuestionRequest`, last 6 turns in Haiku prompt, cache skipped for history requests | Done |
+| Web + mobile `TrekAskAI` send last 3 exchanges as history for contextual follow-ups | Done |
+| `TrekProfile` expanded to include `content_sections: dict` + `faqs: list` — full per-trek "bible" for MCP consumption | Done |
+| `_compact_profile` strips `content_sections`/`faqs` from search/list/recommend tools (token budget) | Done |
+| `treksage_chat_sessions` + `treksage_chat_messages` tables — persistent anonymous/user session transcript | Done |
+| `treksage_agent.py` — Haiku + tool-calling agent (5 MCP-equivalent tools, MAX_TOOL_ROUNDS=3, session history) | Done |
+| `POST /api/v1/treksage/chat` + `GET /api/v1/treksage/chat/{session_key}/history` | Done |
+| `/treksage` — Myra-style public AI chat page with session persistence (`localStorage` session_key) | Done |
+| `datacenter.trekyatra.co.in?slug=<slug>` — full `TrekProfile` JSON viewer; `/trek-guide/[slug]` → 308 redirect | Done |
+
 ---
 
 ## Local Development Setup
@@ -493,8 +509,9 @@ cd apps/web-next && npm run build
 | Trek intelligence | `GET /api/v1/treks/{slug}/profile`, `POST /api/v1/treks/compare`, `POST /api/v1/treks/{slug}/ask`, `GET /api/v1/treks/{slug}/content` | Public |
 | Operator-help lead | `POST /api/v1/leads/operator-help` | Public |
 | AI interaction logging | `POST /api/v1/ai/log` | Public (fire-and-forget) |
-| Admin trek data | `GET /api/v1/admin/treks/data-quality`, `PATCH /api/v1/admin/treks/{slug}/meta`, `POST /api/v1/admin/treks/{slug}/backfill`, `GET /api/v1/admin/treks/ai-logs` | Admin auth required |
+| Admin trek data | `GET /api/v1/admin/treks/data-quality`, `PATCH /api/v1/admin/treks/{slug}/meta`, `POST /api/v1/admin/treks/{slug}/backfill`, `POST /api/v1/admin/treks/backfill-all`, `GET /api/v1/admin/treks/ai-logs` | Admin auth required |
 | "TrekSage" MCP server | `https://api.trekyatra.co.in/mcp` (Streamable HTTP, 8 tools) | Read-only tools open; `create_trek_plan_lead`/`translate_trek_content` require `X-MCP-Key` |
+| TrekSage conversational AI | `POST /api/v1/treksage/chat`, `GET /api/v1/treksage/chat/{session_key}/history` | Public (anonymous session auto-created; user auth optional for linked history) |
 
 Full API docs available at http://localhost:8000/docs when the backend is running.
 
@@ -523,6 +540,7 @@ Full API docs available at http://localhost:8000/docs when the backend is runnin
 | Trek metadata (on cms_pages) | `trek_state`, `trek_name`, `trek_difficulty`, `trek_duration`, `trek_season`, `trek_suitability` |
 | Trek intelligence (Step 72, on cms_pages) | `trek_region`, `trek_max_altitude_ft`, `trek_duration_days_min/max`, `trek_best/open/avoid_months`, `trek_permit_required/notes`, `trek_budget_min/max`, `trek_themes`, `trek_crowd_level`, `trek_beginner/solo/family_friendly`, `trek_operator_available`, `trek_is_unsafe_closed`, `trek_data_confidence`, `trek_last_verified_at` |
 | AI logging + Q&A cache (Step 72) | `ai_interaction_logs`, `trek_qa_cache`; `lead_submissions.details_json` (operator-help fields) |
+| TrekSage chat (Step 73) | `treksage_chat_sessions` (id, user_id nullable FK, session_key unique, created_at, last_active_at), `treksage_chat_messages` (id, session_id FK cascade, role, content, tool_calls_json, created_at) |
 | CDP (Step 64) | `analytics_events`, `analytics_sessions`, `user_traits`, `attribution_touchpoints`, `gsc_performance` |
 
 ---
@@ -588,6 +606,7 @@ Full API docs available at http://localhost:8000/docs when the backend is runnin
 | **bugfix — Voice search crash on mic tap** | `handleMicPress` in `/browse/search` wrapped in `try/catch` — native errors from `expo-speech-recognition` (M07b) no longer crash the app; if voice still doesn't start, dev-client needs a rebuild to compile in the M07b native module | Done — 2026-06-15 |
 | **Step M-DS8 — Glass UI Overhaul** | New `GlassSurface` primitive (`expo-glass-effect` Liquid Glass on iOS 26+, `expo-blur` frosted elsewhere) + `glassTint`/`glassBorder`/`glassOverlay` theme tokens; app-wide pass across tab bar/sticky bars, home/browse/trek-detail surfaces, and auth screens; both new native modules require a dev-client rebuild | Done — 2026-06-15 |
 | **Step 72 — "TrekSage" MCP Server + Trek Intelligence Data Layer + Datacenter Subdomain** | 16 new `cms_pages.trek_*` structured fields, refined deterministic matching (real budget/season scoring, hard exclusion of unsafe/closed + avoid-month treks), Trek Detail Ask AI Q&A (web + mobile, Haiku, DB-cached), Compare page backend wiring + AI trade-off summary, "TrekSage" MCP server (8 tools at `/mcp`), `datacenter.trekyatra.co.in/trek-guide/[slug]`, admin trek data-quality dashboard, AI interaction logging, mobile Plan tab wiring, operator-help fallback lead | Done — 2026-06-15 |
+| **Step 73 — TrekSage Bugfix Pass + Conversational AI** | Bulk trek data backfill (fixes 0 verified / 805 missing fields, compare "—" rows, plan card empty badges); CMS-section grounding for Ask AI (packing/itinerary/safety/faq questions answered from real `content_json.sections`); conversational follow-ups via `history` param (web + mobile); richer compare AI summary (`_SUMMARY_PROMPT_VERSION="v2"` cache-bust); `TrekProfile` expanded with `content_sections`+`faqs`; new `treksage_chat_sessions`/`treksage_chat_messages` tables; `treksage_agent.py` (Haiku + tool-calling, 5 tools, MAX_TOOL_ROUNDS=3); `/treksage` Myra-style chat page; datacenter rewritten as `?slug=` JSON viewer with 308 redirect from `/trek-guide/[slug]`; 18 new tests (683/685 pass) | Done — 2026-06-16 |
 
 ## Production Infrastructure
 

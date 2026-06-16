@@ -40,6 +40,8 @@ class TrekProfile(BaseModel):
     hero_image_url: str | None = None
     data_confidence: dict[str, str] = Field(default_factory=dict)
     last_verified_at: datetime | None = None
+    content_sections: dict[str, str] = Field(default_factory=dict)
+    faqs: list[dict[str, str]] = Field(default_factory=list)
 
 
 class CompareTreksRequest(BaseModel):
@@ -58,8 +60,14 @@ class CompareTreksResponse(BaseModel):
     ai_summary: str | None = None
 
 
+class ChatTurn(BaseModel):
+    role: str  # "user" or "assistant"
+    content: str
+
+
 class AskTrekQuestionRequest(BaseModel):
     question: str = Field(min_length=3, max_length=500)
+    history: list[ChatTurn] | None = None
 
 
 class AskTrekQuestionResponse(BaseModel):
@@ -153,3 +161,8 @@ class AIInteractionLogResponse(BaseModel):
 class BackfillTriggerResponse(BaseModel):
     slug: str
     status: str
+
+
+class BackfillAllTriggerResponse(BaseModel):
+    status: str
+    trek_count: int

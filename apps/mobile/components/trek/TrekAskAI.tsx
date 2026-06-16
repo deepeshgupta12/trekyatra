@@ -2,7 +2,7 @@ import { useState } from "react";
 import { View, Text, TextInput, TouchableOpacity, ActivityIndicator, StyleSheet } from "react-native";
 import { useTheme } from "@/hooks/useTheme";
 import { GlassSurface } from "@/components/ui/GlassSurface";
-import { trekIntelligenceApi } from "@/lib/mobileApi";
+import { trekIntelligenceApi, MobileChatTurn } from "@/lib/mobileApi";
 
 interface Props {
   slug: string;
@@ -35,7 +35,13 @@ export function TrekAskAI({ slug, trekName }: Props) {
     setLoading(true);
     setError(null);
     try {
-      const res = await trekIntelligenceApi.ask(slug, trimmed);
+      const history: MobileChatTurn[] = exchanges
+        .slice(-3)
+        .flatMap((ex): MobileChatTurn[] => [
+          { role: "user", content: ex.question },
+          { role: "assistant", content: ex.answer },
+        ]);
+      const res = await trekIntelligenceApi.ask(slug, trimmed, history.length > 0 ? history : undefined);
       setExchanges((prev) => [...prev, { question: trimmed, answer: res.answer, notVerified: res.not_verified }]);
       setQuestion("");
     } catch {

@@ -3,8 +3,9 @@ from __future__ import annotations
 import uuid
 from datetime import datetime
 
-from sqlalchemy import DateTime, JSON, String, Text
-from sqlalchemy.orm import Mapped, mapped_column
+from sqlalchemy import DateTime, ForeignKey, JSON, String, Text
+from sqlalchemy.dialects.postgresql import UUID
+from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.db.base_class import Base, UUIDPrimaryKeyMixin
 
@@ -40,3 +41,31 @@ class TrekQACache(UUIDPrimaryKeyMixin, Base):
     answer_text: Mapped[str] = mapped_column(Text, nullable=False)
     model: Mapped[str | None] = mapped_column(String(50), nullable=True)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+
+
+class TreksageChatSession(UUIDPrimaryKeyMixin, Base):
+    """Step 73: persisted conversation session for the /treksage chat page."""
+
+    __tablename__ = "treksage_chat_sessions"
+
+    user_id: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True), nullable=True, index=True)
+    session_key: Mapped[str] = mapped_column(String(64), nullable=False, unique=True, index=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    last_active_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    messages: Mapped[list["TreksageChatMessage"]] = relationship("TreksageChatMessage", back_populates="session", order_by="TreksageChatMessage.created_at")
+
+
+class TreksageChatMessage(UUIDPrimaryKeyMixin, Base):
+    """Step 73: one turn in a /treksage conversation — persists tool calls for analytics."""
+
+    __tablename__ = "treksage_chat_messages"
+
+    session_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("treksage_chat_sessions.id", ondelete="CASCADE"),
+        nullable=False, index=True,
+    )
+    role: Mapped[str] = mapped_column(String(16), nullable=False)
+    content: Mapped[str] = mapped_column(Text, nullable=False)
+    tool_calls_json: Mapped[dict | None] = mapped_column(JSON, nullable=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    session: Mapped["TreksageChatSession"] = relationship("TreksageChatSession", back_populates="messages")

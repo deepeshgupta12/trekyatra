@@ -154,7 +154,7 @@ def ask_trek_question(
 ) -> AskTrekQuestionResponse:
     """Step 72: Trek Detail Q&A — cached, Haiku-backed, never invents facts."""
     try:
-        return trek_intel_service.ask_trek_question(db, slug, payload.question)
+        return trek_intel_service.ask_trek_question(db, slug, payload.question, history=payload.history)
     except ValueError as exc:
         raise HTTPException(status_code=404, detail=str(exc))
 

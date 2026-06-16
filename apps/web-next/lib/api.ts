@@ -2185,6 +2185,8 @@ export interface TrekProfile {
   hero_image_url: string | null;
   data_confidence: Record<string, string>;
   last_verified_at: string | null;
+  content_sections: Record<string, string>;
+  faqs: Array<{ question: string; answer: string }>;
 }
 
 /** Fetch the full structured TrekSage profile for one trek_guide page. Returns null if not found. */
@@ -2202,12 +2204,21 @@ export interface AskTrekQuestionResponse {
   not_verified: boolean;
 }
 
-/** Ask TrekSage a question about one trek (Trek Detail Q&A). */
-export async function askTrekQuestion(slug: string, question: string): Promise<AskTrekQuestionResponse> {
+export interface ChatTurn {
+  role: "user" | "assistant";
+  content: string;
+}
+
+/** Ask TrekSage a question about one trek, optionally with conversation history. */
+export async function askTrekQuestion(
+  slug: string,
+  question: string,
+  history?: ChatTurn[]
+): Promise<AskTrekQuestionResponse> {
   const res = await fetch(`/api/v1/treks/${slug}/ask`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ question }),
+    body: JSON.stringify({ question, history: history ?? undefined }),
   });
   if (!res.ok) {
     const body = await res.json().catch(() => ({}));
@@ -2306,6 +2317,64 @@ export interface BackfillTriggerResponse {
 /** Admin: queue an AI draft of missing structured fields for one trek. */
 export async function triggerTrekBackfill(slug: string): Promise<BackfillTriggerResponse> {
   const res = await fetch(`${apiBase}/api/v1/admin/treks/${slug}/backfill`, {
+    method: "POST",
+    credentials: "include",
+  });
+  if (!res.ok) {
+    const body = await res.json().catch(() => ({}));
+    throw new Error((body as { detail?: string }).detail ?? `Failed (${res.status})`);
+  }
+  return res.json();
+}
+
+// ── TrekSage chat ─────────────────────────────────────────────────────────────
+
+export interface TreksageChatResponse {
+  session_key: string;
+  reply: string;
+  tool_calls: Array<{ tool: string; input: unknown; result: unknown }>;
+}
+
+export interface TreksageChatHistoryItem {
+  role: "user" | "assistant";
+  content: string;
+}
+
+export async function treksageChat(
+  message: string,
+  sessionKey?: string
+): Promise<TreksageChatResponse> {
+  const res = await fetch(`${apiBase}/api/v1/treksage/chat`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    credentials: "include",
+    body: JSON.stringify({ message, session_key: sessionKey ?? undefined }),
+  });
+  if (!res.ok) {
+    const body = await res.json().catch(() => ({}));
+    throw new Error((body as { detail?: string }).detail ?? `Failed (${res.status})`);
+  }
+  return res.json();
+}
+
+export async function fetchTreksageChatHistory(sessionKey: string): Promise<TreksageChatHistoryItem[]> {
+  const res = await fetch(`${apiBase}/api/v1/treksage/chat/${sessionKey}/history`, {
+    credentials: "include",
+  });
+  if (!res.ok) return [];
+  return res.json();
+}
+
+// ── Admin backfill all ─────────────────────────────────────────────────────────
+
+export interface BackfillAllTriggerResponse {
+  status: string;
+  trek_count: number;
+}
+
+/** Admin: queue an AI draft of missing structured fields across every published trek guide. */
+export async function triggerTrekBackfillAll(): Promise<BackfillAllTriggerResponse> {
+  const res = await fetch(`${apiBase}/api/v1/admin/treks/backfill-all`, {
     method: "POST",
     credentials: "include",
   });

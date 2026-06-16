@@ -8,6 +8,7 @@ from app.modules.auth.dependencies import get_current_admin
 from app.modules.trek_intelligence import service as ti_service
 from app.schemas.trek_intelligence import (
     AIInteractionLogResponse,
+    BackfillAllTriggerResponse,
     BackfillTriggerResponse,
     TrekDataQualityRow,
     TrekMetaPatch,
@@ -53,6 +54,23 @@ def patch_trek_meta(slug: str, body: TrekMetaPatch, db: Session = Depends(get_db
         return ti_service.update_trek_meta(db, slug, body)
     except ValueError as exc:
         raise HTTPException(status_code=404, detail=str(exc))
+
+
+@router.post("/backfill-all", response_model=BackfillAllTriggerResponse, dependencies=[_admin])
+def trigger_trek_backfill_all(db: Session = Depends(get_db)) -> BackfillAllTriggerResponse:
+    """Step 73: queue an AI draft of missing structured fields across every published trek_guide."""
+    from app.modules.cms.models import CMSPage
+    from app.worker.tasks.trek_intelligence_tasks import backfill_all_trek_meta_task
+    from sqlalchemy import func, select
+
+    trek_count = db.scalar(
+        select(func.count())
+        .select_from(CMSPage)
+        .where(CMSPage.page_type == "trek_guide", CMSPage.status == "published")
+    ) or 0
+
+    backfill_all_trek_meta_task.apply_async()
+    return BackfillAllTriggerResponse(status="queued", trek_count=trek_count)
 
 
 @router.post("/{slug}/backfill", response_model=BackfillTriggerResponse, dependencies=[_admin])
