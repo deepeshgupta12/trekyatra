@@ -562,20 +562,38 @@ def backfill_trek_meta(db: Session, slug: str) -> CMSPage:
     client = get_anthropic_client()
     response = client.messages.create(
         model=_HAIKU_MODEL,
-        max_tokens=400,
+        max_tokens=600,
         system=(
             "You are a trek-data analyst for TrekYatra. From the JSON page content below, "
             "draft the following structured fields as a single JSON object with these exact "
-            f"keys: {', '.join(_BACKFILL_FIELDS)}. Use null for any field you cannot confidently "
-            "infer. trek_best_months/open_months/avoid_months are lists of month numbers (1-12). "
-            "trek_themes is a list of short strings. Return ONLY the JSON object, no markdown."
+            f"keys: {', '.join(_BACKFILL_FIELDS)}. "
+            "Field format rules (MUST follow):\n"
+            "- trek_best_months / trek_open_months / trek_avoid_months: lists of integers 1-12 (month numbers)\n"
+            "- trek_themes: list of short lowercase strings (e.g. [\"snow\", \"forest\", \"camping\"])\n"
+            "- trek_crowd_level: MUST be one of exactly: \"low\", \"medium\", \"high\" — "
+            "estimate from trek popularity/difficulty/accessibility (popular easy treks = high, "
+            "remote technical treks = low)\n"
+            "- trek_budget_min / trek_budget_max: integers in INR per person total trip cost "
+            "(NOT null — ALWAYS estimate based on difficulty/duration/region if not stated; "
+            "e.g. easy 3-day weekender ≈ 3000-8000, moderate 5-7 day Himalayan ≈ 8000-20000, "
+            "difficult/remote week+ ≈ 15000-40000, high-altitude technical ≈ 20000-50000)\n"
+            "- trek_permit_required: boolean\n"
+            "- All other fields: use null only if truly cannot infer\n"
+            "Return ONLY the JSON object, no markdown, no explanation."
         ),
         messages=[{"role": "user", "content": source_text}],
     )
     raw = response.content[0].text.strip()
     if raw.startswith("```"):
         raw = raw.split("\n", 1)[1].rsplit("```", 1)[0].strip()
-    drafted = json.loads(raw)
+    try:
+        drafted = json.loads(raw)
+    except json.JSONDecodeError:
+        # Truncated response — attempt partial parse by closing the JSON object
+        try:
+            drafted = json.loads(raw + "}")
+        except json.JSONDecodeError:
+            raise ValueError(f"backfill_trek_meta: LLM returned unparseable JSON for {slug}: {raw[:200]}")
 
     for field in _BACKFILL_FIELDS:
         if field not in drafted:
