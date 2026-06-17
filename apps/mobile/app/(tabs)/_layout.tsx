@@ -24,6 +24,13 @@ export default function TabLayout() {
         }}
       />
       <Tabs.Screen
+        name="treksage"
+        options={{
+          title: "TrekSage",
+          tabBarAccessibilityLabel: "TrekSage AI assistant",
+        }}
+      />
+      <Tabs.Screen
         name="plan"
         options={{
           title: "Plan",

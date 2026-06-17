@@ -27,11 +27,13 @@ def get_trek_data_quality(db: Session = Depends(get_db)) -> list[TrekDataQuality
 
 @router.get("/ai-logs", response_model=list[AIInteractionLogResponse], dependencies=[_admin])
 def get_ai_interaction_logs(
-    limit: int = Query(default=50, ge=1, le=200),
+    limit: int = Query(default=100, ge=1, le=500),
+    source: str | None = Query(default=None, description="Filter by source: web, mobile, chatgpt, claude"),
+    tool_name: str | None = Query(default=None, description="Filter by tool name"),
     db: Session = Depends(get_db),
 ) -> list[AIInteractionLogResponse]:
-    """Step 72: recent TrekSage / MCP tool usage across web, mobile, ChatGPT, Claude."""
-    logs = ti_service.list_ai_interaction_logs(db, limit=limit)
+    """Step 76: recent TrekSage / MCP tool usage with optional source/tool_name filter."""
+    logs = ti_service.list_ai_interaction_logs(db, limit=limit, source=source, tool_name=tool_name)
     return [
         AIInteractionLogResponse(
             id=str(log.id),

@@ -8,7 +8,7 @@ import {
   LayoutDashboard, Search, Layers, FileText, CheckSquare, Link2,
   DollarSign, BarChart2, Terminal, Settings, ChevronRight, Menu, X,
   GitBranch, Bot, GitMerge, Database, LogOut, Users, RefreshCw, Swords, Mail, Building2, Globe, Workflow, TrendingUp,
-  Package, ShoppingBag, Activity, Filter, Webhook, Mountain,
+  Package, ShoppingBag, Activity, Filter, Webhook, Mountain, MessageSquare,
 } from "lucide-react";
 import { adminLogout } from "@/lib/admin-auth-api";
 
@@ -65,6 +65,7 @@ const NAV_GROUPS = [
     items: [
       { href: "/admin/cms", label: "Master CMS", icon: Database },
       { href: "/admin/trek-data", label: "Trek Data", icon: Mountain },
+      { href: "/admin/treksage-logs", label: "TrekSage Logs", icon: MessageSquare },
       { href: "/admin/logs", label: "Agent Logs", icon: Terminal },
       { href: "/admin/settings", label: "Settings", icon: Settings },
     ],

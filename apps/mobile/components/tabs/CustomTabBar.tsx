@@ -70,7 +70,7 @@ export function CustomTabBar({ state, descriptors, navigation }: TabBarProps) {
         if (options.href === null) return null;
         if (route.name === "downloads") return null;
         const isFocused = state.index === index;
-        const isCenter = route.name === "plan";
+        const isCenter = route.name === "treksage";
 
         function onPress() {
           const event = navigation.emit({
@@ -115,7 +115,7 @@ export function CustomTabBar({ state, descriptors, navigation }: TabBarProps) {
                   elevation: 8,
                 }}
               >
-                <Ionicons name="sparkles" size={24} color="#ffffff" />
+                <Ionicons name="chatbubbles" size={22} color="#ffffff" />
               </TouchableOpacity>
             </View>
           );
@@ -168,6 +168,8 @@ function getIconName(
       return focused ? "home" : "home-outline";
     case "browse":
       return focused ? "compass" : "compass-outline";
+    case "plan":
+      return focused ? "sparkles" : "sparkles-outline";
     case "saved":
       return focused ? "bookmark" : "bookmark-outline";
     case "account":
@@ -183,6 +185,8 @@ function getLabelText(routeName: string): string {
       return "Home";
     case "browse":
       return "Explore";
+    case "treksage":
+      return "TrekSage";
     case "plan":
       return "Plan";
     case "saved":

@@ -685,7 +685,15 @@ def update_trek_meta(db: Session, slug: str, patch: "TrekMetaPatch") -> TrekProf
 
 # ── Admin: AI interaction log viewer ─────────────────────────────────────────
 
-def list_ai_interaction_logs(db: Session, limit: int = 50) -> list[AIInteractionLog]:
-    return list(db.scalars(
-        select(AIInteractionLog).order_by(AIInteractionLog.created_at.desc()).limit(limit)
-    ).all())
+def list_ai_interaction_logs(
+    db: Session,
+    limit: int = 50,
+    source: str | None = None,
+    tool_name: str | None = None,
+) -> list[AIInteractionLog]:
+    stmt = select(AIInteractionLog).order_by(AIInteractionLog.created_at.desc())
+    if source:
+        stmt = stmt.where(AIInteractionLog.source == source)
+    if tool_name:
+        stmt = stmt.where(AIInteractionLog.tool_name == tool_name)
+    return list(db.scalars(stmt.limit(limit)).all())

@@ -3,10 +3,12 @@
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
-import { Send, Mountain, MapPin, RefreshCw } from "lucide-react";
+import { Send, Mountain, MapPin, RefreshCw, Headphones } from "lucide-react";
 import ReactMarkdown, { type Components } from "react-markdown";
 import remarkGfm from "remark-gfm";
 import { treksageChat, fetchTreksageChatHistory } from "@/lib/api";
+import PlanWizard from "@/components/treksage/PlanWizard";
+import LeadCaptureModal from "@/components/treksage/LeadCaptureModal";
 
 const SESSION_KEY_STORAGE = "treksage_session_key";
 
@@ -241,6 +243,8 @@ export default function TreksageChat() {
   const [loadingHistory, setLoadingHistory] = useState(true);
   const [activeTab, setActiveTab] = useState<TabType>("Discover");
   const [loadingMsg, setLoadingMsg] = useState(LOADING_MESSAGES[0]);
+  const [showWizard, setShowWizard] = useState(false);
+  const [showLeadModal, setShowLeadModal] = useState(false);
   const bottomRef = useRef<HTMLDivElement>(null);
   const loadingTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
@@ -311,6 +315,16 @@ export default function TreksageChat() {
   }
 
   return (
+    <>
+    {showWizard && (
+      <PlanWizard
+        onComplete={(prompt) => { setShowWizard(false); send(prompt); }}
+        onClose={() => setShowWizard(false)}
+      />
+    )}
+    {showLeadModal && (
+      <LeadCaptureModal onClose={() => setShowLeadModal(false)} />
+    )}
     <div className="flex flex-col h-[calc(100vh-120px)] min-h-[560px] max-h-[880px] bg-[#FAF5EE] rounded-2xl overflow-hidden border border-[#1D3A2E]/10 shadow-xl">
 
       {/* ── Header ── */}
@@ -403,6 +417,15 @@ export default function TreksageChat() {
                   </button>
                 ))}
               </div>
+              {/* Guided wizard CTA — only on Plan tab */}
+              {activeTab === "Plan" && (
+                <button
+                  onClick={() => setShowWizard(true)}
+                  className="mt-3 w-full flex items-center justify-center gap-2 px-4 py-3 rounded-xl bg-[#1D3A2E] text-white text-sm font-semibold hover:bg-[#1D3A2E]/90 transition-colors shadow-sm"
+                >
+                  🗺 Use Guided Planner (7-step)
+                </button>
+              )}
             </div>
           </div>
 
@@ -488,6 +511,20 @@ export default function TreksageChat() {
           </button>
         </form>
       </div>
+
+      {/* ── Expert help CTA — shown after any conversation ── */}
+      {messages.length > 0 && !loading && (
+        <div className="bg-[#1D3A2E]/4 border-t border-[#1D3A2E]/8 px-4 py-2.5 flex-shrink-0 flex items-center justify-between gap-3">
+          <p className="text-[#1D3A2E]/50 text-xs">Want personalised help from a trek specialist?</p>
+          <button
+            onClick={() => setShowLeadModal(true)}
+            className="flex items-center gap-1.5 text-xs font-semibold text-[#E8702A] hover:text-[#d4621f] transition-colors flex-shrink-0"
+          >
+            <Headphones className="h-3.5 w-3.5" /> Get Expert Help
+          </button>
+        </div>
+      )}
     </div>
+    </>
   );
 }

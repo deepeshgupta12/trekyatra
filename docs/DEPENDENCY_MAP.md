@@ -1876,3 +1876,24 @@ All changes are additive to Step 72's module. New tables have no existing reader
 | `apps/web-next/lib/api.ts` | `TreksageChatResponse.trek_cards` extended with `season` + `max_altitude_ft` | LOW — additive fields; no existing consumers read these keys |
 | `apps/web-next/package.json` | `remark-gfm@4.0.1` added | LOW — new dev/frontend dependency |
 | `apps/mobile/app/(tabs)/browse/search.tsx` | `Constants.appOwnership === "expo"` Expo Go check + `Alert.alert` in `handleMicPress`; improved catch block | LOW — `gitnexus_impact(handleMicPress, upstream)` = 0 upstream callers |
+
+### Step 76 — TrekSage V1 Completion + V2 Features blast radius — Done (2026-06-17)
+
+Impact analysis ran on `get_ai_interaction_logs` (LOW, 0 callers), `SiteLayout` (LOW, 0 callers), `CustomTabBar` (LOW, 0 callers).
+
+| File | Change | Blast radius |
+|------|--------|-------------|
+| `services/api/app/modules/trek_intelligence/service.py` | `list_ai_interaction_logs`: added `source`/`tool_name` filter params (backward-compatible defaults None) | LOW — only called from `admin_treks.py` |
+| `services/api/app/api/routes/admin_treks.py` | `GET /api/v1/admin/treks/ai-logs` — added `source`/`tool_name` Query params, default limit 100 | LOW — admin-only endpoint, no frontend consumer broke (lib/api.ts updated in same step) |
+| `apps/web-next/components/treksage/TrekSageWidget.tsx` (NEW) | Global floating chat widget — pine FAB + compact drawer, `treksage_widget_session` localStorage key | LOW — new leaf component added to SiteLayout |
+| `apps/web-next/components/treksage/PlanWizard.tsx` (NEW) | 7-step guided planner modal, calls `onComplete(prompt)` callback | LOW — new component, no external callers |
+| `apps/web-next/components/treksage/LeadCaptureModal.tsx` (NEW) | Lead capture form → `POST /api/v1/leads/operator-help` | LOW — new component, uses existing endpoint |
+| `apps/web-next/components/layout/SiteLayout.tsx` | Added `<TrekSageWidget />` import + render | LOW — `gitnexus_impact(SiteLayout, upstream)` = 0 direct callers |
+| `apps/web-next/app/(public)/treksage/TreksageChat.tsx` | Added `showWizard`/`showLeadModal` state, PlanWizard + LeadCaptureModal imports, Plan tab wizard CTA, "Get Expert Help" bar | LOW — leaf page component |
+| `apps/web-next/lib/api.ts` | `fetchAiInteractionLogs`: added `source`/`toolName` params | LOW — additive; only consumer is new `/admin/treksage-logs/page.tsx` |
+| `apps/web-next/app/(admin)/admin/treksage-logs/page.tsx` (NEW) | Admin AI logs dashboard — source/tool filter, KPI row, table | LOW — new admin page |
+| `apps/web-next/app/(admin)/admin/layout.tsx` | Added `MessageSquare` import + "TrekSage Logs" nav item | LOW — additive sidebar entry |
+| `apps/mobile/app/(tabs)/treksage.tsx` (NEW) | Mobile TrekSage chat screen — full conversational UI, AsyncStorage session | LOW — new screen |
+| `apps/mobile/app/(tabs)/_layout.tsx` | Added `<Tabs.Screen name="treksage">` between browse and plan | LOW — additive tab registration |
+| `apps/mobile/components/tabs/CustomTabBar.tsx` | `isCenter` → `treksage`; center icon `chatbubbles`; Plan icon `sparkles`/`sparkles-outline` | LOW — `gitnexus_impact(CustomTabBar, upstream)` = 0 upstream callers |
+| `apps/mobile/lib/mobileApi.ts` | Added TrekSage interfaces + `treksageChatMobile()` + `fetchTreksageHistoryMobile()` | LOW — additive; no existing callers |

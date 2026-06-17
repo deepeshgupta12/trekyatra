@@ -2408,9 +2408,16 @@ export interface AIInteractionLogEntry {
   created_at: string;
 }
 
-/** Admin: recent TrekSage / MCP tool usage across web, mobile, ChatGPT, Claude. */
-export async function fetchAiInteractionLogs(limit = 50): Promise<AIInteractionLogEntry[]> {
-  const res = await fetch(`${apiBase}/api/v1/admin/treks/ai-logs?limit=${limit}`, { credentials: "include" });
+/** Admin: recent TrekSage / MCP tool usage with optional source/tool_name filter. */
+export async function fetchAiInteractionLogs(
+  limit = 100,
+  source?: string,
+  toolName?: string,
+): Promise<AIInteractionLogEntry[]> {
+  const params = new URLSearchParams({ limit: String(limit) });
+  if (source) params.set("source", source);
+  if (toolName) params.set("tool_name", toolName);
+  const res = await fetch(`${apiBase}/api/v1/admin/treks/ai-logs?${params}`, { credentials: "include" });
   if (!res.ok) throw new Error(`API ${res.status}`);
   return res.json();
 }

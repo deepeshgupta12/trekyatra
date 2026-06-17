@@ -450,3 +450,55 @@ export const trekIntelligenceApi = {
   compare: (slugs: string[]) =>
     apiPost<CompareTreksResponse>("/api/v1/treks/compare", { slugs }),
 };
+
+// ── TrekSage conversational AI ────────────────────────────────────────────────
+
+export interface TreksageMobileTrekCard {
+  slug: string;
+  name: string;
+  state: string | null;
+  difficulty: string | null;
+  duration: string | null;
+  season: string | null;
+  max_altitude_ft: number | null;
+  budget_min: number | null;
+  budget_max: number | null;
+  hero_image_url: string | null;
+}
+
+export interface TreksageMobileChatResponse {
+  session_key: string;
+  reply: string;
+  tool_calls: Record<string, unknown>[];
+  trek_cards: TreksageMobileTrekCard[];
+}
+
+export interface TreksageMobileMessage {
+  role: "user" | "assistant";
+  content: string;
+}
+
+export async function treksageChatMobile(
+  message: string,
+  sessionKey?: string,
+): Promise<TreksageMobileChatResponse> {
+  const res = await fetch(`${API_BASE}/api/v1/treksage/chat`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ message, session_key: sessionKey }),
+  });
+  if (!res.ok) throw new Error(`TrekSage API ${res.status}`);
+  return res.json();
+}
+
+export async function fetchTreksageHistoryMobile(
+  sessionKey: string,
+): Promise<TreksageMobileMessage[]> {
+  try {
+    const res = await fetch(`${API_BASE}/api/v1/treksage/chat/${sessionKey}/history`);
+    if (!res.ok) return [];
+    return res.json();
+  } catch {
+    return [];
+  }
+}

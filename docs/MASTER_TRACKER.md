@@ -129,6 +129,7 @@ All V0 foundations are shipped. The stack is live locally with:
 | **bugfix — Home difficulty tabs showing empty Easy/Moderate** (2026-06-14) | **done** |
 | **Step M07c — Region Tabs with Trek Cards** (2026-06-14) | **done** |
 | **bugfix — Voice search crash on mic tap** (2026-06-15) | **done** |
+| **Step 76 — TrekSage V1 Completion + V2 Features** (2026-06-17) | **done** — Global floating TrekSageWidget on all public pages; 7-step PlanWizard; LeadCaptureModal; Admin TrekSage Logs dashboard (/admin/treksage-logs); Mobile TrekSage chat tab (center FAB, replaces Plan FAB); ai-logs filter params (source, tool_name); 40/40 BE tests pass; next build ✓; tsc ✓ |
 | Step M08 — Trek Comparison (full attribute table + saved comparisons) | pending |
 
 ### Step M01 — Done (2026-06-03)

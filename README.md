@@ -370,6 +370,16 @@ trekyatra/
 | `/treksage` complete PRD redesign — light warm palette (#FAF5EE bg, #1D3A2E pine, #E8702A saffron); Discover/Compare/Plan tabs; prompt suggestions with tags; trek cards with hero image, match% pill, stats grid, CTAs; rotating loading messages; remark-gfm table support | Done |
 | Mobile voice search graceful degradation — Expo Go detection + `Alert.alert` in `handleMicPress` (app no longer crashes; shows friendly message) | Done |
 
+### TrekSage V1 Completion + V2 Features (Step 76)
+| Feature | Status |
+|---------|--------|
+| **Global floating TrekSageWidget** — pine FAB (bottom-right) on all public pages; compact 380×480 chat drawer; separate widget session; hides on `/treksage` itself | Done |
+| **7-step Plan Wizard** — guided chip-selection (Region → Duration → Difficulty → Budget → Month → Group → Preferences) → natural-language prompt → TrekSage chat; triggered via "Use Guided Planner" in Plan tab | Done |
+| **Lead Capture Modal** — name/email/phone/trek-interest/month form → `POST /api/v1/leads/operator-help`; "Get Expert Help" CTA bar after any conversation | Done |
+| **Admin TrekSage Logs** — `/admin/treksage-logs` dashboard; source (web/mobile/chatgpt/claude) + tool_name filter dropdowns; KPI row; paginated table | Done |
+| **Mobile TrekSage chat tab** — center FAB (chatbubbles icon, saffron); DISCOVER/COMPARE/PLAN prompt chips; message bubbles with trek card chips; AsyncStorage session persistence; Plan tab moves to regular sparkles icon | Done |
+| `GET /api/v1/admin/treks/ai-logs` — added `source` + `tool_name` filter query params; default limit 50→100 | Done |
+
 ---
 
 ## Local Development Setup

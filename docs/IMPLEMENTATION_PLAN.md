@@ -852,6 +852,33 @@ New surfaces:
 
 ---
 
+### Step 76 — TrekSage V1 Completion + V2 Features [DONE — 2026-06-17]
+
+Delivers all remaining V1 and V2 TrekSage MCP features.
+
+Backend:
+- **`service.py`**: `list_ai_interaction_logs` — added `source` and `tool_name` optional filter params.
+- **`admin_treks.py`**: `GET /api/v1/admin/treks/ai-logs` — added `source` and `tool_name` Query params; default limit 50→100.
+
+Web frontend:
+- **`TrekSageWidget.tsx`** (new): Global floating pine FAB (bottom-right, all public pages); compact 380×480 chat drawer with separate `treksage_widget_session` key; hides on `/treksage`.
+- **`PlanWizard.tsx`** (new): 7-step chip-selection wizard (Region → Duration → Difficulty → Budget → Month → Group → Preferences) → constructs natural language prompt → calls `send()` in parent.
+- **`LeadCaptureModal.tsx`** (new): Lead capture form (name/email/phone/trek interest/month) → `POST /api/v1/leads/operator-help`. Shown via "Get Expert Help" CTA after any conversation.
+- **`SiteLayout.tsx`**: Added `<TrekSageWidget />`.
+- **`TreksageChat.tsx`**: Added `showWizard` + `showLeadModal` state; Plan tab "Use Guided Planner (7-step)" button; "Get Expert Help" bar after messages.
+- **`/admin/treksage-logs/page.tsx`** (new): Admin AI interaction logs dashboard — source/tool_name filter dropdowns, KPI row, paginated table.
+- **`layout.tsx`** (admin): Added "TrekSage Logs" nav item + `MessageSquare` import.
+
+Mobile:
+- **`treksage.tsx`** (new): Full TrekSage chat screen — DISCOVER/COMPARE/PLAN tabs, message bubbles with trek card chips, AsyncStorage session, pine/saffron design.
+- **`_layout.tsx`**: Added `<Tabs.Screen name="treksage">` between browse and plan.
+- **`CustomTabBar.tsx`**: `isCenter` → `treksage` (was `plan`); center FAB icon `chatbubbles`; Plan tab uses `sparkles` icon.
+- **`mobileApi.ts`**: `TreksageMobileTrekCard`, `TreksageMobileChatResponse`, `TreksageMobileMessage` interfaces; `treksageChatMobile()`, `fetchTreksageHistoryMobile()` functions.
+
+**Verification:** 40/40 trek intelligence + treksage backend tests | `next build` ✅ Compiled successfully, 197 pages | `npx tsc --noEmit` (mobile) ✅ zero errors.
+
+---
+
 ### Step 75 — TrekSage Advanced Bot Fix + Complete UI Redesign [DONE — 2026-06-17]
 
 Addresses 4 user-reported issues from Step 74 testing, plus a full /treksage page redesign based on the TrekSage PRD documentation.
