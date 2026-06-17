@@ -27,8 +27,8 @@ from app.modules.trek_intelligence.models import TreksageChatMessage, TreksageCh
 logger = logging.getLogger(__name__)
 
 _HAIKU_MODEL = "claude-haiku-4-5-20251001"
-MAX_TOOL_ROUNDS = 3
-MAX_HISTORY_MESSAGES = 10
+MAX_TOOL_ROUNDS = 2
+MAX_HISTORY_MESSAGES = 6
 
 _SYSTEM_PROMPT = """\
 You are TrekSage, TrekYatra's trek planning assistant for India.
@@ -349,6 +349,22 @@ def chat(
             break
 
     _persist_messages(db, session, user_message, final_reply, tool_calls_log or None)
+
+    # Log each tool call to AIInteractionLog so the admin dashboard has data
+    for tc in tool_calls_log:
+        try:
+            ti_service.log_ai_interaction(
+                db=db,
+                source="web",
+                tool_name=tc["tool"],
+                query_summary=user_message[:300],
+                result_summary=json.dumps(tc.get("result", ""), default=str)[:500],
+                session_id=str(session.id),
+                trek_slugs=[r["slug"] for r in tc.get("result", []) if isinstance(r, dict) and "slug" in r] or None,
+            )
+        except Exception as log_exc:
+            logger.warning("Failed to log AI interaction: %s", log_exc)
+
     return {
         "reply": final_reply,
         "tool_calls": tool_calls_log,

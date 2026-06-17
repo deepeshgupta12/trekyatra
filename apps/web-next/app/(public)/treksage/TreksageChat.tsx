@@ -194,16 +194,10 @@ function TrekResultCard({ card, index }: { card: TrekCard; index: number }) {
             View Details
           </Link>
           <Link
-            href={`/compare?slugs=${card.slug}`}
+            href={`/plan?q=${encodeURIComponent(card.name)}`}
             className="flex-1 text-center text-xs font-semibold py-2 rounded-xl border border-[#1D3A2E]/20 text-[#1D3A2E] hover:bg-[#1D3A2E]/5 transition-colors"
           >
-            Compare
-          </Link>
-          <Link
-            href="/plan"
-            className="flex-1 text-center text-xs font-semibold py-2 rounded-xl border border-[#1D3A2E]/20 text-[#1D3A2E] hover:bg-[#1D3A2E]/5 transition-colors"
-          >
-            Plan
+            Plan Trip
           </Link>
         </div>
       </div>
@@ -247,6 +241,8 @@ export default function TreksageChat() {
   const [showLeadModal, setShowLeadModal] = useState(false);
   const bottomRef = useRef<HTMLDivElement>(null);
   const loadingTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  // Only auto-scroll after the user has sent at least one message (not during history restore)
+  const userSentRef = useRef(false);
 
   // Restore prior session on mount
   useEffect(() => {
@@ -258,8 +254,9 @@ export default function TreksageChat() {
       .finally(() => setLoadingHistory(false));
   }, []);
 
-  // Auto-scroll to latest message
+  // Auto-scroll to latest message — only after user sends (not on history restore)
   useEffect(() => {
+    if (!userSentRef.current) return;
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages, loading]);
 
@@ -281,6 +278,7 @@ export default function TreksageChat() {
   async function send(text: string) {
     const trimmed = text.trim();
     if (!trimmed || loading) return;
+    userSentRef.current = true;
     setInput("");
     setMessages((prev) => [...prev, { role: "user", content: trimmed }]);
     setLoading(true);

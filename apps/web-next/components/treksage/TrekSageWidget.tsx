@@ -8,12 +8,44 @@ import { treksageChat, fetchTreksageChatHistory } from "@/lib/api";
 
 const WIDGET_SESSION_KEY = "treksage_widget_session";
 
-const STARTER_PROMPTS = [
-  "Best treks for a complete beginner in India",
-  "Compare Kedarkantha vs Brahmatal for January",
-  "Which permits do Ladakh treks need?",
-  "Plan a 5-day trek in Uttarakhand under ₹12,000",
-];
+function getContextualPrompts(pathname: string): string[] {
+  const trekMatch = pathname.match(/^\/trek\/([^/]+)$/);
+  if (trekMatch) {
+    const slug = trekMatch[1];
+    const trekName = slug
+      .split("-")
+      .map((w: string) => w.charAt(0).toUpperCase() + w.slice(1))
+      .join(" ");
+    return [
+      `What permits are needed for ${trekName}?`,
+      `Best time of year to do ${trekName}`,
+      `What should I pack for ${trekName}?`,
+      `Compare ${trekName} with similar treks`,
+    ];
+  }
+  if (pathname.startsWith("/compare")) {
+    return [
+      "Which trek is better for beginners?",
+      "Which has a shorter duration?",
+      "Compare by budget and difficulty",
+      "Suggest a similar but easier trek",
+    ];
+  }
+  if (pathname.startsWith("/plan")) {
+    return [
+      "Plan a 5-day trek under ₹12,000",
+      "Best treks for March travel",
+      "Solo-friendly trek with no permits",
+      "Weekend trek from Delhi",
+    ];
+  }
+  return [
+    "Best treks for a complete beginner in India",
+    "Compare Kedarkantha vs Brahmatal for January",
+    "Which permits do Ladakh treks need?",
+    "Plan a 5-day trek in Uttarakhand under ₹12,000",
+  ];
+}
 
 interface Message {
   role: "user" | "assistant";
@@ -37,9 +69,7 @@ export default function TrekSageWidget() {
   const [loading, setLoading] = useState(false);
   const [sessionKey, setSessionKey] = useState<string | undefined>(undefined);
   const bottomRef = useRef<HTMLDivElement>(null);
-
-  // Don't render on the dedicated /treksage page
-  if (pathname === "/treksage") return null;
+  const userSentRef = useRef(false);
 
   // Restore session on panel open
   useEffect(() => {
@@ -52,13 +82,21 @@ export default function TrekSageWidget() {
       .catch(() => {});
   }, [open]);
 
+  // Auto-scroll only after the user has sent at least one message (not on history restore)
   useEffect(() => {
+    if (!userSentRef.current) return;
     if (open) bottomRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages, loading, open]);
+
+  // ALL hooks above — conditional return must be after all hooks (Rules of Hooks)
+  if (pathname === "/treksage") return null;
+
+  const starterPrompts = getContextualPrompts(pathname);
 
   async function send(text: string) {
     const trimmed = text.trim();
     if (!trimmed || loading) return;
+    userSentRef.current = true;
     setInput("");
     setMessages((prev) => [...prev, { role: "user", content: trimmed }]);
     setLoading(true);
@@ -70,7 +108,10 @@ export default function TrekSageWidget() {
         if (typeof window !== "undefined") localStorage.setItem(WIDGET_SESSION_KEY, res.session_key);
       }
     } catch {
-      setMessages((prev) => [...prev, { role: "assistant", content: "Sorry, couldn't reach TrekSage right now. Try the full chat at /treksage." }]);
+      setMessages((prev) => [
+        ...prev,
+        { role: "assistant", content: "Sorry, couldn't reach TrekSage right now. Try the full chat at /treksage." },
+      ]);
     } finally {
       setLoading(false);
     }
@@ -80,7 +121,7 @@ export default function TrekSageWidget() {
     <>
       {/* ── Compact chat panel ── */}
       {open && (
-        <div className="fixed bottom-24 right-4 sm:right-6 z-50 w-[calc(100vw-32px)] max-w-[380px] h-[480px] flex flex-col bg-[#FAF5EE] rounded-2xl border border-[#1D3A2E]/12 shadow-2xl overflow-hidden">
+        <div className="fixed bottom-24 right-4 sm:right-6 z-50 w-[calc(100vw-32px)] max-w-[380px] h-[480px] flex flex-col bg-[#FAF5EE] rounded-2xl border border-[#1D3A2E]/20 shadow-2xl overflow-hidden">
           {/* Header */}
           <div className="flex items-center justify-between px-4 py-3 bg-[#1D3A2E] flex-shrink-0">
             <div className="flex items-center gap-2.5">
@@ -92,7 +133,10 @@ export default function TrekSageWidget() {
                 <p className="text-white/45 text-[9px]">Powered by TrekYatra Intelligence</p>
               </div>
             </div>
-            <button onClick={() => setOpen(false)} className="text-white/50 hover:text-white transition-colors p-1 rounded-lg hover:bg-white/10">
+            <button
+              onClick={() => setOpen(false)}
+              className="text-white/50 hover:text-white transition-colors p-1 rounded-lg hover:bg-white/10"
+            >
               <X className="h-4 w-4" />
             </button>
           </div>
@@ -106,17 +150,19 @@ export default function TrekSageWidget() {
                     <Mountain className="h-3 w-3 text-white" />
                   </div>
                   <div className="bg-white rounded-xl rounded-tl-sm px-3 py-2 border border-[#1D3A2E]/10 text-xs text-[#1D3A2E]/75 shadow-sm">
-                    Hi! I'm TrekSage 👋 Ask me about Indian treks, permits, planning, or anything about trekking.
+                    Hi! I&apos;m TrekSage. Ask me about Indian treks, permits, planning, or anything about trekking.
                   </div>
                 </div>
-                <p className="text-[#1D3A2E]/25 text-[10px] font-semibold uppercase tracking-widest text-center">Quick Asks</p>
+                <p className="text-[#1D3A2E]/25 text-[10px] font-semibold uppercase tracking-widest text-center">
+                  Quick Asks
+                </p>
                 <div className="space-y-1">
-                  {STARTER_PROMPTS.map((p) => (
+                  {starterPrompts.map((p) => (
                     <button
                       key={p}
                       onClick={() => send(p)}
                       disabled={loading}
-                      className="w-full text-left text-xs text-[#1D3A2E]/60 hover:text-[#1D3A2E]/80 px-3 py-2 rounded-xl hover:bg-white border border-transparent hover:border-[#1D3A2E]/8 transition-all"
+                      className="w-full text-left text-xs text-[#1D3A2E]/60 hover:text-[#1D3A2E]/80 px-3 py-2 rounded-xl hover:bg-white border border-transparent hover:border-[#1D3A2E]/10 transition-all"
                     >
                       {p}
                     </button>
@@ -141,7 +187,9 @@ export default function TrekSageWidget() {
                     >
                       {msg.role === "assistant" ? (
                         <ReactMarkdown components={mdComponents}>{msg.content}</ReactMarkdown>
-                      ) : msg.content}
+                      ) : (
+                        msg.content
+                      )}
                     </div>
                   </div>
                 ))}
@@ -169,7 +217,10 @@ export default function TrekSageWidget() {
             <a href="/treksage" className="block text-center text-[10px] text-[#E8702A] font-medium hover:underline">
               Open full TrekSage experience →
             </a>
-            <form onSubmit={(e) => { e.preventDefault(); send(input); }} className="flex gap-2 items-center">
+            <form
+              onSubmit={(e) => { e.preventDefault(); send(input); }}
+              className="flex gap-2 items-center"
+            >
               <input
                 type="text"
                 value={input}
@@ -196,7 +247,7 @@ export default function TrekSageWidget() {
       <button
         onClick={() => setOpen((v) => !v)}
         aria-label="Open TrekSage AI assistant"
-        className="fixed bottom-6 right-4 sm:right-6 z-50 h-14 w-14 rounded-full bg-[#1D3A2E] text-white shadow-xl hover:bg-[#1D3A2E]/90 transition-all flex items-center justify-center group"
+        className="fixed bottom-6 right-4 sm:right-6 z-50 h-14 w-14 rounded-full bg-[#1D3A2E] text-white shadow-xl hover:bg-[#1D3A2E]/90 transition-all flex items-center justify-center"
         style={{ boxShadow: "0 8px 24px rgba(29,58,46,0.35)" }}
       >
         {open ? (
