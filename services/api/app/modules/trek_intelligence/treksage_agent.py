@@ -286,17 +286,22 @@ def chat(
 
     for round_num in range(MAX_TOOL_ROUNDS + 1):
         is_final_round = (round_num == MAX_TOOL_ROUNDS)
-        response = client.messages.create(
-            model=_HAIKU_MODEL,
-            # Final round gets more tokens so the summary isn't truncated.
-            max_tokens=1200 if is_final_round else 800,
-            system=_SYSTEM_PROMPT,
-            tools=_TOOLS,
-            # Force plain-text on the final round — prevents partial tool-call prefixes
-            # (e.g. "Let me broaden the search:") from leaking as the final message.
-            tool_choice={"type": "none"} if is_final_round else {"type": "auto"},
-            messages=messages,
-        )
+        try:
+            response = client.messages.create(
+                model=_HAIKU_MODEL,
+                # Final round gets more tokens so the summary isn't truncated.
+                max_tokens=1200 if is_final_round else 800,
+                system=_SYSTEM_PROMPT,
+                tools=_TOOLS,
+                # Force plain-text on the final round — prevents partial tool-call prefixes
+                # (e.g. "Let me broaden the search:") from leaking as the final message.
+                tool_choice={"type": "none"} if is_final_round else {"type": "auto"},
+                messages=messages,
+            )
+        except Exception as llm_exc:
+            logger.error("Anthropic API call failed (round %d): %s", round_num, llm_exc)
+            final_reply = "I'm having trouble reaching my knowledge base right now. Please try again in a moment."
+            break
 
         text_parts = [block.text for block in response.content if block.type == "text"]
         tool_use_blocks = [block for block in response.content if block.type == "tool_use"]

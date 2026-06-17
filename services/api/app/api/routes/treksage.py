@@ -1,12 +1,16 @@
 """Step 73: /treksage chat API — session-persisted conversational trek assistant."""
 from __future__ import annotations
 
+import logging
+
 from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel, Field
 from sqlalchemy.orm import Session
 
 from app.db.session import get_db
 from app.modules.trek_intelligence import treksage_agent
+
+logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/treksage", tags=["treksage"])
 
@@ -31,14 +35,24 @@ class TreksageChatHistoryItem(BaseModel):
 @router.post("/chat", response_model=TreksageChatResponse)
 def chat(payload: TreksageChatRequest, db: Session = Depends(get_db)) -> TreksageChatResponse:
     """Send a message to the TrekSage conversational assistant."""
+    # Session is created first so the key is always returned, even if the agent fails.
     session = treksage_agent.get_or_create_session(db, payload.session_key)
-    result = treksage_agent.chat(db, session, payload.message)
-    return TreksageChatResponse(
-        session_key=result["session_key"],
-        reply=result["reply"],
-        tool_calls=result["tool_calls"],
-        trek_cards=result.get("trek_cards", []),
-    )
+    try:
+        result = treksage_agent.chat(db, session, payload.message)
+        return TreksageChatResponse(
+            session_key=result["session_key"],
+            reply=result["reply"],
+            tool_calls=result["tool_calls"],
+            trek_cards=result.get("trek_cards", []),
+        )
+    except Exception as exc:
+        logger.error("TrekSage agent failed for session %s: %s", session.session_key, exc)
+        return TreksageChatResponse(
+            session_key=session.session_key,
+            reply="I'm having trouble processing your request right now. Please try again in a moment.",
+            tool_calls=[],
+            trek_cards=[],
+        )
 
 
 @router.get("/chat/{session_key}/history", response_model=list[TreksageChatHistoryItem])
