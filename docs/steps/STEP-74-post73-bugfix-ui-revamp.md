@@ -62,6 +62,7 @@
 - **Backend:** 683/685 pass, 2 pre-existing `test_refresh.py` failures (unrelated, unchanged)
 - **Frontend:** `next build` → ✅ Compiled successfully, 196/196 pages
 - **Mobile:** `npx tsc --noEmit` → ✅ zero errors
+- **GitNexus re-index:** 466,648 nodes | 752,545 edges | 300 flows (was 424,262 / 701,977 pre-Step-74)
 
 ---
 

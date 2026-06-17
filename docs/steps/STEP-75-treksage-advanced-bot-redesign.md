@@ -63,7 +63,7 @@
 - **Backend:** 683/685 pass (2 pre-existing `test_refresh.py` failures, unrelated); `test_treksage.py` 7/7 pass
 - **Frontend:** `next build` ✅ Compiled successfully, 196/196 pages, zero TypeScript errors
 - **Mobile:** `npx tsc --noEmit` ✅ zero errors
-- **GitNexus re-index:** pending after commit — run `npx gitnexus analyze --force`
+- **GitNexus re-index:** 492,793 nodes | 790,601 edges | 300 flows (was 467,055 / 760,374 pre-Step-75)
 
 ---
 
