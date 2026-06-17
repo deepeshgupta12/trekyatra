@@ -2339,6 +2339,8 @@ export interface TreksageChatResponse {
     state: string | null;
     difficulty: string | null;
     duration: string | null;
+    season: string | null;
+    max_altitude_ft: number | null;
     budget_min: number | null;
     budget_max: number | null;
     hero_image_url: string | null;

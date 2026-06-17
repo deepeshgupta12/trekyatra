@@ -2,6 +2,18 @@
 
 import { useState } from "react";
 import { Sparkles, Send, Info } from "lucide-react";
+import ReactMarkdown, { type Components } from "react-markdown";
+
+const mdComponents: Components = {
+  p: ({ children }) => <p className="mb-1.5 last:mb-0">{children}</p>,
+  strong: ({ children }) => <strong className="font-semibold">{children}</strong>,
+  em: ({ children }) => <em className="italic">{children}</em>,
+  ul: ({ children }) => <ul className="list-disc pl-4 mb-1.5 space-y-0.5">{children}</ul>,
+  ol: ({ children }) => <ol className="list-decimal pl-4 mb-1.5 space-y-0.5">{children}</ol>,
+  li: ({ children }) => <li>{children}</li>,
+  h3: ({ children }) => <h3 className="font-semibold mt-2 mb-0.5 first:mt-0">{children}</h3>,
+  h2: ({ children }) => <h2 className="font-semibold mt-2 mb-0.5 first:mt-0">{children}</h2>,
+};
 import { askTrekQuestion, ChatTurn } from "@/lib/api";
 
 interface Props {
@@ -74,7 +86,7 @@ export default function TrekAskAI({ slug, trekName }: Props) {
                     <Info className="h-3.5 w-3.5" /> Not verified yet
                   </div>
                 )}
-                {ex.answer}
+                <ReactMarkdown components={mdComponents}>{ex.answer}</ReactMarkdown>
               </div>
             </div>
           ))}

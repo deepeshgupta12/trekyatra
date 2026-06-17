@@ -1862,3 +1862,17 @@ All changes are additive to Step 72's module. New tables have no existing reader
 | `apps/mobile/components/trek/TrekAskAI.tsx` | History built from `exchanges` and sent with each request | LOW — leaf component |
 | `apps/mobile/lib/mobileApi.ts` | Added `MobileChatTurn`, updated `ask()` signature | LOW — additive param |
 | `apps/web-next/app/sitemap.ts` | Added `/treksage` entry | LOW — additive |
+
+### Step 75 — TrekSage Advanced Bot Fix + Complete UI Redesign blast radius — Done (2026-06-17)
+
+**No new migrations. No new routes. No new Celery tasks.** All changes are to existing files.
+
+| File | Purpose | Blast Radius |
+|------|---------|-------------|
+| `services/api/app/modules/trek_intelligence/treksage_agent.py` | Loop fix (transition phrase detection, nudge, continue); system prompt hardened (guardrails, no tech exposure, safety rules); `max_altitude_ft` added to `_slim_profile`; `max_tokens` 800→1200 on final round | LOW — `gitnexus_impact(chat, upstream)` = 0 direct callers (only `routes/treksage.py` → leaf API handler) |
+| `apps/web-next/components/trek/TrekAskAI.tsx` | `ReactMarkdown` + `mdComponents` wraps `ex.answer` | LOW — leaf component; 0 upstream callers per `gitnexus_impact` |
+| `apps/web-next/app/(public)/treksage/TreksageChat.tsx` | Complete rewrite — light PRD palette (#FAF5EE/#1D3A2E/#E8702A), category tabs, trek cards with stats grid + CTA row, rotating loading messages, `remark-gfm` | LOW — leaf component; 0 upstream callers per `gitnexus_impact` |
+| `apps/web-next/app/(public)/treksage/page.tsx` | Light #FAF5EE wrapper; dark heading removed | LOW — page wrapper only |
+| `apps/web-next/lib/api.ts` | `TreksageChatResponse.trek_cards` extended with `season` + `max_altitude_ft` | LOW — additive fields; no existing consumers read these keys |
+| `apps/web-next/package.json` | `remark-gfm@4.0.1` added | LOW — new dev/frontend dependency |
+| `apps/mobile/app/(tabs)/browse/search.tsx` | `Constants.appOwnership === "expo"` Expo Go check + `Alert.alert` in `handleMicPress`; improved catch block | LOW — `gitnexus_impact(handleMicPress, upstream)` = 0 upstream callers |

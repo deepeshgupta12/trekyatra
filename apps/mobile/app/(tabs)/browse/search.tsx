@@ -7,9 +7,11 @@ import {
   FlatList,
   Image,
   ActivityIndicator,
+  Alert,
   StyleSheet,
   Platform,
 } from "react-native";
+import Constants from "expo-constants";
 import { Ionicons } from "@expo/vector-icons";
 import { router } from "expo-router";
 import { useQuery } from "@tanstack/react-query";
@@ -63,12 +65,31 @@ export default function SearchScreen() {
         ExpoSpeechRecognitionModule.stop();
         return;
       }
+      // In Expo Go the NSSpeechRecognitionUsageDescription plist key is absent,
+      // which causes a native TCC crash before JS can catch anything. Detect Expo
+      // Go early and show a friendly message instead of crashing.
+      if ((Constants as Record<string, unknown>).appOwnership === "expo") {
+        Alert.alert(
+          "Voice Search Unavailable",
+          "Voice search requires the full TrekYatra app. Please download or rebuild the app to enable this feature.",
+          [{ text: "OK" }]
+        );
+        return;
+      }
       const permission = await ExpoSpeechRecognitionModule.requestPermissionsAsync();
-      if (!permission.granted) return;
+      if (!permission.granted) {
+        Alert.alert(
+          "Microphone Permission Required",
+          "Please enable microphone access in Settings to use voice search.",
+          [{ text: "OK" }]
+        );
+        return;
+      }
       ExpoSpeechRecognitionModule.start({ lang: "en-US", interimResults: true });
     } catch (error) {
       console.warn("Voice search unavailable:", error);
       setIsRecording(false);
+      Alert.alert("Voice Search", "Voice search is temporarily unavailable. Please try again later.");
     }
   };
 

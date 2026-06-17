@@ -852,6 +852,27 @@ New surfaces:
 
 ---
 
+### Step 75 — TrekSage Advanced Bot Fix + Complete UI Redesign [DONE — 2026-06-17]
+
+Addresses 4 user-reported issues from Step 74 testing, plus a full /treksage page redesign based on the TrekSage PRD documentation.
+
+Backend:
+- **`treksage_agent.py`**: loop fix (transition phrases detected by `:` + length < 60, nudge injected, continue); system prompt hardened (no tech exposure, safety guardrails, structured format); `max_altitude_ft` in `_slim_profile`; final-round `max_tokens` 800→1200.
+
+Web frontend:
+- **`TrekAskAI.tsx`**: `ReactMarkdown` + `mdComponents` wraps `ex.answer` (markdown was rendering raw).
+- **`TreksageChat.tsx`**: complete redesign — light PRD palette (#FAF5EE, #1D3A2E, #E8702A); tabs (Discover/Compare/Plan) + prompt suggestions; trek cards with hero image, match% pill, stats grid, CTAs; rotating loading messages; `remark-gfm` for table support.
+- **`treksage/page.tsx`**: light #FAF5EE wrapper, metadata updated.
+- **`lib/api.ts`**: `trek_cards` type extended with `season` + `max_altitude_ft`.
+- **`remark-gfm@4.0.1`** installed.
+
+Mobile:
+- **`search.tsx`**: `Constants.appOwnership === "expo"` Expo Go detection in `handleMicPress`; `Alert.alert` on voice unavailable / permission denied instead of silent failure.
+
+**Verification:** 683/685 backend pass (2 pre-existing) | `next build` ✅ 196/196 pages | `npx tsc --noEmit` (mobile) ✅ zero errors.
+
+---
+
 ### Step 74 — Post-73 Bug Fixes + Mobile/TrekSage UI Revamp [DONE — 2026-06-16]
 
 Addresses 10 bugs and enhancement requests identified during user testing of Step 73. No new backend migrations or Celery tasks.

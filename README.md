@@ -360,6 +360,16 @@ trekyatra/
 | Mobile Compare revamp — 2-col trek tile grid with images, debounced search input, selected-trek pill strip, trek image header in comparison table, styled "✨ TrekSage says" summary card | Done |
 | `contentApi.searchTreks()` — semantic search for trek selection in mobile compare screen | Done |
 
+### TrekSage Advanced Bot + UI Redesign (Step 75)
+| Feature | Status |
+|---------|--------|
+| Bot-stopping root fix — transition phrases (ends with ":" + < 60 chars) detected on non-final rounds; nudge injected; loop continues | Done |
+| System prompt hardened — no tech exposure (Claude/Haiku/FastAPI/tool names), safety-first (AMS risk, permit disclaimers), structured "Why it matches:" format | Done |
+| `max_altitude_ft` in trek cards — Altitude stat row in `/treksage` chat now shows real summit data | Done |
+| `TrekAskAI.tsx` markdown fix — `ReactMarkdown` wraps `ex.answer` on trek detail "Ask TrekSage" widget | Done |
+| `/treksage` complete PRD redesign — light warm palette (#FAF5EE bg, #1D3A2E pine, #E8702A saffron); Discover/Compare/Plan tabs; prompt suggestions with tags; trek cards with hero image, match% pill, stats grid, CTAs; rotating loading messages; remark-gfm table support | Done |
+| Mobile voice search graceful degradation — Expo Go detection + `Alert.alert` in `handleMicPress` (app no longer crashes; shows friendly message) | Done |
+
 ---
 
 ## Local Development Setup

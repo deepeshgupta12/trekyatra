@@ -30,14 +30,29 @@ _HAIKU_MODEL = "claude-haiku-4-5-20251001"
 MAX_TOOL_ROUNDS = 3
 MAX_HISTORY_MESSAGES = 10
 
-_SYSTEM_PROMPT = (
-    "You are TrekSage, TrekYatra's AI trek planning assistant. Help users plan Himalayan "
-    "treks, compare options, get permit and packing info, and find the perfect trek "
-    "for their fitness and travel dates. Use the available tools to look up real trek "
-    "data — never invent altitudes, permit requirements, or prices. Be friendly, "
-    "concise (under 150 words per reply), and always suggest a next step. "
-    "When tools return results, summarise the key highlights; do NOT repeat every raw field."
-)
+_SYSTEM_PROMPT = """\
+You are TrekSage, TrekYatra's trek planning assistant for India.
+
+CORE RULES:
+1. Always call tools to fetch real trek data before answering — never invent altitudes, permit fees, seasons, or prices.
+2. Answer ONLY about Indian trekking. Politely decline unrelated topics.
+3. Never mention Claude, Haiku, Anthropic, FastAPI, tool names, or any technical infrastructure. If asked who made you, say only: "I'm TrekSage, powered by TrekYatra Intelligence."
+4. Be safety-first: mention AMS risk for high-altitude treks (>14,000 ft), recommend easier alternatives for beginners asking about difficult treks, add "verify requirements before your trek" for permit questions.
+5. Be concise and structured — use bullet points and sections. Keep replies under 200 words unless comparing multiple treks.
+6. After every answer, offer a concrete next step (compare, check permits, plan dates, view details).
+
+RESPONSE FORMAT for recommendations:
+• Lead with 1-2 treks that best match the query
+• For each: name, difficulty, duration, best season, budget range
+• Add "Why it matches:" with 1 specific reason
+• Note any safety or permit consideration
+• Close with a next-step offer
+
+WHAT NOT TO DO:
+• Do not guess or fabricate missing data — if a field is unavailable, say so
+• Do not produce partial sentences ending with ":" — always deliver a complete answer
+• Do not reference raw tool output or JSON field names in your response\
+"""
 _TREK_CARD_TOOLS = {"search_treks", "recommend_treks"}
 
 # ── Tool schemas ──────────────────────────────────────────────────────────────
@@ -184,6 +199,7 @@ def _slim_profile(p: Any) -> dict:
         "difficulty": p.difficulty,
         "duration": p.duration,
         "season": p.season,
+        "max_altitude_ft": getattr(p, "max_altitude_ft", None),
         "budget_min": p.budget_min,
         "budget_max": p.budget_max,
         "themes": p.themes,
@@ -272,23 +288,42 @@ def chat(
         is_final_round = (round_num == MAX_TOOL_ROUNDS)
         response = client.messages.create(
             model=_HAIKU_MODEL,
-            max_tokens=800,
+            # Final round gets more tokens so the summary isn't truncated.
+            max_tokens=1200 if is_final_round else 800,
             system=_SYSTEM_PROMPT,
             tools=_TOOLS,
-            # On the last round force a plain-text reply so the model cannot produce
-            # a truncated tool-call prefix (e.g. "Let me try a broader search:") as
-            # the final message.
+            # Force plain-text on the final round — prevents partial tool-call prefixes
+            # (e.g. "Let me broaden the search:") from leaking as the final message.
             tool_choice={"type": "none"} if is_final_round else {"type": "auto"},
             messages=messages,
         )
 
-        # Collect text content from this response.
         text_parts = [block.text for block in response.content if block.type == "text"]
         tool_use_blocks = [block for block in response.content if block.type == "tool_use"]
 
-        if not tool_use_blocks or is_final_round:
+        if is_final_round:
             final_reply = " ".join(text_parts).strip() or "I couldn't find an answer right now. Try rephrasing your question."
             break
+
+        if not tool_use_blocks:
+            # Model returned text only on a non-final round.
+            candidate = " ".join(text_parts).strip()
+            # An incomplete transition phrase like "Let me broaden the search:" or
+            # "Let me try a different approach:" ends with ":" and is typically
+            # under 60 characters. Everything else — even a short one-liner like
+            # "Here are 3 treks for June!" — should be accepted as a complete reply.
+            is_transition = not candidate or (
+                candidate.rstrip().endswith(":") and len(candidate) < 60
+            )
+            if not is_transition:
+                final_reply = candidate
+                break
+            # Incomplete transition phrase — add to context and nudge the model to
+            # search and deliver a complete answer.
+            stub_content = response.content if response.content else [{"type": "text", "text": candidate or "."}]
+            messages.append({"role": "assistant", "content": stub_content})
+            messages.append({"role": "user", "content": "Please search for relevant treks and provide a complete, helpful answer."})
+            continue
 
         # Execute tool calls and build tool_result messages.
         messages.append({"role": "assistant", "content": response.content})
@@ -302,6 +337,9 @@ def chat(
                 "content": json.dumps(result, default=str),
             })
         messages.append({"role": "user", "content": tool_results})
+
+    if not final_reply:
+        final_reply = "I couldn't find an answer right now. Try rephrasing your question."
 
     # Expose the last search/recommend result as structured trek cards for the UI.
     trek_cards: list[dict] = []
