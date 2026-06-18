@@ -167,10 +167,17 @@ _TOOLS = [
     {
         "name": "get_site_info",
         "description": (
-            "Fetch content from TrekYatra's informational pages: About, Contact, Privacy Policy, "
-            "Terms of Service, Affiliate Disclosure, Safety Disclaimer, Editorial Methodology, "
-            "Gear Reviews, or Author Network. Use this when users ask about TrekYatra as a company, "
-            "its policies, team, editorial standards, or gear recommendations."
+            "Fetch content from TrekYatra's informational pages. "
+            "ROUTING RULES (follow exactly): "
+            "'who is the founder / who built / who made / who created / who is behind TrekYatra / team members / who writes' → topic='authors'. "
+            "'company mission / what is TrekYatra / about the platform' → topic='about'. "
+            "'privacy / data collection' → topic='privacy'. "
+            "'terms / terms of service' → topic='terms'. "
+            "'affiliate / commission / earn money' → topic='affiliate'. "
+            "'safety / disclaimer / is it safe' → topic='safety'. "
+            "'editorial / how you research / how you write' → topic='methodology'. "
+            "'contact / email / how to reach' → topic='contact'. "
+            "'gear / equipment' → topic='gear'."
         ),
         "input_schema": {
             "type": "object",
@@ -178,9 +185,12 @@ _TOOLS = [
             "properties": {
                 "topic": {
                     "type": "string",
+                    "enum": ["about", "contact", "privacy", "terms", "affiliate", "safety", "gear", "authors", "methodology"],
                     "description": (
-                        "Topic to look up. One of: about, contact, privacy, terms, "
-                        "affiliate, safety, gear, authors, methodology"
+                        "CRITICAL: Use 'authors' (NOT 'about') for any question about the founder, "
+                        "who built/made/created TrekYatra, team members, or individual people. "
+                        "'about' is ONLY for company mission and platform story. "
+                        "Values: about | contact | privacy | terms | affiliate | safety | gear | authors | methodology"
                     ),
                 },
             },
@@ -369,12 +379,19 @@ def _call_get_site_info(db: Session, topic: str) -> dict:
         page = cms_service.get_page_by_slug(db, config["slug"])
         if not page or page.status != "published":
             return {"error": f"Page for topic '{topic}' is not published yet."}
-        return {
+        result = {
             "title": page.title,
             "slug": page.slug,
             "content": strip_html(page.content_html),
             "url": f"https://www.trekyatra.co.in/{page.slug}",
         }
+        # Safety net: about page never lists founder by name — add explicit pointer
+        if config["slug"] == "about":
+            result["founder_note"] = (
+                "This page does not list individual founder or team member names. "
+                "To get the founder's name and role, call get_site_info(topic='authors')."
+            )
+        return result
     else:
         pages = cms_service.list_pages(db, page_type=config["page_type"], status="published", limit=8)
         return {
