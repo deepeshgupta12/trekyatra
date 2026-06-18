@@ -1,6 +1,6 @@
 # STEP-M09 — Plan My Trek Wizard
 
-**Status:** Pending
+**Status:** Done (2026-06-18)
 **Phase:** User & Commerce
 **Dependencies:** STEP-M02 (auth for lead capture), STEP-M05 (trek cards in results)
 
@@ -134,3 +134,33 @@ Same events as web (wired in Step M15):
 5. **TC-M09-05**: Tap "View trek" on result → navigates to trek detail screen
 6. **TC-M09-06**: Step progress indicator updates correctly on each step
 7. **TC-M09-07**: Results match web results for same inputs (API parity check)
+
+## Implementation Notes (2026-06-18)
+
+**Files Created:**
+- `apps/mobile/stores/planWizardStore.ts` — Zustand store (intent, months, durationMin/Max, fitnessLevel, experienceLevel, region, reset)
+- `apps/mobile/components/plan/WizardProgress.tsx` — 6-dot progress indicator (done/active/pending states)
+- `apps/mobile/components/plan/WizardStepLayout.tsx` — full-screen step wrapper (back arrow, progress bar, scrollable content, bottom bar with optional Skip + Next)
+- `apps/mobile/components/plan/IntentSelector.tsx` — 2×3 tile grid, multi-select, 6 intent options
+- `apps/mobile/components/plan/MonthSelector.tsx` — 12-month grid + "I'm flexible" chip, multi-select
+- `apps/mobile/components/plan/DurationSelector.tsx` — 4 full-width cards (1-2/3-5/6-8/9+ days), single-select
+- `apps/mobile/components/plan/FitnessSliders.tsx` — segmented button rows for fitness level (4 options) + experience level (5 options)
+- `apps/mobile/components/plan/RegionSelector.tsx` — 7 cards (Any region + 6 states), single-select
+- `apps/mobile/components/plan/LeadCaptureForm.tsx` — name/email/phone inputs + info box
+- `apps/mobile/components/plan/PlanResultCard.tsx` — result card with rank badge, match %, meta, budget/crowd/permit/theme badges, why-this-matches, View trek button
+- `apps/mobile/app/(tabs)/plan/_layout.tsx` — Stack navigator for wizard
+- `apps/mobile/app/(tabs)/plan/index.tsx` — intro screen (hero, 6-step preview, Start Planning button)
+- `apps/mobile/app/(tabs)/plan/step-1.tsx` through `step-5.tsx` — wizard steps
+- `apps/mobile/app/(tabs)/plan/step-6.tsx` — lead capture (skippable; POST /api/v1/leads/operator-help on submit)
+- `apps/mobile/app/(tabs)/plan/results.tsx` — auth-gated results screen with PlanResultCard list + operator CTA
+
+**Files Modified:**
+- `apps/mobile/lib/mobileApi.ts` — added `leadsApi.submitOperatorHelp()`, `OperatorHelpLeadPayload`, `LeadResponse`
+- `apps/mobile/app/(tabs)/(home)/_layout.tsx` — removed stale `plan-my-trek` Stack.Screen
+- `apps/mobile/components/home/CategoryHubRow.tsx` — "Plan a trek" route updated `/(tabs)/plan`
+
+**Files Deleted:**
+- `apps/mobile/app/(tabs)/plan.tsx` — replaced by `plan/` stack
+- `apps/mobile/app/(tabs)/(home)/plan-my-trek.tsx` — replaced by full wizard
+
+**Build:** `npx tsc --noEmit` → 0 errors

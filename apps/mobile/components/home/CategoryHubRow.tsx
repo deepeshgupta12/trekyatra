@@ -9,7 +9,7 @@ const CATEGORIES = [
   { label: "Permits", icon: "document-text-outline", route: "/permits" },
   { label: "Costs", icon: "wallet-outline", route: "/costs" },
   { label: "Safety", icon: "shield-checkmark-outline", route: "/safety" },
-  { label: "Plan a trek", icon: "compass-outline", route: "/plan-my-trek" },
+  { label: "Plan a trek", icon: "compass-outline", route: "/(tabs)/plan" },
 ] as const;
 
 export function CategoryHubRow() {

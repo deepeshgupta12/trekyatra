@@ -808,6 +808,26 @@ Spec: `docs/mobile/steps/STEP-M08-trek-comparison.md`. Enhanced the existing `(h
 
 ---
 
+### Step M09 — Plan My Trek Wizard [DONE — 2026-06-18]
+
+Spec: `docs/mobile/steps/STEP-M09-plan-my-trek-wizard.md`. Replaced the single-scroll `plan-my-trek.tsx` with a full 6-step paginated wizard. State managed in Zustand. Lead capture in step 6 posts to `/api/v1/leads/operator-help`. Results require auth.
+
+- `apps/mobile/stores/planWizardStore.ts` — NEW Zustand store (intent, months, durationMin/Max, fitnessLevel, experienceLevel, region, reset)
+- `apps/mobile/components/plan/` — NEW directory: `WizardProgress.tsx`, `WizardStepLayout.tsx`, `IntentSelector.tsx`, `MonthSelector.tsx`, `DurationSelector.tsx`, `FitnessSliders.tsx`, `RegionSelector.tsx`, `LeadCaptureForm.tsx`, `PlanResultCard.tsx`
+- `apps/mobile/app/(tabs)/plan/_layout.tsx` — NEW Stack navigator (index + step-1..step-6 + results)
+- `apps/mobile/app/(tabs)/plan/index.tsx` — NEW intro screen (hero + 6-step preview + Start Planning CTA)
+- `apps/mobile/app/(tabs)/plan/step-1.tsx` through `step-5.tsx` — NEW wizard steps (intent/month/duration/fitness+experience/region)
+- `apps/mobile/app/(tabs)/plan/step-6.tsx` — NEW lead capture screen (skippable; submits to `POST /api/v1/leads/operator-help`)
+- `apps/mobile/app/(tabs)/plan/results.tsx` — NEW results screen (auth-gate, ranked PlanResultCards, operator CTA)
+- `apps/mobile/lib/mobileApi.ts` — `leadsApi.submitOperatorHelp()`, `OperatorHelpLeadPayload`, `LeadResponse` added
+- `apps/mobile/app/(tabs)/(home)/_layout.tsx` — stale `plan-my-trek` Stack.Screen removed
+- `apps/mobile/components/home/CategoryHubRow.tsx` — "Plan a trek" route fixed to `/(tabs)/plan`
+- `apps/mobile/app/(tabs)/plan.tsx` — DELETED (replaced by plan/ stack)
+- `apps/mobile/app/(tabs)/(home)/plan-my-trek.tsx` — DELETED (replaced by wizard)
+- **tsc --noEmit: 0 errors** | No backend changes (plan/recommend + leads/operator-help already existed) | No web-next changes
+
+---
+
 ### Step M-DS8 — Glass UI Overhaul (platform-adaptive glassmorphism) [DONE — 2026-06-15]
 
 Spec: user-requested app-wide "Glass UI" restyle, without hampering existing UX/IA. User decisions: iOS → Apple "Liquid Glass" (`expo-glass-effect`); Android/web → `expo-blur` frosted; full app-wide pass in one step (not phased).

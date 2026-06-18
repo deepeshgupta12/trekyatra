@@ -1942,3 +1942,32 @@ Impact analysis: `search_treks` (LOW, only called from `_call_tool` in `treksage
 | `apps/web-next/app/(public)/treksage/TreksageChat.tsx` | `initialQuery` auto-send on mount; `onError` image fallback; canvasCards localStorage persistence per session; `openDetail()` fetches `TrekProfile`; `detailProfile` passed to `TrekDetailPanel` | LOW — leaf component, 0 upstream callers |
 | `apps/web-next/app/(public)/treksage/TrekDetailPanel.tsx` | REWRITE — accepts `profile: TrekProfile \| null`; renders month guide, permit banner, themes, suitability badges, content_sections accordion, FAQs accordion; image `onError` fallback | LOW — leaf component, only called by TreksageChat |
 | `apps/mobile/app/(tabs)/treksage.tsx` | REWRITE — `TrekCardItem` with stats row (duration/altitude/season), budget, "View Trek" → `router.push(/trek/slug)`, compare toggle; `compareSet` + compare bar; multi-stage `ThinkingBubble`; canvas cards persisted to AsyncStorage | LOW — mobile leaf screen, 0 upstream callers |
+
+### Step M08 — Trek Comparison + Saved Comparisons — Done (2026-06-18)
+
+| File | Change | Blast radius |
+|------|--------|-------------|
+| `apps/mobile/app/(tabs)/(home)/compare.tsx` | `getWinnerIdx()` winner badge logic; `handleSave()` with auth gate; `savedId` state | LOW — leaf screen |
+| `apps/mobile/lib/mobileApi.ts` | `apiDelete()` helper; `SavedComparison` interface; `accountApi` (listComparisons/saveComparison/deleteComparison) | LOW — additive exports |
+| `apps/mobile/hooks/useComparisons.ts` (NEW) | CRUD hook for saved comparisons | LOW — new leaf hook |
+| `apps/mobile/app/(tabs)/saved.tsx` | DELETED — replaced by `saved/` stack | LOW — file routing only |
+| `apps/mobile/app/(tabs)/saved/_layout.tsx` (NEW) | Stack navigator for saved tab | LOW |
+| `apps/mobile/app/(tabs)/saved/index.tsx` (NEW) | Saved tab root | LOW |
+| `apps/mobile/app/(tabs)/saved/comparisons.tsx` (NEW) | Saved comparisons list with delete + open | LOW |
+
+### Step M09 — Plan My Trek Wizard — Done (2026-06-18)
+
+| File | Change | Blast radius |
+|------|--------|-------------|
+| `apps/mobile/stores/planWizardStore.ts` (NEW) | Zustand store for 6-step wizard answers | LOW — new store |
+| `apps/mobile/components/plan/` (NEW — 9 files) | WizardProgress, WizardStepLayout, IntentSelector, MonthSelector, DurationSelector, FitnessSliders, RegionSelector, LeadCaptureForm, PlanResultCard | LOW — new leaf components |
+| `apps/mobile/app/(tabs)/plan/_layout.tsx` (NEW) | Stack navigator for plan wizard | LOW |
+| `apps/mobile/app/(tabs)/plan/index.tsx` (NEW) | Intro screen | LOW |
+| `apps/mobile/app/(tabs)/plan/step-1.tsx` through `step-5.tsx` (NEW) | Wizard steps | LOW |
+| `apps/mobile/app/(tabs)/plan/step-6.tsx` (NEW) | Lead capture — POST /api/v1/leads/operator-help | LOW |
+| `apps/mobile/app/(tabs)/plan/results.tsx` (NEW) | Results screen — POST /api/v1/plan/recommend | LOW |
+| `apps/mobile/lib/mobileApi.ts` | `leadsApi.submitOperatorHelp()`, `OperatorHelpLeadPayload`, `LeadResponse` added | LOW — additive exports |
+| `apps/mobile/app/(tabs)/(home)/_layout.tsx` | Removed stale `plan-my-trek` Stack.Screen | LOW |
+| `apps/mobile/components/home/CategoryHubRow.tsx` | "Plan a trek" route updated to `/(tabs)/plan` | LOW |
+| `apps/mobile/app/(tabs)/plan.tsx` | DELETED — replaced by `plan/` stack | LOW — file routing only |
+| `apps/mobile/app/(tabs)/(home)/plan-my-trek.tsx` | DELETED — replaced by full wizard | LOW |

@@ -531,3 +531,36 @@ export const accountApi = {
   deleteComparison: (id: string) =>
     apiDelete(`/api/v1/account/comparisons/${id}`),
 };
+
+// ---------------------------------------------------------------------------
+// Step M09 — Plan wizard lead capture
+// ---------------------------------------------------------------------------
+
+export interface OperatorHelpLeadPayload {
+  name: string;
+  email: string;
+  phone?: string;
+  trek_slug?: string;
+  trek_interest: string;
+  message?: string;
+  consent: boolean;
+  travel_month?: string;
+  traveller_count?: number;
+  city?: string;
+  budget_preference?: string;
+  transport_required?: boolean;
+  source_page?: string;
+}
+
+export interface LeadResponse {
+  id: string;
+  name: string;
+  email: string;
+  status: string;
+  created_at: string;
+}
+
+export const leadsApi = {
+  submitOperatorHelp: (payload: OperatorHelpLeadPayload) =>
+    apiPost<LeadResponse>("/api/v1/leads/operator-help", payload),
+};
