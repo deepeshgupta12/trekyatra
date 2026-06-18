@@ -456,7 +456,11 @@ def ask_trek_question(
     if not settings.anthropic_api_key:
         return AskTrekQuestionResponse(answer=_NOT_VERIFIED_MSG, cached=False, not_verified=True)
 
-    facts = profile.model_dump(exclude={"data_confidence"})
+    # Exclude heavy content fields — content_sections and faqs are already handled by the
+    # section_text mechanism above (get_trek_content returns the relevant section when the
+    # question matches a keyword). Sending them in facts_json would double-send thousands of
+    # tokens to Haiku on every Q&A call with no grounding benefit.
+    facts = profile.model_dump(exclude={"data_confidence", "content_sections", "faqs"})
     facts_json = json.dumps({k: v for k, v in facts.items() if v is not None}, default=str)
 
     # Build the first user message: trek facts context + optional section + the question.
