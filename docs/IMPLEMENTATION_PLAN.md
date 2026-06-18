@@ -877,6 +877,14 @@ Mobile:
 
 **Verification:** 40/40 trek intelligence + treksage backend tests | `next build` ✅ Compiled successfully, 197 pages | `npx tsc --noEmit` (mobile) ✅ zero errors.
 
+### Post-Step-76 TrekSage Hotfixes [DONE — 2026-06-17/18, commits 3a33716 / 88ddd49 / 387de83]
+
+Three follow-up fixes applied after Step 76 to address production issues found during user testing:
+
+- **Hotfix 1 (3a33716):** Hooks violation in `SiteLayout.tsx` (early return between hooks → React #418/#423/#300); page scroll on send (replaced `scrollIntoView` with container-ref scroll); token cost cut (`MAX_HISTORY_MESSAGES` 20→6).
+- **Hotfix 2 (88ddd49):** Session key always saved to `localStorage` even on error reply.
+- **Hotfix 3 (387de83):** Full `TreksageChat.tsx` rewrite — stuck chat fixed (`tool_choice={"type":"any"}` round 0), sessions sidebar (Today/Yesterday/Earlier, localStorage), voice input (Web Speech API + animated popup), emoji fix (🏕→⛺, 🗓→📅), trek cards 2-col grid, message slide-up animation; `page.tsx` full-screen layout; `treksage_agent.py` post-process transition phrase fallback.
+
 ---
 
 ### Step 75 — TrekSage Advanced Bot Fix + Complete UI Redesign [DONE — 2026-06-17]

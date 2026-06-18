@@ -1897,3 +1897,24 @@ Impact analysis ran on `get_ai_interaction_logs` (LOW, 0 callers), `SiteLayout` 
 | `apps/mobile/app/(tabs)/_layout.tsx` | Added `<Tabs.Screen name="treksage">` between browse and plan | LOW — additive tab registration |
 | `apps/mobile/components/tabs/CustomTabBar.tsx` | `isCenter` → `treksage`; center icon `chatbubbles`; Plan icon `sparkles`/`sparkles-outline` | LOW — `gitnexus_impact(CustomTabBar, upstream)` = 0 upstream callers |
 | `apps/mobile/lib/mobileApi.ts` | Added TrekSage interfaces + `treksageChatMobile()` + `fetchTreksageHistoryMobile()` | LOW — additive; no existing callers |
+
+### TrekSage Hotfix Commits — Done (2026-06-17–18, commits 3a33716 / 88ddd49 / 387de83)
+
+**Hotfix 1 (3a33716) — Hooks violation + scroll + token cost**
+| File | Change | Blast radius |
+|------|--------|-------------|
+| `apps/web-next/components/layout/SiteLayout.tsx` | Replaced conditional `return null` (between hook declarations) with `usePathname()` check — fixes React error #418/#423 | LOW — `gitnexus_impact(SiteLayout, upstream)` = 0 callers |
+| `apps/web-next/app/(public)/treksage/TreksageChat.tsx` | Container-scroll ref (`messagesContainerRef`) replaces `scrollIntoView` (was scrolling the page window) | LOW — leaf component |
+| `services/api/app/modules/trek_intelligence/treksage_agent.py` | `MAX_HISTORY_MESSAGES` cut from 20→6; widget-source logging guard added | LOW — 0 upstream callers per gitnexus_impact |
+
+**Hotfix 2 (88ddd49) — Session key resilience**
+| File | Change | Blast radius |
+|------|--------|-------------|
+| `apps/web-next/app/(public)/treksage/TreksageChat.tsx` | `session_key` always written to `localStorage` even when agent returns an error reply (ensures session survives a failed turn) | LOW |
+
+**Hotfix 3 (387de83) — UX overhaul (full TreksageChat rewrite)**
+| File | Change | Blast radius |
+|------|--------|-------------|
+| `services/api/app/modules/trek_intelligence/treksage_agent.py` | `tool_choice={"type":"any"}` on round 0 (prevents model outputting transition phrases without fetching data); post-process fallback if `final_reply` ends with `:` and is < 100 chars; improved between-round nudge prompt | LOW — 0 upstream callers |
+| `apps/web-next/app/(public)/treksage/TreksageChat.tsx` | FULL REWRITE: sessions sidebar (Today/Yesterday/Earlier, localStorage, `StoredSession[]`), `userSentRef` auto-scroll guard (no scroll on history restore), `messagesContainerRef` container-scroll, voice input (Web Speech API, pulsing animation popup), emoji fix (🏕→⛺, 🗓→📅), trek result cards in 2-col `sm:grid-cols-2` grid, `treksageSlideUp` message animation, `pushSessionToList`/`switchSession` helpers | LOW — leaf component, 0 upstream callers per gitnexus_impact |
+| `apps/web-next/app/(public)/treksage/page.tsx` | `h-[calc(100vh-4rem)] overflow-hidden` (full-screen, header-subtracted); `max-w-2xl` removed | LOW |

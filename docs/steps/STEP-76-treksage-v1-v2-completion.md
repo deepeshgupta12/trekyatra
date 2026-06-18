@@ -106,3 +106,20 @@ Completion → constructs natural language prompt → calls `send()` in parent T
 - The "lockfile patch" warning in `next build` is a pre-existing Next.js workspace issue unrelated to Step 76 changes — compiled successfully
 - Mobile `treksage.tsx` does not render trek cards as rich UI cards (matching web TrekResultCard) to keep the implementation lean; trek cards appear as text chips with name + difficulty. A richer card layout can be added in a future step if needed.
 - The 6-tab mobile layout (Home | Explore | TrekSage-FAB | Plan | Saved | You) is the recommended final tab architecture per PRD V2 intent. Plan tab remains accessible as a regular sparkles icon tab.
+
+---
+
+## Post-Step-76 Hotfixes (2026-06-17–18, commits 3a33716 / 88ddd49 / 387de83)
+
+### Hotfix 1 — commit 3a33716
+- `SiteLayout.tsx`: Hooks violation fix — widget conditional return moved inside component (uses `usePathname()` guard, not early return between hooks); fixes React errors #418/#423/#300
+- `TreksageChat.tsx`: `messagesContainerRef.scrollTo({top:scrollHeight})` replaces `scrollIntoView` (page was scrolling instead of container)
+- `treksage_agent.py`: `MAX_HISTORY_MESSAGES` cut 20→6; logging guard added
+
+### Hotfix 2 — commit 88ddd49
+- `TreksageChat.tsx`: `session_key` always persisted to `localStorage` even on error reply (session key was lost on agent failure)
+
+### Hotfix 3 — commit 387de83 (full TreksageChat rewrite)
+- `treksage_agent.py`: `tool_choice={"type":"any"}` on round 0 forces tool call before any text output; post-process fallback for transition phrases ending with `:`
+- `TreksageChat.tsx`: Full rewrite — sessions sidebar (Today/Yesterday/Earlier), `userSentRef` scroll guard, voice input (Web Speech API + pulsing popup), emoji fix (🏕→⛺, 🗓→📅), trek cards `sm:grid-cols-2`, `treksageSlideUp` animation
+- `page.tsx`: `h-[calc(100vh-4rem)] overflow-hidden` full-screen layout; `max-w-2xl` removed

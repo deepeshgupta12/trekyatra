@@ -130,6 +130,9 @@ All V0 foundations are shipped. The stack is live locally with:
 | **Step M07c — Region Tabs with Trek Cards** (2026-06-14) | **done** |
 | **bugfix — Voice search crash on mic tap** (2026-06-15) | **done** |
 | **Step 76 — TrekSage V1 Completion + V2 Features** (2026-06-17) | **done** — Global floating TrekSageWidget on all public pages; 7-step PlanWizard; LeadCaptureModal; Admin TrekSage Logs dashboard (/admin/treksage-logs); Mobile TrekSage chat tab (center FAB, replaces Plan FAB); ai-logs filter params (source, tool_name); 40/40 BE tests pass; next build ✓; tsc ✓ |
+| **TrekSage hotfix 1** (2026-06-17, commit 3a33716) | **done** — Hooks violation fix (SiteLayout conditional render moved to usePathname check), scrolling fix (container scroll ref instead of window scrollIntoView), token cost cut (MAX_HISTORY_MESSAGES=6), widget logging guard |
+| **TrekSage hotfix 2** (2026-06-17, commit 88ddd49) | **done** — Always persist session_key in localStorage even on agent failure; resilience fix in TreksageChat.tsx |
+| **TrekSage hotfix 3 — UX overhaul** (2026-06-18, commit 387de83) | **done** — Full TreksageChat rewrite: stuck-chat fixed (tool_choice=any round 0 + post-process fallback), full-screen layout (max-w-2xl removed), sessions sidebar (Today/Yesterday/Earlier grouped, localStorage persistence), voice input (Web Speech API popup + pulsing rings), emoji fix (🏕→⛺, 🗓→📅), trek result cards in 2-col grid, message slide-up animation |
 | Step M08 — Trek Comparison (full attribute table + saved comparisons) | pending |
 
 ### Step M01 — Done (2026-06-03)
