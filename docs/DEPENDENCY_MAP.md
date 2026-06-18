@@ -1955,6 +1955,20 @@ Impact analysis: `search_treks` (LOW, only called from `_call_tool` in `treksage
 | `apps/mobile/app/(tabs)/saved/index.tsx` (NEW) | Saved tab root | LOW |
 | `apps/mobile/app/(tabs)/saved/comparisons.tsx` (NEW) | Saved comparisons list with delete + open | LOW |
 
+### TrekSage Hotfix 5 — Double Nav + Blank Images + get_site_info — Done (2026-06-18, commit 75d029c)
+
+Impact analysis: `_call_tool` (LOW — only callers are `chat()` in treksage_agent.py + 0 upstream); `treksage/layout.tsx` (LOW — route-scoped layout, only applies to `(treksage)` group).
+
+| File | Change | Blast radius |
+|------|--------|-------------|
+| `apps/web-next/app/(public)/treksage/` (DELETED) | Route group moved — all 4 files removed from `(public)` | LOW — no other imports; git detects as rename |
+| `apps/web-next/app/(treksage)/treksage/layout.tsx` (MOVED) | Now in `(treksage)` route group — no longer inherits `SiteLayout`; eliminates double Header + Footer/TrekSageWidget | LOW — route-scoped layout, 0 upstream callers |
+| `apps/web-next/app/(treksage)/treksage/page.tsx` (MOVED) | Route group move only, no content change | LOW |
+| `apps/web-next/app/(treksage)/treksage/TreksageChat.tsx` (MOVED + MODIFIED) | CanvasTrekCard + ChatTrekCard: gradient bg (`from-[#E8F4EE] to-[#D4EAD9]`), Mountain icon opacity `/15`→`/40`, "Trek photo" label added | LOW — leaf component, 0 upstream callers |
+| `apps/web-next/app/(treksage)/treksage/TrekDetailPanel.tsx` (MOVED) | Route group move only, no content change | LOW |
+| `services/api/app/modules/trek_intelligence/treksage_agent.py` | `get_site_info` tool added to `_TOOLS`; `_SITE_INFO_MAP` (9 topics: about/contact/privacy/terms/affiliate/safety/gear/authors/methodology) + `_SITE_INFO_ALIASES` dicts; `_call_get_site_info()` fetches CMS page by slug or page_type; `page.is_published` → `page.status != "published"` fix; system prompt guardrails section added | LOW — `gitnexus_impact(chat, upstream)` = 0 callers outside treksage route |
+| `services/api/tests/test_treksage.py` | TC-B45–B47: `test_get_site_info_slug_page`, `test_get_site_info_unknown_topic_returns_error`, `test_get_site_info_alias_resolution` | LOW — test-only |
+
 ### Step M09 — Plan My Trek Wizard — Done (2026-06-18)
 
 | File | Change | Blast radius |
