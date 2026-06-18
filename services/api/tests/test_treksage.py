@@ -294,3 +294,80 @@ def test_month_ord_full_names():
     assert _MONTH_ORD.get("January") == 1
     assert _MONTH_ORD.get("June") == 6
     assert _MONTH_ORD.get("September") == 9
+
+
+# ---------------------------------------------------------------------------
+# TC-B45: get_site_info tool — slug-based page fetch
+# TC-B46: get_site_info tool — unknown topic returns error
+# TC-B47: get_site_info tool — alias resolution (privacy_policy → privacy)
+# ---------------------------------------------------------------------------
+
+def test_get_site_info_slug_page():
+    """get_site_info returns title + content for a published slug-based page."""
+    from app.modules.trek_intelligence.treksage_agent import _call_get_site_info
+
+    unique_slug = f"about-test-{uuid.uuid4().hex[:6]}"
+    with SessionLocal() as db:
+        page = CMSPage(
+            id=uuid.uuid4(),
+            slug=unique_slug,
+            page_type="about",
+            status="published",
+            title="About TrekYatra",
+            content_html="<p>TrekYatra is India's editorial trekking guide.</p>",
+        )
+        db.add(page)
+        db.commit()
+        # Temporarily monkeypatch the slug map so we don't need the real "about" slug
+        from app.modules.trek_intelligence import treksage_agent as ta
+        original_map = ta._SITE_INFO_MAP.copy()
+        ta._SITE_INFO_MAP["about"] = {"slug": unique_slug}
+        try:
+            result = _call_get_site_info(db, "about")
+            assert result.get("title") == "About TrekYatra"
+            assert "TrekYatra" in result.get("content", "")
+            assert "url" in result
+        finally:
+            ta._SITE_INFO_MAP.clear()
+            ta._SITE_INFO_MAP.update(original_map)
+            db.execute(delete(CMSPage).where(CMSPage.id == page.id))
+            db.commit()
+
+
+def test_get_site_info_unknown_topic_returns_error():
+    """get_site_info returns a descriptive error for unrecognised topics."""
+    from app.modules.trek_intelligence.treksage_agent import _call_get_site_info
+
+    with SessionLocal() as db:
+        result = _call_get_site_info(db, "weather_forecast")
+        assert "error" in result
+        assert "weather_forecast" in result["error"]
+
+
+def test_get_site_info_alias_resolution():
+    """privacy_policy alias resolves to the privacy config entry."""
+    from app.modules.trek_intelligence.treksage_agent import _call_get_site_info
+    from app.modules.trek_intelligence import treksage_agent as ta
+
+    unique_slug = f"privacy-test-{uuid.uuid4().hex[:6]}"
+    with SessionLocal() as db:
+        page = CMSPage(
+            id=uuid.uuid4(),
+            slug=unique_slug,
+            page_type="editorial",
+            status="published",
+            title="Privacy Policy",
+            content_html="<p>We value your privacy.</p>",
+        )
+        db.add(page)
+        db.commit()
+        original_map = ta._SITE_INFO_MAP.copy()
+        ta._SITE_INFO_MAP["privacy"] = {"slug": unique_slug}
+        try:
+            result = _call_get_site_info(db, "privacy_policy")
+            assert result.get("title") == "Privacy Policy"
+        finally:
+            ta._SITE_INFO_MAP.clear()
+            ta._SITE_INFO_MAP.update(original_map)
+            db.execute(delete(CMSPage).where(CMSPage.id == page.id))
+            db.commit()

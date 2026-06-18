@@ -51,6 +51,25 @@ RESPONSE FORMAT for recommendations:
 TREK PAGE CONTEXT:
 When the user message starts with "[Trek page context: <name> (<slug>)]", the user is currently viewing that trek's guide page. Use the given slug directly for ask_trek_question calls. For "similar treks" or "compare" requests, first call search_treks or recommend_treks to discover comparable treks, then optionally compare_treks using the page slug plus discovered slugs.
 
+SITE INFORMATION TOOL:
+Use get_site_info when users ask about TrekYatra as an organisation or its policies:
+- "about" → About TrekYatra (mission, story, team)
+- "contact" → Contact page (how to reach us)
+- "privacy" → Privacy Policy
+- "terms" → Terms of Service
+- "affiliate" → Affiliate Disclosure
+- "safety" → Safety Disclaimer
+- "methodology" → Editorial Methodology (how guides are written)
+- "gear" → Gear Review articles
+- "authors" → Author Network
+
+GUARDRAILS for site info answers:
+• Always cite the URL returned by the tool — say "You can read the full [page name] at [url]"
+• For legal/policy pages (privacy, terms, affiliate), quote accurately and add: "Please read the full page for complete details"
+• Never make commitments or promises on TrekYatra's behalf
+• For contact info, direct to the contact page — never invent email or phone numbers
+• Editorial opinions in gear reviews are independent and not paid placements (unless the affiliate disclosure states otherwise)
+
 WHAT NOT TO DO:
 • Do not guess or fabricate missing data — if a field is unavailable, say so
 • Do not produce partial sentences ending with ":" — always deliver a complete answer
@@ -133,6 +152,28 @@ _TOOLS = [
             },
         },
     },
+    {
+        "name": "get_site_info",
+        "description": (
+            "Fetch content from TrekYatra's informational pages: About, Contact, Privacy Policy, "
+            "Terms of Service, Affiliate Disclosure, Safety Disclaimer, Editorial Methodology, "
+            "Gear Reviews, or Author Network. Use this when users ask about TrekYatra as a company, "
+            "its policies, team, editorial standards, or gear recommendations."
+        ),
+        "input_schema": {
+            "type": "object",
+            "required": ["topic"],
+            "properties": {
+                "topic": {
+                    "type": "string",
+                    "description": (
+                        "Topic to look up. One of: about, contact, privacy, terms, "
+                        "affiliate, safety, gear, authors, methodology"
+                    ),
+                },
+            },
+        },
+    },
 ]
 
 # ── Service function dispatch ─────────────────────────────────────────────────
@@ -187,6 +228,9 @@ def _call_tool(db: Session, name: str, inputs: dict) -> Any:
             lead = ti_service.create_trek_plan_lead(db, payload)
             return {"lead_id": str(lead.id), "status": lead.status}
 
+        if name == "get_site_info":
+            return _call_get_site_info(db, str(inputs.get("topic", "")).strip().lower())
+
     except Exception as exc:
         logger.warning("treksage_agent tool %s failed: %s", name, exc)
         return {"error": str(exc)}
@@ -213,6 +257,90 @@ def _slim_profile(p: Any) -> dict:
         "family_friendly": p.family_friendly,
         "hero_image_url": getattr(p, "hero_image_url", None),
     }
+
+# ── Site info helper ─────────────────────────────────────────────────────────
+
+_SITE_INFO_MAP: dict[str, dict] = {
+    "about":       {"slug": "about"},
+    "contact":     {"slug": "contact"},
+    "privacy":     {"slug": "privacy-policy"},
+    "terms":       {"slug": "terms-of-service"},
+    "affiliate":   {"slug": "affiliate-disclosure"},
+    "safety":      {"slug": "safety-disclaimer"},
+    "methodology": {"slug": "editorial-methodology"},
+    "gear":        {"page_type": "gear_review"},
+    "authors":     {"page_type": "author"},
+}
+
+# Accept alternate phrasings
+_SITE_INFO_ALIASES: dict[str, str] = {
+    "privacy_policy": "privacy",
+    "terms_of_service": "terms",
+    "affiliate_disclosure": "affiliate",
+    "safety_disclaimer": "safety",
+    "editorial_methodology": "methodology",
+    "gear_reviews": "gear",
+    "author_network": "authors",
+    "editorial": "methodology",
+    "team": "about",
+    "who": "about",
+    "company": "about",
+}
+
+
+def _call_get_site_info(db: Session, topic: str) -> dict:
+    import re
+    from app.modules.cms import service as cms_service
+
+    canonical = _SITE_INFO_ALIASES.get(topic, topic)
+    config = _SITE_INFO_MAP.get(canonical)
+    if not config:
+        # partial-match fallback
+        for key, canon in _SITE_INFO_ALIASES.items():
+            if key in topic:
+                config = _SITE_INFO_MAP.get(canon)
+                break
+        for key in _SITE_INFO_MAP:
+            if key in topic:
+                config = _SITE_INFO_MAP[key]
+                break
+
+    if not config:
+        return {
+            "error": (
+                f"Unknown topic '{topic}'. "
+                "Use one of: about, contact, privacy, terms, affiliate, safety, gear, authors, methodology"
+            )
+        }
+
+    def strip_html(html: str | None) -> str:
+        text = re.sub(r"<[^>]+>", " ", html or "")
+        return re.sub(r"\s+", " ", text).strip()[:2000]
+
+    if "slug" in config:
+        page = cms_service.get_page_by_slug(db, config["slug"])
+        if not page or page.status != "published":
+            return {"error": f"Page for topic '{topic}' is not published yet."}
+        return {
+            "title": page.title,
+            "slug": page.slug,
+            "content": strip_html(page.content_html),
+            "url": f"https://www.trekyatra.co.in/{page.slug}",
+        }
+    else:
+        pages = cms_service.list_pages(db, page_type=config["page_type"], status="published", limit=8)
+        return {
+            "pages": [
+                {
+                    "title": p.title,
+                    "slug": p.slug,
+                    "snippet": strip_html(p.content_html)[:400],
+                    "url": f"https://www.trekyatra.co.in/{p.slug}",
+                }
+                for p in pages
+            ]
+        }
+
 
 # ── Session helpers ───────────────────────────────────────────────────────────
 

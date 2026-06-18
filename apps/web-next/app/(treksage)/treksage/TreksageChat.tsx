@@ -144,7 +144,7 @@ function CanvasTrekCard({
       }}
     >
       {/* Hero image */}
-      <div className="relative h-36 bg-[#FAF5EE]">
+      <div className="relative h-36 bg-gradient-to-br from-[#E8F4EE] to-[#D4EAD9]">
         {card.hero_image_url && !imgError ? (
           <Image
             src={card.hero_image_url}
@@ -155,8 +155,9 @@ function CanvasTrekCard({
             onError={() => setImgError(true)}
           />
         ) : (
-          <div className="absolute inset-0 flex items-center justify-center">
-            <Mountain className="h-10 w-10 text-[#1D3A2E]/15" />
+          <div className="absolute inset-0 flex flex-col items-center justify-center gap-1">
+            <Mountain className="h-8 w-8 text-[#1D3A2E]/40" />
+            <span className="text-[9px] font-medium text-[#1D3A2E]/30 uppercase tracking-wide">Trek photo</span>
           </div>
         )}
         {card.difficulty && (
@@ -280,7 +281,7 @@ function ChatTrekCard({ card, index }: { card: TrekCard; index: number }) {
       className="bg-white rounded-xl overflow-hidden border border-[#1D3A2E]/10 shadow-sm flex gap-3 p-3"
       style={{ animation: "tsStaggerFade 0.4s ease-out both", animationDelay: `${index * 0.08}s` }}
     >
-      <div className="relative h-16 w-16 flex-shrink-0 rounded-lg overflow-hidden bg-[#FAF5EE]">
+      <div className="relative h-16 w-16 flex-shrink-0 rounded-lg overflow-hidden bg-gradient-to-br from-[#E8F4EE] to-[#D4EAD9]">
         {card.hero_image_url && !imgError ? (
           <Image
             src={card.hero_image_url}
@@ -292,7 +293,7 @@ function ChatTrekCard({ card, index }: { card: TrekCard; index: number }) {
           />
         ) : (
           <div className="absolute inset-0 flex items-center justify-center">
-            <Mountain className="h-6 w-6 text-[#1D3A2E]/20" />
+            <Mountain className="h-6 w-6 text-[#1D3A2E]/40" />
           </div>
         )}
       </div>
