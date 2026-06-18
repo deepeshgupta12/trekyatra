@@ -371,3 +371,73 @@ def test_get_site_info_alias_resolution():
             ta._SITE_INFO_MAP.update(original_map)
             db.execute(delete(CMSPage).where(CMSPage.id == page.id))
             db.commit()
+
+
+# ---------------------------------------------------------------------------
+# TC-B48: _call_tool("recommend_treks") iterates response.recommendations
+#         correctly and does NOT access .trek (the old broken path)
+# TC-B49: _slim_profile works on TrekRecommendation (getattr safety)
+# ---------------------------------------------------------------------------
+
+def test_call_tool_recommend_treks_iterates_recommendations(db: Session):
+    """_call_tool('recommend_treks') returns a list of slim dicts, not an error."""
+    from app.modules.trek_intelligence.treksage_agent import _call_tool
+    from app.modules.trek_intelligence import service as ti_service
+    from app.schemas.plan import PlanRecommendResponse, TrekRecommendation
+
+    fake_rec = TrekRecommendation(
+        slug="kedarkantha",
+        name="Kedarkantha",
+        match_score=82,
+        category="best_match",
+        why_this_matches="Kedarkantha is recommended because it fits your 5–7-day window.",
+        state="Uttarakhand",
+        difficulty="moderate",
+        duration="6 days",
+        season="Dec–Apr",
+        hero_image_url="https://trekyatra.co.in/wp-content/uploads/kedarkantha.jpg",
+        budget_min=8000,
+        budget_max=15000,
+    )
+    fake_response = PlanRecommendResponse(
+        recommendations=[fake_rec],
+        total_treks_scored=10,
+    )
+
+    with patch.object(ti_service, "recommend_treks", return_value=fake_response):
+        result = _call_tool(db, "recommend_treks", {"months": ["July"], "duration_min": 5, "duration_max": 7})
+
+    assert isinstance(result, list), f"Expected list, got: {result}"
+    assert len(result) == 1
+    assert result[0]["slug"] == "kedarkantha"
+    assert result[0]["name"] == "Kedarkantha"
+    assert result[0]["hero_image_url"] == "https://trekyatra.co.in/wp-content/uploads/kedarkantha.jpg"
+    assert result[0]["match_score"] == 82
+    # Confirm the old broken path ("r.trek") is NOT what produces this
+    assert "error" not in result[0]
+
+
+def test_slim_profile_on_trek_recommendation():
+    """_slim_profile handles TrekRecommendation objects without AttributeError."""
+    from app.modules.trek_intelligence.treksage_agent import _slim_profile
+    from app.schemas.plan import TrekRecommendation
+
+    rec = TrekRecommendation(
+        slug="brahmatal",
+        name="Brahmatal Trek",
+        match_score=75,
+        category="best_match",
+        why_this_matches="Good fit.",
+        state="Uttarakhand",
+        difficulty="easy",
+        hero_image_url=None,
+    )
+    result = _slim_profile(rec)
+    assert result["slug"] == "brahmatal"
+    assert result["name"] == "Brahmatal Trek"
+    assert result["hero_image_url"] is None
+    # Fields absent on TrekRecommendation must default to None, not raise
+    assert result["beginner_friendly"] is None
+    assert result["solo_friendly"] is None
+    assert result["max_altitude_ft"] is None
+    assert result["match_score"] == 75

@@ -1,7 +1,6 @@
 "use client";
 
 import { useState } from "react";
-import Image from "next/image";
 import Link from "next/link";
 import {
   Mountain, MapPin, Clock, TrendingUp, ArrowUpRight, Calendar,
@@ -85,20 +84,19 @@ export default function TrekDetailPanel({ card, profile }: Props) {
       style={{ animation: "tsSlideUp 0.3s ease-out" }}
     >
       {/* Hero */}
-      <div className="relative h-52 bg-[#FAF5EE]">
+      <div className="relative h-52 bg-gradient-to-br from-[#E8F4EE] to-[#D4EAD9]">
         {heroImage && !imgError ? (
-          <Image
+          // eslint-disable-next-line @next/next/no-img-element
+          <img
             src={heroImage}
             alt={card.name}
-            fill
-            className="object-cover"
-            sizes="(max-width: 1200px) 60vw, 600px"
+            className="absolute inset-0 w-full h-full object-cover"
             onError={() => setImgError(true)}
           />
         ) : (
           <div className="absolute inset-0 flex flex-col items-center justify-center gap-2">
-            <Mountain className="h-12 w-12 text-[#1D3A2E]/15" />
-            <p className="text-[#1D3A2E]/25 text-xs">No image available</p>
+            <Mountain className="h-12 w-12 text-[#1D3A2E]/40" />
+            <p className="text-[#1D3A2E]/40 text-xs">No image available</p>
           </div>
         )}
         <div className="absolute inset-0 bg-gradient-to-t from-[#1D3A2E]/70 via-transparent to-transparent" />

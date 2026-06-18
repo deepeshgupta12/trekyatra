@@ -70,6 +70,16 @@ GUARDRAILS for site info answers:
 • For contact info, direct to the contact page — never invent email or phone numbers
 • Editorial opinions in gear reviews are independent and not paid placements (unless the affiliate disclosure states otherwise)
 
+TOOL SELECTION:
+• Planning/recommendation queries ("plan a trek", "suggest treks", "recommend for July"): ALWAYS call recommend_treks. For duration like "6 days" use duration_min=5, duration_max=7. For "Himalayan"/"mountains" do NOT set a state/region filter — all Indian Himalayan treks are already in the database.
+• Keyword/name searches ("find X", "show me treks near Y", "treks in Himachal"): call search_treks.
+• If recommend_treks returns an empty list, immediately follow up with search_treks using a relevant keyword or state — never tell the user you found nothing without trying both tools.
+
+GET_SITE_INFO SPECIFICITY:
+• When a user asks for a SPECIFIC detail (e.g., "who is the founder", "what is the email address"), call get_site_info, then check if that specific detail appears in the returned content.
+• If the specific detail is NOT in the content, say so explicitly: "The About page doesn't mention [specific detail]." Then provide a brief summary of what IS available on that page.
+• Never dump the entire page content verbatim — summarise in 3-5 bullet points maximum.
+
 WHAT NOT TO DO:
 • Do not guess or fabricate missing data — if a field is unavailable, say so
 • Do not produce partial sentences ending with ":" — always deliver a complete answer
@@ -205,8 +215,9 @@ def _call_tool(db: Session, name: str, inputs: dict) -> Any:
                 family_friendly=inputs.get("family_friendly"),
                 limit=min(inputs.get("limit", 5), 10),
             )
-            results = ti_service.recommend_treks(db, req)
-            return [_slim_profile(r.trek) for r in results] if results else []
+            response = ti_service.recommend_treks(db, req)
+            recs = response.recommendations if response else []
+            return [_slim_profile(r) for r in recs] if recs else []
 
         if name == "compare_treks":
             slugs = inputs.get("slugs", [])
@@ -239,24 +250,30 @@ def _call_tool(db: Session, name: str, inputs: dict) -> Any:
 
 
 def _slim_profile(p: Any) -> dict:
-    return {
-        "slug": p.slug,
-        "name": p.name,
-        "state": p.state,
-        "difficulty": p.difficulty,
-        "duration": p.duration,
-        "season": p.season,
+    d: dict = {
+        "slug": getattr(p, "slug", None),
+        "name": getattr(p, "name", None),
+        "state": getattr(p, "state", None),
+        "difficulty": getattr(p, "difficulty", None),
+        "duration": getattr(p, "duration", None),
+        "season": getattr(p, "season", None),
         "max_altitude_ft": getattr(p, "max_altitude_ft", None),
-        "budget_min": p.budget_min,
-        "budget_max": p.budget_max,
-        "themes": p.themes,
-        "crowd_level": p.crowd_level,
-        "permit_required": p.permit_required,
-        "beginner_friendly": p.beginner_friendly,
-        "solo_friendly": p.solo_friendly,
-        "family_friendly": p.family_friendly,
+        "budget_min": getattr(p, "budget_min", None),
+        "budget_max": getattr(p, "budget_max", None),
+        "themes": getattr(p, "themes", None),
+        "crowd_level": getattr(p, "crowd_level", None),
+        "permit_required": getattr(p, "permit_required", None),
+        "beginner_friendly": getattr(p, "beginner_friendly", None),
+        "solo_friendly": getattr(p, "solo_friendly", None),
+        "family_friendly": getattr(p, "family_friendly", None),
         "hero_image_url": getattr(p, "hero_image_url", None),
     }
+    # Include recommendation fields when present (TrekRecommendation objects)
+    if getattr(p, "match_score", None) is not None:
+        d["match_score"] = p.match_score
+    if getattr(p, "why_this_matches", None):
+        d["why_this_matches"] = p.why_this_matches
+    return d
 
 # ── Site info helper ─────────────────────────────────────────────────────────
 
@@ -485,15 +502,27 @@ def chat(
     if not final_reply:
         final_reply = "I couldn't find an answer right now. Try rephrasing your question."
 
-    # Post-process: if the model still leaked a transition phrase (ends with ":" and
-    # is very short), replace with a useful fallback instead of confusing the user.
+    # Post-process: if the model leaked a transition phrase (ends with ":" and is very
+    # short), replace with a fallback. But if tools returned real trek results, reference
+    # the canvas panel rather than claiming no results were found.
     if final_reply.rstrip().endswith(":") and len(final_reply) < 100:
-        final_reply = (
-            "I searched the TrekYatra database but couldn't find results that exactly match your query. "
-            "Try being more specific — mention a region (Himachal Pradesh, Ladakh, Uttarakhand, Sikkim), "
-            "a travel month, difficulty level (easy / moderate / difficult), or a budget range. "
-            "For example: \"Easy 5-day trek in Himachal Pradesh for October under ₹12,000\"."
+        has_trek_results = any(
+            (isinstance(tc["result"], list) and tc["result"]) or
+            (isinstance(tc["result"], dict) and tc["result"].get("treks"))
+            for tc in tool_calls_log
         )
+        if has_trek_results:
+            final_reply = (
+                "I found some treks that match your criteria — you can explore them in the results panel on the right. "
+                "Would you like me to compare any of them, or do you have questions about a specific trek?"
+            )
+        else:
+            final_reply = (
+                "I searched the TrekYatra database but couldn't find results that exactly match your query. "
+                "Try being more specific — mention a region (Himachal Pradesh, Ladakh, Uttarakhand, Sikkim), "
+                "a travel month, difficulty level (easy / moderate / difficult), or a budget range. "
+                "For example: \"Easy 5-day trek in Himachal Pradesh for October under ₹12,000\"."
+            )
 
     # Expose the last search/recommend/compare result as structured trek cards for the UI.
     trek_cards: list[dict] = []

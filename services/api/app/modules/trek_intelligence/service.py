@@ -120,7 +120,9 @@ def _extract_faqs(page: CMSPage) -> list[dict[str, str]]:
         if not isinstance(item, dict):
             continue
         question = str(item.get("q") or item.get("question") or "").strip()
-        answer   = str(item.get("a") or item.get("answer")   or "").strip()
+        answer_raw = str(item.get("a") or item.get("answer") or "").strip()
+        # Strip HTML tags (CMS stores FAQ answers as HTML)
+        answer = re.sub(r"\s+", " ", re.sub(r"<[^>]+>", " ", answer_raw)).strip()
         if question or answer:
             result.append({"question": question, "answer": answer})
     return result

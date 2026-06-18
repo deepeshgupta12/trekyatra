@@ -2,7 +2,6 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import Link from "next/link";
-import Image from "next/image";
 import {
   Send, Square, Mountain, MapPin, RefreshCw, Headphones, Mic, X,
   Plus, MessageSquare, Menu, Check, GitCompare, ArrowUpRight, Loader2,
@@ -146,12 +145,11 @@ function CanvasTrekCard({
       {/* Hero image */}
       <div className="relative h-36 bg-gradient-to-br from-[#E8F4EE] to-[#D4EAD9]">
         {card.hero_image_url && !imgError ? (
-          <Image
+          // eslint-disable-next-line @next/next/no-img-element
+          <img
             src={card.hero_image_url}
             alt={card.name}
-            fill
-            className="object-cover"
-            sizes="(max-width: 1024px) 50vw, 400px"
+            className="absolute inset-0 w-full h-full object-cover"
             onError={() => setImgError(true)}
           />
         ) : (
@@ -283,12 +281,11 @@ function ChatTrekCard({ card, index }: { card: TrekCard; index: number }) {
     >
       <div className="relative h-16 w-16 flex-shrink-0 rounded-lg overflow-hidden bg-gradient-to-br from-[#E8F4EE] to-[#D4EAD9]">
         {card.hero_image_url && !imgError ? (
-          <Image
+          // eslint-disable-next-line @next/next/no-img-element
+          <img
             src={card.hero_image_url}
             alt={card.name}
-            fill
-            className="object-cover"
-            sizes="64px"
+            className="absolute inset-0 w-full h-full object-cover"
             onError={() => setImgError(true)}
           />
         ) : (
