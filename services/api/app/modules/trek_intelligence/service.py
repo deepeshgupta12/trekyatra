@@ -106,15 +106,24 @@ def _extract_content_sections(page: CMSPage) -> dict[str, str]:
 
 
 def _extract_faqs(page: CMSPage) -> list[dict[str, str]]:
-    """Return FAQ list from content_json.faqs (question + answer dicts)."""
+    """Return FAQ list from content_json.faqs, normalised to {question, answer}.
+
+    CMS pipeline stores FAQs as {"q": ..., "a": ...} (see cms/service.py
+    _parse_faqs_from_section). Fallback to "question"/"answer" for any
+    directly-authored or future-format entries.
+    """
     raw = (page.content_json or {}).get("faqs")
     if not isinstance(raw, list):
         return []
-    return [
-        {"question": str(item.get("question", "")), "answer": str(item.get("answer", ""))}
-        for item in raw
-        if isinstance(item, dict)
-    ]
+    result = []
+    for item in raw:
+        if not isinstance(item, dict):
+            continue
+        question = str(item.get("q") or item.get("question") or "").strip()
+        answer   = str(item.get("a") or item.get("answer")   or "").strip()
+        if question or answer:
+            result.append({"question": question, "answer": answer})
+    return result
 
 
 def _cache_get(db: Session, cache_key: str) -> TrekQACache | None:
