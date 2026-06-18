@@ -298,8 +298,22 @@ _SITE_INFO_MAP: dict[str, dict] = {
     "safety":      {"hardcoded": True},
     "methodology": {"slug": "methodology"},
     "gear":        {"page_type": "gear_review"},
-    "authors":     {"page_type": "author"},
+    "authors":     {"hardcoded": True},
 }
+
+_AUTHORS_INFO = (
+    "Founder: Deepesh Kumar Gupta — Founder & Editorial Lead. "
+    "Deepesh is the founder of TrekYatra and the primary editorial lead, responsible for all "
+    "content standards, platform strategy, and every guide that goes live on the site. "
+    "He built TrekYatra out of a direct frustration with the quality of Indian trekking information "
+    "online — outdated permit details, vague cost estimates, and operator-friendly rankings that "
+    "serve everyone except the trekker. His editorial philosophy: every piece of information on "
+    "TrekYatra must be verifiable, up-to-date, and honest — even when honesty means saying "
+    "'we are not sure, verify this at the trailhead.' "
+    "Skills: Content strategy, Platform editorial, Permit research, Trek planning. "
+    "Contributions or corrections: editorial@trekyatra.co.in "
+    "Full authors page: https://www.trekyatra.co.in/about/authors"
+)
 
 _SAFETY_DISCLAIMER = (
     "TrekYatra provides trekking information for planning purposes only — it is not professional safety advice. "
@@ -369,6 +383,12 @@ def _call_get_site_info(db: Session, topic: str) -> dict:
         return re.sub(r"\s+", " ", text).strip()[:4000]
 
     if config.get("hardcoded"):
+        if canonical == "authors":
+            return {
+                "title": "TrekYatra Authors & Editorial Team",
+                "content": _AUTHORS_INFO,
+                "url": "https://www.trekyatra.co.in/about/authors",
+            }
         return {
             "title": "TrekYatra Safety Disclaimer",
             "content": _SAFETY_DISCLAIMER,
