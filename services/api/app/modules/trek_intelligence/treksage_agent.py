@@ -342,7 +342,7 @@ def _call_get_site_info(db: Session, topic: str) -> dict:
 
     def strip_html(html: str | None) -> str:
         text = re.sub(r"<[^>]+>", " ", html or "")
-        return re.sub(r"\s+", " ", text).strip()[:2000]
+        return re.sub(r"\s+", " ", text).strip()[:4000]
 
     if "slug" in config:
         page = cms_service.get_page_by_slug(db, config["slug"])

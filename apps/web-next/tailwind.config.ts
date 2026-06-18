@@ -88,7 +88,22 @@ export default {
         "float-slow": "float-slow 6s ease-in-out infinite",
         "mist-drift": "mist-drift 12s ease-in-out infinite",
       },
+      typography: {
+        DEFAULT: {
+          css: {
+            color: "hsl(var(--foreground))",
+            a: { color: "hsl(var(--accent))", textDecoration: "underline" },
+            "a:hover": { color: "hsl(var(--accent))", opacity: "0.8" },
+            h2: { color: "hsl(var(--foreground))", fontFamily: "var(--font-display), Georgia, serif" },
+            h3: { color: "hsl(var(--foreground))" },
+            h4: { color: "hsl(var(--foreground))" },
+            strong: { color: "hsl(var(--foreground))" },
+            "thead th": { color: "hsl(var(--foreground))" },
+            "tbody tr": { borderColor: "hsl(var(--border))" },
+          },
+        },
+      },
     },
   },
-  plugins: [require("tailwindcss-animate")],
+  plugins: [require("tailwindcss-animate"), require("@tailwindcss/typography")],
 } satisfies Config;
