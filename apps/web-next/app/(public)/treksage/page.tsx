@@ -9,13 +9,10 @@ export const metadata: Metadata = {
 
 export default function TreksagePage() {
   return (
-    <main className="min-h-screen bg-[#FAF5EE] py-6 px-4 sm:px-6">
-      <div className="max-w-2xl mx-auto">
-        <TreksageChat />
-        <p className="text-center text-[#1D3A2E]/25 text-xs mt-4">
-          TrekSage uses verified TrekYatra data. Always check permit requirements and trail conditions with local authorities before trekking.
-        </p>
-      </div>
+    // h-16 = 64px header (Header.tsx uses h-16). overflow-hidden keeps the chat from
+    // triggering page-level scroll — messages scroll inside TreksageChat's container ref.
+    <main className="h-[calc(100vh-4rem)] overflow-hidden">
+      <TreksageChat />
     </main>
   );
 }

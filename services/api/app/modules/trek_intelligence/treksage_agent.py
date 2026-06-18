@@ -286,6 +286,16 @@ def chat(
 
     for round_num in range(MAX_TOOL_ROUNDS + 1):
         is_final_round = (round_num == MAX_TOOL_ROUNDS)
+        # Round 0: force at least one tool call so the model never outputs an incomplete
+        # transition phrase ("Let me broaden the search:") without fetching any data.
+        # Round 1+: auto (model can answer directly if it has enough tool results).
+        # Final round: text-only (no more tool calls allowed).
+        if is_final_round:
+            tool_choice: dict = {"type": "none"}
+        elif round_num == 0:
+            tool_choice = {"type": "any"}
+        else:
+            tool_choice = {"type": "auto"}
         try:
             response = client.messages.create(
                 model=_HAIKU_MODEL,
@@ -293,9 +303,7 @@ def chat(
                 max_tokens=1200 if is_final_round else 800,
                 system=_SYSTEM_PROMPT,
                 tools=_TOOLS,
-                # Force plain-text on the final round — prevents partial tool-call prefixes
-                # (e.g. "Let me broaden the search:") from leaking as the final message.
-                tool_choice={"type": "none"} if is_final_round else {"type": "auto"},
+                tool_choice=tool_choice,
                 messages=messages,
             )
         except Exception as llm_exc:
@@ -327,7 +335,7 @@ def chat(
             # search and deliver a complete answer.
             stub_content = response.content if response.content else [{"type": "text", "text": candidate or "."}]
             messages.append({"role": "assistant", "content": stub_content})
-            messages.append({"role": "user", "content": "Please search for relevant treks and provide a complete, helpful answer."})
+            messages.append({"role": "user", "content": "Based on the trek data you just retrieved, give the user a complete, helpful answer right now — include trek names, key details, and a recommendation. Do not say 'Let me search' again."})
             continue
 
         # Execute tool calls and build tool_result messages.
@@ -345,6 +353,16 @@ def chat(
 
     if not final_reply:
         final_reply = "I couldn't find an answer right now. Try rephrasing your question."
+
+    # Post-process: if the model still leaked a transition phrase (ends with ":" and
+    # is very short), replace with a useful fallback instead of confusing the user.
+    if final_reply.rstrip().endswith(":") and len(final_reply) < 100:
+        final_reply = (
+            "I searched the TrekYatra database but couldn't find results that exactly match your query. "
+            "Try being more specific — mention a region (Himachal Pradesh, Ladakh, Uttarakhand, Sikkim), "
+            "a travel month, difficulty level (easy / moderate / difficult), or a budget range. "
+            "For example: \"Easy 5-day trek in Himachal Pradesh for October under ₹12,000\"."
+        )
 
     # Expose the last search/recommend result as structured trek cards for the UI.
     trek_cards: list[dict] = []
