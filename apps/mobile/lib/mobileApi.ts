@@ -228,6 +228,14 @@ export async function apiPost<T>(path: string, body: unknown): Promise<T> {
   return resp.json() as Promise<T>;
 }
 
+export async function apiDelete(path: string): Promise<void> {
+  const resp = await fetchWithAuth(path, { method: "DELETE" });
+  if (!resp.ok && resp.status !== 204) {
+    const data = await resp.json().catch(() => ({}));
+    throw new Error((data as { detail?: string }).detail ?? `Request failed: ${resp.status}`);
+  }
+}
+
 export class NotFoundError extends Error {
   constructor(path: string) {
     super(`Not found: ${path}`);
@@ -502,3 +510,24 @@ export async function fetchTreksageHistoryMobile(
     return [];
   }
 }
+
+// ── Saved Comparisons ─────────────────────────────────────────────────────────
+
+export interface SavedComparison {
+  id: string;
+  name: string;
+  slugs: string[];
+  created_at: string;
+  updated_at: string;
+}
+
+export const accountApi = {
+  listComparisons: () =>
+    apiGet<SavedComparison[]>("/api/v1/account/comparisons"),
+
+  saveComparison: (name: string, slugs: string[]) =>
+    apiPost<SavedComparison>("/api/v1/account/comparisons", { name, slugs }),
+
+  deleteComparison: (id: string) =>
+    apiDelete(`/api/v1/account/comparisons/${id}`),
+};

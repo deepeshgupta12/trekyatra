@@ -1,7 +1,7 @@
 # STEP-M08 — Trek Comparison
 
-**Status:** Pending
-**Phase:** Discovery
+**Status:** Done (2026-06-18)
+**Phase:** Shipped
 **Dependencies:** STEP-M07 (explore — trek selection UI), STEP-M02 (auth for saving comparisons)
 
 ---
@@ -90,3 +90,20 @@ Winner badges (green checkmark) shown per attribute where one trek clearly wins.
 4. **TC-M08-04**: Save comparison → appears in Saved → Comparisons screen
 5. **TC-M08-05**: Delete saved comparison → removed from list
 6. **TC-M08-06**: Not signed in → save button shows sign-in prompt
+
+## Implementation Notes (2026-06-18)
+
+**Files Modified:**
+- `apps/mobile/app/(tabs)/(home)/compare.tsx` — winner badges via `getWinnerIdx()` for budget/permit/suitability/crowd_level fields; Save Comparison button (auth-gated Alert + POST /api/v1/account/comparisons); `savedId` state turns button green on success
+- `apps/mobile/lib/mobileApi.ts` — added `apiDelete()` helper; `SavedComparison` interface; `accountApi` object with `listComparisons`, `saveComparison`, `deleteComparison`
+
+**Files Created:**
+- `apps/mobile/hooks/useComparisons.ts` — CRUD hook: list (on mount), save, remove
+- `apps/mobile/app/(tabs)/saved/_layout.tsx` — Stack navigator (index + comparisons screens)
+- `apps/mobile/app/(tabs)/saved/index.tsx` — Saved tab root with Comparisons entry card
+- `apps/mobile/app/(tabs)/saved/comparisons.tsx` — FlatList of saved comparisons with delete + Open (navigates to compare screen with preselected first slug)
+
+**Files Deleted:**
+- `apps/mobile/app/(tabs)/saved.tsx` — replaced by directory stack
+
+**Build:** `npx tsc --noEmit` → 0 errors

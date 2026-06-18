@@ -793,6 +793,21 @@ Redefines the previously-unscoped "Browse/Search Polish Pass" placeholder. User-
 
 `apps/mobile/app/(tabs)/browse/search.tsx` — `handleMicPress` wrapped in `try/catch`; any native-module error from `expo-speech-recognition` (added M07b) is caught and logged instead of crashing the app. If voice search still doesn't trigger after this fix, the dev-client binary needs a rebuild to pick up the native module added in M07b. **tsc --noEmit: 0 errors** | No backend or web-next changes.
 
+### Step M08 — Trek Comparison (full attribute table + saved comparisons) [DONE — 2026-06-18]
+
+Spec: `docs/mobile/steps/STEP-M08-trek-comparison.md`. Enhanced the existing `(home)/compare.tsx` (lightweight from M06) with winner badges + save flow; converted the placeholder `saved.tsx` into a proper stack with Saved Comparisons screen.
+
+- `apps/mobile/app/(tabs)/(home)/compare.tsx` — `getWinnerIdx()` function determines green winner badge per attribute row (budget_min/max → lower wins; permit_required → false wins; beginner/solo/family_friendly → true wins; crowd_level → low wins); `handleSave()` with auth gate (Alert prompts unauthenticated users); `savedId` state turns save button green on success
+- `apps/mobile/lib/mobileApi.ts` — `apiDelete()` helper; `SavedComparison` interface; `accountApi` object (`listComparisons` → GET /api/v1/account/comparisons, `saveComparison` → POST, `deleteComparison` → DELETE)
+- `apps/mobile/hooks/useComparisons.ts` — NEW hook: loads comparisons on mount (when `enabled=true`), exposes `save`, `remove`, `reload`
+- `apps/mobile/app/(tabs)/saved.tsx` — DELETED (replaced by directory stack)
+- `apps/mobile/app/(tabs)/saved/_layout.tsx` — NEW Stack navigator (index + comparisons screens)
+- `apps/mobile/app/(tabs)/saved/index.tsx` — NEW Saved tab root with entry card navigating to comparisons
+- `apps/mobile/app/(tabs)/saved/comparisons.tsx` — NEW FlatList of saved comparisons; delete with confirmation Alert; Open navigates to compare screen with preselectSlug
+- **tsc --noEmit: 0 errors** | No backend changes (endpoints already existed from Step 44/72) | No web-next changes
+
+---
+
 ### Step M-DS8 — Glass UI Overhaul (platform-adaptive glassmorphism) [DONE — 2026-06-15]
 
 Spec: user-requested app-wide "Glass UI" restyle, without hampering existing UX/IA. User decisions: iOS → Apple "Liquid Glass" (`expo-glass-effect`); Android/web → `expo-blur` frosted; full app-wide pass in one step (not phased).
