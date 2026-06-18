@@ -115,8 +115,8 @@ This file tracks structural dependencies, source-of-truth modules, and Nexus/Git
 - `apps/web-next/app/(public)/account/premium/page.tsx` -> auth-gated subscription dashboard; blast radius: LOW (new page)
 - `apps/web-next/app/(public)/plan/page.tsx` -> full rewrite: 4-step wizard + TrekPlanCard result; blast radius: LOW (leaf page)
 - `apps/web-next/app/(public)/about/page.tsx` -> Step 42: CMS-first (slug "about") with static ContentPage fallback; blast radius: LOW
-- `apps/web-next/app/(public)/privacy/page.tsx` -> Step 42: CMS-first (slug "privacy-policy"); blast radius: LOW
-- `apps/web-next/app/(public)/terms/page.tsx` -> Step 42: CMS-first (slug "terms-of-service"); blast radius: LOW
+- `apps/web-next/app/(public)/privacy/page.tsx` -> Step 42: CMS-first (slug "privacy"); blast radius: LOW [note: DEPENDENCY_MAP previously said "privacy-policy" — corrected; page always used "privacy"; _SITE_INFO_MAP had the wrong slug, fixed in TrekSage hotfix 9]
+- `apps/web-next/app/(public)/terms/page.tsx` -> Step 42: CMS-first (slug "terms"); blast radius: LOW [note: previously said "terms-of-service" — corrected; same mismatch pattern, fixed in TrekSage hotfix 9]
 - `apps/web-next/app/(public)/contact/page.tsx` -> Step 42: CMS-first (slug "contact"); blast radius: LOW
 - `apps/web-next/app/(public)/affiliate-disclosure/page.tsx` -> Step 42: CMS-first (slug "affiliate-disclosure"); blast radius: LOW
 - `apps/web-next/app/(public)/methodology/page.tsx` -> Step 42: CMS-first (slug "editorial-methodology"); blast radius: LOW
@@ -1968,6 +1968,59 @@ Impact analysis: `_call_tool` (LOW — only callers are `chat()` in treksage_age
 | `apps/web-next/app/(treksage)/treksage/TrekDetailPanel.tsx` (MOVED) | Route group move only, no content change | LOW |
 | `services/api/app/modules/trek_intelligence/treksage_agent.py` | `get_site_info` tool added to `_TOOLS`; `_SITE_INFO_MAP` (9 topics: about/contact/privacy/terms/affiliate/safety/gear/authors/methodology) + `_SITE_INFO_ALIASES` dicts; `_call_get_site_info()` fetches CMS page by slug or page_type; `page.is_published` → `page.status != "published"` fix; system prompt guardrails section added | LOW — `gitnexus_impact(chat, upstream)` = 0 callers outside treksage route |
 | `services/api/tests/test_treksage.py` | TC-B45–B47: `test_get_site_info_slug_page`, `test_get_site_info_unknown_topic_returns_error`, `test_get_site_info_alias_resolution` | LOW — test-only |
+
+### TrekSage Hotfix 6 — recommend_treks broken + FAQ HTML + images — Done (2026-06-18, commit 0b4f136)
+
+Impact analysis: `_call_tool` (LOW — only called from `chat()` in treksage_agent.py); `_extract_faqs` (LOW — only caller is `page_to_profile`); `TreksageChat.tsx` / `TrekDetailPanel.tsx` (LOW — leaf components, 0 upstream callers).
+
+| File | Change | Blast radius |
+|------|--------|-------------|
+| `services/api/app/modules/trek_intelligence/treksage_agent.py` | CRITICAL: `recommend_treks` fixed — was iterating `PlanRecommendResponse` directly and accessing `r.trek` (non-existent); fixed to `response.recommendations` + `_slim_profile(r)`; `_slim_profile` uses `getattr` for all fields; system prompt: TOOL SELECTION + GET_SITE_INFO SPECIFICITY sections; post-processor: "couldn't find" only fires if tools returned no trek results | LOW |
+| `services/api/app/modules/trek_intelligence/service.py` | `_extract_faqs`: added `re.sub` HTML stripping to answer field (same pattern as `_extract_content_sections`) | LOW — only `page_to_profile` caller |
+| `apps/web-next/app/(treksage)/treksage/TreksageChat.tsx` | CanvasTrekCard + ChatTrekCard: `<Image fill>` → `<img>` — bypasses Next.js image optimization pipeline that caused blank images in production; removed unused `next/image` import | LOW — leaf component |
+| `apps/web-next/app/(treksage)/treksage/TrekDetailPanel.tsx` | Hero image: `<Image fill>` → `<img>` same fix; gradient bg updated | LOW — leaf component |
+| `services/api/tests/test_treksage.py` | TC-B48: `test_call_tool_recommend_treks_iterates_recommendations`; TC-B49: `test_slim_profile_on_trek_recommendation` | LOW — test-only |
+
+### TrekSage Hotfix 7 — altitude blank + HTML sections + founder routing + methodology slug — Done (2026-06-18, commit 9514a38)
+
+Impact analysis: `_extract_content_sections` (LOW — only `page_to_profile` caller); `TrekRecommendation` schema (LOW — additive field, no callers broken); `_to_rec` (LOW — internal to `recommend_treks`).
+
+| File | Change | Blast radius |
+|------|--------|-------------|
+| `services/api/app/schemas/plan.py` | `TrekRecommendation`: added `max_altitude_ft: int \| None = None` — previously only had `altitude: str` (human-readable); canvas card reads `max_altitude_ft` (int) so was always "—" for recommend_treks results | LOW — additive field |
+| `services/api/app/modules/trek_intelligence/matching.py` | `_to_rec`: added `max_altitude_ft=page.trek_max_altitude_ft` to `TrekRecommendation` constructor | LOW — internal to matching |
+| `services/api/app/modules/trek_intelligence/service.py` | `_extract_content_sections`: removed `re.sub` HTML strip — keeps raw HTML (8000 char limit) so CMS tables/lists/bold render correctly in frontend; `_extract_faqs`: reverted HTML stripping (raw HTML for consistent rendering path) | LOW — only `page_to_profile` caller |
+| `apps/web-next/app/(treksage)/treksage/TrekDetailPanel.tsx` | `SectionAccordion`: replaced `<p whitespace-pre-line>` with `dangerouslySetInnerHTML` div + Tailwind arbitrary selectors for `[&_table]`, `[&_th]`, `[&_td]`, `[&_ul]`, `[&_h2]`, `[&_h3]`, `[&_a]` | LOW — leaf component |
+| `services/api/app/modules/trek_intelligence/treksage_agent.py` | `_SITE_INFO_MAP["methodology"]`: slug `"editorial-methodology"` → `"methodology"`; `_SITE_INFO_ALIASES`: founder/founders/who_founded/who_built/who_made → "authors"; system prompt: authors topic description + "[content appears cut off]" guardrail | LOW |
+| `services/api/tests/test_trek_intelligence.py` | TC-B32: inverted HTML assertion to expect HTML preserved in `content_sections` | LOW — test-only |
+
+### TrekSage Hotfix 8 — @tailwindcss/typography registered + site-info context — Done (2026-06-18, commit 512be0d)
+
+Impact analysis: `tailwind.config.ts` (MEDIUM — affects all pages using `prose` class; all informational CMS pages now render correctly).
+
+| File | Change | Blast radius |
+|------|--------|-------------|
+| `apps/web-next/tailwind.config.ts` | Added `require("@tailwindcss/typography")` to plugins array; added `typography` theme extension mapping prose colors to CSS variables (`--foreground`, `--accent`, `--border`); plugin was installed (`^0.5.16`) but never registered — `prose prose-lg` generated zero CSS | MEDIUM — all pages using prose class now gain heading/list/table/link styles |
+| `services/api/app/modules/trek_intelligence/treksage_agent.py` | `_call_get_site_info` `strip_html` truncation 2000 → 4000 chars for longer pages (Privacy, About, Methodology) | LOW |
+
+Pages fixed (all used `prose prose-lg max-w-none` with `dangerouslySetInnerHTML` but had no CSS output):
+- `/about`, `/contact`, `/privacy`, `/terms`, `/methodology`, `/affiliate-disclosure`
+
+### TrekSage Hotfix 9 — privacy/terms slug fixes + safety hardcoded response — Done (2026-06-18, commit e96b0f0)
+
+Impact analysis: `_call_get_site_info` (LOW — only called from `_call_tool` in treksage_agent.py).
+
+| File | Change | Blast radius |
+|------|--------|-------------|
+| `services/api/app/modules/trek_intelligence/treksage_agent.py` | `_SITE_INFO_MAP["privacy"]`: `"privacy-policy"` → `"privacy"`; `_SITE_INFO_MAP["terms"]`: `"terms-of-service"` → `"terms"`; `_SITE_INFO_MAP["safety"]`: replaced broken slug `"safety-disclaimer"` (no CMS page exists for it) with `{"hardcoded": True}`; added `_SAFETY_DISCLAIMER` constant (5 key safety rules + URL); `_call_get_site_info`: new `hardcoded` branch returns constant without DB query | LOW |
+
+### TrekSage Hotfix 10 — hard-route founder questions to authors — Done (2026-06-18, commit f5c1627)
+
+Impact analysis: `_call_get_site_info` (LOW); system prompt change only affects model behaviour.
+
+| File | Change | Blast radius |
+|------|--------|-------------|
+| `services/api/app/modules/trek_intelligence/treksage_agent.py` | System prompt: SITE INFORMATION TOOL section replaced with explicit SITE INFORMATION ROUTING table (9 topic mappings); added CRITICAL rule against using topic="about" for founder/person questions; `_SITE_INFO_ALIASES`: `"who": "about"` → `"who": "authors"` — who-questions are about people not company mission | LOW |
 
 ### Step M09 — Plan My Trek Wizard — Done (2026-06-18)
 
