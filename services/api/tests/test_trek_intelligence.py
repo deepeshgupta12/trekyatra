@@ -689,7 +689,7 @@ def test_page_to_profile_includes_content_sections(db: Session):
 
     assert "packing" in profile.content_sections
     assert "Rain jacket" in profile.content_sections["packing"]
-    assert "<ul>" not in profile.content_sections["packing"]  # HTML stripped
+    assert "<ul>" in profile.content_sections["packing"]  # HTML preserved for frontend rendering
     assert "itinerary" in profile.content_sections
     assert len(profile.faqs) == 1
     assert profile.faqs[0]["question"] == "Is it hard?"

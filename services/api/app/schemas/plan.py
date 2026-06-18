@@ -85,6 +85,7 @@ class TrekRecommendation(BaseModel):
     duration: str | None = None
     season: str | None = None
     altitude: str | None = None
+    max_altitude_ft: int | None = None
     permits: str | None = None
     base: str | None = None
     hero_image_url: str | None = None

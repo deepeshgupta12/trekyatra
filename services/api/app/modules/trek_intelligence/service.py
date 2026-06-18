@@ -95,13 +95,16 @@ def page_to_profile(page: CMSPage) -> TrekProfile:
 
 
 def _extract_content_sections(page: CMSPage) -> dict[str, str]:
-    """Strip HTML and truncate each section from content_json.sections for MCP/JSON bible."""
+    """Return raw HTML for each section from content_json.sections.
+    Truncated at 8000 chars to bound payload size; HTML is preserved so the
+    frontend can render tables, lists, and bold text correctly.
+    AI grounding callers strip HTML themselves via get_trek_content/_strip_html.
+    """
     raw_sections = (page.content_json or {}).get("sections", {})
     result: dict[str, str] = {}
     for key, html in (raw_sections or {}).items():
-        if isinstance(html, str):
-            text = re.sub(r"<[^>]+>", " ", html).strip()
-            result[key] = text[:4000]
+        if isinstance(html, str) and html.strip():
+            result[key] = html[:8000]
     return result
 
 
@@ -120,9 +123,7 @@ def _extract_faqs(page: CMSPage) -> list[dict[str, str]]:
         if not isinstance(item, dict):
             continue
         question = str(item.get("q") or item.get("question") or "").strip()
-        answer_raw = str(item.get("a") or item.get("answer") or "").strip()
-        # Strip HTML tags (CMS stores FAQ answers as HTML)
-        answer = re.sub(r"\s+", " ", re.sub(r"<[^>]+>", " ", answer_raw)).strip()
+        answer = str(item.get("a") or item.get("answer") or "").strip()
         if question or answer:
             result.append({"question": question, "answer": answer})
     return result

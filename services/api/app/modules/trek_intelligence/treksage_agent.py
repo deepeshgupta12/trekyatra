@@ -53,7 +53,7 @@ When the user message starts with "[Trek page context: <name> (<slug>)]", the us
 
 SITE INFORMATION TOOL:
 Use get_site_info when users ask about TrekYatra as an organisation or its policies:
-- "about" → About TrekYatra (mission, story, team)
+- "about" → About TrekYatra (mission, story, editorial philosophy)
 - "contact" → Contact page (how to reach us)
 - "privacy" → Privacy Policy
 - "terms" → Terms of Service
@@ -61,7 +61,7 @@ Use get_site_info when users ask about TrekYatra as an organisation or its polic
 - "safety" → Safety Disclaimer
 - "methodology" → Editorial Methodology (how guides are written)
 - "gear" → Gear Review articles
-- "authors" → Author Network
+- "authors" → Author Network (team members, founder profiles, roles — USE THIS for "who is the founder", "who made TrekYatra", "who is behind TrekYatra", "who built this")
 
 GUARDRAILS for site info answers:
 • Always cite the URL returned by the tool — say "You can read the full [page name] at [url]"
@@ -83,7 +83,8 @@ GET_SITE_INFO SPECIFICITY:
 WHAT NOT TO DO:
 • Do not guess or fabricate missing data — if a field is unavailable, say so
 • Do not produce partial sentences ending with ":" — always deliver a complete answer
-• Do not reference raw tool output or JSON field names in your response\
+• Do not reference raw tool output or JSON field names in your response
+• Do not add editorial notes about content being truncated — never write "[the content appears cut off]" or similar. If you have partial content, simply share what you have.\
 """
 _TREK_CARD_TOOLS = {"search_treks", "recommend_treks", "compare_treks"}
 
@@ -284,7 +285,7 @@ _SITE_INFO_MAP: dict[str, dict] = {
     "terms":       {"slug": "terms-of-service"},
     "affiliate":   {"slug": "affiliate-disclosure"},
     "safety":      {"slug": "safety-disclaimer"},
-    "methodology": {"slug": "editorial-methodology"},
+    "methodology": {"slug": "methodology"},
     "gear":        {"page_type": "gear_review"},
     "authors":     {"page_type": "author"},
 }
@@ -302,6 +303,15 @@ _SITE_INFO_ALIASES: dict[str, str] = {
     "team": "about",
     "who": "about",
     "company": "about",
+    # Founder / team-member lookups must resolve to the authors page
+    "founder": "authors",
+    "founders": "authors",
+    "who_founded": "authors",
+    "who_built": "authors",
+    "who_made": "authors",
+    "who_created": "authors",
+    "made_by": "authors",
+    "created_by": "authors",
 }
 
 

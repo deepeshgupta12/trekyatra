@@ -280,6 +280,7 @@ def score_treks(db: Session, req: PlanRecommendRequest) -> PlanRecommendResponse
             duration=page.trek_duration or tf.get("duration"),
             season=page.trek_season or tf.get("season"),
             altitude=tf.get("altitude"),
+            max_altitude_ft=page.trek_max_altitude_ft,
             permits=tf.get("permits"),
             base=tf.get("base"),
             hero_image_url=page.hero_image_url,

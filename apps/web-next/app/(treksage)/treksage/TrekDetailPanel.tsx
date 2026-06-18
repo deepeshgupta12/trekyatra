@@ -43,7 +43,10 @@ function SectionAccordion({ label, content }: { label: string; content: string }
           : <ChevronDown className="h-3.5 w-3.5 text-[#1D3A2E]/35 flex-shrink-0" />}
       </button>
       {open && (
-        <p className="text-xs text-[#1D3A2E]/65 leading-relaxed pb-3 whitespace-pre-line">{content}</p>
+        <div
+          className="text-xs text-[#1D3A2E]/65 leading-relaxed pb-3 [&_table]:w-full [&_table]:border-collapse [&_table]:my-2 [&_td]:border [&_td]:border-[#1D3A2E]/10 [&_td]:px-2 [&_td]:py-1.5 [&_th]:border [&_th]:border-[#1D3A2E]/10 [&_th]:px-2 [&_th]:py-1.5 [&_th]:text-left [&_th]:bg-[#1D3A2E]/5 [&_th]:font-semibold [&_strong]:font-semibold [&_b]:font-semibold [&_ul]:list-disc [&_ul]:pl-4 [&_ul]:my-1 [&_ol]:list-decimal [&_ol]:pl-4 [&_ol]:my-1 [&_li]:mb-0.5 [&_h2]:font-semibold [&_h2]:text-sm [&_h2]:mt-3 [&_h2]:mb-1 [&_h3]:font-semibold [&_h3]:mt-2 [&_h3]:mb-0.5 [&_p]:mb-1.5 [&_a]:text-[#E8702A] [&_a]:underline"
+          dangerouslySetInnerHTML={{ __html: content }}
+        />
       )}
     </div>
   );
