@@ -7,12 +7,15 @@ export const metadata: Metadata = {
     "Chat with TrekSage, TrekYatra's AI trek planning assistant. Discover treks, compare options, check permits and plan your perfect Indian Himalayan adventure.",
 };
 
-export default function TreksagePage() {
+interface Props {
+  searchParams: Promise<{ q?: string }>;
+}
+
+export default async function TreksagePage({ searchParams }: Props) {
+  const { q } = await searchParams;
   return (
-    // h-16 = 64px header (Header.tsx uses h-16). overflow-hidden keeps the chat from
-    // triggering page-level scroll — messages scroll inside TreksageChat's container ref.
-    <main className="h-[calc(100vh-4rem)] overflow-hidden">
-      <TreksageChat />
+    <main className="flex-1 min-h-0 overflow-hidden">
+      <TreksageChat initialQuery={q} />
     </main>
   );
 }

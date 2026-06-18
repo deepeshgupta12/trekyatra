@@ -5,17 +5,18 @@ import Link from "next/link";
 import Image from "next/image";
 import {
   Send, Square, Mountain, MapPin, RefreshCw, Headphones, Mic, X,
-  Plus, MessageSquare, Menu, Check, GitCompare, ArrowUpRight,
+  Plus, MessageSquare, Menu, Check, GitCompare, ArrowUpRight, Loader2,
 } from "lucide-react";
 import ReactMarkdown, { type Components } from "react-markdown";
 import remarkGfm from "remark-gfm";
-import { treksageChat, fetchTreksageChatHistory } from "@/lib/api";
+import { treksageChat, fetchTreksageChatHistory, fetchTrekProfile, type TrekProfile } from "@/lib/api";
 import PlanWizard from "@/components/treksage/PlanWizard";
 import LeadCaptureModal from "@/components/treksage/LeadCaptureModal";
 import TrekDetailPanel from "./TrekDetailPanel";
 
-const SESSION_KEY_STORAGE = "treksage_session_key";
-const SESSIONS_LIST_STORAGE = "treksage_sessions";
+const SESSION_KEY_STORAGE    = "treksage_session_key";
+const SESSIONS_LIST_STORAGE  = "treksage_sessions";
+const CANVAS_CARDS_STORAGE   = "treksage_canvas";  // per-session canvas persistence
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -125,6 +126,7 @@ function CanvasTrekCard({
   onViewDetails: (c: TrekCard) => void;
   onToggleCompare: (slug: string) => void;
 }) {
+  const [imgError, setImgError] = useState(false);
   const budgetText = card.budget_min && card.budget_max
     ? `₹${Math.round(card.budget_min / 1000)}k–₹${Math.round(card.budget_max / 1000)}k`
     : card.budget_min
@@ -143,13 +145,14 @@ function CanvasTrekCard({
     >
       {/* Hero image */}
       <div className="relative h-36 bg-[#FAF5EE]">
-        {card.hero_image_url ? (
+        {card.hero_image_url && !imgError ? (
           <Image
             src={card.hero_image_url}
             alt={card.name}
             fill
             className="object-cover"
             sizes="(max-width: 1024px) 50vw, 400px"
+            onError={() => setImgError(true)}
           />
         ) : (
           <div className="absolute inset-0 flex items-center justify-center">
@@ -271,14 +274,22 @@ function ThinkingBubble({ stage }: { stage: number }) {
 // ─── Inline trek card (chat pane — mobile only) ───────────────────────────────
 
 function ChatTrekCard({ card, index }: { card: TrekCard; index: number }) {
+  const [imgError, setImgError] = useState(false);
   return (
     <div
       className="bg-white rounded-xl overflow-hidden border border-[#1D3A2E]/10 shadow-sm flex gap-3 p-3"
       style={{ animation: "tsStaggerFade 0.4s ease-out both", animationDelay: `${index * 0.08}s` }}
     >
       <div className="relative h-16 w-16 flex-shrink-0 rounded-lg overflow-hidden bg-[#FAF5EE]">
-        {card.hero_image_url ? (
-          <Image src={card.hero_image_url} alt={card.name} fill className="object-cover" sizes="64px" />
+        {card.hero_image_url && !imgError ? (
+          <Image
+            src={card.hero_image_url}
+            alt={card.name}
+            fill
+            className="object-cover"
+            sizes="64px"
+            onError={() => setImgError(true)}
+          />
         ) : (
           <div className="absolute inset-0 flex items-center justify-center">
             <Mountain className="h-6 w-6 text-[#1D3A2E]/20" />
@@ -314,7 +325,7 @@ function ChatTrekCard({ card, index }: { card: TrekCard; index: number }) {
 
 // ─── Main component ───────────────────────────────────────────────────────────
 
-export default function TreksageChat() {
+export default function TreksageChat({ initialQuery }: { initialQuery?: string }) {
   // ── Chat state ──
   const [messages, setMessages]               = useState<Message[]>([]);
   const [input, setInput]                     = useState("");
@@ -328,6 +339,8 @@ export default function TreksageChat() {
   const [canvasCards, setCanvasCards]         = useState<TrekCard[]>([]);
   const [canvasMode, setCanvasMode]           = useState<"cards" | "detail">("cards");
   const [detailCard, setDetailCard]           = useState<TrekCard | null>(null);
+  const [detailProfile, setDetailProfile]     = useState<TrekProfile | null>(null);
+  const [loadingDetail, setLoadingDetail]     = useState(false);
   const [compareSet, setCompareSet]           = useState<Set<string>>(new Set());
 
   // ── Sidebar / modals ──
@@ -338,13 +351,29 @@ export default function TreksageChat() {
   const [voiceOpen, setVoiceOpen]             = useState(false);
 
   // ── Refs ──
-  const messagesContainerRef = useRef<HTMLDivElement>(null);
-  const stageTimerRef        = useRef<ReturnType<typeof setInterval> | null>(null);
-  const userSentRef          = useRef(false);
+  const messagesContainerRef   = useRef<HTMLDivElement>(null);
+  const stageTimerRef          = useRef<ReturnType<typeof setInterval> | null>(null);
+  const userSentRef            = useRef(false);
+  const initialQueryFiredRef   = useRef(false);
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const recognitionRef       = useRef<any>(null);
+  const recognitionRef         = useRef<any>(null);
 
   const showCanvas = canvasCards.length > 0 && messages.length > 0;
+
+  // ── Canvas card persistence helpers ──
+
+  function saveCanvasCards(key: string, cards: TrekCard[]) {
+    try {
+      localStorage.setItem(`${CANVAS_CARDS_STORAGE}_${key}`, JSON.stringify(cards));
+    } catch { /* ignore */ }
+  }
+
+  function loadCanvasCards(key: string): TrekCard[] {
+    try {
+      const raw = localStorage.getItem(`${CANVAS_CARDS_STORAGE}_${key}`);
+      return raw ? (JSON.parse(raw) as TrekCard[]) : [];
+    } catch { return []; }
+  }
 
   // ── Scroll ──
   function scrollToBottom(smooth = true) {
@@ -366,19 +395,24 @@ export default function TreksageChat() {
     fetchTreksageChatHistory(stored)
       .then((history) => {
         if (history.length > 0) {
-          const msgs = history as Message[];
-          setMessages(msgs);
-          // Restore canvas cards from last assistant message with trek_cards
-          for (let i = msgs.length - 1; i >= 0; i--) {
-            if (msgs[i].role === "assistant" && msgs[i].trek_cards && msgs[i].trek_cards!.length > 0) {
-              setCanvasCards(msgs[i].trek_cards!);
-              break;
-            }
-          }
+          setMessages(history as Message[]);
         }
+        // Restore canvas cards from localStorage (persisted per session)
+        const saved = loadCanvasCards(stored);
+        if (saved.length > 0) setCanvasCards(saved);
       })
       .finally(() => setLoadingHistory(false));
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  // Auto-send initialQuery (from ?q= param) once history is loaded and not loading
+  useEffect(() => {
+    if (!loadingHistory && !loading && initialQuery && !initialQueryFiredRef.current) {
+      initialQueryFiredRef.current = true;
+      send(initialQuery);
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [loadingHistory, initialQuery]);
 
   // Auto-scroll after user sends
   useEffect(() => {
@@ -419,6 +453,7 @@ export default function TreksageChat() {
     setCanvasCards([]);
     setCanvasMode("cards");
     setDetailCard(null);
+    setDetailProfile(null);
     setCompareSet(new Set());
     userSentRef.current = false;
     setLoadingHistory(true);
@@ -427,20 +462,13 @@ export default function TreksageChat() {
     localStorage.setItem(SESSION_KEY_STORAGE, key);
     fetchTreksageChatHistory(key)
       .then((history) => {
-        if (history.length > 0) {
-          const msgs = history as Message[];
-          setMessages(msgs);
-          for (let i = msgs.length - 1; i >= 0; i--) {
-            if (msgs[i].role === "assistant" && msgs[i].trek_cards && msgs[i].trek_cards!.length > 0) {
-              setCanvasCards(msgs[i].trek_cards!);
-              break;
-            }
-          }
-          setTimeout(() => {
-            const el = messagesContainerRef.current;
-            if (el) el.scrollTo({ top: el.scrollHeight, behavior: "instant" });
-          }, 60);
-        }
+        if (history.length > 0) setMessages(history as Message[]);
+        const saved = loadCanvasCards(key);
+        if (saved.length > 0) setCanvasCards(saved);
+        setTimeout(() => {
+          const el = messagesContainerRef.current;
+          if (el) el.scrollTo({ top: el.scrollHeight, behavior: "instant" });
+        }, 60);
       })
       .finally(() => setLoadingHistory(false));
   }
@@ -450,10 +478,23 @@ export default function TreksageChat() {
     setCanvasCards([]);
     setCanvasMode("cards");
     setDetailCard(null);
+    setDetailProfile(null);
     setCompareSet(new Set());
     setSessionKey(undefined);
     userSentRef.current = false;
     if (typeof window !== "undefined") localStorage.removeItem(SESSION_KEY_STORAGE);
+  }
+
+  // ── View Details — fetches full profile ──
+
+  async function openDetail(card: TrekCard) {
+    setDetailCard(card);
+    setDetailProfile(null);
+    setCanvasMode("detail");
+    setLoadingDetail(true);
+    const profile = await fetchTrekProfile(card.slug);
+    setDetailProfile(profile);
+    setLoadingDetail(false);
   }
 
   // ── Send ──
@@ -474,6 +515,9 @@ export default function TreksageChat() {
         setCanvasCards(cards);
         setCanvasMode("cards");
         setDetailCard(null);
+        setDetailProfile(null);
+        // Persist cards so they survive navigation / page reload
+        if (res.session_key) saveCanvasCards(res.session_key, cards);
       }
       if (res.session_key !== sessionKey) {
         setSessionKey(res.session_key);
@@ -842,7 +886,7 @@ export default function TreksageChat() {
                   <div className="flex items-center gap-2">
                     {canvasMode === "detail" && detailCard ? (
                       <>
-                        <button onClick={() => { setCanvasMode("cards"); setDetailCard(null); }}
+                        <button onClick={() => { setCanvasMode("cards"); setDetailCard(null); setDetailProfile(null); }}
                           className="text-[#1D3A2E]/40 hover:text-[#1D3A2E] text-xs flex items-center gap-1 transition-colors">
                           ← Trek Results
                         </button>
@@ -869,10 +913,18 @@ export default function TreksageChat() {
                 {/* Canvas content */}
                 <div className="flex-1 overflow-y-auto p-5">
                   {canvasMode === "detail" && detailCard ? (
-                    <TrekDetailPanel
-                      card={detailCard}
-                      onClose={() => { setCanvasMode("cards"); setDetailCard(null); }}
-                    />
+                    loadingDetail ? (
+                      <div className="flex flex-col items-center justify-center py-16 gap-3">
+                        <Loader2 className="h-8 w-8 text-[#E8702A] animate-spin" />
+                        <p className="text-[#1D3A2E]/40 text-sm">Loading trek details…</p>
+                      </div>
+                    ) : (
+                      <TrekDetailPanel
+                        card={detailCard}
+                        profile={detailProfile}
+                        onClose={() => { setCanvasMode("cards"); setDetailCard(null); setDetailProfile(null); }}
+                      />
+                    )
                   ) : (
                     <div className="grid grid-cols-1 xl:grid-cols-2 gap-4">
                       {canvasCards.map((card, idx) => (
@@ -881,7 +933,7 @@ export default function TreksageChat() {
                           card={card}
                           index={idx}
                           isSelected={compareSet.has(card.slug)}
-                          onViewDetails={(c) => { setDetailCard(c); setCanvasMode("detail"); }}
+                          onViewDetails={openDetail}
                           onToggleCompare={toggleCompare}
                         />
                       ))}

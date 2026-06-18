@@ -197,7 +197,7 @@ export default async function Home() {
                 ].map((prompt) => (
                   <Link
                     key={prompt}
-                    href="/treksage"
+                    href={`/treksage?q=${encodeURIComponent(prompt)}`}
                     className="flex items-center gap-3 p-3 rounded-xl bg-white/3 hover:bg-white/6 border border-white/8 hover:border-accent/30 transition-colors group"
                   >
                     <div className="h-6 w-6 rounded-full bg-accent/10 flex-shrink-0 flex items-center justify-center">

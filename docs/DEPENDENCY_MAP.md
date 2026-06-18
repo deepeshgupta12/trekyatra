@@ -1930,3 +1930,15 @@ Impact analysis: `search_treks` (LOW, only called from `_call_tool` in `treksage
 | `services/api/tests/test_treksage.py` | TC-B41–B44: keyword search tests + month-name test; tests use unique `trek_state` UUID to avoid 200-row fetch limit in full suite | LOW — test-only |
 | `apps/web-next/app/(public)/treksage/TreksageChat.tsx` | FULL REWRITE: Myra-inspired split-screen (chat 42% / canvas 58%); canvas slides in on first trek_cards response; trek name → `/trek/[slug]?ref=treksage` analytics link; "View Details" → `TrekDetailPanel` inline; "Add to Compare" → `compareSet` state; "Compare (N)" button → sends compare message; `ThinkingBubble` multi-stage cascade; send/stop icon morph; `CanvasTrekCard` with stagger-fade; mobile inline `ChatTrekCard` (canvas hidden); `canvasCards`/`detailCard`/`compareSet` state; canvas restored from last assistant message on session history restore | LOW — leaf page component, 0 upstream callers |
 | `apps/web-next/app/(public)/treksage/TrekDetailPanel.tsx` (NEW) | Inline trek detail panel: hero image, key facts grid (6 cells), budget, "View Full Page" link (`?ref=treksage`), "Plan This Trek" link | LOW — new leaf component, only used by TreksageChat.tsx |
+
+### Post-Step-77 TrekSage UX Hotfixes — Done (2026-06-18)
+
+| File | Change | Blast Radius |
+|------|--------|-------------|
+| `apps/web-next/app/(public)/treksage/layout.tsx` (NEW) | Header-only layout (no Footer, no TrekSageWidget) for TrekSage route — eliminates footer extra space | LOW — new route-scoped layout |
+| `apps/web-next/app/(public)/treksage/page.tsx` | Reads `searchParams.q`; passes `initialQuery` prop; `flex-1 min-h-0` height | LOW — isolated page |
+| `apps/web-next/next.config.mjs` | Added `trekyatra.co.in` + `**.trekyatra.co.in` to `images.remotePatterns` | LOW — build config only |
+| `apps/web-next/app/(public)/page.tsx` | Homepage TrekSage pills changed from `href="/treksage"` to `href="/treksage?q=<encoded>"` | LOW — static homepage section |
+| `apps/web-next/app/(public)/treksage/TreksageChat.tsx` | `initialQuery` auto-send on mount; `onError` image fallback; canvasCards localStorage persistence per session; `openDetail()` fetches `TrekProfile`; `detailProfile` passed to `TrekDetailPanel` | LOW — leaf component, 0 upstream callers |
+| `apps/web-next/app/(public)/treksage/TrekDetailPanel.tsx` | REWRITE — accepts `profile: TrekProfile \| null`; renders month guide, permit banner, themes, suitability badges, content_sections accordion, FAQs accordion; image `onError` fallback | LOW — leaf component, only called by TreksageChat |
+| `apps/mobile/app/(tabs)/treksage.tsx` | REWRITE — `TrekCardItem` with stats row (duration/altitude/season), budget, "View Trek" → `router.push(/trek/slug)`, compare toggle; `compareSet` + compare bar; multi-stage `ThinkingBubble`; canvas cards persisted to AsyncStorage | LOW — mobile leaf screen, 0 upstream callers |

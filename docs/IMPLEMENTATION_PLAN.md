@@ -890,6 +890,18 @@ Frontend:
 
 **Verification:** 676/676 BE tests pass | `next build` ✅ compiled, `/treksage` 21 kB.
 
+### Post-Step-77 TrekSage UX Hotfixes [DONE — 2026-06-18]
+
+- **`apps/web-next/app/(public)/treksage/layout.tsx`** (NEW): Standalone layout (Header only, no Footer, no TrekSageWidget) — eliminates extra footer space below chat.
+- **`apps/web-next/app/(public)/treksage/page.tsx`**: Reads `searchParams.q`, passes as `initialQuery` prop to TreksageChat; page height changed to `flex-1 min-h-0`.
+- **`apps/web-next/next.config.mjs`**: Added `trekyatra.co.in` + `**.trekyatra.co.in` to `remotePatterns` (covers WordPress/CMS image subdomains).
+- **`apps/web-next/app/(public)/page.tsx`**: Homepage TrekSage pills now link to `/treksage?q=<encoded prompt>`.
+- **`TreksageChat.tsx`**: `initialQuery` prop auto-sends on mount (after history load); `onError` fallback on all Image components; canvasCards persisted to localStorage per sessionKey (`treksage_canvas_<key>`), restored on history load and session switch; `openDetail()` fetches full TrekProfile async (loading spinner shown while fetching); `detailProfile` state passed to TrekDetailPanel.
+- **`TrekDetailPanel.tsx`** (REWRITE): Now accepts `profile: TrekProfile | null` — renders SEO description, full key-facts grid (7 cells incl. crowd level), month guide (best/open/avoid), permit block (amber/green banner), themes chips, suitability badges (beginner/solo/family), content_sections as accordion, FAQs as accordion; image `onError` fallback.
+- **`apps/mobile/app/(tabs)/treksage.tsx`** (REWRITE): Richer TrekCardItem (stats row: duration/altitude/season, budget text, "View Trek" → `router.push(/trek/slug)`, "Compare" toggle); `compareSet` + compare bar ("Compare (N)" sends compare message); multi-stage ThinkingBubble; canvas cards persisted to AsyncStorage per session.
+
+**Verification:** `next build` ✅ compiled, `/treksage` 22.7 kB | `npx tsc --noEmit` (mobile) ✅ zero errors.
+
 ---
 
 ### Post-Step-76 TrekSage Hotfixes [DONE — 2026-06-17/18, commits 3a33716 / 88ddd49 / 387de83]

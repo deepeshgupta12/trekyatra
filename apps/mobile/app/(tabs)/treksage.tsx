@@ -12,21 +12,23 @@ import {
   StyleSheet,
 } from "react-native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import { useRouter } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { treksageChatMobile, fetchTreksageHistoryMobile, type TreksageMobileMessage, type TreksageMobileTrekCard } from "@/lib/mobileApi";
 
-const PINE = "#1D3A2E";
+const PINE    = "#1D3A2E";
 const SAFFRON = "#E8702A";
-const CREAM = "#FAF5EE";
+const CREAM   = "#FAF5EE";
 const SESSION_STORAGE_KEY = "treksage_mobile_session";
+const CANVAS_STORAGE_KEY  = "treksage_mobile_canvas";
 
 type TabType = "Discover" | "Compare" | "Plan";
 const TABS: TabType[] = ["Discover", "Compare", "Plan"];
 
 const TAB_PROMPTS: Record<TabType, string[]> = {
   Discover: [
-    "Best beginner treks in India for December",
-    "Top treks in Uttarakhand under 7 days",
+    "Best snowfall treks for December",
+    "Top beginner treks in Uttarakhand",
     "Safe solo treks in Himachal Pradesh",
   ],
   Compare: [
@@ -41,18 +43,155 @@ const TAB_PROMPTS: Record<TabType, string[]> = {
   ],
 };
 
+const THINKING_STAGES = [
+  "Searching TrekYatra database…",
+  "Analysing best options…",
+  "Checking seasons & permits…",
+  "Preparing recommendations…",
+];
+
 interface Message extends TreksageMobileMessage {
   trek_cards?: TreksageMobileTrekCard[];
 }
 
+// ─── Trek card component ──────────────────────────────────────────────────────
+
+function TrekCardItem({
+  card,
+  isSelected,
+  onView,
+  onToggleCompare,
+}: {
+  card: TreksageMobileTrekCard;
+  isSelected: boolean;
+  onView: (slug: string) => void;
+  onToggleCompare: (slug: string) => void;
+}) {
+  const budgetText = card.budget_min && card.budget_max
+    ? `₹${Math.round(card.budget_min / 1000)}k–₹${Math.round(card.budget_max / 1000)}k`
+    : null;
+
+  return (
+    <View style={styles.trekCard}>
+      {/* Top row: name + location */}
+      <View style={styles.trekCardHeader}>
+        <View style={{ flex: 1 }}>
+          <Text style={styles.trekCardName} numberOfLines={1}>{card.name}</Text>
+          {card.state ? (
+            <Text style={styles.trekCardState}>{card.state}, India</Text>
+          ) : null}
+        </View>
+        {card.difficulty ? (
+          <View style={styles.diffBadge}>
+            <Text style={styles.diffBadgeText}>{card.difficulty}</Text>
+          </View>
+        ) : null}
+      </View>
+
+      {/* Stats row */}
+      <View style={styles.trekStats}>
+        <View style={styles.trekStatItem}>
+          <Ionicons name="time-outline" size={10} color={`${PINE}60`} />
+          <Text style={styles.trekStatLabel}>Duration</Text>
+          <Text style={styles.trekStatValue}>{card.duration ?? "—"}</Text>
+        </View>
+        <View style={[styles.trekStatItem, styles.trekStatBorder]}>
+          <Ionicons name="trending-up-outline" size={10} color={`${PINE}60`} />
+          <Text style={styles.trekStatLabel}>Altitude</Text>
+          <Text style={styles.trekStatValue}>
+            {card.max_altitude_ft ? `${card.max_altitude_ft.toLocaleString()} ft` : "—"}
+          </Text>
+        </View>
+        <View style={styles.trekStatItem}>
+          <Ionicons name="sunny-outline" size={10} color={`${PINE}60`} />
+          <Text style={styles.trekStatLabel}>Season</Text>
+          <Text style={styles.trekStatValue} numberOfLines={1}>{card.season ?? "—"}</Text>
+        </View>
+      </View>
+
+      {budgetText && (
+        <Text style={styles.trekBudget}>{budgetText}</Text>
+      )}
+
+      {/* Actions */}
+      <View style={styles.trekCardActions}>
+        <TouchableOpacity
+          onPress={() => onView(card.slug)}
+          style={styles.viewBtn}
+        >
+          <Text style={styles.viewBtnText}>View Trek</Text>
+          <Ionicons name="arrow-forward" size={12} color="#fff" />
+        </TouchableOpacity>
+        <TouchableOpacity
+          onPress={() => onToggleCompare(card.slug)}
+          style={[styles.compareBtn, isSelected && styles.compareBtnSelected]}
+        >
+          <Ionicons
+            name={isSelected ? "checkmark" : "add"}
+            size={13}
+            color={isSelected ? "#fff" : `${PINE}70`}
+          />
+          <Text style={[styles.compareBtnText, isSelected && styles.compareBtnTextSelected]}>
+            {isSelected ? "Added" : "Compare"}
+          </Text>
+        </TouchableOpacity>
+      </View>
+    </View>
+  );
+}
+
+// ─── Thinking animation ───────────────────────────────────────────────────────
+
+function ThinkingBubble({ stage }: { stage: number }) {
+  return (
+    <View style={[styles.msgRow, styles.msgRowBot]}>
+      <View style={styles.botAvatar}>
+        <Ionicons name="leaf" size={12} color="#fff" />
+      </View>
+      <View style={styles.bubbleBot}>
+        <View style={styles.loadingDots}>
+          <View style={[styles.dot, { opacity: 0.9 }]} />
+          <View style={[styles.dot, { opacity: 0.6 }]} />
+          <View style={[styles.dot, { opacity: 0.3 }]} />
+        </View>
+        <View style={{ marginTop: 6, gap: 4 }}>
+          {THINKING_STAGES.slice(0, stage + 1).map((s, i) => (
+            <View key={s} style={{ flexDirection: "row", alignItems: "center", gap: 6 }}>
+              {i < stage ? (
+                <Ionicons name="checkmark-circle" size={11} color="#10B981" />
+              ) : (
+                <View style={styles.stageDot} />
+              )}
+              <Text style={[
+                styles.stageText,
+                i < stage && { color: `${PINE}30`, textDecorationLine: "line-through" },
+              ]}>
+                {s}
+              </Text>
+            </View>
+          ))}
+        </View>
+      </View>
+    </View>
+  );
+}
+
+// ─── Main screen ─────────────────────────────────────────────────────────────
+
 export default function TrekSageScreen() {
-  const [messages, setMessages] = useState<Message[]>([]);
-  const [input, setInput] = useState("");
-  const [loading, setLoading] = useState(false);
+  const router = useRouter();
+  const [messages, setMessages]     = useState<Message[]>([]);
+  const [input, setInput]           = useState("");
+  const [loading, setLoading]       = useState(false);
   const [loadingHistory, setLoadingHistory] = useState(true);
   const [sessionKey, setSessionKey] = useState<string | undefined>(undefined);
-  const [activeTab, setActiveTab] = useState<TabType>("Discover");
-  const scrollRef = useRef<ScrollView>(null);
+  const [activeTab, setActiveTab]   = useState<TabType>("Discover");
+  const [thinkingStage, setThinkingStage] = useState(0);
+  const [compareSet, setCompareSet] = useState<Set<string>>(new Set());
+  const [lastCards, setLastCards]   = useState<TreksageMobileTrekCard[]>([]);
+
+  const scrollRef    = useRef<ScrollView>(null);
+  const stageTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   // Restore session
   useEffect(() => {
@@ -61,6 +200,11 @@ export default function TrekSageScreen() {
       setSessionKey(stored);
       const history = await fetchTreksageHistoryMobile(stored);
       if (history.length > 0) setMessages(history);
+      // Restore last trek cards from localStorage
+      const savedCards = await AsyncStorage.getItem(`${CANVAS_STORAGE_KEY}_${stored}`);
+      if (savedCards) {
+        try { setLastCards(JSON.parse(savedCards)); } catch { /* ignore */ }
+      }
       setLoadingHistory(false);
     });
   }, []);
@@ -71,6 +215,20 @@ export default function TrekSageScreen() {
     }
   }, [messages, loading]);
 
+  // Thinking stage advance
+  useEffect(() => {
+    if (loading) {
+      setThinkingStage(0);
+      stageTimerRef.current = setInterval(() => {
+        setThinkingStage(prev => Math.min(prev + 1, THINKING_STAGES.length - 1));
+      }, 1800);
+    } else {
+      if (stageTimerRef.current) clearInterval(stageTimerRef.current);
+      setThinkingStage(0);
+    }
+    return () => { if (stageTimerRef.current) clearInterval(stageTimerRef.current); };
+  }, [loading]);
+
   const send = useCallback(async (text: string) => {
     const trimmed = text.trim();
     if (!trimmed || loading) return;
@@ -79,11 +237,18 @@ export default function TrekSageScreen() {
     setLoading(true);
     try {
       const res = await treksageChatMobile(trimmed, sessionKey);
+      const cards = res.trek_cards ?? [];
       setMessages((prev) => [...prev, {
         role: "assistant",
         content: res.reply,
-        trek_cards: res.trek_cards,
+        trek_cards: cards,
       }]);
+      if (cards.length > 0) {
+        setLastCards(cards);
+        if (res.session_key) {
+          await AsyncStorage.setItem(`${CANVAS_STORAGE_KEY}_${res.session_key}`, JSON.stringify(cards));
+        }
+      }
       if (res.session_key !== sessionKey) {
         setSessionKey(res.session_key);
         await AsyncStorage.setItem(SESSION_STORAGE_KEY, res.session_key);
@@ -100,8 +265,27 @@ export default function TrekSageScreen() {
 
   function clearSession() {
     setMessages([]);
+    setLastCards([]);
+    setCompareSet(new Set());
     setSessionKey(undefined);
     AsyncStorage.removeItem(SESSION_STORAGE_KEY);
+  }
+
+  function toggleCompare(slug: string) {
+    setCompareSet(prev => {
+      const next = new Set(prev);
+      if (next.has(slug)) { next.delete(slug); }
+      else if (next.size < 4) { next.add(slug); }
+      return next;
+    });
+  }
+
+  function sendCompare() {
+    const names = Array.from(compareSet)
+      .map(slug => lastCards.find(c => c.slug === slug)?.name ?? slug)
+      .join(", ");
+    setCompareSet(new Set());
+    send(`Compare these treks: ${names}`);
   }
 
   return (
@@ -200,49 +384,46 @@ export default function TrekSageScreen() {
                       <Ionicons name="leaf" size={12} color="#fff" />
                     </View>
                   )}
-                  <View
-                    style={[
-                      styles.bubble,
-                      msg.role === "user" ? styles.bubbleUser : styles.bubbleBot,
-                    ]}
-                  >
+                  <View style={[
+                    styles.bubble,
+                    msg.role === "user" ? styles.bubbleUser : styles.bubbleBot,
+                    msg.trek_cards && msg.trek_cards.length > 0 ? { maxWidth: "95%" } : undefined,
+                  ]}>
                     <Text style={[styles.bubbleText, msg.role === "user" && styles.bubbleTextUser]}>
                       {msg.content}
                     </Text>
-                    {/* Trek cards (simplified — show names as chips) */}
+                    {/* Trek cards */}
                     {msg.role === "assistant" && msg.trek_cards && msg.trek_cards.length > 0 && (
-                      <View style={styles.trekCards}>
-                        {msg.trek_cards.slice(0, 3).map((card) => (
-                          <View key={card.slug} style={styles.trekCardChip}>
-                            <Ionicons name="walk-outline" size={10} color={SAFFRON} />
-                            <Text style={styles.trekCardName}>{card.name}</Text>
-                            {card.difficulty && (
-                              <Text style={styles.trekCardDifficulty}>{card.difficulty}</Text>
-                            )}
-                          </View>
+                      <View style={styles.trekCardList}>
+                        {msg.trek_cards.slice(0, 4).map((card) => (
+                          <TrekCardItem
+                            key={card.slug}
+                            card={card}
+                            isSelected={compareSet.has(card.slug)}
+                            onView={(slug) => router.push(`/trek/${slug}` as never)}
+                            onToggleCompare={toggleCompare}
+                          />
                         ))}
                       </View>
                     )}
                   </View>
                 </View>
               ))}
-              {loading && (
-                <View style={[styles.msgRow, styles.msgRowBot]}>
-                  <View style={styles.botAvatar}>
-                    <Ionicons name="leaf" size={12} color="#fff" />
-                  </View>
-                  <View style={styles.bubbleBot}>
-                    <View style={styles.loadingDots}>
-                      <View style={[styles.dot, { opacity: 0.9 }]} />
-                      <View style={[styles.dot, { opacity: 0.6 }]} />
-                      <View style={[styles.dot, { opacity: 0.3 }]} />
-                    </View>
-                  </View>
-                </View>
-              )}
+              {loading && <ThinkingBubble stage={thinkingStage} />}
             </>
           )}
         </ScrollView>
+
+        {/* ── Compare bar ── */}
+        {compareSet.size >= 2 && (
+          <View style={styles.compareBar}>
+            <Text style={styles.compareBarText}>{compareSet.size} treks selected</Text>
+            <TouchableOpacity onPress={sendCompare} style={styles.compareBarBtn}>
+              <Ionicons name="git-compare-outline" size={14} color="#fff" />
+              <Text style={styles.compareBarBtnText}>Compare ({compareSet.size})</Text>
+            </TouchableOpacity>
+          </View>
+        )}
 
         {/* ── Input bar ── */}
         <View style={styles.inputBar}>
@@ -326,12 +507,12 @@ const styles = StyleSheet.create({
     borderWidth: 1, borderColor: `${PINE}12`,
   },
   promptChipText: { flex: 1, fontSize: 13, color: `${PINE}70`, marginRight: 8 },
-  msgRow: { flexDirection: "row", marginBottom: 12, alignItems: "flex-end" },
+  msgRow: { flexDirection: "row", marginBottom: 12, alignItems: "flex-start" },
   msgRowUser: { justifyContent: "flex-end" },
   msgRowBot: { justifyContent: "flex-start" },
   botAvatar: {
     width: 24, height: 24, borderRadius: 12, backgroundColor: PINE,
-    alignItems: "center", justifyContent: "center", marginRight: 8, flexShrink: 0,
+    alignItems: "center", justifyContent: "center", marginRight: 8, flexShrink: 0, marginTop: 2,
   },
   bubble: { maxWidth: "80%", borderRadius: 16, padding: 12 },
   bubbleUser: { backgroundColor: PINE, borderBottomRightRadius: 4 },
@@ -342,17 +523,63 @@ const styles = StyleSheet.create({
   },
   bubbleText: { fontSize: 13, color: `${PINE}85`, lineHeight: 18 },
   bubbleTextUser: { color: "#fff" },
-  trekCards: { marginTop: 8, gap: 4 },
-  trekCardChip: {
-    flexDirection: "row", alignItems: "center", gap: 5,
-    backgroundColor: `${SAFFRON}10`, borderRadius: 8,
-    paddingHorizontal: 8, paddingVertical: 4,
-    borderWidth: 1, borderColor: `${SAFFRON}20`,
+  // Trek cards
+  trekCardList: { marginTop: 10, gap: 8 },
+  trekCard: {
+    backgroundColor: CREAM, borderRadius: 14,
+    borderWidth: 1, borderColor: `${PINE}12`,
+    padding: 10,
   },
-  trekCardName: { fontSize: 11, fontWeight: "600", color: PINE, flex: 1 },
-  trekCardDifficulty: { fontSize: 10, color: `${PINE}50`, textTransform: "capitalize" },
+  trekCardHeader: { flexDirection: "row", alignItems: "flex-start", gap: 8, marginBottom: 8 },
+  trekCardName: { fontSize: 13, fontWeight: "700", color: PINE, flex: 1 },
+  trekCardState: { fontSize: 11, color: `${PINE}50`, marginTop: 1 },
+  diffBadge: {
+    backgroundColor: `${PINE}12`, borderRadius: 6,
+    paddingHorizontal: 7, paddingVertical: 2,
+  },
+  diffBadgeText: { fontSize: 10, fontWeight: "600", color: `${PINE}70`, textTransform: "capitalize" },
+  trekStats: {
+    flexDirection: "row", backgroundColor: "#fff",
+    borderRadius: 10, padding: 8, marginBottom: 6, gap: 0,
+  },
+  trekStatItem: { flex: 1, alignItems: "center", gap: 2 },
+  trekStatBorder: { borderLeftWidth: 1, borderRightWidth: 1, borderColor: `${PINE}08` },
+  trekStatLabel: { fontSize: 9, color: `${PINE}40`, fontWeight: "600", textTransform: "uppercase" },
+  trekStatValue: { fontSize: 11, color: PINE, fontWeight: "600" },
+  trekBudget: { fontSize: 11, fontWeight: "700", color: SAFFRON, marginBottom: 8 },
+  trekCardActions: { flexDirection: "row", gap: 6 },
+  viewBtn: {
+    flex: 1, flexDirection: "row", alignItems: "center", justifyContent: "center",
+    gap: 4, backgroundColor: SAFFRON, borderRadius: 9, paddingVertical: 8,
+  },
+  viewBtnText: { fontSize: 11, fontWeight: "700", color: "#fff" },
+  compareBtn: {
+    flex: 1, flexDirection: "row", alignItems: "center", justifyContent: "center",
+    gap: 4, borderRadius: 9, paddingVertical: 8,
+    borderWidth: 1, borderColor: `${PINE}20`, backgroundColor: "#fff",
+  },
+  compareBtnSelected: { backgroundColor: PINE, borderColor: PINE },
+  compareBtnText: { fontSize: 11, fontWeight: "600", color: `${PINE}70` },
+  compareBtnTextSelected: { color: "#fff" },
+  // Thinking
   loadingDots: { flexDirection: "row", gap: 4, padding: 4 },
   dot: { width: 6, height: 6, borderRadius: 3, backgroundColor: SAFFRON },
+  stageDot: { width: 7, height: 7, borderRadius: 3.5, backgroundColor: `${SAFFRON}60` },
+  stageText: { fontSize: 11, color: `${PINE}55` },
+  // Compare bar
+  compareBar: {
+    flexDirection: "row", alignItems: "center", justifyContent: "space-between",
+    paddingHorizontal: 16, paddingVertical: 10,
+    backgroundColor: PINE,
+  },
+  compareBarText: { color: "rgba(255,255,255,0.6)", fontSize: 12 },
+  compareBarBtn: {
+    flexDirection: "row", alignItems: "center", gap: 6,
+    backgroundColor: SAFFRON, borderRadius: 10,
+    paddingHorizontal: 14, paddingVertical: 7,
+  },
+  compareBarBtnText: { color: "#fff", fontSize: 12, fontWeight: "700" },
+  // Input bar
   inputBar: {
     flexDirection: "row", alignItems: "center", gap: 8,
     paddingHorizontal: 12, paddingVertical: 10,
