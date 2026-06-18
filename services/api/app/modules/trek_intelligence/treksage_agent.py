@@ -281,14 +281,26 @@ def _slim_profile(p: Any) -> dict:
 _SITE_INFO_MAP: dict[str, dict] = {
     "about":       {"slug": "about"},
     "contact":     {"slug": "contact"},
-    "privacy":     {"slug": "privacy-policy"},
-    "terms":       {"slug": "terms-of-service"},
+    "privacy":     {"slug": "privacy"},
+    "terms":       {"slug": "terms"},
     "affiliate":   {"slug": "affiliate-disclosure"},
-    "safety":      {"slug": "safety-disclaimer"},
+    "safety":      {"hardcoded": True},
     "methodology": {"slug": "methodology"},
     "gear":        {"page_type": "gear_review"},
     "authors":     {"page_type": "author"},
 }
+
+_SAFETY_DISCLAIMER = (
+    "TrekYatra provides trekking information for planning purposes only — it is not professional safety advice. "
+    "Trekking in the Himalayas and other Indian mountain regions carries real risks: altitude sickness (AMS, HACE, HAPE), "
+    "unpredictable weather, flash floods, avalanches, and remote terrain with limited rescue access. "
+    "Key safety rules: (1) Always check weather and trail conditions the day before departure. "
+    "(2) Acclimatise properly — do not ascend more than 300–500m of sleeping altitude per day above 3000m. "
+    "(3) Carry a first-aid kit, emergency contacts (local SDRF, district emergency number), and a fully charged phone or satellite communicator. "
+    "(4) Verify permit requirements and trek closure status with official sources before departure — TrekYatra re-verifies permit data every 14 days but conditions can change without notice. "
+    "(5) Do not attempt difficult or high-altitude treks alone. "
+    "Full disclaimer: https://www.trekyatra.co.in/safety-disclaimer"
+)
 
 # Accept alternate phrasings
 _SITE_INFO_ALIASES: dict[str, str] = {
@@ -343,6 +355,13 @@ def _call_get_site_info(db: Session, topic: str) -> dict:
     def strip_html(html: str | None) -> str:
         text = re.sub(r"<[^>]+>", " ", html or "")
         return re.sub(r"\s+", " ", text).strip()[:4000]
+
+    if config.get("hardcoded"):
+        return {
+            "title": "TrekYatra Safety Disclaimer",
+            "content": _SAFETY_DISCLAIMER,
+            "url": "https://www.trekyatra.co.in/safety-disclaimer",
+        }
 
     if "slug" in config:
         page = cms_service.get_page_by_slug(db, config["slug"])
