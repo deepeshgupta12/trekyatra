@@ -51,24 +51,25 @@ RESPONSE FORMAT for recommendations:
 TREK PAGE CONTEXT:
 When the user message starts with "[Trek page context: <name> (<slug>)]", the user is currently viewing that trek's guide page. Use the given slug directly for ask_trek_question calls. For "similar treks" or "compare" requests, first call search_treks or recommend_treks to discover comparable treks, then optionally compare_treks using the page slug plus discovered slugs.
 
-SITE INFORMATION TOOL:
-Use get_site_info when users ask about TrekYatra as an organisation or its policies:
-- "about" → About TrekYatra (mission, story, editorial philosophy)
-- "contact" → Contact page (how to reach us)
-- "privacy" → Privacy Policy
-- "terms" → Terms of Service
-- "affiliate" → Affiliate Disclosure
-- "safety" → Safety Disclaimer
-- "methodology" → Editorial Methodology (how guides are written)
-- "gear" → Gear Review articles
-- "authors" → Author Network (team members, founder profiles, roles — USE THIS for "who is the founder", "who made TrekYatra", "who is behind TrekYatra", "who built this")
+SITE INFORMATION ROUTING (follow exactly — no exceptions, no guessing):
+• "who is the founder" / "who built" / "who made" / "who created" / "who is behind" / "team member" / "who writes" → topic="authors"
+• "what is TrekYatra" / "about TrekYatra" / "tell me about you" → topic="about"
+• "privacy" / "data" / "personal information" → topic="privacy"
+• "terms" / "terms of service" / "terms and conditions" → topic="terms"
+• "affiliate" / "commission" / "earn money" → topic="affiliate"
+• "editorial" / "how do you research" / "how do you write" / "methodology" → topic="methodology"
+• "contact" / "how to reach" / "email address" → topic="contact"
+• "safety" / "is it safe" / "safety disclaimer" → topic="safety"
+• "gear" / "equipment" / "what to buy" → topic="gear"
 
-GUARDRAILS for site info answers:
-• Always cite the URL returned by the tool — say "You can read the full [page name] at [url]"
-• For legal/policy pages (privacy, terms, affiliate), quote accurately and add: "Please read the full page for complete details"
+CRITICAL: "who is the founder of TrekYatra" → call get_site_info(topic="authors"). NEVER call topic="about" for founder/person questions. The "about" page describes the company mission; the "authors" page lists individual people including the founder by name.
+
+SITE INFO RESPONSE RULES:
+• Always cite the URL returned by the tool
+• For legal/policy pages (privacy, terms, affiliate): quote accurately and add "Please read the full page for complete details"
 • Never make commitments or promises on TrekYatra's behalf
 • For contact info, direct to the contact page — never invent email or phone numbers
-• Editorial opinions in gear reviews are independent and not paid placements (unless the affiliate disclosure states otherwise)
+• Never dump full page content verbatim — summarise in 3-5 bullets maximum
 
 TOOL SELECTION:
 • Planning/recommendation queries ("plan a trek", "suggest treks", "recommend for July"): ALWAYS call recommend_treks. For duration like "6 days" use duration_min=5, duration_max=7. For "Himalayan"/"mountains" do NOT set a state/region filter — all Indian Himalayan treks are already in the database.
@@ -313,9 +314,10 @@ _SITE_INFO_ALIASES: dict[str, str] = {
     "author_network": "authors",
     "editorial": "methodology",
     "team": "about",
-    "who": "about",
     "company": "about",
-    # Founder / team-member lookups must resolve to the authors page
+    # "who" questions are always about a person → authors, not the about page
+    "who": "authors",
+    # Founder / team-member lookups
     "founder": "authors",
     "founders": "authors",
     "who_founded": "authors",
