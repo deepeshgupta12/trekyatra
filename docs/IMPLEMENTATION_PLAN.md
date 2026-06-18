@@ -877,6 +877,21 @@ Mobile:
 
 **Verification:** 40/40 trek intelligence + treksage backend tests | `next build` ✅ Compiled successfully, 197 pages | `npx tsc --noEmit` (mobile) ✅ zero errors.
 
+### Step 77 — TrekSage UX Overhaul + Search Fix [DONE — 2026-06-18]
+
+Backend:
+- **`service.py`** (`search_treks`): Keyword tokenization — query split into tokens, stop words filtered, OR-match any token against extended haystack (name + title + seo_description + season + state + region + themes + structured month names from best_months int list).
+- **`matching.py`** (`_MONTH_ORD`): Added full month names (January…December) alongside abbreviations so `recommend_treks(months=["December"])` scores correctly.
+- **`tests/test_treksage.py`** (TC-B41–B44): Keyword search tests use unique `trek_state` UUID + `state=` filter to avoid 200-row fetch limit issue in full suite; TC-B44 verifies `_MONTH_ORD` full name resolution.
+
+Frontend:
+- **`TreksageChat.tsx`** (FULL REWRITE): Myra-inspired split-screen layout (42% chat / 58% canvas); canvas slides in on first trek_cards response; trek name → `/trek/[slug]?ref=treksage` analytics link (new tab); "View Details" → `TrekDetailPanel` inline canvas; "Add to Compare" + `compareSet` (Set<string>); "Compare (N)" button sends compare message; `ThinkingBubble` multi-stage cascade (4 stages, check icons); send/stop icon morph; `CanvasTrekCard` with stagger-fade animation; inline `ChatTrekCard` on mobile (canvas hidden on sm); canvas state restored from last assistant trek_cards on session history reload.
+- **`TrekDetailPanel.tsx`** (NEW): Inline trek detail panel in canvas — hero image + gradient overlay, 6-cell key facts grid, "View Full Trek Page" (`?ref=treksage`) + "Plan This Trek" CTA.
+
+**Verification:** 676/676 BE tests pass | `next build` ✅ compiled, `/treksage` 21 kB.
+
+---
+
 ### Post-Step-76 TrekSage Hotfixes [DONE — 2026-06-17/18, commits 3a33716 / 88ddd49 / 387de83]
 
 Three follow-up fixes applied after Step 76 to address production issues found during user testing:

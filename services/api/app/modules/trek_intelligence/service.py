@@ -134,6 +134,24 @@ def _cache_put(db: Session, cache_key: str, answer_text: str, model: str) -> Non
 
 # ── 1. search_treks ──────────────────────────────────────────────────────────
 
+# Words too generic to be useful as search keywords
+_SEARCH_STOP = frozenset({
+    "a", "an", "the", "and", "or", "for", "to", "in", "at", "of", "on", "by",
+    "with", "from", "into", "about", "trek", "treks", "trekking", "hiking",
+    "hike", "trip", "tour", "best", "top", "good", "great", "some", "any",
+    "all", "what", "which", "how", "when", "where", "can", "are", "is", "was",
+    "do", "i", "me", "my", "you", "your", "tell", "find", "show", "give",
+    "list", "india", "indian",
+})
+
+# Full month name → ordinal (for haystack expansion from best_months int list)
+_MONTH_NAME_TO_NUM = {
+    "january": 1, "february": 2, "march": 3, "april": 4, "may": 5, "june": 6,
+    "july": 7, "august": 8, "september": 9, "october": 10, "november": 11, "december": 12,
+}
+_NUM_TO_MONTH_NAME = {v: k for k, v in _MONTH_NAME_TO_NUM.items()}
+
+
 def search_treks(
     db: Session,
     query: str | None = None,
@@ -152,12 +170,42 @@ def search_treks(
         stmt = stmt.where(CMSPage.trek_difficulty.ilike(f"%{difficulty}%"))
     pages = db.scalars(stmt.limit(200)).all()
 
+    # Pre-compute query tokens once (not inside the inner loop)
+    query_tokens: list[str] | None = None
+    if query:
+        raw_tokens = re.sub(r"[^a-z0-9\s]", "", query.lower()).split()
+        query_tokens = [w for w in raw_tokens if w not in _SEARCH_STOP and len(w) >= 3]
+
     results: list[CMSPage] = []
     for page in pages:
         if query:
-            haystack = " ".join(filter(None, [page.trek_name, page.title, page.seo_description])).lower()
-            if query.lower() not in haystack:
-                continue
+            # Build extended haystack: name + title + seo + season + state + region +
+            # themes + month names derived from structured best/open month arrays
+            structured_month_names = [
+                _NUM_TO_MONTH_NAME[n]
+                for n in (page.trek_best_months or []) + (page.trek_open_months or [])
+                if n in _NUM_TO_MONTH_NAME
+            ]
+            haystack = " ".join(filter(None, [
+                page.trek_name,
+                page.title,
+                page.seo_description,
+                page.trek_season,
+                page.trek_state,
+                page.trek_region,
+                " ".join(page.trek_themes or []),
+                " ".join(structured_month_names),
+            ])).lower()
+
+            if query_tokens:
+                # At least one meaningful keyword must appear in haystack
+                if not any(tok in haystack for tok in query_tokens):
+                    continue
+            else:
+                # Query was all stop words — fall back to direct phrase match
+                if query.lower() not in haystack:
+                    continue
+
         if max_budget is not None:
             if page.trek_budget_min is not None and page.trek_budget_min > max_budget:
                 continue

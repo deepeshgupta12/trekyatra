@@ -8,11 +8,12 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 from fastapi.testclient import TestClient
-from sqlalchemy import delete
+from sqlalchemy import delete, select
 from sqlalchemy.orm import Session
 
 from app.main import app
-from app.db.session import get_db
+from app.db.session import get_db, SessionLocal
+from app.modules.cms.models import CMSPage
 from app.modules.trek_intelligence.models import TreksageChatSession, TreksageChatMessage
 from app.modules.trek_intelligence import treksage_agent
 
@@ -180,3 +181,116 @@ def test_treksage_chat_endpoint_creates_session(db: Session, monkeypatch):
     assert hist_res.status_code == 200
     hist = hist_res.json()
     assert any(h["content"] == "What treks can I do in June?" for h in hist)
+
+
+# ---------------------------------------------------------------------------
+# TC-B41: search_treks — keyword tokenization finds trek by single keyword
+# ---------------------------------------------------------------------------
+def test_search_treks_keyword_match():
+    """search_treks must match on any meaningful keyword, not the full phrase.
+
+    Uses a UUID-based trek_state to guarantee the test page is the only result
+    returned by the initial SQL fetch (search_treks caps DB fetch at 200 rows,
+    and the test DB may have thousands of accumulated trek_guide pages).
+    """
+    from app.modules.trek_intelligence.service import search_treks
+
+    unique_state = f"teststate-{uuid.uuid4().hex}"
+    with SessionLocal() as db:
+        page = CMSPage(
+            id=uuid.uuid4(),
+            slug=f"snowfall-test-{uuid.uuid4().hex[:6]}",
+            page_type="trek_guide",
+            status="published",
+            title="Kedarkantha Trek",
+            trek_name="Kedarkantha",
+            seo_description="Famous for stunning snowfall views and snow-covered meadows in winter.",
+            trek_state=unique_state,
+            trek_difficulty="easy",
+        )
+        db.add(page)
+        db.commit()
+        try:
+            results = search_treks(db, query="best snowfall treks in December", state=unique_state)
+            slugs = [r.slug for r in results]
+            assert page.slug in slugs, f"Expected {page.slug} in {slugs}"
+        finally:
+            from sqlalchemy import delete as sa_delete
+            db.execute(sa_delete(CMSPage).where(CMSPage.id == page.id))
+            db.commit()
+
+
+# ---------------------------------------------------------------------------
+# TC-B42: search_treks — stop-word-only query falls back to phrase match
+# ---------------------------------------------------------------------------
+def test_search_treks_all_stop_words():
+    """When all tokens are stop words, exact phrase matching still works."""
+    from app.modules.trek_intelligence.service import search_treks
+
+    unique_state = f"teststate-{uuid.uuid4().hex}"
+    with SessionLocal() as db:
+        page = CMSPage(
+            id=uuid.uuid4(),
+            slug=f"stopword-test-{uuid.uuid4().hex[:6]}",
+            page_type="trek_guide",
+            status="published",
+            title="Any Trek",
+            trek_name="Any Trek",
+            seo_description="A good great trek for all.",
+            trek_state=unique_state,
+        )
+        db.add(page)
+        db.commit()
+        try:
+            results = search_treks(db, query="a good great trek for all", state=unique_state)
+            slugs = [r.slug for r in results]
+            assert page.slug in slugs, f"Expected {page.slug} in {slugs}"
+        finally:
+            from sqlalchemy import delete as sa_delete
+            db.execute(sa_delete(CMSPage).where(CMSPage.id == page.id))
+            db.commit()
+
+
+# ---------------------------------------------------------------------------
+# TC-B43: search_treks — keyword match via structured month names
+# ---------------------------------------------------------------------------
+def test_search_treks_month_name_from_best_months():
+    """search_treks expands best_months int list to month names in haystack."""
+    from app.modules.trek_intelligence.service import search_treks
+
+    unique_state = f"teststate-{uuid.uuid4().hex}"
+    with SessionLocal() as db:
+        page = CMSPage(
+            id=uuid.uuid4(),
+            slug=f"month-test-{uuid.uuid4().hex[:6]}",
+            page_type="trek_guide",
+            status="published",
+            title="Chopta Trek",
+            trek_name="Chopta Tungnath",
+            seo_description="A beautiful Bugyals trek.",
+            trek_state=unique_state,
+            trek_best_months=[11, 12, 1, 2],
+        )
+        db.add(page)
+        db.commit()
+        try:
+            results = search_treks(db, query="december treks", state=unique_state)
+            slugs = [r.slug for r in results]
+            assert page.slug in slugs, f"Expected {page.slug} in {slugs}"
+        finally:
+            from sqlalchemy import delete as sa_delete
+            db.execute(sa_delete(CMSPage).where(CMSPage.id == page.id))
+            db.commit()
+
+
+# ---------------------------------------------------------------------------
+# TC-B44: _MONTH_ORD — full month names map correctly
+# ---------------------------------------------------------------------------
+def test_month_ord_full_names():
+    """_MONTH_ORD must resolve full month names so recommend_treks scores correctly."""
+    from app.modules.trek_intelligence.matching import _MONTH_ORD
+
+    assert _MONTH_ORD.get("December") == 12, "December must resolve to 12"
+    assert _MONTH_ORD.get("January") == 1
+    assert _MONTH_ORD.get("June") == 6
+    assert _MONTH_ORD.get("September") == 9

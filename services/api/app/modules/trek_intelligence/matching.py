@@ -14,10 +14,14 @@ from sqlalchemy.orm import Session
 from app.modules.cms.models import CMSPage
 from app.schemas.plan import PlanRecommendRequest, PlanRecommendResponse, TrekRecommendation
 
-# Month abbreviation -> ordinal (1=Jan)
+# Month abbreviation OR full name -> ordinal (1=Jan).
+# Full names added so treksage_agent recommend_treks(months=["December"]) scores correctly.
 _MONTH_ORD: dict[str, int] = {
     "Jan": 1, "Feb": 2, "Mar": 3, "Apr": 4, "May": 5, "Jun": 6,
     "Jul": 7, "Aug": 8, "Sep": 9, "Oct": 10, "Nov": 11, "Dec": 12,
+    "January": 1, "February": 2, "March": 3, "April": 4,
+    "June": 6, "July": 7, "August": 8, "September": 9,
+    "October": 10, "November": 11, "December": 12,
 }
 
 # Difficulty string -> numeric level (0=easiest, 7=hardest)
