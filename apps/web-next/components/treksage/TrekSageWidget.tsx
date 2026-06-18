@@ -20,7 +20,7 @@ function getContextualPrompts(pathname: string): string[] {
       `What permits are needed for ${trekName}?`,
       `Best time of year to do ${trekName}`,
       `What should I pack for ${trekName}?`,
-      `Compare ${trekName} with similar treks`,
+      `Recommend treks similar to ${trekName}`,
     ];
   }
   if (pathname.startsWith("/compare")) {
@@ -100,8 +100,18 @@ export default function TrekSageWidget() {
     setInput("");
     setMessages((prev) => [...prev, { role: "user", content: trimmed }]);
     setLoading(true);
+
+    // Prefix trek page context so the agent knows the slug without having to infer it.
+    let messageToSend = trimmed;
+    const trekPageMatch = pathname.match(/^\/trek\/([^/]+)$/);
+    if (trekPageMatch) {
+      const slug = trekPageMatch[1];
+      const name = slug.split("-").map((w: string) => w.charAt(0).toUpperCase() + w.slice(1)).join(" ");
+      messageToSend = `[Trek page context: ${name} (${slug})] ${trimmed}`;
+    }
+
     try {
-      const res = await treksageChat(trimmed, sessionKey);
+      const res = await treksageChat(messageToSend, sessionKey);
       setMessages((prev) => [...prev, { role: "assistant", content: res.reply }]);
       if (res.session_key !== sessionKey) {
         setSessionKey(res.session_key);

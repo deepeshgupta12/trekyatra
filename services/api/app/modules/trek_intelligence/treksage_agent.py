@@ -48,12 +48,15 @@ RESPONSE FORMAT for recommendations:
 • Note any safety or permit consideration
 • Close with a next-step offer
 
+TREK PAGE CONTEXT:
+When the user message starts with "[Trek page context: <name> (<slug>)]", the user is currently viewing that trek's guide page. Use the given slug directly for ask_trek_question calls. For "similar treks" or "compare" requests, first call search_treks or recommend_treks to discover comparable treks, then optionally compare_treks using the page slug plus discovered slugs.
+
 WHAT NOT TO DO:
 • Do not guess or fabricate missing data — if a field is unavailable, say so
 • Do not produce partial sentences ending with ":" — always deliver a complete answer
 • Do not reference raw tool output or JSON field names in your response\
 """
-_TREK_CARD_TOOLS = {"search_treks", "recommend_treks"}
+_TREK_CARD_TOOLS = {"search_treks", "recommend_treks", "compare_treks"}
 
 # ── Tool schemas ──────────────────────────────────────────────────────────────
 
@@ -364,11 +367,18 @@ def chat(
             "For example: \"Easy 5-day trek in Himachal Pradesh for October under ₹12,000\"."
         )
 
-    # Expose the last search/recommend result as structured trek cards for the UI.
+    # Expose the last search/recommend/compare result as structured trek cards for the UI.
     trek_cards: list[dict] = []
     for tc in reversed(tool_calls_log):
-        if tc["tool"] in _TREK_CARD_TOOLS and isinstance(tc["result"], list) and tc["result"]:
-            trek_cards = tc["result"]
+        if tc["tool"] not in _TREK_CARD_TOOLS:
+            continue
+        result = tc["result"]
+        if isinstance(result, list) and result:
+            trek_cards = result
+            break
+        # compare_treks returns {"treks": [...], "ai_summary": ...}
+        if isinstance(result, dict) and isinstance(result.get("treks"), list) and result["treks"]:
+            trek_cards = result["treks"]
             break
 
     _persist_messages(db, session, user_message, final_reply, tool_calls_log or None)
