@@ -5,6 +5,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from sqlalchemy import update
+from uvicorn.middleware.proxy_headers import ProxyHeadersMiddleware
 
 from app.api.router import api_router
 from app.core.config import settings
@@ -66,6 +67,10 @@ app = FastAPI(
     lifespan=lifespan,
 )
 
+# Trust X-Forwarded-Proto/Host from Cloudflare + DigitalOcean proxy so that
+# FastAPI generates correct HTTPS redirect URLs (e.g. /mcp → /mcp/).
+app.add_middleware(ProxyHeadersMiddleware, trusted_hosts="*")
+
 # CORS — must be added before any routes.
 # Allows the Next.js frontend (trekyatra.co.in) to call the FastAPI backend
 # (api.trekyatra.co.in) from the browser.
@@ -74,6 +79,9 @@ _CORS_ORIGINS = [
     "https://trekyatra.co.in",                            # production root
     "https://www.trekyatra.co.in",                        # production www
     "https://trekyatra-ssvha.ondigitalocean.app",         # DO temporary URL
+    "https://claude.ai",                                  # Claude.ai MCP client
+    "https://chatgpt.com",                               # ChatGPT MCP client
+    "https://chat.openai.com",                           # ChatGPT legacy domain
 ]
 
 app.add_middleware(
