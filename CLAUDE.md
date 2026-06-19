@@ -62,9 +62,11 @@ Run all of these before touching a single file:
 6. Run `gitnexus_query` and `gitnexus_impact` on every symbol you plan to modify — report blast radius before coding
 7. Confirm all required local services are running (Postgres, Redis, WordPress as needed)
 8. Confirm the previous step's tests still pass (`make test`) before starting new work
-9. For any `apps/mobile/` step or screen change, also read `.claude/skills/mobile-design-system/SKILL.md` — confirms theme tokens, font loading, tab-bar route-name conventions, and API contract checks
+9. For any `apps/mobile/` step or screen change:
+   - Read `docs/mobile/MOBILE_IMPLEMENTATION_PLAN.md` — confirms which mobile steps are done/pending and the mobile-specific execution rules (offline parity, both-platform testing, no `any` types, accessibility props)
+   - Read `.claude/skills/mobile-design-system/SKILL.md` — confirms theme tokens, font loading, tab-bar route-name conventions, and API contract checks
 
-Do not begin implementation until all 8 checks are complete.
+Do not begin implementation until all 9 checks are complete.
 
 ---
 
@@ -358,12 +360,14 @@ Cover at minimum: happy path, one error/edge case, mobile layout check, and any 
 |------|-------|
 | Product scope | `docs/TRAVEL_BLOG.md` |
 | Current progress | `docs/MASTER_TRACKER.md` |
-| Step plan | `docs/IMPLEMENTATION_PLAN.md` |
+| Step plan (web/backend) | `docs/IMPLEMENTATION_PLAN.md` |
+| **Mobile step plan** | **`docs/mobile/MOBILE_IMPLEMENTATION_PLAN.md`** |
 | Dependency map | `docs/DEPENDENCY_MAP.md` |
 | **URL structure map** | **`docs/URL_MAP.md`** |
 | Process rules | `docs/PROCESS_GUARDRAILS.md` + this file |
-| Active step | `docs/steps/STEP-XX-*.md` |
+| Active step | `docs/steps/STEP-XX-*.md` or `docs/mobile/steps/STEP-MXX-*.md` |
 | Frontend source | `apps/web-next/` |
+| Mobile source | `apps/mobile/` |
 | Backend source | `services/api/` |
 
 ---
