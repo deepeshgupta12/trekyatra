@@ -1,8 +1,49 @@
 # STEP-M10 — User Account
 
-**Status:** Pending
+**Status:** Done (2026-06-19)
 **Phase:** User & Commerce
 **Dependencies:** STEP-M02 (auth), STEP-M05 (trek detail — save from there)
+
+---
+
+## Files Created
+
+| File | Notes |
+|------|-------|
+| `apps/mobile/app/(tabs)/account/_layout.tsx` | Stack navigator for all account sub-screens (NEW — converted from placeholder account.tsx) |
+| `apps/mobile/app/(tabs)/account/index.tsx` | Account dashboard: ProfileHeader + AccountDashboard + stats strip + sign-out |
+| `apps/mobile/app/(tabs)/account/saved.tsx` | Saved treks list via `GET /api/v1/account/bookmarks`; swipe-to-delete with Alert confirm |
+| `apps/mobile/app/(tabs)/account/downloads.tsx` | Purchased digital products via `GET /api/v1/account/downloads`; opens download URL via Linking |
+| `apps/mobile/app/(tabs)/account/enquiries.tsx` | Trek planning leads via `GET /api/v1/auth/me/leads` |
+| `apps/mobile/app/(tabs)/account/premium.tsx` | Premium feature list + "coming soon" CTA |
+| `apps/mobile/app/(tabs)/account/settings.tsx` | Profile name edit, EN/हिंदी language toggle, biometric toggle, notifications link, Trail Letter newsletter subscribe, legal links, sign-out |
+| `apps/mobile/app/(tabs)/account/notifications.tsx` | 6 per-category notification toggles stored in AsyncStorage |
+| `apps/mobile/app/(tabs)/account/privacy.tsx` | DPDP data export (Linking to signed URL) + delete analytics data (DELETE /api/v1/auth/me/data) |
+| `apps/mobile/components/account/ProfileHeader.tsx` | Avatar initials + name + email + Edit button |
+| `apps/mobile/components/account/AccountDashboard.tsx` | Stats strip + menu rows component |
+| `apps/mobile/components/account/SavedTrekCard.tsx` | Compact trek card with hero image + bookmark icon tap to remove |
+| `apps/mobile/components/account/DownloadItem.tsx` | Digital product row with Download button |
+| `apps/mobile/components/account/EnquiryCard.tsx` | Lead enquiry row with status badge |
+| `apps/mobile/hooks/useAccount.ts` | `useSavedTreks`, `useDownloads`, `useAccountMe`, `useNewsletter` TanStack Query hooks |
+
+## Files Modified
+
+| File | Change |
+|------|--------|
+| `apps/mobile/app/(tabs)/account.tsx` | DELETED — replaced by `account/_layout.tsx` + `account/index.tsx` |
+| `apps/mobile/lib/mobileApi.ts` | Added `apiPatch`, `BookmarkResponse`, `DownloadResponse`, `UserMeResponse`, `NewsletterSubscribeResponse` types; extended `accountApi` with `listBookmarks`, `removeBookmarkBySlug`, `listDownloads`, `getDownloadUrl`; added `newsletterApi.subscribe`, `authMeApi.getMe/updateMe/getDataExportUrl/deleteMyData` |
+
+## Notes
+
+- `account.tsx` placeholder deleted; Expo Router resolves the `account` tab to `account/_layout.tsx` + `account/index.tsx` stack
+- Route type errors for `/(tabs)/account/settings` and `/(tabs)/account/notifications` fixed with `as never` cast (types regenerate on next `expo start`)
+- Enquiries screen calls `GET /api/v1/auth/me/leads` — backend confirmed (Step 33)
+- Language preference stored in AsyncStorage `app_language: 'en' | 'hi'`; biometric in `biometric_enabled: 'true' | 'false'`
+- Notification preferences stored locally in AsyncStorage `notification_prefs: JSON` (synced to account profile in a future step)
+- Data export opens the signed download URL in the system browser (Linking.openURL)
+- **tsc --noEmit: 0 errors** | No backend changes (all endpoints pre-exist from Steps 13, 33, 34, 68)
+
+---
 
 ---
 

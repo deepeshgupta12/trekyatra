@@ -236,6 +236,18 @@ export async function apiDelete(path: string): Promise<void> {
   }
 }
 
+export async function apiPatch<T>(path: string, body: unknown): Promise<T> {
+  const resp = await fetchWithAuth(path, {
+    method: "PATCH",
+    body: JSON.stringify(body),
+  });
+  if (!resp.ok) {
+    const data = await resp.json().catch(() => ({}));
+    throw new Error((data as { detail?: string }).detail ?? `Request failed: ${resp.status}`);
+  }
+  return resp.json() as Promise<T>;
+}
+
 export class NotFoundError extends Error {
   constructor(path: string) {
     super(`Not found: ${path}`);
@@ -521,6 +533,29 @@ export interface SavedComparison {
   updated_at: string;
 }
 
+// Bookmark (saved trek) shapes from /api/v1/account/bookmarks
+export interface BookmarkResponse {
+  id: string;
+  user_id: string;
+  trek_slug: string | null;
+  slug: string | null;
+  title: string | null;
+  page_type: string | null;
+  hero_image_url: string | null;
+  created_at: string;
+}
+
+// Download (purchased digital product) shapes from /api/v1/account/downloads
+export interface DownloadResponse {
+  id: string;
+  user_id: string;
+  product_id: string | null;
+  order_id: string | null;
+  filename: string;
+  download_url: string | null;
+  downloaded_at: string;
+}
+
 export const accountApi = {
   listComparisons: () =>
     apiGet<SavedComparison[]>("/api/v1/account/comparisons"),
@@ -530,6 +565,50 @@ export const accountApi = {
 
   deleteComparison: (id: string) =>
     apiDelete(`/api/v1/account/comparisons/${id}`),
+
+  // Bookmarks (saved treks)
+  listBookmarks: () =>
+    apiGet<BookmarkResponse[]>("/api/v1/account/bookmarks"),
+
+  removeBookmarkBySlug: (slug: string) =>
+    apiDelete(`/api/v1/account/bookmarks/by-slug/${slug}`),
+
+  // Downloads (purchased digital products)
+  listDownloads: () =>
+    apiGet<DownloadResponse[]>("/api/v1/account/downloads"),
+
+  getDownloadUrl: (orderId: string) =>
+    apiPost<{ download_url: string }>(`/api/v1/account/downloads/${orderId}/url`, {}),
+};
+
+// Newsletter
+export interface NewsletterSubscribeResponse {
+  subscribed: boolean;
+  email: string;
+}
+
+export const newsletterApi = {
+  subscribe: (email: string) =>
+    apiPost<NewsletterSubscribeResponse>("/api/v1/newsletter/subscribe", { email }),
+};
+
+// Auth/me — update name, DPDP data export and delete
+export interface UserMeResponse {
+  id: string;
+  email: string | null;
+  full_name: string | null;
+  is_verified_email: boolean;
+}
+
+export const authMeApi = {
+  getMe: () => apiGet<UserMeResponse>("/api/v1/auth/me"),
+
+  updateMe: (payload: { full_name?: string }) =>
+    apiPatch<UserMeResponse>("/api/v1/auth/me", payload),
+
+  getDataExportUrl: () => `${process.env.EXPO_PUBLIC_API_URL ?? "http://localhost:8000"}/api/v1/auth/me/data-export`,
+
+  deleteMyData: () => apiDelete("/api/v1/auth/me/data"),
 };
 
 // ---------------------------------------------------------------------------

@@ -2039,6 +2039,24 @@ Impact analysis: `_call_get_site_info` (LOW); system prompt change only affects 
 | `apps/mobile/app/(tabs)/plan.tsx` | DELETED — replaced by `plan/` stack | LOW — file routing only |
 | `apps/mobile/app/(tabs)/(home)/plan-my-trek.tsx` | DELETED — replaced by full wizard | LOW |
 
+### Step M10 — User Account — Done (2026-06-19)
+
+| File | Change | Blast radius |
+|------|--------|-------------|
+| `apps/mobile/app/(tabs)/account.tsx` | DELETED — placeholder replaced by `account/` Stack | LOW — routing only |
+| `apps/mobile/app/(tabs)/account/_layout.tsx` (NEW) | Stack navigator for account sub-screens | LOW — new |
+| `apps/mobile/app/(tabs)/account/index.tsx` (NEW) | Account dashboard screen | LOW — new leaf screen |
+| `apps/mobile/app/(tabs)/account/saved.tsx` (NEW) | Saved treks list, calls `GET /api/v1/account/bookmarks` | LOW — new leaf screen |
+| `apps/mobile/app/(tabs)/account/downloads.tsx` (NEW) | Digital product downloads, calls `GET /api/v1/account/downloads` | LOW — new leaf screen |
+| `apps/mobile/app/(tabs)/account/enquiries.tsx` (NEW) | Lead enquiries, calls `GET /api/v1/auth/me/leads` | LOW — new leaf screen |
+| `apps/mobile/app/(tabs)/account/premium.tsx` (NEW) | Premium placeholder screen | LOW — new leaf screen |
+| `apps/mobile/app/(tabs)/account/settings.tsx` (NEW) | Settings: name/language/biometric/newsletter/legal | LOW — new leaf screen |
+| `apps/mobile/app/(tabs)/account/notifications.tsx` (NEW) | Per-category notification toggles (AsyncStorage) | LOW — new leaf screen |
+| `apps/mobile/app/(tabs)/account/privacy.tsx` (NEW) | DPDP data export + delete | LOW — new leaf screen |
+| `apps/mobile/components/account/` (5 NEW files) | `ProfileHeader`, `AccountDashboard`, `SavedTrekCard`, `DownloadItem`, `EnquiryCard` | LOW — new leaf components |
+| `apps/mobile/hooks/useAccount.ts` (NEW) | TanStack Query hooks for bookmarks, downloads, profile, newsletter | LOW — new hook |
+| `apps/mobile/lib/mobileApi.ts` | Added `apiPatch`; new types + `accountApi` extensions + `newsletterApi` + `authMeApi` | MEDIUM — shared API client; existing callers unaffected (additive only) |
+
 ### TrekSage Hotfix 11 — Enforce founder→authors routing in tool schema (2026-06-18, commit 6a8087f)
 
 | File | Change | Blast radius |

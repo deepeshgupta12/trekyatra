@@ -828,6 +828,30 @@ Spec: `docs/mobile/steps/STEP-M09-plan-my-trek-wizard.md`. Replaced the single-s
 
 ---
 
+### Step M10 — User Account [DONE — 2026-06-19]
+
+Spec: `docs/mobile/steps/STEP-M10-user-account.md`. Full account management tab: dashboard with profile header and menu, saved treks (bookmarks), purchased digital product downloads, enquiries, premium placeholder, settings (name/language/biometric/newsletter/legal), per-category notification toggles, and DPDP privacy screen.
+
+- `apps/mobile/app/(tabs)/account/_layout.tsx` (NEW) — Stack navigator; placeholder `account.tsx` deleted
+- `apps/mobile/app/(tabs)/account/index.tsx` (NEW) — Dashboard: ProfileHeader + AccountDashboard (stats + menu rows) + sign-out
+- `apps/mobile/app/(tabs)/account/saved.tsx` (NEW) — `GET /api/v1/account/bookmarks`; Alert-confirm remove
+- `apps/mobile/app/(tabs)/account/downloads.tsx` (NEW) — `GET /api/v1/account/downloads`; download URL via `Linking.openURL`
+- `apps/mobile/app/(tabs)/account/enquiries.tsx` (NEW) — `GET /api/v1/auth/me/leads`
+- `apps/mobile/app/(tabs)/account/premium.tsx` (NEW) — Feature list + "coming soon" placeholder
+- `apps/mobile/app/(tabs)/account/settings.tsx` (NEW) — Name edit (`PATCH /api/v1/auth/me`), EN/हिंदी language toggle (AsyncStorage), biometric toggle (AsyncStorage), notifications link, Trail Letter newsletter (`POST /api/v1/newsletter/subscribe`), legal links (Linking.openURL), sign-out
+- `apps/mobile/app/(tabs)/account/notifications.tsx` (NEW) — 6 per-category notification toggles stored in AsyncStorage `notification_prefs`
+- `apps/mobile/app/(tabs)/account/privacy.tsx` (NEW) — DPDP data export (Linking to `/api/v1/auth/me/data-export`) + `DELETE /api/v1/auth/me/data` with Alert confirm
+- `apps/mobile/components/account/ProfileHeader.tsx` (NEW) — Avatar initials + name + email + Edit→settings
+- `apps/mobile/components/account/AccountDashboard.tsx` (NEW) — Stats strip + 6 menu rows with Ionicons
+- `apps/mobile/components/account/SavedTrekCard.tsx` (NEW) — Trek card with thumbnail + remove bookmark button
+- `apps/mobile/components/account/DownloadItem.tsx` (NEW) — Digital product row with Download button
+- `apps/mobile/components/account/EnquiryCard.tsx` (NEW) — Lead enquiry row with status badge
+- `apps/mobile/hooks/useAccount.ts` (NEW) — `useSavedTreks`, `useDownloads`, `useAccountMe`, `useNewsletter` hooks
+- `apps/mobile/lib/mobileApi.ts` — Added `apiPatch`, new types (`BookmarkResponse`, `DownloadResponse`, `UserMeResponse`, `NewsletterSubscribeResponse`), extended `accountApi`, added `newsletterApi` and `authMeApi`
+- **tsc --noEmit: 0 errors** | No backend changes (all endpoints existed from Steps 13, 33, 34, 68)
+
+---
+
 ### TrekSage Hotfix 11 — Enforce founder→authors routing in tool schema [DONE — 2026-06-18, commit 6a8087f]
 
 Root cause: despite `_SITE_INFO_ALIASES` mapping founder terms → "authors", the Haiku LLM was ignoring the Python-layer alias resolution and generating `topic="about"` at the tool-call level based on the English word meaning of "about" ≈ "about the founder". Fix: moved routing rules into the schema itself (where the model reads them at call time) rather than relying on system prompt hints.
