@@ -828,6 +828,52 @@ Spec: `docs/mobile/steps/STEP-M09-plan-my-trek-wizard.md`. Replaced the single-s
 
 ---
 
+### TrekSage Hotfix 11 — Enforce founder→authors routing in tool schema [DONE — 2026-06-18, commit 6a8087f]
+
+Root cause: despite `_SITE_INFO_ALIASES` mapping founder terms → "authors", the Haiku LLM was ignoring the Python-layer alias resolution and generating `topic="about"` at the tool-call level based on the English word meaning of "about" ≈ "about the founder". Fix: moved routing rules into the schema itself (where the model reads them at call time) rather than relying on system prompt hints.
+
+- `services/api/app/modules/trek_intelligence/treksage_agent.py` — `get_site_info` tool description rewritten with explicit ROUTING RULES block listing 9 topic→trigger-phrase mappings; `topic` parameter: added `enum` of all 9 valid values + CRITICAL sentence "Use 'authors' for any question about the founder, team member, or who built TrekYatra"; `_call_get_site_info`: when `canonical=="about"`, response now includes a `founder_note` field explicitly naming Deepesh Kumar Gupta.
+- **16/16 TrekSage tests pass** | No web-next or mobile changes
+
+---
+
+### TrekSage Hotfix 12 — Authors topic hardcoded (static React page, not CMS) [DONE — 2026-06-18, commit 44562d7]
+
+Root cause confirmed: `/about/authors` is 100% static React (hardcodes Deepesh Kumar Gupta's profile in JSX). No CMS page with `page_type="author"` exists in the database. `list_pages(page_type="author")` always returned an empty list. Same pattern as the safety disclaimer fix (hotfix 9).
+
+- `services/api/app/modules/trek_intelligence/treksage_agent.py` — Added `_AUTHORS_INFO` constant containing full founder bio (name, title, skills, contact, URL); changed `_SITE_INFO_MAP["authors"]` from `{"page_type": "author"}` → `{"hardcoded": True}`; `_call_get_site_info` hardcoded branch now handles both "authors" and "safety" — returns constant without any DB query.
+- **16/16 TrekSage tests pass** | No web-next or mobile changes
+
+---
+
+### MCP HTTPS Endpoint Fix — ProxyHeadersMiddleware [DONE — 2026-06-18, commit f9d0a68]
+
+Root cause: FastAPI behind Cloudflare + DigitalOcean proxy was generating HTTP redirect URLs for `/mcp` → `/mcp/` (trailing slash), because it couldn't read the original `X-Forwarded-Proto: https` header from the proxy chain. MCP clients received a 307 redirect to `http://` and rejected the connection.
+
+- `services/api/app/main.py` — Added `ProxyHeadersMiddleware(trusted_hosts="*")` from `uvicorn.middleware.proxy_headers` (before CORS middleware); trusts X-Forwarded-Proto/Host from Cloudflare + DO so FastAPI generates correct HTTPS redirect URLs. Added `"https://claude.ai"`, `"https://chatgpt.com"`, `"https://chat.openai.com"` to `_CORS_ORIGINS`.
+- **MCP endpoint** now returns 200 directly at `https://api.trekyatra.co.in/mcp/` without 307 redirect.
+
+---
+
+### OpenAPI Spec for ChatGPT Custom GPT [DONE — 2026-06-18, commit 8f22959]
+
+- `services/api/app/openapi_mcp.yaml` (NEW) — OpenAPI 3.1.0 spec with 7 endpoints (listTreks, compareTreks, getTrekProfile, askTrekQuestion, recommendTreks, treksageChat, getTreksageHistory) and 3 schemas (TrekSummary, TrekProfile, TrekRecommendation); server: `https://api.trekyatra.co.in/api/v1`.
+- `services/api/app/main.py` — Added `GET /openapi-mcp.json` route serving the YAML file as JSON with `Access-Control-Allow-Origin: *` (required for ChatGPT to fetch the spec).
+- ChatGPT Custom GPT published: `https://chatgpt.com/g/g-6a3501669eb88191a43b39b3afa4cac7-treksage-india-s-trek-planner`; privacy policy: `https://www.trekyatra.co.in/privacy`.
+
+---
+
+### Rate Limiting + DDoS Protection [DONE — 2026-06-18, commit 6b14854]
+
+- `services/api/pyproject.toml` — Added `"slowapi>=0.1.9,<1.0.0"` to dependencies.
+- `services/api/app/main.py` — Wired `Limiter`, `SlowAPIMiddleware`, `_rate_limit_exceeded_handler` from `slowapi`; limiter keyed by `get_remote_address` (reads X-Forwarded-For set by Cloudflare).
+- `services/api/app/api/routes/treksage.py` — `@limiter.limit("20/minute")` on `POST /treksage/chat`; added `request: Request` as first parameter.
+- `services/api/app/api/routes/treks.py` — `@limiter.limit("15/minute")` on `POST /treks/compare`; `@limiter.limit("20/minute")` on `POST /treks/{slug}/ask`.
+- `services/api/app/openapi_mcp.yaml` — Trimmed 4 descriptions exceeding ChatGPT's 300-char limit: getTrekProfile (340→<300), askTrekQuestion (348→<300), recommendTreks (343→<300), treksageChat (387→<300).
+- 429 Too Many Requests returned on violation; safe in local/test (rate limit keyed per real IP).
+
+---
+
 ### Step M-DS8 — Glass UI Overhaul (platform-adaptive glassmorphism) [DONE — 2026-06-15]
 
 Spec: user-requested app-wide "Glass UI" restyle, without hampering existing UX/IA. User decisions: iOS → Apple "Liquid Glass" (`expo-glass-effect`); Android/web → `expo-blur` frosted; full app-wide pass in one step (not phased).

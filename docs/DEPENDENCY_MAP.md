@@ -2038,3 +2038,38 @@ Impact analysis: `_call_get_site_info` (LOW); system prompt change only affects 
 | `apps/mobile/components/home/CategoryHubRow.tsx` | "Plan a trek" route updated to `/(tabs)/plan` | LOW |
 | `apps/mobile/app/(tabs)/plan.tsx` | DELETED — replaced by `plan/` stack | LOW — file routing only |
 | `apps/mobile/app/(tabs)/(home)/plan-my-trek.tsx` | DELETED — replaced by full wizard | LOW |
+
+### TrekSage Hotfix 11 — Enforce founder→authors routing in tool schema (2026-06-18, commit 6a8087f)
+
+| File | Change | Blast radius |
+|------|--------|-------------|
+| `services/api/app/modules/trek_intelligence/treksage_agent.py` | `get_site_info` tool description rewritten with explicit ROUTING RULES block + `enum` on topic param + CRITICAL note; `_call_get_site_info`: when canonical=="about", adds `founder_note` field naming Deepesh Kumar Gupta | LOW — same callers as before, additive field in response |
+
+### TrekSage Hotfix 12 — Authors topic hardcoded (static React page) (2026-06-18, commit 44562d7)
+
+| File | Change | Blast radius |
+|------|--------|-------------|
+| `services/api/app/modules/trek_intelligence/treksage_agent.py` | `_AUTHORS_INFO` constant added (founder bio, skills, contact); `_SITE_INFO_MAP["authors"]` changed from `{"page_type": "author"}` → `{"hardcoded": True}`; hardcoded handler covers both "authors" and "safety" topics | LOW — no new callers; replaces empty DB query with constant lookup |
+
+### MCP HTTPS Endpoint Fix — ProxyHeadersMiddleware (2026-06-18, commit f9d0a68)
+
+| File | Change | Blast radius |
+|------|--------|-------------|
+| `services/api/app/main.py` | Added `ProxyHeadersMiddleware(trusted_hosts="*")` (before CORS middleware); added `"https://claude.ai"`, `"https://chatgpt.com"`, `"https://chat.openai.com"` to `_CORS_ORIGINS` | MEDIUM — middleware wraps every request; incorrect trust config could expose internal headers, but `trusted_hosts="*"` is standard for Cloudflare+DO |
+
+### OpenAPI Spec for ChatGPT Custom GPT (2026-06-18, commit 8f22959)
+
+| File | Change | Blast radius |
+|------|--------|-------------|
+| `services/api/app/openapi_mcp.yaml` (NEW) | OpenAPI 3.1.0 spec with 7 endpoints and 3 schemas for ChatGPT Custom GPT Actions | LOW — static YAML file |
+| `services/api/app/main.py` | Added `GET /openapi-mcp.json` route serving YAML as JSON with open CORS | LOW — new additive route |
+
+### Rate Limiting + DDoS Protection (2026-06-18, commit 6b14854)
+
+| File | Change | Blast radius |
+|------|--------|-------------|
+| `services/api/pyproject.toml` | Added `slowapi>=0.1.9,<1.0.0` dependency | LOW — additive |
+| `services/api/app/main.py` | Wired `Limiter`, `SlowAPIMiddleware`, `_rate_limit_exceeded_handler`; limiter keyed by `get_remote_address` (X-Forwarded-For from Cloudflare) | MEDIUM — SlowAPIMiddleware wraps every request; incorrect key_func config could rate-limit all traffic to a single IP |
+| `services/api/app/api/routes/treksage.py` | `@limiter.limit("20/minute")` on `POST /treksage/chat`; `request: Request` added as first param | LOW — additive decorator; no logic change |
+| `services/api/app/api/routes/treks.py` | `@limiter.limit("15/minute")` on `POST /compare`; `@limiter.limit("20/minute")` on `POST /{slug}/ask`; `request: Request` added | LOW — additive decorators |
+| `services/api/app/openapi_mcp.yaml` | Trimmed 4 descriptions exceeding ChatGPT's 300-char limit | LOW — documentation only |
