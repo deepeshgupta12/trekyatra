@@ -1,0 +1,522 @@
+openapi: "3.1.0"
+info:
+  title: TrekSage — India Trek Intelligence API
+  description: >
+    TrekSage is TrekYatra's trek intelligence layer. It provides verified,
+    structured data on 250+ Indian trek guides — including altitude profiles,
+    permit requirements, seasonal windows, cost breakdowns, difficulty grades,
+    packing guidance, and itineraries. Use these endpoints to search, compare,
+    recommend, and ask questions about Indian treks.
+  version: "1.0.0"
+
+servers:
+  - url: https://api.trekyatra.co.in/api/v1
+
+paths:
+
+  /treks:
+    get:
+      operationId: listTreks
+      summary: List and filter Indian treks
+      description: >
+        Returns a filtered list of trek summaries. Use for browsing treks by
+        difficulty, state, or beginner-friendliness.
+      parameters:
+        - name: difficulty
+          in: query
+          required: false
+          schema:
+            type: string
+            enum: [easy, moderate, difficult, very_difficult]
+          description: Filter by difficulty level
+        - name: state
+          in: query
+          required: false
+          schema:
+            type: string
+          description: Filter by Indian state (e.g. Uttarakhand, Himachal Pradesh, Ladakh)
+        - name: beginner
+          in: query
+          required: false
+          schema:
+            type: boolean
+          description: If true, return only beginner-friendly treks
+      responses:
+        "200":
+          description: List of trek summaries
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  treks:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/TrekSummary"
+                  total:
+                    type: integer
+
+  /treks/compare:
+    post:
+      operationId: compareTreks
+      summary: Compare 2–4 treks side by side
+      description: >
+        Returns a structured side-by-side comparison of 2–4 treks across 12+
+        parameters including altitude, difficulty, duration, best season, permit
+        requirements, budget range, crowd level, and beginner/solo/family
+        suitability. Also includes an AI-generated trade-off summary.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - slugs
+              properties:
+                slugs:
+                  type: array
+                  minItems: 2
+                  maxItems: 4
+                  items:
+                    type: string
+                  description: >
+                    URL slugs of the treks to compare
+                    (e.g. ["kedarkantha", "har-ki-dun"])
+      responses:
+        "200":
+          description: Side-by-side comparison with AI summary
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  treks:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/TrekProfile"
+                  rows:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        field:
+                          type: string
+                        label:
+                          type: string
+                        values:
+                          type: array
+                          items: {}
+                  ai_summary:
+                    type: string
+                    nullable: true
+        "404":
+          description: One or more trek slugs not found
+
+  /treks/{slug}/profile:
+    get:
+      operationId: getTrekProfile
+      summary: Get the full structured profile for a trek
+      description: >
+        Returns the complete structured data for a single trek: altitude,
+        difficulty, duration, best/open/avoid months, permit details,
+        budget range, crowd level, themes, suitability flags, content
+        sections (itinerary, packing, costs, safety), and FAQs.
+        This is the richest data shape — use it when a user asks for
+        full details on a specific trek.
+      parameters:
+        - name: slug
+          in: path
+          required: true
+          schema:
+            type: string
+          description: Trek URL slug (e.g. kedarkantha, hampta-pass)
+      responses:
+        "200":
+          description: Full trek profile
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TrekProfile"
+        "404":
+          description: Trek not found
+
+  /treks/{slug}/ask:
+    post:
+      operationId: askTrekQuestion
+      summary: Ask a specific question about a trek
+      description: >
+        Answers a natural-language question about a specific trek, grounded
+        in the verified guide content. Covers packing lists, permit details,
+        costs, safety considerations, itinerary, altitude sickness risk, and
+        route descriptions. Supports conversational follow-ups via history.
+        Never invents facts — returns a not_verified flag if data is unavailable.
+      parameters:
+        - name: slug
+          in: path
+          required: true
+          schema:
+            type: string
+          description: Trek URL slug (e.g. kedarkantha, nubra-valley)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - question
+              properties:
+                question:
+                  type: string
+                  minLength: 3
+                  maxLength: 500
+                  description: >
+                    The question to answer (e.g. "What permits do I need?",
+                    "What should I pack?", "Is this safe for beginners?")
+                history:
+                  type: array
+                  nullable: true
+                  description: Prior conversation turns for follow-up questions (last 6 max)
+                  items:
+                    type: object
+                    properties:
+                      role:
+                        type: string
+                        enum: [user, assistant]
+                      content:
+                        type: string
+      responses:
+        "200":
+          description: Answer grounded in verified trek guide content
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  answer:
+                    type: string
+                  cached:
+                    type: boolean
+                  not_verified:
+                    type: boolean
+                    description: True if TrekYatra does not have verified data for this question
+        "404":
+          description: Trek not found
+
+  /plan/recommend:
+    post:
+      operationId: recommendTreks
+      summary: Get personalised trek recommendations
+      description: >
+        Returns trek recommendations tailored to the user's preferences:
+        difficulty, duration, season, budget, state/region, fitness level,
+        solo/group/family suitability, and themes (snow, wildlife, camping, etc.).
+        Use this for planning queries — "suggest a trek for October",
+        "5-day moderate trek in Himachal under ₹15,000", "family-friendly treks".
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                difficulty:
+                  type: string
+                  enum: [easy, moderate, difficult, very_difficult]
+                  nullable: true
+                duration_min:
+                  type: integer
+                  nullable: true
+                  description: Minimum trek duration in days
+                duration_max:
+                  type: integer
+                  nullable: true
+                  description: Maximum trek duration in days
+                month:
+                  type: integer
+                  nullable: true
+                  description: Travel month (1=Jan … 12=Dec)
+                budget_max:
+                  type: integer
+                  nullable: true
+                  description: Maximum budget in INR per person
+                state:
+                  type: string
+                  nullable: true
+                  description: Preferred Indian state or region
+                solo_friendly:
+                  type: boolean
+                  nullable: true
+                family_friendly:
+                  type: boolean
+                  nullable: true
+                beginner_friendly:
+                  type: boolean
+                  nullable: true
+                themes:
+                  type: array
+                  nullable: true
+                  items:
+                    type: string
+                  description: >
+                    Interest tags e.g. ["snow", "camping", "wildlife",
+                    "offbeat", "lake", "glacier", "meadows"]
+                limit:
+                  type: integer
+                  default: 5
+                  description: Number of recommendations to return (max 10)
+      responses:
+        "200":
+          description: Personalised trek recommendations
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  recommendations:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/TrekRecommendation"
+
+  /treksage/chat:
+    post:
+      operationId: treksageChat
+      summary: Full conversational TrekSage assistant
+      description: >
+        Single endpoint for the full TrekSage conversational experience.
+        Handles planning, recommendations, comparisons, trek-specific Q&A,
+        and site information in one turn. Maintains session history across
+        turns via session_key. Use this as the primary endpoint for a
+        chat-style integration — it internally calls the right tools and
+        returns a natural-language reply plus structured trek cards.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - message
+              properties:
+                message:
+                  type: string
+                  minLength: 1
+                  maxLength: 1000
+                  description: >
+                    The user's message. Examples:
+                    "Plan a 6-day trek in Ladakh for October",
+                    "Compare Kedarkantha and Har Ki Dun",
+                    "What permits does Nubra Valley need?",
+                    "Who is the founder of TrekYatra?"
+                session_key:
+                  type: string
+                  nullable: true
+                  description: >
+                    Session identifier from a previous turn. Omit for a new
+                    conversation — a new session_key will be returned.
+      responses:
+        "200":
+          description: TrekSage reply with optional structured trek cards
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  session_key:
+                    type: string
+                    description: Pass this back in subsequent turns to maintain context
+                  reply:
+                    type: string
+                    description: Natural-language response from TrekSage
+                  tool_calls:
+                    type: array
+                    description: Which internal tools were invoked (for transparency)
+                    items:
+                      type: object
+                  trek_cards:
+                    type: array
+                    description: Structured trek data cards (when recommendations are returned)
+                    items:
+                      type: object
+
+  /treksage/chat/{session_key}/history:
+    get:
+      operationId: getTreksageHistory
+      summary: Get chat history for a returning session
+      description: >
+        Returns all prior messages for a session in order. Use on page load
+        to restore a returning user's conversation.
+      parameters:
+        - name: session_key
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Ordered list of prior messages
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    role:
+                      type: string
+                      enum: [user, assistant]
+                    content:
+                      type: string
+        "404":
+          description: Session not found
+
+components:
+  schemas:
+
+    TrekSummary:
+      type: object
+      properties:
+        slug:
+          type: string
+        title:
+          type: string
+        difficulty:
+          type: string
+          nullable: true
+        duration_days:
+          type: string
+          nullable: true
+        state:
+          type: string
+          nullable: true
+        max_altitude:
+          type: string
+          nullable: true
+        best_season:
+          type: string
+          nullable: true
+
+    TrekProfile:
+      type: object
+      properties:
+        slug:
+          type: string
+        title:
+          type: string
+        region:
+          type: string
+          nullable: true
+        max_altitude_ft:
+          type: integer
+          nullable: true
+        duration_days_min:
+          type: integer
+          nullable: true
+        duration_days_max:
+          type: integer
+          nullable: true
+        difficulty:
+          type: string
+          nullable: true
+        best_months:
+          type: array
+          nullable: true
+          items:
+            type: integer
+          description: Month numbers when conditions are best (1=Jan … 12=Dec)
+        permit_required:
+          type: boolean
+          nullable: true
+        permit_notes:
+          type: string
+          nullable: true
+        budget_min_inr:
+          type: integer
+          nullable: true
+        budget_max_inr:
+          type: integer
+          nullable: true
+        crowd_level:
+          type: string
+          nullable: true
+        beginner_friendly:
+          type: boolean
+          nullable: true
+        solo_friendly:
+          type: boolean
+          nullable: true
+        family_friendly:
+          type: boolean
+          nullable: true
+        themes:
+          type: array
+          nullable: true
+          items:
+            type: string
+        content_sections:
+          type: object
+          nullable: true
+          description: Keyed sections from the trek guide (itinerary, packing, permits, costs, safety)
+          additionalProperties:
+            type: string
+        faqs:
+          type: array
+          nullable: true
+          items:
+            type: object
+            properties:
+              question:
+                type: string
+              answer:
+                type: string
+
+    TrekRecommendation:
+      type: object
+      properties:
+        slug:
+          type: string
+        title:
+          type: string
+        difficulty:
+          type: string
+          nullable: true
+        duration_days_min:
+          type: integer
+          nullable: true
+        duration_days_max:
+          type: integer
+          nullable: true
+        max_altitude_ft:
+          type: integer
+          nullable: true
+        best_months:
+          type: array
+          nullable: true
+          items:
+            type: integer
+        budget_min_inr:
+          type: integer
+          nullable: true
+        budget_max_inr:
+          type: integer
+          nullable: true
+        permit_required:
+          type: boolean
+          nullable: true
+        crowd_level:
+          type: string
+          nullable: true
+        themes:
+          type: array
+          nullable: true
+          items:
+            type: string
+        altitude:
+          type: string
+          nullable: true
+          description: Human-readable altitude string (e.g. "4,200 m")
+        url:
+          type: string
+          nullable: true
+          description: Full URL to the trek guide on TrekYatra

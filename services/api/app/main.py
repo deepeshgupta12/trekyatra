@@ -1,8 +1,10 @@
 from contextlib import asynccontextmanager
 import os
 
+import yaml
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import JSONResponse
 from fastapi.staticfiles import StaticFiles
 from sqlalchemy import update
 from uvicorn.middleware.proxy_headers import ProxyHeadersMiddleware
@@ -100,6 +102,15 @@ async def root_health() -> dict[str, str]:
         "service": settings.app_name,
         "environment": settings.app_env,
     }
+
+
+@app.get("/openapi-mcp.json", tags=["system"], include_in_schema=False)
+async def openapi_mcp_spec() -> JSONResponse:
+    """Serve the TrekSage OpenAPI spec for ChatGPT Custom GPT Actions."""
+    spec_path = os.path.join(os.path.dirname(__file__), "openapi_mcp.yaml")
+    with open(spec_path) as f:
+        spec = yaml.safe_load(f)
+    return JSONResponse(content=spec, headers={"Access-Control-Allow-Origin": "*"})
 
 
 app.include_router(api_router, prefix=settings.api_v1_prefix)
