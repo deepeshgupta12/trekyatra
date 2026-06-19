@@ -1,7 +1,9 @@
 from __future__ import annotations
 
-from fastapi import APIRouter, Depends, HTTPException, Query
+from fastapi import APIRouter, Depends, HTTPException, Query, Request
 from pydantic import BaseModel
+from slowapi import Limiter
+from slowapi.util import get_remote_address
 from sqlalchemy import select, text
 from sqlalchemy.orm import Session
 
@@ -19,6 +21,7 @@ from app.schemas.trek_intelligence import (
 )
 
 router = APIRouter(prefix="/treks", tags=["treks"])
+limiter = Limiter(key_func=get_remote_address)
 
 
 class FilterFacets(BaseModel):
@@ -118,7 +121,8 @@ def get_treks(
 
 
 @router.post("/compare", response_model=CompareTreksResponse)
-def compare_treks(payload: CompareTreksRequest, db: Session = Depends(get_db)) -> CompareTreksResponse:
+@limiter.limit("15/minute")
+def compare_treks(request: Request, payload: CompareTreksRequest, db: Session = Depends(get_db)) -> CompareTreksResponse:
     """Step 72: compare 2-4 trek_guide CMS pages with a cached AI trade-off summary."""
     try:
         return trek_intel_service.compare_treks(db, payload.slugs)
@@ -149,8 +153,9 @@ def get_trek_content_section(
 
 
 @router.post("/{slug}/ask", response_model=AskTrekQuestionResponse)
+@limiter.limit("20/minute")
 def ask_trek_question(
-    slug: str, payload: AskTrekQuestionRequest, db: Session = Depends(get_db)
+    request: Request, slug: str, payload: AskTrekQuestionRequest, db: Session = Depends(get_db)
 ) -> AskTrekQuestionResponse:
     """Step 72: Trek Detail Q&A — cached, Haiku-backed, never invents facts."""
     try:

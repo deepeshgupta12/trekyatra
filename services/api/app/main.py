@@ -2,10 +2,14 @@ from contextlib import asynccontextmanager
 import os
 
 import yaml
-from fastapi import FastAPI
+from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from fastapi.staticfiles import StaticFiles
+from slowapi import Limiter, _rate_limit_exceeded_handler
+from slowapi.errors import RateLimitExceeded
+from slowapi.middleware import SlowAPIMiddleware
+from slowapi.util import get_remote_address
 from sqlalchemy import update
 from uvicorn.middleware.proxy_headers import ProxyHeadersMiddleware
 
@@ -63,11 +67,18 @@ async def lifespan(_: FastAPI):
     logger.info("Shutting down %s", settings.app_name)
 
 
+# Rate limiter — keyed by real client IP (Cloudflare sends X-Forwarded-For)
+limiter = Limiter(key_func=get_remote_address)
+
 app = FastAPI(
     title=settings.app_name,
     debug=settings.app_debug,
     lifespan=lifespan,
 )
+
+app.state.limiter = limiter
+app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
+app.add_middleware(SlowAPIMiddleware)
 
 # Trust X-Forwarded-Proto/Host from Cloudflare + DigitalOcean proxy so that
 # FastAPI generates correct HTTPS redirect URLs (e.g. /mcp → /mcp/).

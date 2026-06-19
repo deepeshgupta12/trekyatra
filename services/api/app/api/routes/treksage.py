@@ -3,8 +3,10 @@ from __future__ import annotations
 
 import logging
 
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Request
 from pydantic import BaseModel, Field
+from slowapi import Limiter
+from slowapi.util import get_remote_address
 from sqlalchemy.orm import Session
 
 from app.db.session import get_db
@@ -13,6 +15,7 @@ from app.modules.trek_intelligence import treksage_agent
 logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/treksage", tags=["treksage"])
+limiter = Limiter(key_func=get_remote_address)
 
 
 class TreksageChatRequest(BaseModel):
@@ -33,7 +36,8 @@ class TreksageChatHistoryItem(BaseModel):
 
 
 @router.post("/chat", response_model=TreksageChatResponse)
-def chat(payload: TreksageChatRequest, db: Session = Depends(get_db)) -> TreksageChatResponse:
+@limiter.limit("20/minute")
+def chat(request: Request, payload: TreksageChatRequest, db: Session = Depends(get_db)) -> TreksageChatResponse:
     """Send a message to the TrekSage conversational assistant."""
     # Session is created first so the key is always returned, even if the agent fails.
     session = treksage_agent.get_or_create_session(db, payload.session_key)

@@ -118,12 +118,10 @@ paths:
       operationId: getTrekProfile
       summary: Get the full structured profile for a trek
       description: >
-        Returns the complete structured data for a single trek: altitude,
-        difficulty, duration, best/open/avoid months, permit details,
-        budget range, crowd level, themes, suitability flags, content
-        sections (itinerary, packing, costs, safety), and FAQs.
-        This is the richest data shape — use it when a user asks for
-        full details on a specific trek.
+        Returns complete structured data for a trek: altitude, difficulty,
+        duration, permit details, budget, crowd level, themes, suitability,
+        content sections (itinerary, packing, costs, safety), and FAQs.
+        Use when a user asks for full details on a specific trek.
       parameters:
         - name: slug
           in: path
@@ -146,11 +144,10 @@ paths:
       operationId: askTrekQuestion
       summary: Ask a specific question about a trek
       description: >
-        Answers a natural-language question about a specific trek, grounded
-        in the verified guide content. Covers packing lists, permit details,
-        costs, safety considerations, itinerary, altitude sickness risk, and
-        route descriptions. Supports conversational follow-ups via history.
-        Never invents facts — returns a not_verified flag if data is unavailable.
+        Answers a question about a trek grounded in verified guide content.
+        Covers packing, permits, costs, safety, itinerary, and altitude risk.
+        Supports follow-ups via history. Returns not_verified flag if
+        TrekYatra does not have verified data for the question.
       parameters:
         - name: slug
           in: path
@@ -209,11 +206,10 @@ paths:
       operationId: recommendTreks
       summary: Get personalised trek recommendations
       description: >
-        Returns trek recommendations tailored to the user's preferences:
-        difficulty, duration, season, budget, state/region, fitness level,
-        solo/group/family suitability, and themes (snow, wildlife, camping, etc.).
-        Use this for planning queries — "suggest a trek for October",
-        "5-day moderate trek in Himachal under ₹15,000", "family-friendly treks".
+        Returns trek recommendations based on preferences: difficulty, duration,
+        season, budget, state, solo/family suitability, and themes.
+        Use for planning queries like "suggest a trek for October" or
+        "5-day moderate trek in Himachal under Rs 15000".
       requestBody:
         required: true
         content:
@@ -284,12 +280,10 @@ paths:
       operationId: treksageChat
       summary: Full conversational TrekSage assistant
       description: >
-        Single endpoint for the full TrekSage conversational experience.
-        Handles planning, recommendations, comparisons, trek-specific Q&A,
-        and site information in one turn. Maintains session history across
-        turns via session_key. Use this as the primary endpoint for a
-        chat-style integration — it internally calls the right tools and
-        returns a natural-language reply plus structured trek cards.
+        Full TrekSage chat — handles planning, recommendations, comparisons,
+        and Q&A in one turn. Maintains session history via session_key.
+        Primary endpoint for chat integrations — returns a natural-language
+        reply plus structured trek cards.
       requestBody:
         required: true
         content:
