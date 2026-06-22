@@ -1,6 +1,7 @@
 import { useState } from "react";
-import { Linking } from "react-native";
 import { useQueryClient } from "@tanstack/react-query";
+import { File, Directory, Paths } from "expo-file-system";
+import * as Sharing from "expo-sharing";
 import { checkoutApi, type Product } from "@/lib/mobileApi";
 
 type PurchaseStatus =
@@ -8,6 +9,7 @@ type PurchaseStatus =
   | "creating_order"
   | "payment"
   | "verifying"
+  | "downloading"
   | "done"
   | "error";
 
@@ -15,6 +17,18 @@ export function usePurchase() {
   const [status, setStatus] = useState<PurchaseStatus>("idle");
   const [error, setError] = useState<string | null>(null);
   const queryClient = useQueryClient();
+
+  async function downloadAndShare(url: string, title: string) {
+    const destDir = new Directory(Paths.document);
+    const downloaded = await File.downloadFileAsync(url, destDir, { idempotent: true });
+    const canShare = await Sharing.isAvailableAsync();
+    if (canShare) {
+      await Sharing.shareAsync(downloaded.uri, {
+        mimeType: "application/pdf",
+        dialogTitle: title,
+      });
+    }
+  }
 
   async function purchase(product: Product, userEmail: string, userName: string) {
     setStatus("creating_order");
@@ -24,7 +38,7 @@ export function usePurchase() {
       // 1. Create backend order → get provider_order_id + razorpay key
       const order = await checkoutApi.createOrder(product.slug);
 
-      // 2. Open Razorpay native payment sheet (requires EAS development build)
+      // 2. Open Razorpay native payment sheet
       setStatus("payment");
       // eslint-disable-next-line @typescript-eslint/no-var-requires
       const RazorpayCheckout = require("react-native-razorpay");
@@ -39,7 +53,7 @@ export function usePurchase() {
         theme: { color: "#E8702A" },
       });
 
-      // 3. Verify payment on backend → get signed download URL
+      // 3. Verify payment → get signed download URL
       setStatus("verifying");
       const verification = await checkoutApi.verifyPayment(
         order.order_id,
@@ -48,15 +62,15 @@ export function usePurchase() {
         paymentData.razorpay_signature,
       );
 
-      // 4. Open download URL in browser — saves to Files/Downloads via Safari
-      await Linking.openURL(verification.download_url);
+      // 4. Download file to document directory + open share sheet
+      setStatus("downloading");
+      await downloadAndShare(verification.download_url, product.title);
 
       // 5. Invalidate purchases cache so Downloads screen refreshes
       queryClient.invalidateQueries({ queryKey: ["purchased-products"] });
 
       setStatus("done");
     } catch (err: unknown) {
-      // Razorpay SDK throws with a description field on user cancellation
       const rzpErr = err as { description?: string };
       if (rzpErr?.description === "Payment Cancelled") {
         setStatus("idle");
@@ -67,11 +81,11 @@ export function usePurchase() {
     }
   }
 
-  async function downloadExisting(downloadUrl: string) {
-    setStatus("creating_order"); // reuse state as "loading"
+  async function downloadExisting(downloadUrl: string, title: string) {
+    setStatus("downloading");
     setError(null);
     try {
-      await Linking.openURL(downloadUrl);
+      await downloadAndShare(downloadUrl, title);
       setStatus("done");
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : "Download failed");

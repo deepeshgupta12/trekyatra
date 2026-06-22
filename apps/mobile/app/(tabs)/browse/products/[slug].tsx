@@ -11,9 +11,10 @@ import { useTheme } from "@/hooks/useTheme";
 const SAFFRON = "#E8702A";
 
 const STATUS_LABELS: Record<string, string> = {
-  creating_order: "Preparing…",
+  creating_order: "Preparing order…",
   payment: "Opening payment…",
   verifying: "Verifying payment…",
+  downloading: "Downloading…",
   done: "Done!",
   error: "Failed",
 };
@@ -48,7 +49,7 @@ export default function ProductDetailScreen() {
     }
 
     if (isPurchased && downloadUrl) {
-      downloadExisting(downloadUrl);
+      downloadExisting(downloadUrl, product.title);
       return;
     }
 
@@ -158,7 +159,7 @@ export default function ProductDetailScreen() {
           {status === "done" ? (
             <View style={[styles.successBanner, { backgroundColor: "rgba(34,197,94,0.08)" }]}>
               <Ionicons name="checkmark-circle" size={18} color="#22c55e" />
-              <Text style={styles.successText}>Opening download in browser. Save from there to your Files.</Text>
+              <Text style={styles.successText}>Download complete! Check your Files app.</Text>
             </View>
           ) : null}
 
