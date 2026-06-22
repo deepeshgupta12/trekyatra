@@ -2070,6 +2070,34 @@ Impact analysis: `_call_get_site_info` (LOW); system prompt change only affects 
 | `apps/mobile/lib/mobileApi.ts` | Fixed `Operator.region: string[] \| null` (was `string \| null`); added `OperatorSpecialization`, `OperatorReview`, `InquiryPayload`, `InquiryResponse` types; added `operatorsApi` namespace | MEDIUM — shared API client; existing callers unaffected (additive + bug fix on unused field) |
 | `apps/mobile/app/(tabs)/browse/_layout.tsx` | Added 2 Stack.Screen entries for `operators` + `operators/[slug]` | LOW — additive routing only |
 
+### Step M12 — Digital Products — Done (2026-06-22)
+
+| File | Change | Blast radius |
+|------|--------|-------------|
+| `apps/mobile/app/(tabs)/browse/products.tsx` (NEW) | Product catalog screen | LOW — new leaf screen |
+| `apps/mobile/app/(tabs)/browse/products/[slug].tsx` (NEW) | Product detail + Razorpay purchase screen | LOW — new leaf screen |
+| `apps/mobile/components/products/ProductCard.tsx` (NEW) | Product tile (price / owned badge) | LOW — new leaf component |
+| `apps/mobile/hooks/useProducts.ts` (NEW) | TanStack Query hooks: list, detail, purchased set | LOW — new hook |
+| `apps/mobile/hooks/usePurchase.ts` (NEW) | Purchase flow (order → Razorpay → verify → download) | LOW — new hook; requires EAS build |
+| `apps/mobile/stores/drawerStore.ts` (NEW) | Zustand store: `isOpen`, `open()`, `close()` | LOW — new store; imported by CustomTabBar + AppDrawer |
+| `apps/mobile/components/layout/AppDrawer.tsx` (NEW) | Right-slide drawer overlay; guest/auth state | LOW — new component; rendered in app `_layout.tsx` |
+| `apps/mobile/lib/mobileApi.ts` | Added `Product`, `CheckoutOrderResponse`, `CheckoutVerifyResponse` types; `productsApi` + `checkoutApi` namespaces | MEDIUM — shared API client; additive only |
+| `apps/mobile/app/(tabs)/browse/_layout.tsx` | Added `products` + `products/[slug]` Stack.Screen entries | LOW — additive routing |
+| `apps/mobile/app.config.ts` | Added `expo-sharing` plugin | LOW — additive Expo plugin |
+| `apps/mobile/.env.example` | Added `EXPO_PUBLIC_RAZORPAY_KEY_ID` entry | LOW — docs only |
+
+### Mobile UI Pass 2 — Hamburger menu + tab bar + plan wizard light mode (2026-06-22)
+
+| File | Change | Blast radius |
+|------|--------|-------------|
+| `apps/mobile/components/layout/AppDrawer.tsx` (NEW) | Right-side drawer overlay; guest/auth display; Animated spring entry/exit | LOW — new component |
+| `apps/mobile/stores/drawerStore.ts` (NEW) | Zustand `isOpen` store for drawer | LOW — new store |
+| `apps/mobile/app/_layout.tsx` | Added `<AppDrawer />` overlay inside `<AuthGate>` | LOW — visual overlay; doesn't affect routing |
+| `apps/mobile/app/(tabs)/_layout.tsx` | Set `href: null` on `saved` + `account` tabs | LOW — removes tabs from bar; screens still routable |
+| `apps/mobile/components/tabs/CustomTabBar.tsx` | Filters out `account` + `saved` from route loop; adds hamburger `☰` button calling `drawerStore.open()` | MEDIUM — shared tab bar rendered on all tab screens |
+| `apps/mobile/components/plan/WizardStepLayout.tsx` | Replaced hardcoded `rgba(255,255,255,*)` colors with `colors.textSecondary`/`textMuted`/`border`/`borderSubtle` | LOW — affects all 6 plan wizard step screens |
+| `apps/mobile/components/plan/LeadCaptureForm.tsx` | `infoText` hardcoded white → `colors.textSecondary` | LOW — affects plan step-6 only |
+
 ### TrekSage Hotfix 11 — Enforce founder→authors routing in tool schema (2026-06-18, commit 6a8087f)
 
 | File | Change | Blast radius |

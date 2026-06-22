@@ -28,7 +28,7 @@ export function LeadCaptureForm({ data, onChange, error }: Props) {
   return (
     <View style={styles.root}>
       <View style={styles.infoBox}>
-        <Text style={styles.infoText}>
+        <Text style={[styles.infoText, { color: colors.textSecondary }]}>
           An expert operator will reach out within 48 hours with a personalised plan based on your answers.
         </Text>
       </View>
@@ -81,7 +81,7 @@ export function LeadCaptureForm({ data, onChange, error }: Props) {
 const styles = StyleSheet.create({
   root: { gap: 16 },
   infoBox: { backgroundColor: "rgba(232,112,42,0.08)", borderRadius: 12, padding: 14, borderWidth: 1, borderColor: "rgba(232,112,42,0.2)" },
-  infoText: { color: "rgba(255,255,255,0.7)", fontSize: 13, lineHeight: 19 },
+  infoText: { fontSize: 13, lineHeight: 19 },
   field: { gap: 6 },
   label: { fontSize: 12, fontWeight: "600" },
   input: { borderRadius: 12, borderWidth: 1, paddingHorizontal: 14, paddingVertical: 13, fontSize: 15 },

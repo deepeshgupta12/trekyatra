@@ -40,15 +40,15 @@ export default function TabLayout() {
       <Tabs.Screen
         name="saved"
         options={{
+          href: null,
           title: "Saved",
-          tabBarAccessibilityLabel: "Saved treks",
         }}
       />
       <Tabs.Screen
         name="account"
         options={{
-          title: "You",
-          tabBarAccessibilityLabel: "Your account",
+          href: null,
+          title: "Account",
         }}
       />
       <Tabs.Screen

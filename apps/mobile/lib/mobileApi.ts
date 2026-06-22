@@ -693,3 +693,63 @@ export const leadsApi = {
   submitOperatorHelp: (payload: OperatorHelpLeadPayload) =>
     apiPost<LeadResponse>("/api/v1/leads/operator-help", payload),
 };
+
+// ---------------------------------------------------------------------------
+// Step M12 — Digital Products
+// ---------------------------------------------------------------------------
+
+export interface Product {
+  id: string;
+  slug: string;
+  title: string;
+  description: string | null;
+  price_inr: number;
+  file_path: string | null;
+  preview_image_url: string | null;
+  active: boolean;
+  sales_count: number;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface CheckoutOrderResponse {
+  order_id: string;
+  provider_order_id: string;
+  amount_inr: number;
+  product_title: string;
+  key_id: string | null;
+  test_mode: boolean;
+}
+
+export interface CheckoutVerifyResponse {
+  order_id: string;
+  product_title: string;
+  download_url: string;
+  already_paid: boolean;
+}
+
+export const productsApi = {
+  listProducts: () =>
+    apiGet<Product[]>("/api/v1/products"),
+
+  getProduct: (slug: string) =>
+    apiGet<Product>(`/api/v1/products/${slug}`),
+};
+
+export const checkoutApi = {
+  createOrder: (product_slug: string) =>
+    apiPost<CheckoutOrderResponse>("/api/v1/checkout/create-order", { product_slug }),
+
+  verifyPayment: (
+    order_id: string,
+    razorpay_payment_id: string,
+    razorpay_order_id: string,
+    razorpay_signature: string,
+  ) =>
+    apiPost<CheckoutVerifyResponse>("/api/v1/checkout/verify", {
+      order_id,
+      razorpay_payment_id,
+      razorpay_order_id,
+      razorpay_signature,
+    }),
+};

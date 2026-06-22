@@ -2,6 +2,7 @@ import { View, TouchableOpacity, Platform, StyleSheet } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { useTheme } from "@/hooks/useTheme";
 import { GlassSurface } from "@/components/ui/GlassSurface";
+import { useDrawerStore } from "@/stores/drawerStore";
 
 // Inline type — avoids importing from expo-router's internal build path
 interface TabRoute {
@@ -33,6 +34,7 @@ const TAB_HEIGHT = Platform.OS === "ios" ? 56 : 50;
 
 export function CustomTabBar({ state, descriptors, navigation }: TabBarProps) {
   const { isDark } = useTheme();
+  const openDrawer = useDrawerStore((s) => s.open);
 
   const borderColor = isDark ? "rgba(255,255,255,0.10)" : "rgba(0,0,0,0.08)";
   const inactiveColor = isDark ? "rgba(255,255,255,0.40)" : "rgba(29,58,46,0.45)";
@@ -67,7 +69,8 @@ export function CustomTabBar({ state, descriptors, navigation }: TabBarProps) {
       {state.routes.map((route, index) => {
         const { options } = descriptors[route.key];
         if (options.href === null) return null;
-        if (route.name === "downloads") return null;
+        // account and saved are in the hamburger drawer; downloads is internal
+        if (route.name === "downloads" || route.name === "account" || route.name === "saved") return null;
         const isFocused = state.index === index;
         const isCenter = route.name === "treksage";
 
@@ -155,6 +158,22 @@ export function CustomTabBar({ state, descriptors, navigation }: TabBarProps) {
           </TouchableOpacity>
         );
       })}
+
+        {/* Hamburger menu button — replaces account + saved tabs */}
+        <TouchableOpacity
+          onPress={openDrawer}
+          accessibilityRole="button"
+          accessibilityLabel="Open menu"
+          testID="tab-menu"
+          style={{
+            flex: 1,
+            alignItems: "center",
+            justifyContent: "center",
+            paddingBottom: Platform.OS === "ios" ? 14 : 6,
+          }}
+        >
+          <Ionicons name="menu" size={24} color={inactiveColor} />
+        </TouchableOpacity>
       </View>
     </View>
   );

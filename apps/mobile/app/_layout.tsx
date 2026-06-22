@@ -25,6 +25,7 @@ import { initBackgroundSync, destroyBackgroundSync } from "@/services/background
 import { useOfflineStore } from "@/stores/offlineStore";
 import { usePlanWizardStore } from "@/stores/planWizardStore";
 import { AnimatedSplash } from "@/components/ui/AnimatedSplash";
+import { AppDrawer } from "@/components/layout/AppDrawer";
 
 Sentry.init({
   dsn: process.env.EXPO_PUBLIC_SENTRY_DSN,
@@ -110,6 +111,7 @@ export default Sentry.wrap(function RootLayout() {
                 <Stack.Screen name="(auth)" options={{ headerShown: false }} />
                 <Stack.Screen name="+not-found" />
               </Stack>
+              <AppDrawer />
             </AuthGate>
           </AuthProvider>
         </OnboardingProvider>

@@ -30,17 +30,17 @@ export function WizardStepLayout({
   skipLabel,
   onSkip,
 }: Props) {
-  const { colors } = useTheme();
+  const { colors, isDark } = useTheme();
 
   return (
     <SafeArea edges={["top", "bottom"]}>
       {/* Header */}
       <View style={styles.header}>
         <TouchableOpacity onPress={onBack} style={styles.backBtn} hitSlop={12}>
-          <Text style={styles.backArrow}>←</Text>
+          <Text style={[styles.backArrow, { color: colors.textSecondary }]}>←</Text>
         </TouchableOpacity>
         <WizardProgress current={step} total={totalSteps} />
-        <Text style={styles.stepCounter}>{step}/{totalSteps}</Text>
+        <Text style={[styles.stepCounter, { color: colors.textMuted }]}>{step}/{totalSteps}</Text>
       </View>
 
       {/* Content */}
@@ -58,10 +58,19 @@ export function WizardStepLayout({
       </ScrollView>
 
       {/* Bottom bar */}
-      <View style={styles.bottomBar}>
+      <View style={[styles.bottomBar, { borderTopColor: colors.borderSubtle }]}>
         {skipLabel && onSkip ? (
-          <TouchableOpacity style={styles.skipBtn} onPress={onSkip}>
-            <Text style={styles.skipText}>{skipLabel}</Text>
+          <TouchableOpacity
+            style={[
+              styles.skipBtn,
+              {
+                backgroundColor: isDark ? "rgba(255,255,255,0.06)" : "rgba(29,58,46,0.06)",
+                borderColor: colors.border,
+              },
+            ]}
+            onPress={onSkip}
+          >
+            <Text style={[styles.skipText, { color: colors.textSecondary }]}>{skipLabel}</Text>
           </TouchableOpacity>
         ) : null}
         <TouchableOpacity
@@ -80,15 +89,15 @@ export function WizardStepLayout({
 const styles = StyleSheet.create({
   header: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", paddingHorizontal: 20, paddingTop: 8, paddingBottom: 12 },
   backBtn: { width: 36, height: 36, alignItems: "center", justifyContent: "center" },
-  backArrow: { fontSize: 20, color: "rgba(255,255,255,0.7)" },
-  stepCounter: { fontSize: 12, color: "rgba(255,255,255,0.4)", fontWeight: "600" },
+  backArrow: { fontSize: 20 },
+  stepCounter: { fontSize: 12, fontWeight: "600" },
   scroll: { flex: 1 },
   scrollContent: { paddingHorizontal: 20, paddingBottom: 24 },
   title: { fontSize: 24, fontWeight: "700", fontFamily: "PlayfairDisplay_700Bold", marginBottom: 8, lineHeight: 32 },
   subtitle: { fontSize: 14, lineHeight: 20, marginBottom: 24 },
-  bottomBar: { flexDirection: "row", gap: 10, paddingHorizontal: 20, paddingVertical: 16, borderTopWidth: 1, borderTopColor: "rgba(255,255,255,0.06)" },
-  skipBtn: { flex: 1, borderRadius: 14, paddingVertical: 15, alignItems: "center", backgroundColor: "rgba(255,255,255,0.06)", borderWidth: 1, borderColor: "rgba(255,255,255,0.1)" },
-  skipText: { color: "rgba(255,255,255,0.6)", fontSize: 14, fontWeight: "600" },
+  bottomBar: { flexDirection: "row", gap: 10, paddingHorizontal: 20, paddingVertical: 16, borderTopWidth: 1 },
+  skipBtn: { flex: 1, borderRadius: 14, paddingVertical: 15, alignItems: "center", borderWidth: 1 },
+  skipText: { fontSize: 14, fontWeight: "600" },
   nextBtn: { borderRadius: 14, paddingVertical: 15, alignItems: "center", backgroundColor: "#E8702A" },
   nextBtnDisabled: { opacity: 0.4 },
   nextBtnFull: { flex: 1 },

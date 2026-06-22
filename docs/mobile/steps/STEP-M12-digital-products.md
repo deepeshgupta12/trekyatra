@@ -1,6 +1,6 @@
 # STEP-M12 — Digital Products
 
-**Status:** Pending
+**Status:** Done (2026-06-22)
 **Phase:** User & Commerce
 **Dependencies:** STEP-M02 (auth), STEP-M10 (downloads in account)
 
@@ -128,6 +128,33 @@ async function downloadProduct(orderId: string) {
 - Purchased products listed in Account → Downloads screen
 
 ---
+
+## Files Created
+
+| File | Purpose |
+|------|---------|
+| `apps/mobile/app/(tabs)/browse/products.tsx` | Product catalog screen |
+| `apps/mobile/app/(tabs)/browse/products/[slug].tsx` | Product detail + purchase screen |
+| `apps/mobile/components/products/ProductCard.tsx` | Product tile with price/owned badge |
+| `apps/mobile/hooks/useProducts.ts` | Products list + detail + ownership queries |
+| `apps/mobile/hooks/usePurchase.ts` | Purchase flow (order → Razorpay → verify → download) |
+| `apps/mobile/stores/drawerStore.ts` | Drawer open/close store (also used for hamburger menu) |
+
+## Files Modified
+
+| File | Change |
+|------|--------|
+| `apps/mobile/lib/mobileApi.ts` | Added `Product`, `CheckoutOrderResponse`, `CheckoutVerifyResponse` types + `productsApi` + `checkoutApi` |
+| `apps/mobile/app/(tabs)/browse/_layout.tsx` | Added `products` and `products/[slug]` Stack.Screen entries |
+| `apps/mobile/app.config.ts` | Added `expo-sharing` plugin |
+| `apps/mobile/.env.example` | Added `EXPO_PUBLIC_RAZORPAY_KEY_ID` documentation |
+
+## Notes
+
+- Requires EAS development build (M22) — `react-native-razorpay` is a native module, not compatible with Expo Go
+- Uses expo-file-system v56 class-based API (`File.downloadFileAsync`, `new Directory(Paths.document)`)
+- Packages installed: `expo-file-system ~56.0.8`, `expo-sharing ~56.0.18`, `react-native-razorpay ^3.0.0`
+- tsc ✓ zero errors
 
 ## Verification
 

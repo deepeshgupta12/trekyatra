@@ -47,6 +47,7 @@ export default ({ config }: ConfigContext): any => ({
     "expo-local-authentication",
     "expo-sqlite",
     "expo-image",
+    "expo-sharing",
     [
       "expo-speech-recognition",
       {
