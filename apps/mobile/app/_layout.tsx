@@ -23,6 +23,7 @@ import { OnboardingProvider, useOnboarding } from "@/providers/OnboardingProvide
 import { initDb } from "@/db/client";
 import { initBackgroundSync, destroyBackgroundSync } from "@/services/backgroundSync";
 import { useOfflineStore } from "@/stores/offlineStore";
+import { usePlanWizardStore } from "@/stores/planWizardStore";
 import { AnimatedSplash } from "@/components/ui/AnimatedSplash";
 
 Sentry.init({
@@ -40,6 +41,7 @@ function AuthGate({ children }: { children: ReactNode }) {
   const segments = useSegments();
   const router = useRouter();
   const loadDownloaded = useOfflineStore((s) => s.loadDownloaded);
+  const planAnswers = usePlanWizardStore((s) => s.answers);
 
   // Initialise SQLite DB on first mount
   useEffect(() => {
@@ -69,7 +71,10 @@ function AuthGate({ children }: { children: ReactNode }) {
     // Anonymous browsing is allowed for (tabs) — auth-gated screens use
     // useRequireAuth() to redirect individually (e.g. account, saved).
     if (isAuthenticated && inAuthGroup) {
-      router.replace("/(tabs)/(home)");
+      // If the user signed in while a completed plan wizard is pending, send
+      // them straight to results so their answers aren't lost.
+      const hasPendingPlan = planAnswers.intent.length > 0 || planAnswers.months.length > 0;
+      router.replace(hasPendingPlan ? ("/(tabs)/plan/results" as never) : "/(tabs)/(home)");
     }
   }, [isLoading, isAuthenticated, segments, onboardingLoading, onboardingDone]);
 

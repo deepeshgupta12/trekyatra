@@ -61,6 +61,19 @@ class MobileAccessOut(BaseModel):
     expires_in: int
 
 
+class MobileGoogleIn(BaseModel):
+    access_token: str   # Google OAuth access token from expo-auth-session
+    device_id: str
+    platform: str       # "android" | "ios"
+
+    @field_validator("platform")
+    @classmethod
+    def validate_platform(cls, v: str) -> str:
+        if v not in ("android", "ios"):
+            raise ValueError("platform must be 'android' or 'ios'")
+        return v
+
+
 class DeviceIn(BaseModel):
     device_id: str
     platform: str  # "android" | "ios"

@@ -1,9 +1,12 @@
 import { useQuery } from "@tanstack/react-query";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 import { contentApi, NotFoundError } from "@/lib/mobileApi";
 import type { CMSPage } from "@/lib/mobileApi";
 import { db } from "@/db/client";
 import { cmsPages } from "@/db/schema";
 import { eq } from "drizzle-orm";
+
+const APP_LANGUAGE_KEY = "app_language";
 
 function mapPageToDb(page: CMSPage) {
   return {
@@ -17,6 +20,8 @@ function mapPageToDb(page: CMSPage) {
     trekAltitude: page.trek_altitude ?? null,
     trekSeason: page.trek_season ?? null,
     bodyJson: page.body_json ? JSON.stringify(page.body_json) : null,
+    contentHtml: page.content_html ?? null,
+    contentJson: page.content_json ? JSON.stringify(page.content_json) : null,
     seoDescription: page.seo_description ?? null,
     syncedAt: new Date().toISOString(),
     isDownloaded: false,
@@ -35,9 +40,8 @@ function mapDbToPage(row: typeof cmsPages.$inferSelect): CMSPage {
     trek_altitude: row.trekAltitude ?? null,
     trek_season: row.trekSeason ?? null,
     body_json: row.bodyJson ? (JSON.parse(row.bodyJson) as unknown[]) : null,
-    // Not cached offline (no SQLite columns) — offline pages fall back to empty state
-    content_html: "",
-    content_json: null,
+    content_html: row.contentHtml ?? "",
+    content_json: row.contentJson ? (JSON.parse(row.contentJson) as CMSPage["content_json"]) : null,
     seo_description: row.seoDescription ?? null,
     is_published: true,
     published_at: null,
@@ -51,8 +55,9 @@ export interface TrekDetailResult {
 }
 
 async function fetchTrekDetail(slug: string): Promise<TrekDetailResult> {
+  const lang = (await AsyncStorage.getItem(APP_LANGUAGE_KEY)) ?? "en";
   try {
-    const page = await contentApi.getCmsPage(slug);
+    const page = await contentApi.getCmsPage(slug, lang);
     // Background upsert into SQLite
     try {
       await db

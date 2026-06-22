@@ -3,7 +3,7 @@ import {
   View, Text, ScrollView, TouchableOpacity, ActivityIndicator,
   StyleSheet, Image, TextInput, Alert,
 } from "react-native";
-import { useLocalSearchParams } from "expo-router";
+import { useLocalSearchParams, useRouter } from "expo-router";
 import { useTheme } from "@/hooks/useTheme";
 import { useAuth } from "@/hooks/useAuth";
 import { SafeArea } from "@/components/ui/SafeArea";
@@ -70,6 +70,7 @@ export default function CompareScreen() {
   const { colors, isDark } = useTheme();
   const { isAuthenticated } = useAuth();
   const { slug: preselectSlug } = useLocalSearchParams<{ slug?: string }>();
+  const router = useRouter();
 
   const [treks, setTreks] = useState<TrekListItem[]>([]);
   const [loading, setLoading] = useState(true);
@@ -148,7 +149,7 @@ export default function CompareScreen() {
     if (!isAuthenticated) {
       Alert.alert("Sign in to save", "Create a free account to save and revisit your trek comparisons.", [
         { text: "Cancel", style: "cancel" },
-        { text: "Sign in", onPress: () => {} },
+        { text: "Sign in", onPress: () => router.push("/(auth)/sign-in" as never) },
       ]);
       return;
     }

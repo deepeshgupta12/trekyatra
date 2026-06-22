@@ -21,6 +21,8 @@ export async function initDb() {
       trek_altitude TEXT,
       trek_season TEXT,
       body_json TEXT,
+      content_html TEXT,
+      content_json TEXT,
       seo_description TEXT,
       synced_at TEXT NOT NULL,
       is_downloaded INTEGER DEFAULT 0
@@ -34,4 +36,13 @@ export async function initDb() {
 
     INSERT OR IGNORE INTO sync_meta (id, last_sync_at, total_pages) VALUES (1, NULL, 0);
   `);
+
+  // Migrate existing DBs — SQLite ADD COLUMN ignores if column exists via try/catch
+  for (const col of ["content_html TEXT", "content_json TEXT"]) {
+    try {
+      await expoDb.execAsync(`ALTER TABLE cms_pages ADD COLUMN ${col};`);
+    } catch {
+      // Column already exists — safe to ignore
+    }
+  }
 }

@@ -1,13 +1,18 @@
+import uuid
+
+import httpx
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 
 from app.db.session import get_db
 from app.modules.auth.dependencies import get_current_user
 from app.modules.auth.models import User
+from app.modules.auth.service import login_or_register_google_user
 from app.modules.mobile.service import issue_mobile_token, mobile_login, mobile_signup, refresh_mobile_token
 from app.schemas.mobile import (
     MobileAccessOut,
     MobileAuthOut,
+    MobileGoogleIn,
     MobileRefreshIn,
     MobileSignInIn,
     MobileSignUpIn,
@@ -73,6 +78,63 @@ def get_mobile_token(
         platform=body.platform,
     )
     return MobileTokenOut(**result)
+
+
+@router.post("/google", response_model=MobileAuthOut)
+def mobile_google_auth(
+    body: MobileGoogleIn,
+    db: Session = Depends(get_db),
+) -> MobileAuthOut:
+    """Exchange a Google access token for mobile Bearer tokens (no cookie required)."""
+    try:
+        with httpx.Client(timeout=10.0) as http:
+            r = http.get(
+                "https://www.googleapis.com/oauth2/v3/userinfo",
+                headers={"Authorization": f"Bearer {body.access_token}"},
+            )
+    except httpx.HTTPError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail="Unable to verify Google token. Please try again.",
+        ) from exc
+
+    if r.status_code != 200:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Invalid or expired Google access token.",
+        )
+
+    google_info = r.json()
+    google_sub = google_info.get("sub")
+    if not google_sub:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Could not retrieve Google user identity.",
+        )
+
+    try:
+        user = login_or_register_google_user(
+            db,
+            google_sub=google_sub,
+            email=google_info.get("email"),
+            full_name=google_info.get("name"),
+            is_verified_email=bool(google_info.get("email_verified", False)),
+        )
+    except ValueError as exc:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(exc)) from exc
+
+    tokens = issue_mobile_token(
+        db=db,
+        user_id=user.id,
+        device_id=body.device_id,
+        platform=body.platform,
+    )
+    return MobileAuthOut(
+        **tokens,
+        user_id=str(user.id),
+        email=user.email,
+        full_name=user.full_name,
+    )
 
 
 @router.post("/token/refresh", response_model=MobileAccessOut)

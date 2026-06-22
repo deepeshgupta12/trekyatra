@@ -10,7 +10,9 @@ export const cmsPages = sqliteTable("cms_pages", {
   trekDuration: text("trek_duration"),
   trekAltitude: text("trek_altitude"),
   trekSeason: text("trek_season"),
-  bodyJson: text("body_json"), // serialised JSON; parse on read
+  bodyJson: text("body_json"),
+  contentHtml: text("content_html"),       // full HTML for packing/permits/costs tabs
+  contentJson: text("content_json"),       // serialised content_json object
   seoDescription: text("seo_description"),
   syncedAt: text("synced_at").notNull(),
   isDownloaded: integer("is_downloaded", { mode: "boolean" }).default(false),

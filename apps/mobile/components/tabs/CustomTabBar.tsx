@@ -1,4 +1,4 @@
-import { View, TouchableOpacity, Text, Platform, StyleSheet } from "react-native";
+import { View, TouchableOpacity, Platform, StyleSheet } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { useTheme } from "@/hooks/useTheme";
 import { GlassSurface } from "@/components/ui/GlassSurface";
@@ -22,15 +22,14 @@ interface TabBarProps {
   state: { routes: TabRoute[]; index: number };
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   descriptors: Record<string, { options: TabDescriptorOptions; [k: string]: any }>;
+  // expo-router internal navigation type is not publicly exported
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   navigation: any;
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  [k: string]: any;
 }
 
 const SAFFRON = "#E8702A";
-const FAB_SIZE = 56;
-const TAB_HEIGHT = Platform.OS === "ios" ? 64 : 56;
+const FAB_SIZE = 54;
+const TAB_HEIGHT = Platform.OS === "ios" ? 56 : 50;
 
 export function CustomTabBar({ state, descriptors, navigation }: TabBarProps) {
   const { isDark } = useTheme();
@@ -133,24 +132,26 @@ export function CustomTabBar({ state, descriptors, navigation }: TabBarProps) {
             accessibilityRole="tab"
             accessibilityLabel={options.tabBarAccessibilityLabel ?? labelText}
             accessibilityState={{ selected: isFocused }}
+            testID={`tab-${route.name}`}
             style={{
               flex: 1,
               alignItems: "center",
-              justifyContent: "flex-end",
-              paddingBottom: 2,
+              justifyContent: "center",
+              paddingBottom: Platform.OS === "ios" ? 14 : 6,
             }}
           >
-            <Ionicons name={iconName} size={22} color={iconColor} />
-            <Text
-              style={{
-                fontSize: 10,
-                marginTop: 3,
-                fontFamily: "Inter_500Medium",
-                color: iconColor,
-              }}
-            >
-              {typeof options.tabBarLabel === "string" ? options.tabBarLabel : labelText}
-            </Text>
+            <Ionicons name={iconName} size={24} color={iconColor} />
+            {isFocused && (
+              <View
+                style={{
+                  width: 4,
+                  height: 4,
+                  borderRadius: 2,
+                  backgroundColor: SAFFRON,
+                  marginTop: 4,
+                }}
+              />
+            )}
           </TouchableOpacity>
         );
       })}

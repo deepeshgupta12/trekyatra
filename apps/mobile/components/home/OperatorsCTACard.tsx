@@ -9,7 +9,7 @@ export function OperatorsCTACard() {
 
   return (
     <View style={styles.container}>
-      <TouchableOpacity activeOpacity={0.85} onPress={() => router.push("/operators" as never)}>
+      <TouchableOpacity activeOpacity={0.85} onPress={() => router.push("/(tabs)/browse/operators" as never)} testID="operators-cta-card" accessibilityRole="button" accessibilityLabel="Browse trek operators">
         <GlassSurface rounded="lg" style={styles.card}>
           <View style={styles.iconWrap}>
             <Ionicons name="people-outline" size={22} color="#E8702A" />

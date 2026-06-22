@@ -307,7 +307,8 @@ export class NotFoundError extends Error {
 
 // Content API helpers
 export const contentApi = {
-  getCmsPage: (slug: string) => apiGet<CMSPage>(`/api/v1/cms/pages/${slug}`),
+  getCmsPage: (slug: string, lang?: string) =>
+    apiGet<CMSPage>(`/api/v1/cms/pages/${slug}${lang && lang !== "en" ? `?lang=${lang}` : ""}`),
 
   getTrendingTreks: async () => {
     const pages = await apiGet<CMSPageResponseLike[]>("/api/v1/cms/pages/trending");

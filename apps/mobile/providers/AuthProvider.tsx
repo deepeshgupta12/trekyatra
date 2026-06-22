@@ -1,13 +1,19 @@
-import { createContext, useContext, useEffect, type ReactNode } from "react";
+import { createContext, useContext, useEffect, useState, type ReactNode } from "react";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useAuthStore, type AuthUser } from "@/stores/authStore";
 import * as authApiLib from "@/lib/authApi";
 import { signInWithApple as nativeAppleSignIn } from "@/lib/appleAuth";
+import { promptBiometric } from "@/lib/biometricAuth";
+
+const BIOMETRIC_KEY = "biometric_enabled";
 
 interface AuthContextValue {
   user: AuthUser | null;
   accessToken: string | null;
   isLoading: boolean;
   isAuthenticated: boolean;
+  requiresBiometric: boolean;
+  clearBiometricGate: () => void;
   signIn: (email: string, password: string) => Promise<void>;
   signUp: (email: string, password: string, fullName?: string) => Promise<void>;
   signInWithGoogle: (googleAccessToken: string) => Promise<void>;
@@ -20,10 +26,27 @@ const AuthContext = createContext<AuthContextValue | null>(null);
 export function AuthProvider({ children }: { children: ReactNode }) {
   const { user, accessToken, isLoading, isAuthenticated, setAuth, clearAuth, loadStoredToken } =
     useAuthStore();
+  const [requiresBiometric, setRequiresBiometric] = useState(false);
 
   useEffect(() => {
-    loadStoredToken();
-  }, [loadStoredToken]);
+    async function boot() {
+      await loadStoredToken();
+      const { accessToken: tok } = useAuthStore.getState();
+      if (!tok) return;
+      const bioPref = await AsyncStorage.getItem(BIOMETRIC_KEY);
+      if (bioPref !== "true") return;
+      // Token exists + biometric enabled → gate the session
+      setRequiresBiometric(true);
+      const passed = await promptBiometric();
+      if (passed) {
+        setRequiresBiometric(false);
+      } else {
+        setRequiresBiometric(false);
+        await clearAuth();
+      }
+    }
+    boot();
+  }, []);
 
   async function resolveUser(result: authApiLib.MobileAuthResult): Promise<AuthUser> {
     try {
@@ -75,6 +98,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         accessToken,
         isLoading,
         isAuthenticated,
+        requiresBiometric,
+        clearBiometricGate: () => setRequiresBiometric(false),
         signIn,
         signUp,
         signInWithGoogle,

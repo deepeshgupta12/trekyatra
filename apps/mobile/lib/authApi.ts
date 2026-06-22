@@ -122,41 +122,9 @@ export async function resetPassword(token: string, newPassword: string): Promise
 
 export async function signInWithGoogle(googleAccessToken: string): Promise<MobileAuthResult> {
   const deviceId = await getOrCreateDeviceId();
-  // Exchange Google access_token via web auth endpoint, then get mobile tokens
-  const webResp = await fetch(`${API_BASE}/api/v1/auth/google`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ access_token: googleAccessToken }),
+  return apiPost<MobileAuthResult>("/api/v1/auth/mobile/google", {
+    access_token: googleAccessToken,
+    device_id: deviceId,
+    platform: Platform.OS,
   });
-  if (!webResp.ok) throw new Error("Google sign-in failed");
-
-  // Extract cookie from Set-Cookie header, then exchange for mobile token
-  const setCookie = webResp.headers.get("set-cookie") ?? "";
-  const tokenMatch = setCookie.match(/trekyatra_access_token=([^;]+)/);
-  const sessionToken = tokenMatch?.[1];
-
-  if (sessionToken) {
-    const mobileResp = await fetch(`${API_BASE}/api/v1/auth/mobile/token`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Cookie: `trekyatra_access_token=${sessionToken}`,
-      },
-      body: JSON.stringify({ device_id: deviceId, platform: Platform.OS }),
-    });
-    if (mobileResp.ok) {
-      const tokens = await mobileResp.json();
-      const userData = await webResp.json();
-      return {
-        ...tokens,
-        user_id: userData.user?.id ?? "",
-        email: userData.user?.email ?? null,
-        full_name: userData.user?.full_name ?? null,
-      };
-    }
-  }
-
-  // Fallback: parse user from web response
-  const userData = await webResp.json();
-  throw new Error("Could not obtain mobile token after Google sign-in. Please try email sign-in.");
 }
