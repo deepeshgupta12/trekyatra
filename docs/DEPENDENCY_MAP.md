@@ -2057,6 +2057,19 @@ Impact analysis: `_call_get_site_info` (LOW); system prompt change only affects 
 | `apps/mobile/hooks/useAccount.ts` (NEW) | TanStack Query hooks for bookmarks, downloads, profile, newsletter | LOW — new hook |
 | `apps/mobile/lib/mobileApi.ts` | Added `apiPatch`; new types + `accountApi` extensions + `newsletterApi` + `authMeApi` | MEDIUM — shared API client; existing callers unaffected (additive only) |
 
+### Step M11 — Operators Marketplace — Done (2026-06-22)
+
+| File | Change | Blast radius |
+|------|--------|-------------|
+| `apps/mobile/app/(tabs)/browse/operators.tsx` (NEW) | Operators listing screen | LOW — new leaf screen |
+| `apps/mobile/app/(tabs)/browse/operators/[slug].tsx` (NEW) | Operator detail screen | LOW — new leaf screen |
+| `apps/mobile/components/operators/OperatorCard.tsx` (NEW) | GlassSurface operator card | LOW — new leaf component |
+| `apps/mobile/components/operators/OperatorInquirySheet.tsx` (NEW) | Modal inquiry form | LOW — new leaf component |
+| `apps/mobile/components/operators/OperatorReviewsList.tsx` (NEW) | Review rows component | LOW — new leaf component |
+| `apps/mobile/hooks/useOperators.ts` (NEW) | TanStack Query hooks for operators + inquiry | LOW — new hook |
+| `apps/mobile/lib/mobileApi.ts` | Fixed `Operator.region: string[] \| null` (was `string \| null`); added `OperatorSpecialization`, `OperatorReview`, `InquiryPayload`, `InquiryResponse` types; added `operatorsApi` namespace | MEDIUM — shared API client; existing callers unaffected (additive + bug fix on unused field) |
+| `apps/mobile/app/(tabs)/browse/_layout.tsx` | Added 2 Stack.Screen entries for `operators` + `operators/[slug]` | LOW — additive routing only |
+
 ### TrekSage Hotfix 11 — Enforce founder→authors routing in tool schema (2026-06-18, commit 6a8087f)
 
 | File | Change | Blast radius |

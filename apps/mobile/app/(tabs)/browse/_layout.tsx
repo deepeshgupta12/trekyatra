@@ -18,6 +18,8 @@ export default function BrowseStackLayout() {
       <Stack.Screen name="search" options={{ title: "Search" }} />
       <Stack.Screen name="regions/[state]" options={{ title: "" }} />
       <Stack.Screen name="seasons/[season]" options={{ title: "" }} />
+      <Stack.Screen name="operators" options={{ headerShown: false }} />
+      <Stack.Screen name="operators/[slug]" options={{ headerShown: false }} />
     </Stack>
   );
 }

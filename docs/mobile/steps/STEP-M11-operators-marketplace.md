@@ -1,6 +1,6 @@
 # STEP-M11 — Operators Marketplace
 
-**Status:** Pending
+**Status:** Done (2026-06-22)
 **Phase:** User & Commerce
 **Dependencies:** STEP-M02 (auth for inquiry), STEP-M09 (plan results link to operators)
 
@@ -114,3 +114,31 @@ Show these only when `operator.phone` / `operator.whatsapp` are available. Whats
 4. **TC-M11-04**: Tap "Send inquiry" → form sheet → submit → success state + appears in Enquiries
 5. **TC-M11-05**: Tap "Call operator" → phone dialler opens (if phone available)
 6. **TC-M11-06**: Tap "WhatsApp" → WhatsApp opens with pre-filled message
+
+---
+
+## Files Created
+
+| File | Notes |
+|------|-------|
+| `apps/mobile/app/(tabs)/browse/operators.tsx` | Operators listing: search + region chips + `GET /api/v1/operators?region=`; navigates to detail |
+| `apps/mobile/app/(tabs)/browse/operators/[slug].tsx` | Operator detail: hero with initials, about, trek portfolio chips, specialities, reviews, fixed CTA bar (Call + Send inquiry) |
+| `apps/mobile/components/operators/OperatorCard.tsx` | GlassSurface card: initials avatar, name, rating, region, speciality slugs, Inquire CTA |
+| `apps/mobile/components/operators/OperatorInquirySheet.tsx` | Modal bottom sheet: name/email/phone/trek_interest/message → `POST /api/v1/inquiries`; success state with confirmation copy |
+| `apps/mobile/components/operators/OperatorReviewsList.tsx` | Review rows with star row, date, body; empty state copy |
+| `apps/mobile/hooks/useOperators.ts` | `useOperators(region?)`, `useOperatorDetail(slug)`, `useOperatorReviews(slug)`, `useSubmitInquiry()` |
+
+## Files Modified
+
+| File | Change |
+|------|--------|
+| `apps/mobile/lib/mobileApi.ts` | Fixed `Operator.region: string[] \| null` (was `string \| null`); added `OperatorSpecialization`, `OperatorReview`, `InquiryPayload`, `InquiryResponse` types; added `operatorsApi` namespace (`list`, `getBySlug`, `getReviews`, `submitInquiry`); `contentApi.getOperators` delegates to `operatorsApi.list` |
+| `apps/mobile/app/(tabs)/browse/_layout.tsx` | Added `Stack.Screen name="operators"` and `name="operators/[slug]"` both `headerShown: false` |
+
+## Notes
+
+- No WhatsApp button — `OperatorPublicResponse` schema has no `whatsapp` field; step doc assumption was wrong
+- Inquiry endpoint is `POST /api/v1/inquiries` (not `POST /api/v1/leads`) — confirmed from `operators_public.py`
+- `trek_interest` is a free-text field; no trek picker since operators list is independent of trek catalog in the API
+- `Operator.region` bug fixed: backend returns `string[] | null` not `string | null`
+- **tsc --noEmit: 0 errors** | No backend changes (all endpoints pre-existed)

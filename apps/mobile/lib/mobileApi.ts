@@ -134,21 +134,71 @@ export interface Product {
   sales_count: number;
 }
 
-// Shape returned by /api/v1/operators
+// Shape returned by /api/v1/operators (OperatorPublicResponse)
+export interface OperatorSpecialization {
+  id: string;
+  operator_id: string;
+  trek_slug: string;
+  priority: number;
+}
+
 export interface Operator {
   id: string;
   name: string;
   slug: string;
-  region: string | null;
+  region: string[] | null;
   trek_types: string[] | null;
   phone: string | null;
   website_url: string | null;
   logo_url: string | null;
   description_long: string | null;
-  rating_avg: number | null;
+  rating_avg: number;
   review_count: number;
   active: boolean;
+  created_at: string;
+  specializations: OperatorSpecialization[];
 }
+
+export interface OperatorReview {
+  id: string;
+  operator_id: string;
+  user_id: string | null;
+  rating: number;
+  body: string | null;
+  created_at: string;
+}
+
+export interface InquiryPayload {
+  name: string;
+  email: string;
+  phone?: string | null;
+  trek_interest: string;
+  message?: string | null;
+  operator_slug?: string | null;
+}
+
+export interface InquiryResponse {
+  id: string;
+  name: string;
+  email: string;
+  trek_interest: string;
+  status: string;
+  created_at: string;
+}
+
+export const operatorsApi = {
+  list: (region?: string) =>
+    apiGet<Operator[]>(`/api/v1/operators${region ? `?region=${encodeURIComponent(region)}` : ""}`),
+
+  getBySlug: (slug: string) =>
+    apiGet<Operator>(`/api/v1/operators/${slug}`),
+
+  getReviews: (slug: string, limit = 20) =>
+    apiGet<OperatorReview[]>(`/api/v1/operators/${slug}/reviews?limit=${limit}`),
+
+  submitInquiry: (payload: InquiryPayload) =>
+    apiPost<InquiryResponse>("/api/v1/inquiries", payload),
+};
 
 function mapCmsPageToTrekListItem(page: CMSPageResponseLike): TrekListItem {
   return {
@@ -343,8 +393,7 @@ export const contentApi = {
 
   getProducts: () => apiGet<Product[]>("/api/v1/products"),
 
-  getOperators: (region?: string) =>
-    apiGet<Operator[]>(`/api/v1/operators${region ? `?region=${encodeURIComponent(region)}` : ""}`),
+  getOperators: (region?: string) => operatorsApi.list(region),
 
   getNewsByTrek: (slug: string, limit = 5) =>
     apiGet<NewsArticle[]>(`/api/v1/public/news/by-trek/${slug}?limit=${limit}`),

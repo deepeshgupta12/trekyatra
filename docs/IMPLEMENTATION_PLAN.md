@@ -852,6 +852,22 @@ Spec: `docs/mobile/steps/STEP-M10-user-account.md`. Full account management tab:
 
 ---
 
+### Step M11 — Operators Marketplace [DONE — 2026-06-22]
+
+Spec: `docs/mobile/steps/STEP-M11-operators-marketplace.md`. Operators listing + detail + inquiry form inside the Browse stack.
+
+- `apps/mobile/app/(tabs)/browse/operators.tsx` (NEW) — Listing: search TextInput, 6 region chips (`GET /api/v1/operators?region=`), `OperatorCard` list, empty/error states
+- `apps/mobile/app/(tabs)/browse/operators/[slug].tsx` (NEW) — Detail: hero with initials avatar, about, trek portfolio chips (→ trek detail), trek_types tags, reviews, fixed CTA bar (Call + Send inquiry)
+- `apps/mobile/components/operators/OperatorCard.tsx` (NEW) — GlassSurface card: initials, name, rating, region, speciality slugs, Inquire pill
+- `apps/mobile/components/operators/OperatorInquirySheet.tsx` (NEW) — Modal bottom sheet: name/email/phone/trek_interest/message → `POST /api/v1/inquiries`; success state with confirmation copy
+- `apps/mobile/components/operators/OperatorReviewsList.tsx` (NEW) — Star rows + body + date; empty state copy
+- `apps/mobile/hooks/useOperators.ts` (NEW) — `useOperators(region?)`, `useOperatorDetail(slug)`, `useOperatorReviews(slug)`, `useSubmitInquiry()` TanStack Query hooks
+- `apps/mobile/lib/mobileApi.ts` — Fixed `Operator.region: string[] | null` (bug: was `string | null`); added `OperatorSpecialization`, `OperatorReview`, `InquiryPayload`, `InquiryResponse` types; added `operatorsApi` namespace; `contentApi.getOperators` delegates to `operatorsApi.list`
+- `apps/mobile/app/(tabs)/browse/_layout.tsx` — Added `Stack.Screen name="operators"` + `name="operators/[slug]"` (both `headerShown: false`)
+- **tsc --noEmit: 0 errors** | No backend changes (all endpoints pre-existed) | WhatsApp button omitted (no `whatsapp` field in `OperatorPublicResponse`)
+
+---
+
 ### TrekSage Hotfix 11 — Enforce founder→authors routing in tool schema [DONE — 2026-06-18, commit 6a8087f]
 
 Root cause: despite `_SITE_INFO_ALIASES` mapping founder terms → "authors", the Haiku LLM was ignoring the Python-layer alias resolution and generating `topic="about"` at the tool-call level based on the English word meaning of "about" ≈ "about the founder". Fix: moved routing rules into the schema itself (where the model reads them at call time) rather than relying on system prompt hints.

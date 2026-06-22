@@ -187,13 +187,16 @@ Full account management tab:
 - `mobileApi.ts`: `apiPatch`, new types (`BookmarkResponse`, `DownloadResponse`, `UserMeResponse`, `NewsletterSubscribeResponse`), extended `accountApi`, `newsletterApi`, `authMeApi`
 - tsc ✓ zero errors
 
-### Step M11 — Operators Marketplace [PENDING]
-- Operators list screen: region filter + search
-- Operator detail screen: cover photo, description, specialities, reviews, certifications
-- Inquiry form: name, email, phone, trek of interest, dates, group size
-- `POST /api/v1/leads` with `lead_type: "operator_inquiry"`
-- WhatsApp deep link: `whatsapp://send?phone={operator_phone}` (if operator provides it)
-- Call CTA: `tel:{phone}` via `Linking.openURL()`
+### Step M11 — Operators Marketplace [DONE — 2026-06-22]
+- Operators listing: search + 6 region chips (`GET /api/v1/operators?region=`); `OperatorCard` (GlassSurface, initials avatar, rating, region, speciality slugs)
+- Operator detail: hero initials card, about, trek portfolio chips (→ trek detail), trek_types tags, reviews (`GET /api/v1/operators/{slug}/reviews`), fixed CTA bar
+- `OperatorInquirySheet` modal: name/email/phone/trek_interest/message → `POST /api/v1/inquiries`; success state with confirmation copy
+- Call CTA: `Linking.openURL(tel:{phone})` when `operator.phone` available
+- `useOperators`, `useOperatorDetail`, `useOperatorReviews`, `useSubmitInquiry` hooks
+- `operatorsApi` namespace + types added to `mobileApi.ts`; `Operator.region: string[]` bug fixed
+- Browse `_layout.tsx` extended with `operators` + `operators/[slug]` Stack.Screen entries
+- Note: WhatsApp button omitted — `OperatorPublicResponse` has no `whatsapp` field
+- tsc ✓ zero errors | No backend changes (all endpoints pre-existed)
 
 ### Step M12 — Digital Products [PENDING]
 - Product catalog screen: grid of downloadable products
@@ -332,10 +335,10 @@ Mobile-adapted version of `lib/analytics.ts` for React Native:
 |-------|--------|
 | Foundation (M01–M05) | ✓ DONE (M01, M02, M03, M-DS1, M04, M05 complete) |
 | Discovery (M06–M08) | ✓ DONE (M06, M07a, M07b, M07c, M08 complete) |
-| User & Commerce (M09–M13) | M09 ✓ Done — M10 ✓ Done — M11, M12, M13 Pending |
+| User & Commerce (M09–M13) | M09 ✓ Done — M10 ✓ Done — M11 ✓ Done — M12, M13 Pending |
 | Engagement & Analytics (M14–M15) | Pending |
 | Community (M16–M18) | Pending |
 | Contextual Intelligence (M19–M20) | Pending |
 | Content & Release (M21–M22) | Pending |
 
-**Current next step:** M11 — Operators Marketplace (operators list, detail screen, inquiry form).
+**Current next step:** M12 — Digital Products (product catalog, Razorpay payment, secure download delivery).
