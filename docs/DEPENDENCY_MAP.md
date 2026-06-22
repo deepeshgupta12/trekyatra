@@ -2086,6 +2086,26 @@ Impact analysis: `_call_get_site_info` (LOW); system prompt change only affects 
 | `apps/mobile/app.config.ts` | Added `expo-sharing` plugin | LOW — additive Expo plugin |
 | `apps/mobile/.env.example` | Added `EXPO_PUBLIC_RAZORPAY_KEY_ID` entry | LOW — docs only |
 
+### Step M13 — Premium Subscription — Done (2026-06-22)
+
+| File | Change | Blast radius |
+|------|--------|-------------|
+| `apps/mobile/app/(tabs)/account/premium.tsx` | Replaced "coming soon" placeholder with full IAP screen (hero, plan selector, subscribe, restore, web fallback, active-premium state) | LOW — replaces leaf screen; no other screens import it |
+| `apps/mobile/components/premium/PremiumFeatureList.tsx` (NEW) | Free vs premium feature comparison table | LOW — new component |
+| `apps/mobile/components/premium/SubscribeButton.tsx` (NEW) | Status-aware IAP subscribe button | LOW — new component |
+| `apps/mobile/components/premium/GatedContentOverlay.tsx` (NEW) | BlurView gating overlay for premium-locked content sections | LOW — new component; ready to apply to trek sections |
+| `apps/mobile/hooks/usePremium.ts` (NEW) | IAP purchase + restore + status hook; test mode path when IAP unavailable | LOW — new hook |
+| `apps/mobile/services/iapService.ts` (NEW) | react-native-iap v15 wrapper (fetchSubscriptionProducts, purchaseSubscription, getReceiptData) | LOW — new service |
+| `apps/mobile/lib/mobileApi.ts` | Added `SubscriptionStatus`, `IAPVerifyPayload`, `IAPVerifyResponse`, `IAPRestoreResponse` types; `subscriptionApi` namespace (`getStatus`, `verifyIAP`, `restoreIAP`) | MEDIUM — shared API client; additive only |
+| `apps/mobile/app.config.ts` | Added `react-native-iap` plugin | LOW — additive Expo plugin; requires native rebuild |
+| `apps/mobile/package.json` | Added `react-native-iap@^15.3.2` + `react-native-nitro-modules@^0.35.9` | MEDIUM — new native modules; requires pod install + rebuild |
+| `services/api/app/schemas/subscriptions.py` | Added `IAPVerifyRequest`, `IAPVerifyResponse`, `IAPRestoreRequest`, `IAPRestoreResponse` schemas | LOW — additive schemas |
+| `services/api/app/modules/subscriptions/service.py` | Added `iap_verify_purchase()`, `iap_restore_purchases()`; test mode when IAP credentials unset | LOW — additive; existing service functions unchanged |
+| `services/api/app/api/routes/subscriptions.py` | Added `POST /subscriptions/iap/verify` + `POST /subscriptions/iap/restore` | LOW — additive routes; existing routes unchanged |
+| `services/api/app/core/config.py` | Added `apple_iap_shared_secret`, `google_play_service_account_json` settings fields | LOW — optional fields with `None` default |
+| `services/api/.env.example` | Documented `APPLE_IAP_SHARED_SECRET` + `GOOGLE_PLAY_SERVICE_ACCOUNT_JSON` | LOW — docs only |
+| `services/api/tests/test_subscriptions.py` | Added TC-B16–B21 (6 new tests for IAP verify/restore routes and service functions) | LOW — additive tests |
+
 ### Mobile UI Pass 2 — Hamburger menu + tab bar + plan wizard light mode (2026-06-22)
 
 | File | Change | Blast radius |

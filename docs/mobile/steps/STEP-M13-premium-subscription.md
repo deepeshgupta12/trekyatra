@@ -1,6 +1,6 @@
 # STEP-M13 — Premium Subscription
 
-**Status:** Pending
+**Status:** Done (2026-06-22)
 **Phase:** User & Commerce
 **Dependencies:** STEP-M02 (auth), STEP-M10 (premium status in account)
 
@@ -170,9 +170,37 @@ For users who prefer not to use IAP (e.g., web users):
 
 ---
 
+## Files Created
+
+| File | Status |
+|------|--------|
+| `apps/mobile/app/(tabs)/account/premium.tsx` | ✅ Replaced placeholder with full IAP screen |
+| `apps/mobile/components/premium/PremiumFeatureList.tsx` | ✅ Created |
+| `apps/mobile/components/premium/SubscribeButton.tsx` | ✅ Created |
+| `apps/mobile/components/premium/GatedContentOverlay.tsx` | ✅ Created |
+| `apps/mobile/hooks/usePremium.ts` | ✅ Created |
+| `apps/mobile/services/iapService.ts` | ✅ Created |
+
+## Files Modified
+
+| File | Change |
+|------|--------|
+| `apps/mobile/lib/mobileApi.ts` | Added `subscriptionApi` namespace + IAP types |
+| `apps/mobile/app.config.ts` | Added `react-native-iap` plugin |
+| `apps/mobile/package.json` | Added `react-native-iap@^15.3.2` + `react-native-nitro-modules@^0.35.9` |
+| `services/api/app/schemas/subscriptions.py` | Added `IAPVerifyRequest/Response`, `IAPRestoreRequest/Response` |
+| `services/api/app/modules/subscriptions/service.py` | Added `iap_verify_purchase()`, `iap_restore_purchases()` |
+| `services/api/app/api/routes/subscriptions.py` | Added `POST /subscriptions/iap/verify` + `POST /subscriptions/iap/restore` |
+| `services/api/app/core/config.py` | Added `apple_iap_shared_secret`, `google_play_service_account_json` |
+| `services/api/.env.example` | Documented IAP env vars |
+| `services/api/tests/test_subscriptions.py` | Added TC-B16–B21 (6 new tests) |
+
 ## Notes
 
+- **IAP library**: `expo-in-app-purchases` is deprecated in modern Expo SDKs — replaced with `react-native-iap@^15.3.2` which uses the NitroModules architecture (requires `react-native-nitro-modules` peer dep)
+- **Test mode**: When `APPLE_IAP_SHARED_SECRET` / `GOOGLE_PLAY_SERVICE_ACCOUNT_JSON` env vars are not set, the backend activates premium directly (mirrors Stripe test mode behaviour). This means the purchase flow works end-to-end in development without App Store Connect setup.
+- **Production IAP**: Actual store receipt verification wired up at M22 (EAS Build) when App Store Connect product IDs are configured and credentials provisioned.
+- **Simulator**: IAP native purchase sheet does NOT work on simulator. The `usePremium` hook detects `initConnection()` failure and falls back to test mode (backend direct call).
 - Apple takes 30% of IAP revenue in year 1, 15% from year 2 onwards for subscriptions
 - Google takes 30% (15% after first year). Factor this into pricing — ₹299/month on mobile vs ₹249/month on web is acceptable
 - App Store Connect requires all in-app purchase products to be configured and approved before submission
-- Use `expo-in-app-purchases` in development mode with test accounts (iOS Sandbox / Android test billing)

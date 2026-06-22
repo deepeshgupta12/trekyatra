@@ -8,6 +8,10 @@ from app.modules.auth.dependencies import get_current_user
 from app.modules.auth.models import User
 from app.modules.subscriptions import service as sub_service
 from app.schemas.subscriptions import (
+    IAPRestoreRequest,
+    IAPRestoreResponse,
+    IAPVerifyRequest,
+    IAPVerifyResponse,
     StripeWebhookResponse,
     SubscriptionCancelResponse,
     SubscriptionCheckoutRequest,
@@ -53,6 +57,38 @@ def cancel_subscription(
 ) -> SubscriptionCancelResponse:
     result = sub_service.cancel_subscription(db, current_user.id)
     return SubscriptionCancelResponse(**result)
+
+
+@router.post("/iap/verify", response_model=IAPVerifyResponse)
+def iap_verify(
+    body: IAPVerifyRequest,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+) -> IAPVerifyResponse:
+    result = sub_service.iap_verify_purchase(
+        db=db,
+        user_id=current_user.id,
+        platform=body.platform,
+        receipt_data=body.receipt_data,
+        product_id=body.product_id,
+        transaction_id=body.transaction_id,
+    )
+    return IAPVerifyResponse(**result)
+
+
+@router.post("/iap/restore", response_model=IAPRestoreResponse)
+def iap_restore(
+    body: IAPRestoreRequest,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+) -> IAPRestoreResponse:
+    result = sub_service.iap_restore_purchases(
+        db=db,
+        user_id=current_user.id,
+        platform=body.platform,
+        receipt_data=body.receipt_data,
+    )
+    return IAPRestoreResponse(**result)
 
 
 @router.post("/webhook", response_model=StripeWebhookResponse)

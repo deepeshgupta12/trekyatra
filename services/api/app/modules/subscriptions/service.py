@@ -219,6 +219,65 @@ def _handle_payment_failed(db: Session, obj: dict) -> None:
         db.commit()
 
 
+def iap_verify_purchase(
+    db: Session,
+    user_id: uuid.UUID,
+    platform: str,
+    receipt_data: str,
+    product_id: str,
+    transaction_id: str | None = None,
+) -> dict:
+    """Verify an IAP receipt and activate premium. Falls back to test mode when no Apple/Google credentials configured."""
+    from app.core.config import settings
+
+    has_apple_secret = bool(getattr(settings, "apple_iap_shared_secret", None))
+    has_google_key = bool(getattr(settings, "google_play_service_account_json", None))
+    test_mode = not (has_apple_secret if platform == "ios" else has_google_key)
+
+    if test_mode:
+        upsert_subscription_for_user(db, user_id)
+        return {
+            "success": True,
+            "plan": "premium",
+            "message": "Premium activated (test mode — IAP credentials not yet configured).",
+            "test_mode": True,
+        }
+
+    # Production path — wired up when Apple/Google credentials are provisioned (M22)
+    logger.warning("Production IAP verify called but credentials not configured for platform=%s", platform)
+    return {
+        "success": False,
+        "plan": "free",
+        "message": "IAP verification not yet configured. Please contact support.",
+        "test_mode": False,
+    }
+
+
+def iap_restore_purchases(
+    db: Session,
+    user_id: uuid.UUID,
+    platform: str,
+    receipt_data: str,
+) -> dict:
+    """Restore existing IAP purchases. Returns current subscription state."""
+    sub = get_subscription(db, user_id)
+    if sub and sub.plan == "premium" and sub.status == "active":
+        return {
+            "restored": True,
+            "plan": "premium",
+            "message": "Premium subscription restored.",
+            "test_mode": False,
+        }
+
+    result = iap_verify_purchase(db, user_id, platform, receipt_data, "premium_monthly")
+    return {
+        "restored": result["success"],
+        "plan": result["plan"],
+        "message": result["message"],
+        "test_mode": result["test_mode"],
+    }
+
+
 def upsert_subscription_for_user(
     db: Session,
     user_id: uuid.UUID,

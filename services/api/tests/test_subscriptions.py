@@ -21,6 +21,8 @@ from app.modules.subscriptions.service import (
     create_checkout_session,
     get_subscription_status,
     handle_webhook,
+    iap_verify_purchase,
+    iap_restore_purchases,
     upsert_subscription_for_user,
 )
 
@@ -354,3 +356,101 @@ def test_auth_me_returns_subscription_plan(free_user, override_free_user):
     data = res.json()
     assert "subscription_plan" in data
     assert data["subscription_plan"] == "free"
+
+
+# ---------------------------------------------------------------------------
+# TC-B16: iap_verify_purchase — test mode activates premium (no credentials)
+# ---------------------------------------------------------------------------
+def test_iap_verify_test_mode_activates_premium(db: Session, free_user, monkeypatch):
+    monkeypatch.setattr(
+        "app.modules.subscriptions.service.settings",
+        type("S", (), {"apple_iap_shared_secret": None, "google_play_service_account_json": None,
+                       "stripe_secret_key": None})(),
+    )
+    result = iap_verify_purchase(
+        db, free_user.id, platform="ios",
+        receipt_data="base64encodedreceipt==", product_id="com.trekyatra.premium.monthly",
+    )
+    assert result["success"] is True
+    assert result["plan"] == "premium"
+    assert result["test_mode"] is True
+    db.expire_all()
+    user = db.get(User, free_user.id)
+    assert user.subscription_plan == "premium"
+
+
+# ---------------------------------------------------------------------------
+# TC-B17: iap_verify_purchase — android test mode works the same way
+# ---------------------------------------------------------------------------
+def test_iap_verify_android_test_mode(db: Session, free_user, monkeypatch):
+    monkeypatch.setattr(
+        "app.modules.subscriptions.service.settings",
+        type("S", (), {"apple_iap_shared_secret": None, "google_play_service_account_json": None,
+                       "stripe_secret_key": None})(),
+    )
+    result = iap_verify_purchase(
+        db, free_user.id, platform="android",
+        receipt_data="android_purchase_token", product_id="com.trekyatra.premium.annual",
+    )
+    assert result["success"] is True
+    assert result["test_mode"] is True
+
+
+# ---------------------------------------------------------------------------
+# TC-B18: iap_restore_purchases — returns premium for already-premium user
+# ---------------------------------------------------------------------------
+def test_iap_restore_existing_premium_user(db: Session, free_user, monkeypatch):
+    monkeypatch.setattr(
+        "app.modules.subscriptions.service.settings",
+        type("S", (), {"apple_iap_shared_secret": None, "google_play_service_account_json": None,
+                       "stripe_secret_key": None})(),
+    )
+    upsert_subscription_for_user(db, free_user.id)
+    db.expire_all()
+    result = iap_restore_purchases(
+        db, free_user.id, platform="ios", receipt_data="receipt=="
+    )
+    assert result["restored"] is True
+    assert result["plan"] == "premium"
+
+
+# ---------------------------------------------------------------------------
+# TC-B19: POST /subscriptions/iap/verify — requires auth (401)
+# ---------------------------------------------------------------------------
+def test_iap_verify_route_requires_auth():
+    res = client.post(
+        "/api/v1/subscriptions/iap/verify",
+        json={"platform": "ios", "receipt_data": "x", "product_id": "com.trekyatra.premium.monthly"},
+    )
+    assert res.status_code in (401, 403)
+
+
+# ---------------------------------------------------------------------------
+# TC-B20: POST /subscriptions/iap/verify — authenticated happy path returns 200
+# ---------------------------------------------------------------------------
+def test_iap_verify_route_authenticated(free_user, override_free_user, monkeypatch):
+    monkeypatch.setattr(
+        "app.modules.subscriptions.service.settings",
+        type("S", (), {"apple_iap_shared_secret": None, "google_play_service_account_json": None,
+                       "stripe_secret_key": None})(),
+    )
+    res = client.post(
+        "/api/v1/subscriptions/iap/verify",
+        json={"platform": "ios", "receipt_data": "base64receipt==", "product_id": "com.trekyatra.premium.monthly"},
+    )
+    assert res.status_code == 200
+    data = res.json()
+    assert data["success"] is True
+    assert data["plan"] == "premium"
+    assert data["test_mode"] is True
+
+
+# ---------------------------------------------------------------------------
+# TC-B21: POST /subscriptions/iap/restore — requires auth (401)
+# ---------------------------------------------------------------------------
+def test_iap_restore_route_requires_auth():
+    res = client.post(
+        "/api/v1/subscriptions/iap/restore",
+        json={"platform": "ios", "receipt_data": "x"},
+    )
+    assert res.status_code in (401, 403)

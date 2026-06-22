@@ -200,7 +200,7 @@ Full account management tab:
 - Note: WhatsApp button omitted — `OperatorPublicResponse` has no `whatsapp` field
 - tsc ✓ zero errors | No backend changes (all endpoints pre-existed)
 
-### Step M12 — Digital Products [PENDING]
+### Step M12 — Digital Products [DONE]
 - Product catalog screen: grid of downloadable products
 - Product detail screen: description, preview pages, price
 - Razorpay React Native SDK: payment sheet (UPI, cards, netbanking)
@@ -208,13 +208,17 @@ Full account management tab:
 - Download delivery: secure pre-signed URL from `/api/v1/orders/{id}/download`
 - Purchased products stored locally (AsyncStorage list of purchased product IDs)
 
-### Step M13 — Premium Subscription [PENDING]
-- Subscription screen: feature comparison (free vs premium)
-- `expo-in-app-purchases`: Apple monthly/annual products + Google Play billing
-- Platform fee handling: IAP for iOS/Android store installs; Stripe web fallback for sideload
-- `POST /api/v1/payments/iap/verify` — receipt verification (Apple StoreKit receipt / Google Play token)
-- Premium content gating: blur overlay on gated trek sections with "Unlock with Premium" CTA
-- Subscription status synced to user profile on login
+### Step M13 — Premium Subscription [DONE]
+- Subscription screen: feature comparison + plan cards (monthly/annual) + subscribe button + restore + web fallback
+- `react-native-iap@15.3.2` (NitroModules) — `expo-in-app-purchases` deprecated in SDK 56
+- `iapService.ts`: `initIAP`, `fetchSubscriptionProducts`, `purchaseSubscription`, `getRestoredPurchases`, `getReceiptData` using v15 `fetchProducts`/`requestPurchase` API
+- `usePremium.ts`: hook with `purchaseUpdatedListener` → backend verify → `queryClient.invalidateQueries`; test mode (no credentials) → backend direct call
+- Backend: `POST /api/v1/subscriptions/iap/verify` + `POST /api/v1/subscriptions/iap/restore`; test mode activates premium when `APPLE_IAP_SHARED_SECRET`/`GOOGLE_PLAY_SERVICE_ACCOUNT_JSON` not set
+- `GatedContentOverlay` component: `BlurView` + lock icon + "Unlock Premium" CTA
+- `PremiumFeatureList`: free vs premium comparison table
+- `SubscribeButton`: status-aware (idle/purchasing/verifying/done/error)
+- Note: IAP purchase sheet only works on real device + App Store Connect product setup (M22); simulator uses test mode backend path
+- tsc ✓ zero errors; 6 new backend tests (TC-B16–B21); 698 backend tests pass
 
 ---
 

@@ -605,7 +605,11 @@ Full API docs available at http://localhost:8000/docs when the backend is runnin
 | Explore & Search — advanced search (semantic/voice/recent/trending) | Done (M07b) |
 | Home — Region tabs (5 trek cards per region + View all) and difficulty tabs fuzzy-matching fix | Done (M07c) |
 | Glass UI overhaul — `GlassSurface` primitive (Liquid Glass on iOS 26+, expo-blur frosted elsewhere), app-wide pass: tab bar/sticky bars, home/browse/trek-detail surfaces, auth screens | Done (M-DS8) |
-| Trek planning wizard (full multi-step UI) | Pending (M09) |
+| Trek planning wizard (full multi-step UI) | Done (M09) |
+| User account (profile, saved, downloads, settings) | Done (M10) |
+| Operators marketplace (listing, detail, inquiry) | Done (M11) |
+| Digital products (catalog, Razorpay payment, file download) | Done (M12) |
+| Premium subscription (IAP screen, usePremium hook, GatedContentOverlay, backend verify/restore) | Done (M13) |
 | Push notifications | Pending (M14) |
 
 ---

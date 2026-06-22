@@ -753,3 +753,49 @@ export const checkoutApi = {
       razorpay_signature,
     }),
 };
+
+// ---------------------------------------------------------------------------
+// Step M13 — Premium Subscription (IAP)
+// ---------------------------------------------------------------------------
+
+export interface SubscriptionStatus {
+  has_subscription: boolean;
+  plan: string;
+  status: string | null;
+  current_period_end: string | null;
+}
+
+export interface IAPVerifyPayload {
+  platform: "ios" | "android";
+  receipt_data: string;
+  product_id: string;
+  transaction_id?: string;
+}
+
+export interface IAPVerifyResponse {
+  success: boolean;
+  plan: string;
+  message: string;
+  test_mode: boolean;
+}
+
+export interface IAPRestoreResponse {
+  restored: boolean;
+  plan: string;
+  message: string;
+  test_mode: boolean;
+}
+
+export const subscriptionApi = {
+  getStatus: () =>
+    apiGet<SubscriptionStatus>("/api/v1/subscriptions/status"),
+
+  verifyIAP: (payload: IAPVerifyPayload) =>
+    apiPost<IAPVerifyResponse>("/api/v1/subscriptions/iap/verify", payload),
+
+  restoreIAP: (platform: "ios" | "android", receipt_data: string) =>
+    apiPost<IAPRestoreResponse>("/api/v1/subscriptions/iap/restore", {
+      platform,
+      receipt_data,
+    }),
+};

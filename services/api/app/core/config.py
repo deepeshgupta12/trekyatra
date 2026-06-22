@@ -69,6 +69,11 @@ class Settings(BaseSettings):
     stripe_premium_price_id_monthly: str | None = None
     stripe_premium_price_id_annual: str | None = None
 
+    # IAP — Apple App Store + Google Play in-app purchases (M13)
+    # Leave unset to run in test mode (subscription activated without real store verification).
+    apple_iap_shared_secret: str | None = None
+    google_play_service_account_json: str | None = None
+
     # Digital product file storage — local path, relative to services/api/
     product_files_dir: str = "data/products"
     product_download_base_url: str = "http://localhost:3000"
