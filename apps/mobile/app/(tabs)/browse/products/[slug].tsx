@@ -11,12 +11,11 @@ import { useTheme } from "@/hooks/useTheme";
 const SAFFRON = "#E8702A";
 
 const STATUS_LABELS: Record<string, string> = {
-  creating_order: "Preparing order…",
+  creating_order: "Preparing…",
   payment: "Opening payment…",
   verifying: "Verifying payment…",
-  downloading: "Downloading…",
   done: "Done!",
-  error: "Payment failed",
+  error: "Failed",
 };
 
 export default function ProductDetailScreen() {
@@ -26,10 +25,11 @@ export default function ProductDetailScreen() {
   const { isAuthenticated, user } = useAuth();
 
   const { data: product, isLoading, isError } = useProduct(slug);
-  const { data: purchasedIds } = usePurchasedProducts();
-  const { status, error, purchase, reset } = usePurchase();
+  const { data: purchasedMap } = usePurchasedProducts();
+  const { status, error, purchase, downloadExisting, reset } = usePurchase();
 
-  const isPurchased = product ? (purchasedIds?.has(product.id) ?? false) : false;
+  const isPurchased = product ? (purchasedMap?.has(product.id) ?? false) : false;
+  const downloadUrl = product ? (purchasedMap?.get(product.id) ?? null) : null;
   const isProcessing = status !== "idle" && status !== "done" && status !== "error";
 
   function handleBuy() {
@@ -44,6 +44,11 @@ export default function ProductDetailScreen() {
           { text: "Sign In", onPress: () => router.push("/(auth)/sign-in" as never) },
         ],
       );
+      return;
+    }
+
+    if (isPurchased && downloadUrl) {
+      downloadExisting(downloadUrl);
       return;
     }
 
@@ -153,7 +158,7 @@ export default function ProductDetailScreen() {
           {status === "done" ? (
             <View style={[styles.successBanner, { backgroundColor: "rgba(34,197,94,0.08)" }]}>
               <Ionicons name="checkmark-circle" size={18} color="#22c55e" />
-              <Text style={styles.successText}>Download complete! Check your Files app.</Text>
+              <Text style={styles.successText}>Opening download in browser. Save from there to your Files.</Text>
             </View>
           ) : null}
 

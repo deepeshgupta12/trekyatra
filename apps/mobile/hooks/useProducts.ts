@@ -19,6 +19,8 @@ export function useProduct(slug: string) {
   });
 }
 
+// Returns a Map of productId → downloadUrl (null if URL not yet available)
+// Use .has(productId) to check ownership, .get(productId) to get the URL
 export function usePurchasedProducts() {
   const { isAuthenticated } = useAuth();
   return useQuery({
@@ -27,6 +29,10 @@ export function usePurchasedProducts() {
     enabled: isAuthenticated,
     staleTime: 60 * 1000,
     select: (downloads) =>
-      new Set(downloads.map((d) => d.product_id).filter(Boolean) as string[]),
+      new Map(
+        downloads
+          .filter((d) => d.product_id)
+          .map((d) => [d.product_id as string, d.download_url ?? null]),
+      ),
   });
 }

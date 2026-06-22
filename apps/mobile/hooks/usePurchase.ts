@@ -1,7 +1,6 @@
 import { useState } from "react";
+import { Linking } from "react-native";
 import { useQueryClient } from "@tanstack/react-query";
-import { File, Directory, Paths } from "expo-file-system";
-import * as Sharing from "expo-sharing";
 import { checkoutApi, type Product } from "@/lib/mobileApi";
 
 type PurchaseStatus =
@@ -9,7 +8,6 @@ type PurchaseStatus =
   | "creating_order"
   | "payment"
   | "verifying"
-  | "downloading"
   | "done"
   | "error";
 
@@ -17,18 +15,6 @@ export function usePurchase() {
   const [status, setStatus] = useState<PurchaseStatus>("idle");
   const [error, setError] = useState<string | null>(null);
   const queryClient = useQueryClient();
-
-  async function downloadAndShare(url: string, title: string) {
-    const destDir = new Directory(Paths.document);
-    const downloaded = await File.downloadFileAsync(url, destDir, { idempotent: true });
-    const canShare = await Sharing.isAvailableAsync();
-    if (canShare) {
-      await Sharing.shareAsync(downloaded.uri, {
-        mimeType: "application/pdf",
-        dialogTitle: title,
-      });
-    }
-  }
 
   async function purchase(product: Product, userEmail: string, userName: string) {
     setStatus("creating_order");
@@ -62,9 +48,8 @@ export function usePurchase() {
         paymentData.razorpay_signature,
       );
 
-      // 4. Download + share
-      setStatus("downloading");
-      await downloadAndShare(verification.download_url, product.title);
+      // 4. Open download URL in browser — saves to Files/Downloads via Safari
+      await Linking.openURL(verification.download_url);
 
       // 5. Invalidate purchases cache so Downloads screen refreshes
       queryClient.invalidateQueries({ queryKey: ["purchased-products"] });
@@ -82,11 +67,11 @@ export function usePurchase() {
     }
   }
 
-  async function downloadExisting(downloadUrl: string, title: string) {
-    setStatus("downloading");
+  async function downloadExisting(downloadUrl: string) {
+    setStatus("creating_order"); // reuse state as "loading"
     setError(null);
     try {
-      await downloadAndShare(downloadUrl, title);
+      await Linking.openURL(downloadUrl);
       setStatus("done");
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : "Download failed");
