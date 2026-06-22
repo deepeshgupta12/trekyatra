@@ -3,7 +3,7 @@
 
 **Framework:** React Native + Expo Router v3  
 **Backend:** FastAPI (services/api/) extended with mobile namespace  
-**Last Updated:** 2026-05-29
+**Last Updated:** 2026-06-19
 
 > Full architecture, feature scope, technology decisions, and milestone targets:
 > see `docs/versions/V5-MOBILE-APP.md`
@@ -126,50 +126,66 @@ Components delivered:
 - Pull-to-refresh, skeleton loading states per section
 - tsc --noEmit: 0 errors
 
-### Step M07 — Explore & Search [PENDING]
-- Browse screen: infinite scroll grid of trek cards
-- Filter bottom sheet: state, difficulty, duration, season, altitude (mirrors web explore filters)
-- Facet counts from `/api/v1/treks/filter-facets`
-- Search screen: text input + recent searches (AsyncStorage) + trending searches
-- Fuzzy search via API `/api/v1/search/suggestions`
-- Semantic search for long queries (`POST /api/v1/search/semantic`)
-- Regional hubs screen (list of states → region page)
-- Seasonal hubs screen (Winter/Monsoon/Summer/Spring)
+### Step M07a — Browse Tab (grid, filters, regions/seasons, basic search) [DONE — 2026-06-12]
+- Browse screen: infinite scroll grid of trek cards (`app/(tabs)/browse.tsx`)
+- Filter bottom sheet: state, difficulty, duration_min/max, season filters — wired to `GET /api/v1/cms/pages` extended filter params
+- Backend: `list_pages()` extended with `trek_state`, `trek_difficulty`, `trek_season`, `trek_duration_min/max` query params + integer day-count extraction via `regexp_replace`; 4 new backend tests
+- `RegionsRow` (M06) + `SeasonalPicksRow` (M06) wired as interactive filter shortcuts
+- tsc ✓ zero errors
 
-### Step M08 — Trek Comparison [PENDING]
-- Compare tab in browse: pick 2 treks from list
-- Compare result screen: side-by-side attribute table (difficulty, duration, altitude, season, state, permits)
-- Swipeable columns (one column per trek, swipe to compare)
-- Save comparison (synced to `/api/v1/account/comparisons`)
-- Saved comparisons list in Account tab
+### Step M07b — Advanced Search (semantic, voice, recent, trending) [DONE — 2026-06-14]
+- Search screen: text input + `GET /api/v1/search/trending` trending chips + recent searches (AsyncStorage)
+- Semantic search: long queries → `POST /api/v1/search/semantic`
+- Voice search: `expo-speech` mic input → search query
+- Search log: `POST /api/v1/search/log` on result tap (no new backend — all routes pre-existed)
+- tsc ✓ zero errors
+
+### Step M07c — Region Tabs with Trek Cards [DONE — 2026-06-14]
+- `RegionsRow` chips converted to selectable tabs (Himachal Pradesh default active, saffron active style mirrors `DifficultyTabsSection`)
+- Trek card rows rendered per selected region using `GET /api/v1/cms/pages?trek_state=<region>`
+- tsc ✓ zero errors
+
+### Step M08 — Trek Comparison (full attribute table + saved comparisons) [DONE — 2026-06-18]
+- Compare flow: pick 2 treks → side-by-side attribute table (budget, permit, difficulty, altitude, duration, season, crowd, solo/family/beginner-friendly)
+- Winner badges per attribute row (highlights better trek per field)
+- Save comparison button (auth-gated, `POST /api/v1/account/comparisons`)
+- `saved.tsx` converted to stack: `saved/_layout.tsx` + `saved/index.tsx` + `saved/comparisons.tsx` (saved comparisons list with delete)
+- `useComparisons` hook (list/save/delete via TanStack Query)
+- `accountApi` + `apiDelete` added to `mobileApi.ts`
+- tsc ✓ zero errors
 
 ---
 
 ## Phase 3 — User & Commerce Layer (Steps M09–M13)
 
-### Step M09 — Plan My Trek Wizard [PENDING]
-Full parity with web `/plan` wizard (6 steps):
-- Step 0: Intent selection (adventure / beginner / monsoon / family / solo / group)
-- Step 1: Travel month selector (12-month grid + "Flexible" option)
-- Step 2: Duration preference (1-2 days / 3-5 days / 6-8 days / 9+ days)
-- Step 3: Fitness + experience sliders
-- Step 4: Region preference (state multi-select)
-- Step 5: Lead capture (name, email, phone — optional)
-- Results screen: top 5 ranked treks with match score + category badges
-- `POST /api/v1/plan/search` wired identically to web
-- `POST /api/v1/leads` on form submit
-- Event tracking: `plan_wizard_step_1` through `plan_wizard_completed` (same as web)
+### Step M09 — Plan My Trek Wizard [DONE — 2026-06-18]
+Full 6-step native wizard replacing single-scroll `plan-my-trek.tsx`:
+- `plan/_layout.tsx` (Stack navigator) + `plan/index.tsx` (hero intro + 6-step preview)
+- `plan/step-1.tsx`–`step-5.tsx`: intent / month / duration / fitness+experience / region
+- `plan/step-6.tsx`: lead capture (skippable) → `POST /api/v1/leads/operator-help`
+- `plan/results.tsx`: ranked trek cards with match score, auth-gate, retry
+- `planWizardStore.ts` (Zustand — 7 fields + reset)
+- 9 components in `components/plan/`: `WizardProgress`, `WizardStepLayout`, `IntentSelector`, `MonthSelector`, `DurationSelector`, `FitnessSliders`, `RegionSelector`, `LeadCaptureForm`, `PlanResultCard`
+- `leadsApi` + `OperatorHelpLeadPayload` added to `mobileApi.ts`
+- `CategoryHubRow` "Plan a trek" route fixed; stale `plan-my-trek` refs removed
+- `plan-my-trek.tsx` DELETED; old `plan.tsx` DELETED; replaced by `plan/` Stack
+- tsc ✓ zero errors
 
-### Step M10 — User Account [PENDING]
-- Account tab: dashboard with stats (saved count, completed count, downloads)
-- Bookmarks (saved treks): synced to `GET/POST/DELETE /api/v1/account/saved`
-- Downloads: list of purchased digital products with download button
-- Enquiry history: trek planning leads submitted
-- Account settings: name, email, profile photo (expo-image-picker)
-- Language preference: English / Hindi (persisted in AsyncStorage + user profile)
-- Notification preferences: per-category toggles
-- Premium status card (upgrade CTA or subscription details)
-- Sign out: clears secure store + unregisters device push token
+### Step M10 — User Account [DONE — 2026-06-19]
+Full account management tab:
+- `account/_layout.tsx` (Stack navigator); placeholder `account.tsx` DELETED
+- `account/index.tsx`: ProfileHeader + AccountDashboard (stats strip + 6 menu rows) + sign-out
+- `account/saved.tsx`: `GET /api/v1/account/bookmarks`; Alert-confirm remove per bookmark
+- `account/downloads.tsx`: `GET /api/v1/account/downloads`; download URL via `Linking.openURL`
+- `account/enquiries.tsx`: `GET /api/v1/auth/me/leads`
+- `account/premium.tsx`: feature list + "coming soon" placeholder
+- `account/settings.tsx`: name edit (`PATCH /api/v1/auth/me`), EN/हिंदी language toggle (AsyncStorage `app_language`), biometric toggle (AsyncStorage), notifications link, Trail Letter newsletter (`POST /api/v1/newsletter/subscribe`), legal links (Linking.openURL), sign-out
+- `account/notifications.tsx`: 6 per-category notification toggles stored in AsyncStorage `notification_prefs`
+- `account/privacy.tsx`: DPDP data export (`GET /api/v1/auth/me/data-export` via Linking) + `DELETE /api/v1/auth/me/data` with Alert confirm
+- 5 new components: `ProfileHeader`, `AccountDashboard`, `SavedTrekCard`, `DownloadItem`, `EnquiryCard`
+- `hooks/useAccount.ts`: `useSavedTreks`, `useDownloads`, `useAccountMe`, `useNewsletter`
+- `mobileApi.ts`: `apiPatch`, new types (`BookmarkResponse`, `DownloadResponse`, `UserMeResponse`, `NewsletterSubscribeResponse`), extended `accountApi`, `newsletterApi`, `authMeApi`
+- tsc ✓ zero errors
 
 ### Step M11 — Operators Marketplace [PENDING]
 - Operators list screen: region filter + search
@@ -315,11 +331,11 @@ Mobile-adapted version of `lib/analytics.ts` for React Native:
 | Phase | Status |
 |-------|--------|
 | Foundation (M01–M05) | ✓ DONE (M01, M02, M03, M-DS1, M04, M05 complete) |
-| Discovery (M06–M08) | M06 ✓ Done — M07, M08 Pending |
-| User & Commerce (M09–M13) | Pending |
+| Discovery (M06–M08) | ✓ DONE (M06, M07a, M07b, M07c, M08 complete) |
+| User & Commerce (M09–M13) | M09 ✓ Done — M10 ✓ Done — M11, M12, M13 Pending |
 | Engagement & Analytics (M14–M15) | Pending |
 | Community (M16–M18) | Pending |
 | Contextual Intelligence (M19–M20) | Pending |
 | Content & Release (M21–M22) | Pending |
 
-**Current next step:** M07 — Explore & Search (browse screen + filter bottom sheet + semantic search).
+**Current next step:** M11 — Operators Marketplace (operators list, detail screen, inquiry form).
