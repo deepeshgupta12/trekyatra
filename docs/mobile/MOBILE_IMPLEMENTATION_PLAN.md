@@ -3,7 +3,7 @@
 
 **Framework:** React Native + Expo Router v3  
 **Backend:** FastAPI (services/api/) extended with mobile namespace  
-**Last Updated:** 2026-06-19
+**Last Updated:** 2026-06-22
 
 > Full architecture, feature scope, technology decisions, and milestone targets:
 > see `docs/versions/V5-MOBILE-APP.md`
@@ -59,6 +59,7 @@ These rules apply to every mobile step, in addition to the project-wide rules in
 - DB migration 20260608_0042: `mobile_devices` table + `cms_pages.deleted_at` + partial index
 - `get_current_user_bearer` dependency for Authorization: Bearer auth
 - 11 backend tests; all pass; full suite regression-free
+- **Bugfix pass 2026-06-22**: Added `POST /api/v1/auth/mobile/google` (`MobileGoogleIn` schema → Google userinfo verify → `login_or_register_google_user` → `issue_mobile_token` → `MobileAuthOut`); `authApi.signInWithGoogle` replaced broken cookie-extraction approach with direct call to this endpoint
 
 ### Step M-DS1 — Mobile Design System Overhaul [DONE — 2026-06-10]
 - Pine/Saffron/Sky/Earth/Mist/Paper brand tokens + dark mode (system + user toggle)
@@ -72,7 +73,8 @@ These rules apply to every mobile step, in addition to the project-wide rules in
 
 ### Step M04 — CMS Offline Content Engine [DONE — 2026-06-10]
 - `expo-sqlite` database (`trekyatra.db`) with Drizzle ORM schema
-- Tables: `cms_pages` (slug, title, body_json, page_type, hero_image_url, synced_at, is_downloaded), `sync_meta` (last_sync_at, total_pages)
+- Tables: `cms_pages` (slug, title, body_json, **content_html**, **content_json**, page_type, hero_image_url, synced_at, is_downloaded), `sync_meta` (last_sync_at, total_pages)
+- **Bugfix pass 2026-06-22**: Added `content_html`/`content_json` to `db/schema.ts`; `db/client.ts` `initDb()` includes new columns in `CREATE TABLE` + `ALTER TABLE` migration loop for existing DBs; `useTrekDetail.ts` `mapPageToDb`/`mapDbToPage` cache and restore both fields — packing/permits/costs tabs now work offline
 - Sync service (`services/syncService.ts`): fetch from `/mobile/sync`, upsert into SQLite, handle deleted slugs, pagination
 - Background sync (`services/backgroundSync.ts`): AppState listener, 15-min throttle, token-aware
 - `useSync` hook: isSyncing / lastSyncAt / syncProgress / triggerSync / refreshLastSync
