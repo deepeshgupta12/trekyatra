@@ -37,6 +37,7 @@ from app.api.routes.revenue import router as revenue_router
 from app.api.routes.account import router as account_router
 from app.api.routes.treks import router as treks_router
 from app.api.routes.admin_treks import router as admin_treks_router
+from app.api.routes.admin_push import router as admin_push_router
 from app.api.routes.worker import router as worker_router
 from app.api.routes.products import public_router as products_public_router
 from app.api.routes.products import admin_router as products_admin_router
@@ -114,3 +115,4 @@ api_router.include_router(cdp_admin_router)
 api_router.include_router(auth_mobile_router)
 api_router.include_router(mobile_router)
 api_router.include_router(ai_log_router)
+api_router.include_router(admin_push_router)

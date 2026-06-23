@@ -613,7 +613,7 @@ Full API docs available at http://localhost:8000/docs when the backend is runnin
 | Premium subscription (IAP screen, usePremium hook, GatedContentOverlay, backend verify/restore) | Done (M13) |
 | Cross-platform personalization sync (behavior_profile on users, GET/PUT API, mobile pull-on-login, web sync-on-view) | Done (Bugfix Pass 2) |
 | Explore filter prominence + Go Premium drawer entry | Done (Bugfix Pass 2) |
-| Push notifications | Pending (M14) |
+| Push notifications (FCM/APNs, test mode, permit/seasonal/news Celery tasks, notification inbox screen, badge count, 2nd-open permission prompt) | Done (M14) |
 
 ---
 

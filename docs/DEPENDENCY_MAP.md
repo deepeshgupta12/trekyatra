@@ -2176,3 +2176,31 @@ New `behavior_profile JSON` column on `users` table. New GET/PUT routes at `/api
 | `apps/web-next/lib/auth-context.tsx` | Added `pullAndMergeBehaviorProfileFromBackend()` call in `login`/`signup`/`loginWithGoogle` | LOW — fire-and-forget; does not change return type or behavior for callers |
 | `apps/mobile/components/layout/AppDrawer.tsx` | Added "Go Premium" saffron-accented row to INFO_MENU | LOW — leaf drawer component |
 | `apps/mobile/components/browse/FilterChips.tsx` | Replaced inconsistent glass/saffron filter chips with unified prominent saffron pill | LOW — `gitnexus_impact(FilterChips, upstream)` = 1 caller (`browse/index.tsx`) |
+
+---
+
+### Step M14 — Push Notifications (2026-06-23)
+
+New `mobile_push_log` table. New `notifications` module (backend). New push notification infrastructure (mobile). All additive.
+
+| File | Change | Blast radius |
+|------|--------|-------------|
+| `services/api/alembic/versions/20260623_0046_push_log.py` (NEW) | Creates `mobile_push_log` table with FK → `mobile_devices` | LOW — new table, no existing code touches it |
+| `services/api/app/modules/notifications/__init__.py` (NEW) | Module init | LOW — new module |
+| `services/api/app/modules/notifications/models.py` (NEW) | `MobilePushLog` ORM model | LOW — new model, no existing callers |
+| `services/api/app/modules/notifications/push_provider.py` (NEW) | `FCMProvider`, `APNsProvider` (test mode when creds absent), factory functions | LOW — new module, 0 existing callers |
+| `services/api/app/modules/notifications/service.py` (NEW) | `send_push`, `send_batch_push`, `get_devices_for_users`, `get_push_logs`, `_log_push` | LOW — new functions, 0 existing callers |
+| `services/api/app/db/base.py` | Added `MobilePushLog` import + `__all__` entry | LOW — additive only |
+| `services/api/app/core/config.py` | Added `firebase_service_account_json`, `apns_key_id`, `apns_team_id`, `apns_key_p8`, `apns_bundle_id` settings | LOW — new optional fields with `None` defaults |
+| `services/api/.env.example` | Added M14 `FIREBASE_SERVICE_ACCOUNT_JSON`/`APNS_*`/`APNS_BUNDLE_ID` vars | LOW — documentation |
+| `services/api/app/worker/tasks/notifications.py` (NEW) | `notifications.send_permit_alerts` (daily), `notifications.send_seasonal_alerts` (weekly), `notifications.send_news_alerts` (event-triggered) | LOW — new tasks; require Celery worker restart to register |
+| `services/api/app/worker/celery_app.py` | Added `app.worker.tasks.notifications` to include list; 2 beat schedule entries | MEDIUM — any syntax error here crashes all workers; tasks confirmed working in test mode |
+| `services/api/app/api/routes/admin_push.py` (NEW) | `POST /api/v1/admin/push/send`, `GET /api/v1/admin/push/logs` | LOW — new admin-only routes, 0 existing callers |
+| `services/api/app/api/router.py` | Added `admin_push_router` include | LOW — additive |
+| `services/api/tests/test_notifications_m14.py` (NEW) | 5 tests TC-B-M14-01–05 | LOW — test file only |
+| `apps/mobile/services/notificationService.ts` (NEW) | `incrementOpenCount`, `requestAndRegisterPushToken`, `saveToInbox`, `getInbox`, `markAllRead`, `getUnreadCount`; uses `Constants.executionEnvironment` (no `expo-device`); `shouldShowBanner`/`shouldShowList` handler (expo-notifications v56) | LOW — new module; callers: `_layout.tsx`, `useNotifications.ts` |
+| `apps/mobile/hooks/useNotifications.ts` (NEW) | `useNotifications()` hook: inbox state, permission status, foreground listener, deeplink tap handler | LOW — new hook; callers: `app/notifications.tsx` |
+| `apps/mobile/components/notifications/NotificationRow.tsx` (NEW) | Notification list item with category icon, unread dot, relative timestamp | LOW — leaf component |
+| `apps/mobile/app/notifications.tsx` (NEW) | Notification inbox screen (modal presentation, `FlatList` + empty state + mark-all-read) | LOW — new route, registered as Stack.Screen modal |
+| `apps/mobile/app/_layout.tsx` | Added `incrementOpenCount`/`requestAndRegisterPushToken`/`saveToInbox` imports + `Notifications` import; push setup `useEffect`; `notifications` Stack.Screen | MEDIUM — `_layout.tsx` is the root shell; changes lightly tested; additive only (new effect + new Screen, no logic removed) |
+| `apps/mobile/components/layout/AppDrawer.tsx` | Added "Notifications" entry to EXPLORE section of drawer | LOW — leaf drawer component, 1 upstream caller (`_layout.tsx`) |

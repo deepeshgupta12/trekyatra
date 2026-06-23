@@ -26,6 +26,8 @@ import { useOfflineStore } from "@/stores/offlineStore";
 import { usePlanWizardStore } from "@/stores/planWizardStore";
 import { AnimatedSplash } from "@/components/ui/AnimatedSplash";
 import { AppDrawer } from "@/components/layout/AppDrawer";
+import { incrementOpenCount, requestAndRegisterPushToken, saveToInbox } from "@/services/notificationService";
+import * as Notifications from "expo-notifications";
 
 Sentry.init({
   dsn: process.env.EXPO_PUBLIC_SENTRY_DSN,
@@ -58,6 +60,18 @@ function AuthGate({ children }: { children: ReactNode }) {
   // Load downloaded slugs into Zustand store on mount
   useEffect(() => {
     loadDownloaded().catch(console.error);
+  }, []);
+
+  // Push notifications — request permission on 2nd open, listen for foreground notifs
+  useEffect(() => {
+    incrementOpenCount().then((count) => {
+      if (count >= 2) requestAndRegisterPushToken().catch(() => {});
+    });
+
+    const sub = Notifications.addNotificationReceivedListener((notification) => {
+      saveToInbox(notification).catch(() => {});
+    });
+    return () => sub.remove();
   }, []);
 
   useEffect(() => {
@@ -109,6 +123,7 @@ export default Sentry.wrap(function RootLayout() {
               <Stack screenOptions={{ headerShown: false }}>
                 <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
                 <Stack.Screen name="(auth)" options={{ headerShown: false }} />
+                <Stack.Screen name="notifications" options={{ headerShown: false, presentation: "modal" }} />
                 <Stack.Screen name="+not-found" />
               </Stack>
               <AppDrawer />

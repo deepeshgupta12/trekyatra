@@ -21,6 +21,7 @@ celery_app = Celery(
         "app.worker.tasks.news",
         "app.worker.tasks.cdp",
         "app.worker.tasks.trek_intelligence_tasks",
+        "app.worker.tasks.notifications",
     ],
 )
 
@@ -89,6 +90,14 @@ celery_app.conf.update(
         "daily-trek-alert-digest": {
             "task": "account.send_trek_alerts",
             "schedule": 86400,  # 24 hours — fires daily (cron pinning to 08:00 IST done in DO)
+        },
+        "daily-push-permit-alerts": {
+            "task": "notifications.send_permit_alerts",
+            "schedule": 86400,  # daily 09:00 UTC
+        },
+        "weekly-push-seasonal-alerts": {
+            "task": "notifications.send_seasonal_alerts",
+            "schedule": 604800,  # weekly Monday 10:00 UTC
         },
     },
 )

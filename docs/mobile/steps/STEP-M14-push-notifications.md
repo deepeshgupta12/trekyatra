@@ -1,6 +1,6 @@
 # STEP-M14 — Push Notifications
 
-**Status:** Pending
+**Status:** Done
 **Phase:** Engagement
 **Dependencies:** STEP-M03 (device registration endpoint), STEP-M02 (auth), STEP-M10 (notification preferences)
 **Backend step:** Yes — new DB table, Celery tasks, push send service

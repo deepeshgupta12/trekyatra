@@ -27,6 +27,7 @@ from app.modules.plan.models import TripPlan
 from app.modules.subscriptions.models import Subscription
 from app.modules.search.models import PageView, SearchEvent
 from app.modules.mobile.models import MobileDevice
+from app.modules.notifications.models import MobilePushLog
 from app.modules.trek_intelligence.models import AIInteractionLog, TrekQACache, TreksageChatSession, TreksageChatMessage
 from app.modules.cdp.models import (
     AnalyticsEvent,
@@ -100,6 +101,7 @@ __all__ = [
     "CustomSegment",
     "CdpWebhookRule",
     "MobileDevice",
+    "MobilePushLog",
     "AIInteractionLog",
     "TrekQACache",
     "TreksageChatSession",

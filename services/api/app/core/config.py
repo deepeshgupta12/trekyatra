@@ -114,6 +114,14 @@ class Settings(BaseSettings):
     # (create_trek_plan_lead, translate_trek_content) when called via MCP.
     mcp_shared_secret: str | None = None
 
+    # Step M14 — Push Notifications (FCM + APNs)
+    # Leave unset to run in test mode (push calls are logged but not actually sent).
+    firebase_service_account_json: str | None = None   # FCM HTTP v1 — service account JSON (raw or base64)
+    apns_key_id: str | None = None                     # Apple APNs Auth Key ID (10-char string from Apple Developer)
+    apns_team_id: str | None = None                    # Apple Developer Team ID
+    apns_key_p8: str | None = None                     # APNs Auth Key content (.p8 file, newlines as \n)
+    apns_bundle_id: str = "co.trekyatra.app"           # iOS bundle identifier
+
     model_config = SettingsConfigDict(
         env_file=".env",
         env_file_encoding="utf-8",

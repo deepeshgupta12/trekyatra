@@ -224,7 +224,7 @@ Full account management tab:
 
 ## Phase 4 — Engagement + Analytics (Steps M14–M15)
 
-### Step M14 — Push Notifications [PENDING]
+### Step M14 — Push Notifications [DONE]
 - `expo-notifications` SDK setup (request permissions on onboarding)
 - FCM token (Android) + APNs token (iOS) registration via `POST /api/v1/mobile/device`
 - Notification categories:
@@ -342,11 +342,13 @@ Mobile-adapted version of `lib/analytics.ts` for React Native:
 | Foundation (M01–M05) | ✓ DONE (M01, M02, M03, M-DS1, M04, M05 complete) |
 | Discovery (M06–M08) | ✓ DONE (M06, M07a, M07b, M07c, M08 complete) |
 | User & Commerce (M09–M13) | M09 ✓ Done — M10 ✓ Done — M11 ✓ Done — M12 ✓ Done — M13 ✓ Done |
-| Engagement & Analytics (M14–M15) | Pending |
+| Engagement & Analytics (M14–M15) | M14 ✓ Done — M15 Pending |
 | Community (M16–M18) | Pending |
 | Contextual Intelligence (M19–M20) | Pending |
 | Content & Release (M21–M22) | Pending |
 
 **Bugfix Pass 2 (2026-06-23) — DONE:** Cross-platform behavior sync (`behavior_profile` column + GET/PUT endpoints + mobile `pullAndMergeBehaviorProfile` on login + web `pullAndMergeBehaviorProfileFromBackend` on login + `syncBehaviorProfileToBackend` on trek view when authenticated); Go Premium saffron entry in AppDrawer; Explore FilterChips prominent saffron pill.
 
-**Current next step:** M14 — Push Notifications.
+**Step M14 (2026-06-23) — DONE:** Push notifications — FCM/APNs providers (test mode), `mobile_push_log` table, permit/seasonal/news Celery tasks, admin send route, notification inbox screen, 2nd-open permission prompt, badge count, deeplink tap handler. 707 backend tests pass; tsc ✓; next build ✓.
+
+**Current next step:** M15 — Mobile CDP Analytics.

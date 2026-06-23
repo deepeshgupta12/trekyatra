@@ -39,6 +39,7 @@ const AUTH_MENU: MenuItem[] = [
 const COMMON_MENU: MenuItem[] = [
   { icon: "storefront-outline", label: "Browse Operators", route: "/(tabs)/browse/operators" as never },
   { icon: "bag-outline", label: "Trek Resources", route: "/(tabs)/browse/products" as never },
+  { icon: "notifications-outline", label: "Notifications", route: "/notifications" as never },
 ];
 
 const INFO_MENU: MenuItem[] = [
