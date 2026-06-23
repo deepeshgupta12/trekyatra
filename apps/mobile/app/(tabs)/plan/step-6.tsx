@@ -5,11 +5,17 @@ import { WizardStepLayout } from "@/components/plan/WizardStepLayout";
 import { LeadCaptureForm, type LeadFormData } from "@/components/plan/LeadCaptureForm";
 import { usePlanWizardStore } from "@/stores/planWizardStore";
 import { leadsApi } from "@/lib/mobileApi";
+import { useAuth } from "@/hooks/useAuth";
 
 export default function Step6Screen() {
   const router = useRouter();
   const { answers } = usePlanWizardStore();
-  const [form, setForm] = useState<LeadFormData>({ name: "", email: "", phone: "" });
+  const { user } = useAuth();
+  const [form, setForm] = useState<LeadFormData>({
+    name: user?.fullName ?? "",
+    email: user?.email ?? "",
+    phone: "",
+  });
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 

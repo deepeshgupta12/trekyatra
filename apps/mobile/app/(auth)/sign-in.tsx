@@ -8,7 +8,7 @@ import { Logo } from "@/components/ui/Logo";
 import { SocialSignInButtons } from "@/components/auth/SocialSignInButtons";
 import { useAuth } from "@/providers/AuthProvider";
 import { useOnboarding } from "@/providers/OnboardingProvider";
-import { discovery, getGoogleAuthConfig } from "@/lib/googleAuth";
+import { discovery, getGoogleAuthConfig, GOOGLE_CLIENT_ID, googleRedirectUri, exchangeCodeAsync } from "@/lib/googleAuth";
 import { useTheme } from "@/hooks/useTheme";
 import { GlassSurface } from "@/components/ui/GlassSurface";
 
@@ -22,24 +22,31 @@ export default function SignInScreen() {
   const { isDark, colors } = useTheme();
 
   const googleConfig = getGoogleAuthConfig();
-  const [, googleResponse, promptGoogle] = useAuthRequest(googleConfig, discovery);
+  const [googleRequest, googleResponse, promptGoogle] = useAuthRequest(googleConfig, discovery);
 
   useEffect(() => {
-    if (googleResponse?.type === "success") {
-      const token =
-        (googleResponse.params as Record<string, string>).access_token ??
-        googleResponse.authentication?.accessToken;
-      if (token) {
-        setSocialLoading(true);
-        signInWithGoogle(token)
-          .catch((err: unknown) => {
-            const msg = err instanceof Error ? err.message : "Google sign-in failed";
-            Alert.alert("Error", msg);
-          })
-          .finally(() => setSocialLoading(false));
-      }
-    }
-  }, [googleResponse]);
+    if (googleResponse?.type !== "success") return;
+    const code = (googleResponse.params as Record<string, string>).code;
+    const codeVerifier = googleRequest?.codeVerifier;
+    if (!code || !codeVerifier) return;
+
+    setSocialLoading(true);
+    exchangeCodeAsync(
+      {
+        clientId: GOOGLE_CLIENT_ID,
+        code,
+        redirectUri: googleRedirectUri,
+        extraParams: { code_verifier: codeVerifier },
+      },
+      discovery
+    )
+      .then((tokenResponse) => signInWithGoogle(tokenResponse.accessToken))
+      .catch((err: unknown) => {
+        const msg = err instanceof Error ? err.message : "Google sign-in failed";
+        Alert.alert("Error", msg);
+      })
+      .finally(() => setSocialLoading(false));
+  }, [googleResponse, googleRequest]);
 
   async function handleSignIn() {
     if (!email.trim() || !password) return;

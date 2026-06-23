@@ -24,6 +24,13 @@ export default ({ config }: ConfigContext): any => ({
         "TrekYatra uses speech recognition to let you search for treks by voice.",
       NSMicrophoneUsageDescription:
         "TrekYatra needs microphone access for voice search.",
+      CFBundleURLTypes: [
+        {
+          CFBundleURLSchemes: [
+            "com.googleusercontent.apps.445487374089-1qgsnnn3428nuf6qvtiff6bobmvfgvjr",
+          ],
+        },
+      ],
     },
   },
   android: {
@@ -57,7 +64,10 @@ export default ({ config }: ConfigContext): any => ({
       },
     ],
   ],
-  scheme: "trekyatra",
+  scheme: [
+    "trekyatra",
+    "com.googleusercontent.apps.445487374089-1qgsnnn3428nuf6qvtiff6bobmvfgvjr",
+  ],
   experiments: {
     typedRoutes: true,
   },

@@ -129,11 +129,12 @@ const styles = StyleSheet.create({
     marginBottom: 16,
   },
   filtersWrapper: {
-    marginTop: 16,
+    marginTop: 12,
+    marginBottom: 4,
   },
   hubSection: {
-    marginTop: 24,
-    gap: 10,
+    marginTop: 28,
+    gap: 12,
   },
   hubHeading: {
     fontSize: 18,
@@ -144,6 +145,7 @@ const styles = StyleSheet.create({
   hubRow: {
     paddingHorizontal: 16,
     gap: 8,
+    paddingBottom: 4,
   },
   hubChip: {
     paddingHorizontal: 14,
@@ -156,6 +158,7 @@ const styles = StyleSheet.create({
     fontWeight: "500",
   },
   gridHeading: {
+    marginTop: 28,
     marginBottom: 12,
   },
 });

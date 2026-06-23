@@ -27,7 +27,8 @@ export default function HomeStackLayout() {
       <Stack.Screen name="packing" options={{ title: "Packing Guide" }} />
       <Stack.Screen name="permits" options={{ title: "Permits" }} />
       <Stack.Screen name="costs" options={{ title: "Trek Costs" }} />
-      <Stack.Screen name="safety" options={{ title: "Trek Safety" }} />
+      <Stack.Screen name="safety" options={{ title: "Safety Tips" }} />
+      <Stack.Screen name="about" options={{ title: "About TrekYatra" }} />
       <Stack.Screen name="beginner" options={{ title: "Beginner Treks" }} />
       <Stack.Screen name="compare" options={{ title: "Compare Treks" }} />
       <Stack.Screen name="products" options={{ title: "Resources" }} />

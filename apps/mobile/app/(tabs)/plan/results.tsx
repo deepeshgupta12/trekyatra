@@ -17,6 +17,7 @@ export default function PlanResultsScreen() {
   const [status, setStatus] = useState<"loading" | "done" | "error" | "auth">("loading");
   const [results, setResults] = useState<TrekRecommendation[]>([]);
   const [noMatchMsg, setNoMatchMsg] = useState<string | null>(null);
+  const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
   useEffect(() => {
     if (!isAuthenticated) {
@@ -42,7 +43,9 @@ export default function PlanResultsScreen() {
       setResults(res.recommendations);
       setNoMatchMsg(res.no_match ? res.no_match_message : null);
       setStatus("done");
-    } catch {
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : null;
+      setErrorMsg(msg);
       setStatus("error");
     }
   }
@@ -79,17 +82,24 @@ export default function PlanResultsScreen() {
   }
 
   if (status === "error") {
+    const isRateLimit = errorMsg?.toLowerCase().includes("limit") || errorMsg?.toLowerCase().includes("reached");
     return (
       <SafeArea edges={["top", "bottom"]}>
         <View style={styles.center}>
-          <Text style={{ fontSize: 36, marginBottom: 12 }}>😕</Text>
-          <Text style={[styles.authTitle, { color: colors.textPrimary }]}>Something went wrong</Text>
-          <Text style={[styles.authSub, { color: colors.textMuted }]}>Limited to 2 searches per 24 hours. Please try again later.</Text>
-          <TouchableOpacity style={styles.signInBtn} onPress={fetchResults}>
-            <Text style={styles.signInText}>Retry</Text>
-          </TouchableOpacity>
-          <TouchableOpacity style={styles.backLink} onPress={() => router.back()}>
-            <Text style={[styles.backLinkText, { color: colors.textMuted }]}>← Go back</Text>
+          <Text style={{ fontSize: 48, marginBottom: 16 }}>{isRateLimit ? "⏳" : "🏔"}</Text>
+          <Text style={[styles.authTitle, { color: colors.textPrimary }]}>
+            {isRateLimit ? "Daily limit reached" : "Something went wrong"}
+          </Text>
+          <Text style={[styles.authSub, { color: colors.textMuted }]}>
+            {errorMsg ?? "We couldn't load your trek matches. Please check your connection and try again."}
+          </Text>
+          {!isRateLimit && (
+            <TouchableOpacity style={styles.signInBtn} onPress={fetchResults}>
+              <Text style={styles.signInText}>Try again</Text>
+            </TouchableOpacity>
+          )}
+          <TouchableOpacity style={[styles.backLink, isRateLimit && { marginTop: 24 }]} onPress={() => router.push("/(tabs)/plan" as never)}>
+            <Text style={[styles.backLinkText, { color: colors.textMuted }]}>← Back to Plan</Text>
           </TouchableOpacity>
         </View>
       </SafeArea>

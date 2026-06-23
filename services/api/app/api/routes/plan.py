@@ -84,7 +84,7 @@ def get_plan(
     return TripPlanResponse.model_validate(plan)
 
 
-_RECOMMEND_LIMIT = 2        # max Plan My Trek uses per user per 24 hours
+_RECOMMEND_LIMIT = 3        # max Plan My Trek uses per user per 24 hours
 _RECOMMEND_WINDOW = 86400   # 24 hours in seconds
 
 
@@ -115,9 +115,9 @@ def _check_recommend_rate_limit(user_id: uuid.UUID) -> None:
             raise HTTPException(
                 status_code=status.HTTP_429_TOO_MANY_REQUESTS,
                 detail=(
-                    f"You have used Plan My Trek {_RECOMMEND_LIMIT} times in the last 24 hours. "
-                    f"Please try again in approximately {hours_left} hour(s). "
-                    "This limit helps us keep recommendations fast and accurate for all users."
+                    f"You've reached the daily limit of {_RECOMMEND_LIMIT} trek searches. "
+                    f"Try again in about {hours_left} hour(s). "
+                    "This keeps recommendations fast and personalised for everyone."
                 ),
             )
     except HTTPException:

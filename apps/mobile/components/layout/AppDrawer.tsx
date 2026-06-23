@@ -28,6 +28,7 @@ interface MenuItem {
 }
 
 const AUTH_MENU: MenuItem[] = [
+  { icon: "person-circle-outline", label: "My Profile", route: "/(tabs)/account" as never, authRequired: true },
   { icon: "bookmark-outline", label: "Saved Treks", route: "/(tabs)/saved" as never, authRequired: true },
   { icon: "git-compare-outline", label: "Comparisons", route: "/(tabs)/(home)/compare" as never, authRequired: true },
   { icon: "mail-outline", label: "Enquiries", route: "/(tabs)/account/enquiries" as never, authRequired: true },
@@ -41,8 +42,8 @@ const COMMON_MENU: MenuItem[] = [
 ];
 
 const INFO_MENU: MenuItem[] = [
-  { icon: "information-circle-outline", label: "About TrekYatra", route: "/(tabs)/browse" as never },
-  { icon: "shield-checkmark-outline", label: "Safety Tips", route: "/(tabs)/browse" as never },
+  { icon: "information-circle-outline", label: "About TrekYatra", route: "/(tabs)/(home)/about" as never },
+  { icon: "shield-checkmark-outline", label: "Safety Tips", route: "/(tabs)/(home)/safety" as never },
 ];
 
 function InitialsAvatar({ name, size = 44 }: { name: string; size?: number }) {
