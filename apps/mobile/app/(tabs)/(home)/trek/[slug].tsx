@@ -24,6 +24,7 @@ import { OfflineBadge } from "@/components/trek/OfflineBadge";
 import { CMSContentRenderer } from "@/components/cms/CMSContentRenderer";
 import { HtmlContentRenderer } from "@/components/cms/HtmlContentRenderer";
 import { useTheme } from "@/hooks/useTheme";
+import { useAuth } from "@/hooks/useAuth";
 import { recordTrekView } from "@/lib/behaviorProfile";
 import { contentApi } from "@/lib/mobileApi";
 import type { TrekListItem } from "@/lib/mobileApi";
@@ -33,6 +34,7 @@ export default function TrekDetailScreen() {
   const { slug } = useLocalSearchParams<{ slug: string }>();
   const { data, isLoading, error } = useTrekDetail(slug ?? "");
   const { colors, isDark } = useTheme();
+  const { user } = useAuth();
   const [activeTab, setActiveTab] = useState<TrekTab>("guide");
   const [relatedTreks, setRelatedTreks] = useState<TrekListItem[]>([]);
   const [contentsVisible, setContentsVisible] = useState(false);
@@ -46,12 +48,15 @@ export default function TrekDetailScreen() {
   // Record behavior
   useEffect(() => {
     if (!trek) return;
-    recordTrekView({
-      slug: trek.slug,
-      region: trek.trek_state ?? "",
-      difficulty: trek.trek_difficulty ?? "",
-      season: trek.trek_season ?? "",
-    });
+    recordTrekView(
+      {
+        slug: trek.slug,
+        region: trek.trek_state ?? "",
+        difficulty: trek.trek_difficulty ?? "",
+        season: trek.trek_season ?? "",
+      },
+      !!user
+    );
   }, [trek?.slug]);
 
   // Fetch related treks

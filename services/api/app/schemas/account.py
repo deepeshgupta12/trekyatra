@@ -95,3 +95,23 @@ class ComparisonResponse(BaseModel):
     updated_at: datetime
 
     model_config = {"from_attributes": True}
+
+
+class TrekViewEntry(BaseModel):
+    slug: str
+    region: str = ""
+    difficulty: str = ""
+    season: str = ""
+    ts: int = 0
+
+
+class BehaviorProfilePayload(BaseModel):
+    views: list[TrekViewEntry] = []
+    topRegions: list[str] = []
+    topDifficulties: list[str] = []
+
+
+class BehaviorProfileResponse(BaseModel):
+    views: list[TrekViewEntry] = []
+    topRegions: list[str] = []
+    topDifficulties: list[str] = []

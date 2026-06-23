@@ -521,6 +521,7 @@ cd apps/web-next && npm run build
 | Semantic search (mobile advanced search, M07b) | `POST /api/v1/search/semantic` — pgvector + text hybrid search, intent detection | Public |
 | Page view tracking | `POST /api/v1/track/page-view` | Public (fire-and-forget) |
 | Saved comparisons | `GET/POST /api/v1/account/comparisons`, `DELETE /api/v1/account/comparisons/{id}` | User auth required |
+| Cross-platform behavior sync | `GET /api/v1/account/behavior-profile`, `PUT /api/v1/account/behavior-profile` — sync trek-view personalization between web and mobile | User auth required |
 | News (public) | `GET /api/v1/public/news`, `GET /api/v1/public/news/{slug}`, `GET /api/v1/public/news/by-trek/{trek_slug}` | Public |
 | CMS pages list (mobile Browse) | `GET /api/v1/cms/pages` — optional filters `trek_state`, `trek_difficulty`, `trek_season`, `trek_duration_min`, `trek_duration_max` (M07a, additive) | Public |
 | News (admin) | `POST /api/v1/admin/news/generate/{trek_slug}` | Admin auth required |
@@ -552,11 +553,11 @@ Full API docs available at http://localhost:8000/docs when the backend is runnin
 
 ## Database Overview
 
-**40 Alembic migrations applied.** Key table groups:
+**45 Alembic migrations applied.** Key table groups:
 
 | Domain | Tables |
 |--------|--------|
-| Auth | `users`, `sessions`, `roles`, `permissions`, `role_permissions` |
+| Auth | `users` (+`behavior_profile JSON` for cross-platform personalization sync), `sessions`, `roles`, `permissions`, `role_permissions` |
 | Content pipeline | `topics`, `keyword_clusters`, `content_briefs`, `brief_versions`, `content_drafts`, `draft_claims` |
 | Pipeline tracking | `agent_runs`, `pipeline_runs`, `pipeline_stages` |
 | CMS | `cms_pages` (with `embedding vector(1536)`), `pages`, `page_links` |
@@ -610,6 +611,8 @@ Full API docs available at http://localhost:8000/docs when the backend is runnin
 | Operators marketplace (listing, detail, inquiry) | Done (M11) |
 | Digital products (catalog, Razorpay payment, file download) | Done (M12) |
 | Premium subscription (IAP screen, usePremium hook, GatedContentOverlay, backend verify/restore) | Done (M13) |
+| Cross-platform personalization sync (behavior_profile on users, GET/PUT API, mobile pull-on-login, web sync-on-view) | Done (Bugfix Pass 2) |
+| Explore filter prominence + Go Premium drawer entry | Done (Bugfix Pass 2) |
 | Push notifications | Pending (M14) |
 
 ---

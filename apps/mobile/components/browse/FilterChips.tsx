@@ -27,23 +27,23 @@ export function FilterChips() {
         showsHorizontalScrollIndicator={false}
         contentContainerStyle={styles.row}
       >
-        {hasActive ? (
-          <TouchableOpacity
-            style={[styles.filterChip, { backgroundColor: colors.saffron + "22", borderColor: colors.saffron }]}
-            activeOpacity={0.7}
-            onPress={() => setSheetVisible(true)}
-          >
-            <Ionicons name="options-outline" size={14} color={colors.saffron} />
-            <Text style={[styles.chipText, { color: colors.saffron }]}>Filters</Text>
-          </TouchableOpacity>
-        ) : (
-          <TouchableOpacity activeOpacity={0.7} onPress={() => setSheetVisible(true)}>
-            <GlassSurface rounded="xl" style={styles.filterChip}>
-              <Ionicons name="options-outline" size={14} color={colors.textSecondary} />
-              <Text style={[styles.chipText, { color: colors.textSecondary }]}>Filters</Text>
-            </GlassSurface>
-          </TouchableOpacity>
-        )}
+        {/* Prominent Filter button — always visible, fills with saffron when filters active */}
+        <TouchableOpacity
+          style={[
+            styles.filterBtn,
+            {
+              backgroundColor: hasActive ? colors.saffron : `${colors.saffron}22`,
+              borderColor: colors.saffron,
+            },
+          ]}
+          activeOpacity={0.7}
+          onPress={() => setSheetVisible(true)}
+        >
+          <Ionicons name="options-outline" size={15} color={hasActive ? "#fff" : colors.saffron} />
+          <Text style={[styles.filterBtnText, { color: hasActive ? "#fff" : colors.saffron }]}>
+            {hasActive ? `Filters (${activeChips.length})` : "Filter Treks"}
+          </Text>
+        </TouchableOpacity>
 
         {activeChips.map((chip) => (
           <TouchableOpacity key={chip.key} activeOpacity={0.7} onPress={chip.onClear}>
@@ -72,14 +72,19 @@ const styles = StyleSheet.create({
     gap: 8,
     alignItems: "center",
   },
-  filterChip: {
+  filterBtn: {
     flexDirection: "row",
     alignItems: "center",
     gap: 6,
-    paddingHorizontal: 14,
-    paddingVertical: 8,
+    paddingHorizontal: 16,
+    paddingVertical: 9,
     borderRadius: 24,
-    borderWidth: 1,
+    borderWidth: 1.5,
+  },
+  filterBtnText: {
+    fontSize: 13,
+    fontWeight: "700",
+    fontFamily: "Inter_600SemiBold",
   },
   chip: {
     flexDirection: "row",

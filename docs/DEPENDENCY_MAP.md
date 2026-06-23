@@ -2152,3 +2152,27 @@ Impact analysis: `_call_get_site_info` (LOW); system prompt change only affects 
 | `services/api/app/api/routes/treksage.py` | `@limiter.limit("20/minute")` on `POST /treksage/chat`; `request: Request` added as first param | LOW — additive decorator; no logic change |
 | `services/api/app/api/routes/treks.py` | `@limiter.limit("15/minute")` on `POST /compare`; `@limiter.limit("20/minute")` on `POST /{slug}/ask`; `request: Request` added | LOW — additive decorators |
 | `services/api/app/openapi_mcp.yaml` | Trimmed 4 descriptions exceeding ChatGPT's 300-char limit | LOW — documentation only |
+
+---
+
+### Mobile Bugfix Pass 2 — Cross-platform Personalization Sync + Explore UX (2026-06-23)
+
+New `behavior_profile JSON` column on `users` table. New GET/PUT routes at `/api/v1/account/behavior-profile`. No new tables. All changes are additive.
+
+| File | Change | Blast radius |
+|------|--------|-------------|
+| `services/api/alembic/versions/20260623_0045_add_behavior_profile_to_users.py` (NEW) | Adds `behavior_profile JSON NOT NULL DEFAULT '{}'` to `users` table | LOW — additive, nullable-equivalent (server_default) |
+| `services/api/app/modules/auth/models.py` | Added `behavior_profile: Mapped[dict]` column | LOW — `gitnexus_impact(User, upstream)` = many callers but additive field, no existing reader touched |
+| `services/api/app/schemas/account.py` | Added `TrekViewEntry`, `BehaviorProfilePayload`, `BehaviorProfileResponse` schemas | LOW — new schemas, no existing consumers |
+| `services/api/app/modules/account/service.py` | Added `get_behavior_profile()`, `update_behavior_profile()` (caps views at 50) | LOW — new functions, 0 existing callers |
+| `services/api/app/api/routes/account.py` | Added `GET /account/behavior-profile`, `PUT /account/behavior-profile` | LOW — new routes, no existing callers |
+| `services/api/tests/test_account.py` | Added TC-B21–TC-B24 | LOW — test file only |
+| `apps/mobile/lib/mobileApi.ts` | Added `apiPut<T>`, `BehaviorProfileData`/`BehaviorProfileEntry` types, `accountApi.getBehaviorProfile`/`putBehaviorProfile` | LOW — additive exports |
+| `apps/mobile/lib/behaviorProfile.ts` | Rewrote: `recordTrekView` accepts `isAuthenticated` flag + fire-and-forget PUT; `pullAndMergeBehaviorProfile()` merge-on-login | MEDIUM — `recordTrekView` signature changed (optional 2nd param), all callers (1: `trek/[slug].tsx`) updated |
+| `apps/mobile/hooks/useBehaviorProfile.ts` | Added `useAuth()` + `useRef(prevUserId)` login-transition trigger for pull-and-merge | LOW — hook result unchanged; 0 upstream callers affected |
+| `apps/mobile/app/(tabs)/(home)/trek/[slug].tsx` | Passes `!!user` as `isAuthenticated` to `recordTrekView` | LOW — behavioral addition only |
+| `apps/web-next/lib/behavior-tracker.ts` | Added `syncBehaviorProfileToBackend()`, `pullAndMergeBehaviorProfileFromBackend()`; MAX_ENTRIES 25→50 | LOW — new exports; existing `recordTrekView`/`getBehaviorProfile`/`hasBehaviorData` unchanged |
+| `apps/web-next/components/trek/TrekViewTracker.tsx` | Added `useAuth()` + `syncBehaviorProfileToBackend()` call when user logged in | LOW — invisible client component; 0 external callers |
+| `apps/web-next/lib/auth-context.tsx` | Added `pullAndMergeBehaviorProfileFromBackend()` call in `login`/`signup`/`loginWithGoogle` | LOW — fire-and-forget; does not change return type or behavior for callers |
+| `apps/mobile/components/layout/AppDrawer.tsx` | Added "Go Premium" saffron-accented row to INFO_MENU | LOW — leaf drawer component |
+| `apps/mobile/components/browse/FilterChips.tsx` | Replaced inconsistent glass/saffron filter chips with unified prominent saffron pill | LOW — `gitnexus_impact(FilterChips, upstream)` = 1 caller (`browse/index.tsx`) |

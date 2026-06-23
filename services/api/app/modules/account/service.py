@@ -9,6 +9,7 @@ from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
 from app.modules.account.models import AccountComparison, TrekAlert, UserBookmark, UserDownload, UserProfile
+from app.modules.auth.models import User
 from app.modules.cms.models import CMSPage
 
 logger = logging.getLogger(__name__)
@@ -308,3 +309,26 @@ def delete_comparison(db: Session, user_id: UUID, comparison_id: UUID) -> bool:
     db.delete(comp)
     db.commit()
     return True
+
+
+# --- Behavior Profile (cross-platform personalization sync) ---
+
+def get_behavior_profile(db: Session, user_id: UUID) -> dict:
+    user = db.get(User, user_id)
+    if user is None:
+        return {}
+    return user.behavior_profile or {}
+
+
+def update_behavior_profile(db: Session, user_id: UUID, profile: dict) -> dict:
+    user = db.get(User, user_id)
+    if user is None:
+        return {}
+    # Cap views at 50 entries to bound storage
+    views = profile.get("views", [])
+    if len(views) > 50:
+        profile = {**profile, "views": views[:50]}
+    user.behavior_profile = profile
+    db.commit()
+    db.refresh(user)
+    return user.behavior_profile

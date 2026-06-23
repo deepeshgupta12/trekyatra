@@ -11,6 +11,7 @@ import {
 } from "@/lib/auth-api";
 import { addBookmarkBySlug } from "@/lib/api";
 import { trackSignIn, trackSignUp, identify } from "@/lib/analytics";
+import { pullAndMergeBehaviorProfileFromBackend } from "@/lib/behavior-tracker";
 
 type AuthContextValue = {
   user: UserResponse | null;
@@ -71,6 +72,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     trackSignIn("email");
     identify(res.user.id);
     await flushPendingBookmarks();
+    pullAndMergeBehaviorProfileFromBackend();
   }, [flushPendingBookmarks]);
 
   const signup = useCallback(
@@ -85,6 +87,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       trackSignUp("email");
       identify(res.user.id);
       await flushPendingBookmarks();
+      pullAndMergeBehaviorProfileFromBackend();
     },
     [flushPendingBookmarks],
   );
@@ -95,6 +98,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     trackSignIn("google");
     identify(res.user.id);
     await flushPendingBookmarks();
+    pullAndMergeBehaviorProfileFromBackend();
   }, [flushPendingBookmarks]);
 
   const logout = useCallback(async () => {

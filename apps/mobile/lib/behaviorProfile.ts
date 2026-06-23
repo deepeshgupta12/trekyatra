@@ -1,4 +1,5 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import { accountApi } from "@/lib/mobileApi";
 
 const BEHAVIOR_KEY = "ty_behavior_v1";
 const MAX_VIEWS = 50;
@@ -30,7 +31,10 @@ export function hasBehaviorData(profile: BehaviorProfile | null): boolean {
   return !!profile && profile.views.length > 0;
 }
 
-export async function recordTrekView(entry: Omit<TrekViewEntry, "ts">): Promise<void> {
+export async function recordTrekView(
+  entry: Omit<TrekViewEntry, "ts">,
+  isAuthenticated = false
+): Promise<void> {
   try {
     const profile = (await getBehaviorProfile()) ?? {
       views: [],
@@ -48,12 +52,65 @@ export async function recordTrekView(entry: Omit<TrekViewEntry, "ts">): Promise<
     const topRegions = computeTop(views.map((v) => v.region).filter(Boolean));
     const topDifficulties = computeTop(views.map((v) => v.difficulty).filter(Boolean));
 
-    await AsyncStorage.setItem(
-      BEHAVIOR_KEY,
-      JSON.stringify({ views, topRegions, topDifficulties })
-    );
+    const updated: BehaviorProfile = { views, topRegions, topDifficulties };
+    await AsyncStorage.setItem(BEHAVIOR_KEY, JSON.stringify(updated));
+
+    // Push to backend for cross-platform sync when authenticated
+    if (isAuthenticated) {
+      accountApi.putBehaviorProfile(updated).catch(() => {});
+    }
   } catch {
     // Behavior tracking is non-critical — silent fail
+  }
+}
+
+/**
+ * Pull behavior profile from backend and merge with local AsyncStorage data.
+ * Called once on login. Remote views are merged (deduplicated by slug, local wins on tie).
+ */
+export async function pullAndMergeBehaviorProfile(): Promise<void> {
+  try {
+    const [local, remote] = await Promise.all([
+      getBehaviorProfile(),
+      accountApi.getBehaviorProfile(),
+    ]);
+
+    const localViews = local?.views ?? [];
+    const remoteViews = (remote?.views ?? []) as TrekViewEntry[];
+
+    // Merge: local wins on duplicate slugs, remote fills in the rest
+    const localSlugs = new Set(localViews.map((v) => v.slug));
+    const merged = [
+      ...localViews,
+      ...remoteViews.filter((v) => !localSlugs.has(v.slug)),
+    ]
+      .sort((a, b) => b.ts - a.ts)
+      .slice(0, MAX_VIEWS);
+
+    const topRegions = computeTop(merged.map((v) => v.region).filter(Boolean));
+    const topDifficulties = computeTop(merged.map((v) => v.difficulty).filter(Boolean));
+
+    const merged_profile: BehaviorProfile = { views: merged, topRegions, topDifficulties };
+    await AsyncStorage.setItem(BEHAVIOR_KEY, JSON.stringify(merged_profile));
+
+    // Push merged result back to backend
+    accountApi.putBehaviorProfile(merged_profile).catch(() => {});
+  } catch {
+    // Non-critical — silent fail
+  }
+}
+
+/**
+ * Push current local behavior profile to backend (called on login).
+ */
+export async function pushBehaviorProfile(): Promise<void> {
+  try {
+    const profile = await getBehaviorProfile();
+    if (profile && profile.views.length > 0) {
+      await accountApi.putBehaviorProfile(profile);
+    }
+  } catch {
+    // Non-critical
   }
 }
 

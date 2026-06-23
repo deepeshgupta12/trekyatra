@@ -13,6 +13,8 @@ from app.modules.products.service import build_download_url
 from app.modules.products.models import UserOrder
 from sqlalchemy import select as sa_select
 from app.schemas.account import (
+    BehaviorProfilePayload,
+    BehaviorProfileResponse,
     BookmarkBySlugCreate,
     BookmarkCheckResponse,
     BookmarkCreate,
@@ -197,3 +199,24 @@ def delete_comparison(
     deleted = account_service.delete_comparison(db, current_user.id, comparison_id)
     if not deleted:
         raise HTTPException(status_code=404, detail="Comparison not found.")
+
+
+# --- Behavior Profile ---
+
+@router.get("/behavior-profile", response_model=BehaviorProfileResponse)
+def get_behavior_profile(
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    data = account_service.get_behavior_profile(db, current_user.id)
+    return BehaviorProfileResponse(**data) if data else BehaviorProfileResponse()
+
+
+@router.put("/behavior-profile", response_model=BehaviorProfileResponse)
+def put_behavior_profile(
+    body: BehaviorProfilePayload,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    data = account_service.update_behavior_profile(db, current_user.id, body.model_dump())
+    return BehaviorProfileResponse(**data) if data else BehaviorProfileResponse()

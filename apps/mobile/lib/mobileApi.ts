@@ -286,6 +286,18 @@ export async function apiDelete(path: string): Promise<void> {
   }
 }
 
+export async function apiPut<T>(path: string, body: unknown): Promise<T> {
+  const resp = await fetchWithAuth(path, {
+    method: "PUT",
+    body: JSON.stringify(body),
+  });
+  if (!resp.ok) {
+    const data = await resp.json().catch(() => ({}));
+    throw new Error((data as { detail?: string }).detail ?? `Request failed: ${resp.status}`);
+  }
+  return resp.json() as Promise<T>;
+}
+
 export async function apiPatch<T>(path: string, body: unknown): Promise<T> {
   const resp = await fetchWithAuth(path, {
     method: "PATCH",
@@ -606,6 +618,21 @@ export interface DownloadResponse {
   downloaded_at: string;
 }
 
+// Cross-platform behavior profile sync shapes
+export interface BehaviorProfileEntry {
+  slug: string;
+  region: string;
+  difficulty: string;
+  season: string;
+  ts: number;
+}
+
+export interface BehaviorProfileData {
+  views: BehaviorProfileEntry[];
+  topRegions: string[];
+  topDifficulties: string[];
+}
+
 export const accountApi = {
   listComparisons: () =>
     apiGet<SavedComparison[]>("/api/v1/account/comparisons"),
@@ -629,6 +656,13 @@ export const accountApi = {
 
   getDownloadUrl: (orderId: string) =>
     apiPost<{ download_url: string }>(`/api/v1/account/downloads/${orderId}/url`, {}),
+
+  // Behavior profile — cross-platform personalization sync
+  getBehaviorProfile: () =>
+    apiGet<BehaviorProfileData>("/api/v1/account/behavior-profile"),
+
+  putBehaviorProfile: (profile: BehaviorProfileData) =>
+    apiPut<BehaviorProfileData>("/api/v1/account/behavior-profile", profile),
 };
 
 // Newsletter

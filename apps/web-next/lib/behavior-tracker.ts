@@ -1,11 +1,12 @@
 /**
  * Cookie-based behavior tracker for personalised recommendations.
- * No login required — works purely via localStorage.
  * Tracks which trek pages a user visits, building a preference profile.
+ * When the user is authenticated, the profile is also synced to the backend
+ * so it is available on mobile (cross-platform personalization sync).
  */
 
 const STORAGE_KEY = "ty_behavior_v1";
-const MAX_ENTRIES = 25;
+const MAX_ENTRIES = 50;
 
 export interface TrekViewEntry {
   slug: string;
@@ -29,7 +30,6 @@ export function recordTrekView(entry: Omit<TrekViewEntry, "ts">): void {
     const existing = readViews();
     const updated = [
       { ...entry, ts: Date.now() },
-      // deduplicate by slug, most recent first
       ...existing.filter((v) => v.slug !== entry.slug),
     ].slice(0, MAX_ENTRIES);
     localStorage.setItem(STORAGE_KEY, JSON.stringify(updated));
@@ -69,6 +69,59 @@ export function getBehaviorProfile(): BehaviorProfile | null {
 export function hasBehaviorData(): boolean {
   if (typeof window === "undefined") return false;
   return readViews().length > 0;
+}
+
+/**
+ * Push current localStorage profile to the backend.
+ * Fire-and-forget. Called after web login and on each trek view when authenticated.
+ */
+export async function syncBehaviorProfileToBackend(): Promise<void> {
+  if (typeof window === "undefined") return;
+  try {
+    const profile = getBehaviorProfile();
+    if (!profile) return;
+    const payload = {
+      views: profile.views,
+      topRegions: profile.topRegions,
+      topDifficulties: profile.topDifficulties,
+    };
+    await fetch("/api/v1/account/behavior-profile", {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      credentials: "include",
+      body: JSON.stringify(payload),
+    });
+  } catch {
+    // Non-critical — silent fail
+  }
+}
+
+/**
+ * Pull behavior profile from backend and merge with localStorage.
+ * Called once on web login for cross-platform sync.
+ */
+export async function pullAndMergeBehaviorProfileFromBackend(): Promise<void> {
+  if (typeof window === "undefined") return;
+  try {
+    const resp = await fetch("/api/v1/account/behavior-profile", {
+      credentials: "include",
+    });
+    if (!resp.ok) return;
+    const remote = (await resp.json()) as { views: TrekViewEntry[]; topRegions: string[]; topDifficulties: string[] };
+    const localViews = readViews();
+    const localSlugs = new Set(localViews.map((v) => v.slug));
+    const merged = [
+      ...localViews,
+      ...remote.views.filter((v) => !localSlugs.has(v.slug)),
+    ]
+      .sort((a, b) => b.ts - a.ts)
+      .slice(0, MAX_ENTRIES);
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(merged));
+    // Push merged back to backend
+    await syncBehaviorProfileToBackend();
+  } catch {
+    // Non-critical — silent fail
+  }
 }
 
 function readViews(): TrekViewEntry[] {

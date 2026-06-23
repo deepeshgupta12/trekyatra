@@ -42,6 +42,7 @@ const COMMON_MENU: MenuItem[] = [
 ];
 
 const INFO_MENU: MenuItem[] = [
+  { icon: "star-outline", label: "Go Premium", route: "/(tabs)/account/premium" as never },
   { icon: "information-circle-outline", label: "About TrekYatra", route: "/(tabs)/(home)/about" as never },
   { icon: "shield-checkmark-outline", label: "Safety Tips", route: "/(tabs)/(home)/safety" as never },
 ];
@@ -125,18 +126,25 @@ export function AppDrawer() {
   }
 
   function renderRow(item: MenuItem) {
+    const isPremium = item.label === "Go Premium";
     return (
       <TouchableOpacity
         key={item.label}
-        style={[styles.row, { backgroundColor: rowBg }]}
+        style={[
+          styles.row,
+          { backgroundColor: isPremium ? `${SAFFRON}12` : rowBg },
+        ]}
         onPress={() => navigate(item.route)}
         activeOpacity={0.7}
       >
-        <View style={[styles.rowIcon, { backgroundColor: isDark ? "rgba(255,255,255,0.06)" : "rgba(29,58,46,0.06)" }]}>
-          <Ionicons name={item.icon} size={18} color={colors.textSecondary} />
+        <View style={[
+          styles.rowIcon,
+          { backgroundColor: isPremium ? `${SAFFRON}22` : (isDark ? "rgba(255,255,255,0.06)" : "rgba(29,58,46,0.06)") },
+        ]}>
+          <Ionicons name={item.icon} size={18} color={isPremium ? SAFFRON : colors.textSecondary} />
         </View>
-        <Text style={[styles.rowLabel, { color: colors.textPrimary }]}>{item.label}</Text>
-        <Ionicons name="chevron-forward" size={14} color={colors.textMuted} />
+        <Text style={[styles.rowLabel, { color: isPremium ? SAFFRON : colors.textPrimary }]}>{item.label}</Text>
+        <Ionicons name="chevron-forward" size={14} color={isPremium ? SAFFRON : colors.textMuted} />
       </TouchableOpacity>
     );
   }

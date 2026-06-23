@@ -341,10 +341,12 @@ Mobile-adapted version of `lib/analytics.ts` for React Native:
 |-------|--------|
 | Foundation (M01–M05) | ✓ DONE (M01, M02, M03, M-DS1, M04, M05 complete) |
 | Discovery (M06–M08) | ✓ DONE (M06, M07a, M07b, M07c, M08 complete) |
-| User & Commerce (M09–M13) | M09 ✓ Done — M10 ✓ Done — M11 ✓ Done — M12, M13 Pending |
+| User & Commerce (M09–M13) | M09 ✓ Done — M10 ✓ Done — M11 ✓ Done — M12 ✓ Done — M13 ✓ Done |
 | Engagement & Analytics (M14–M15) | Pending |
 | Community (M16–M18) | Pending |
 | Contextual Intelligence (M19–M20) | Pending |
 | Content & Release (M21–M22) | Pending |
 
-**Current next step:** M12 — Digital Products (product catalog, Razorpay payment, secure download delivery).
+**Bugfix Pass 2 (2026-06-23) — DONE:** Cross-platform behavior sync (`behavior_profile` column + GET/PUT endpoints + mobile `pullAndMergeBehaviorProfile` on login + web `pullAndMergeBehaviorProfileFromBackend` on login + `syncBehaviorProfileToBackend` on trek view when authenticated); Go Premium saffron entry in AppDrawer; Explore FilterChips prominent saffron pill.
+
+**Current next step:** M14 — Push Notifications.

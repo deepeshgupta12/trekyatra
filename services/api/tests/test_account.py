@@ -234,3 +234,63 @@ def test_api_add_alert(authed_client):
     data = resp.json()
     assert data["trek_slug"] == "valley-of-flowers"
     assert data["active"] is True
+
+
+# --- Behavior Profile tests ---
+
+# TC-B21: GET /account/behavior-profile returns correct shape (resets to empty first)
+def test_api_behavior_profile_get_empty(authed_client):
+    # Reset to empty so this test is order-independent
+    authed_client.put("/api/v1/account/behavior-profile", json={"views": [], "topRegions": [], "topDifficulties": []})
+    resp = authed_client.get("/api/v1/account/behavior-profile")
+    assert resp.status_code == 200
+    data = resp.json()
+    assert data["views"] == []
+    assert data["topRegions"] == []
+    assert data["topDifficulties"] == []
+
+
+# TC-B22: PUT /account/behavior-profile stores and returns the profile
+def test_api_behavior_profile_put(authed_client):
+    payload = {
+        "views": [
+            {"slug": "kedarkantha", "region": "Uttarakhand", "difficulty": "Easy", "season": "winter", "ts": 1700000000},
+            {"slug": "hampta-pass", "region": "Himachal Pradesh", "difficulty": "Moderate", "season": "summer", "ts": 1700001000},
+        ],
+        "topRegions": ["Uttarakhand", "Himachal Pradesh"],
+        "topDifficulties": ["Easy", "Moderate"],
+    }
+    resp = authed_client.put("/api/v1/account/behavior-profile", json=payload)
+    assert resp.status_code == 200
+    data = resp.json()
+    assert len(data["views"]) == 2
+    assert data["views"][0]["slug"] == "kedarkantha"
+    assert data["topRegions"] == ["Uttarakhand", "Himachal Pradesh"]
+
+
+# TC-B23: GET after PUT returns the stored profile
+def test_api_behavior_profile_roundtrip(authed_client):
+    payload = {
+        "views": [{"slug": "roopkund", "region": "Uttarakhand", "difficulty": "Difficult", "season": "summer", "ts": 1700002000}],
+        "topRegions": ["Uttarakhand"],
+        "topDifficulties": ["Difficult"],
+    }
+    authed_client.put("/api/v1/account/behavior-profile", json=payload)
+    resp = authed_client.get("/api/v1/account/behavior-profile")
+    assert resp.status_code == 200
+    data = resp.json()
+    slugs = [v["slug"] for v in data["views"]]
+    assert "roopkund" in slugs
+    assert "Uttarakhand" in data["topRegions"]
+
+
+# TC-B24: PUT caps views at 50 entries
+def test_api_behavior_profile_view_cap(authed_client):
+    views = [
+        {"slug": f"trek-{i}", "region": "Uttarakhand", "difficulty": "Easy", "season": "summer", "ts": 1700000000 + i}
+        for i in range(60)
+    ]
+    payload = {"views": views, "topRegions": ["Uttarakhand"], "topDifficulties": ["Easy"]}
+    resp = authed_client.put("/api/v1/account/behavior-profile", json=payload)
+    assert resp.status_code == 200
+    assert len(resp.json()["views"]) == 50
