@@ -1025,6 +1025,47 @@ Frontend:
 
 ---
 
+### Step 78 — Trip Reports + Trail Conditions (shared backend + web surfaces) [DONE — 2026-06-24]
+
+Backend (shared with STEP-M17 mobile):
+- **`alembic/versions/20260624_0049_trip_reports.py`** (NEW): `trip_reports` + `trek_media` tables; 3 indexes each.
+- **`modules/reports/models.py`** (NEW): `TripReport` + `TrekMedia` ORM models.
+- **`modules/reports/schemas.py`** (NEW): `ReportIn`, `ReportOut`, `MediaOut`, `ConditionSummary`, `ReportPageOut`, `MediaUploadOut`, `ModerationIn`.
+- **`modules/reports/service.py`** (NEW): `upload_media` (Pillow resize→1920px, boto3 DO Spaces), `create_report`, `get_reports_for_trek`, `_compute_condition_summary`, `moderate_report`, `delete_report`, `get_moderation_queue`, `get_condition_summary`.
+- **`api/routes/reports.py`** (NEW): `public_router` (`GET /public/treks/{slug}/reports`), `auth_router` (`POST /reports`, `POST /reports/media/upload`, `DELETE /reports/{id}`), `admin_router` (`GET /admin/reports`, `PATCH /admin/reports/{id}/moderate`).
+- **`pyproject.toml`**: `Pillow>=10.0.0,<11.0.0` added.
+- **`tests/test_reports_m17.py`** (NEW): 8 tests TC-B-M17-01–08; 727/729 pass (2 pre-existing).
+
+Web frontend:
+- **`apps/web-next/lib/reports.ts`** (NEW): TypeScript interfaces + `fetchReports`, `submitReport`, `uploadPhoto`, `deleteReport`, `fetchModerationQueue`, `moderateReport`.
+- **`components/trek/ConditionSummaryBanner.tsx`** (NEW): Condition % bars + report count + last date.
+- **`components/trek/PhotoGallery.tsx`** (NEW): Full-screen overlay, keyboard nav (←→ Esc).
+- **`components/trek/TripReportCard.tsx`** (NEW): Condition badge, date, title, body, photo thumbnails → gallery.
+- **`components/trek/AddReportForm.tsx`** (NEW): Controlled form, live char counter, immediate photo upload, max 3 photos.
+- **`components/trek/TrekReportsSection.tsx`** (NEW): Load-more, auth-gate, post-submit success banner.
+- **`app/(public)/trek/[slug]/page.tsx`**: `<TrekReportsSection>` added before `<StickyMobileCTA>`.
+- **`app/(admin)/admin/reports/page.tsx`** (NEW): Moderation queue — pending/approved/rejected tabs, approve/reject with optional reason, photo thumbnails.
+- **`app/(admin)/admin/layout.tsx`**: "Community" nav group with "Trip Reports" link added.
+
+**Verification:** 727/729 BE tests pass (2 pre-existing) | `next build` ✅ zero errors.
+
+### Step M17 — Trip Reports + Photo Gallery (mobile surfaces) [DONE — 2026-06-24]
+
+- **`apps/mobile/components/trek/TrekTabBar.tsx`**: `TrekTab` type extended with `"reports"`; TABS array gains `{ key: "reports", label: "Trail" }`.
+- **`apps/mobile/lib/mobileApi.ts`**: `apiUploadFile<T>` export added (multipart FormData, no Content-Type override).
+- **`apps/mobile/hooks/useReports.ts`** (NEW): `useReports` hook — `fetchReports` paginated, `submitReport`, `uploadPhoto` (multipart via `apiUploadFile`), `deleteReport`, `reload`.
+- **`apps/mobile/components/reports/ConditionSummaryBanner.tsx`** (NEW): Condition bars, report count, last-report date.
+- **`apps/mobile/components/reports/TripReportCard.tsx`** (NEW): Condition badge, date, title, body, photo thumbnails → `PhotoGallery`.
+- **`apps/mobile/components/reports/PhotoGallery.tsx`** (NEW): Modal + FlatList pagingEnabled + expo-image full-screen viewer.
+- **`apps/mobile/components/reports/PhotoPicker.tsx`** (NEW): expo-image-picker + expo-image-manipulator resize→1920px, 3-photo limit.
+- **`apps/mobile/components/reports/AddReportSheet.tsx`** (NEW): Slide-up Modal form — trek date, condition radio, title, body with char counter, PhotoPicker, submit.
+- **`apps/mobile/app/(tabs)/(home)/trek/[slug].tsx`**: New imports; `addReportVisible` state; `useReports(slug)` hook; "Trail" tab renders ConditionSummaryBanner + TripReportCard list + load-more + AddReportSheet; auth-gated CTA.
+- **`apps/mobile/package.json`**: `expo-image-picker@~56.0.18` + `expo-image-manipulator@~56.0.19` installed.
+
+**Verification:** `npx tsc --noEmit` ✅ zero errors.
+
+---
+
 ### Post-Step-76 TrekSage Hotfixes [DONE — 2026-06-17/18, commits 3a33716 / 88ddd49 / 387de83]
 
 Three follow-up fixes applied after Step 76 to address production issues found during user testing:

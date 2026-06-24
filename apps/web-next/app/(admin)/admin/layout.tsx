@@ -61,6 +61,12 @@ const NAV_GROUPS = [
     ],
   },
   {
+    label: "Community",
+    items: [
+      { href: "/admin/reports", label: "Trip Reports", icon: MessageSquare },
+    ],
+  },
+  {
     label: "System",
     items: [
       { href: "/admin/cms", label: "Master CMS", icon: Database },

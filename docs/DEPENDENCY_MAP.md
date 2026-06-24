@@ -2276,3 +2276,45 @@ New `user_trek_history` table + checkin API routes + history screen. Trek detail
 | `apps/mobile/app/(tabs)/account/_layout.tsx` | `history` Stack.Screen added | LOW — additive Screen |
 | `apps/mobile/components/account/AccountDashboard.tsx` | "Trek History" menu row added | LOW — additive row |
 | `apps/mobile/app/(tabs)/(home)/trek/[slug].tsx` | `useCheckin.isDone` on mount; CTA + banner + `CheckinSheet` | MEDIUM — trek detail screen is critical; changes are purely additive (new state, new conditional UI elements) |
+
+### Step 78 — Trip Reports + Trail Conditions (shared backend + web surfaces) [DONE — 2026-06-24]
+
+New `trip_reports` + `trek_media` tables, moderation queue, public reports API, web UI with photo gallery, admin moderation page.
+
+| File | Change | Blast Radius |
+|------|--------|-------------|
+| `services/api/alembic/versions/20260624_0049_trip_reports.py` (NEW) | `trip_reports` + `trek_media` tables; 3 indexes each | LOW — new tables |
+| `services/api/app/modules/reports/models.py` (NEW) | `TripReport`/`TrekMedia` ORM models | LOW — new module |
+| `services/api/app/db/base.py` | `TripReport`/`TrekMedia` imported + registered | LOW — additive imports |
+| `services/api/app/modules/reports/schemas.py` (NEW) | `ReportIn`, `ReportOut`, `MediaOut`, `ConditionSummary`, `ReportPageOut`, `MediaUploadOut`, `ModerationIn` | LOW — new schemas |
+| `services/api/app/modules/reports/service.py` (NEW) | `upload_media`, `create_report`, `get_reports_for_trek`, `moderate_report`, `delete_report`, `get_moderation_queue`, `get_condition_summary` | LOW — new service, no existing functions modified |
+| `services/api/app/api/routes/reports.py` (NEW) | `public_router`, `auth_router`, `admin_router` — 5 new endpoints | LOW — additive routes |
+| `services/api/app/api/router.py` | 3 new router imports + registrations | LOW — additive |
+| `services/api/pyproject.toml` | `Pillow>=10.0.0,<11.0.0` added | LOW — new library, no conflicts |
+| `services/api/tests/test_reports_m17.py` (NEW) | 8 tests TC-B-M17-01–08 | LOW — test file only |
+| `apps/web-next/lib/reports.ts` (NEW) | TypeScript interfaces + API client functions | LOW — new module |
+| `apps/web-next/components/trek/ConditionSummaryBanner.tsx` (NEW) | Condition % bars | LOW — leaf component |
+| `apps/web-next/components/trek/PhotoGallery.tsx` (NEW) | Full-screen photo overlay | LOW — leaf component |
+| `apps/web-next/components/trek/TripReportCard.tsx` (NEW) | Report card with photo thumbnails | LOW — leaf component |
+| `apps/web-next/components/trek/AddReportForm.tsx` (NEW) | Report submission form | LOW — leaf component |
+| `apps/web-next/components/trek/TrekReportsSection.tsx` (NEW) | Reports section orchestrator | LOW — new section; wired into trek detail page |
+| `apps/web-next/app/(public)/trek/[slug]/page.tsx` | `<TrekReportsSection slug>` added before `<StickyMobileCTA>` | LOW — additive section; no existing layout changed |
+| `apps/web-next/app/(admin)/admin/reports/page.tsx` (NEW) | Admin moderation queue | LOW — new admin page |
+| `apps/web-next/app/(admin)/admin/layout.tsx` | "Community" nav group + Trip Reports link | LOW — additive nav group |
+
+### Step M17 — Trip Reports + Photo Gallery (mobile surfaces) [DONE — 2026-06-24]
+
+5th "Trail" tab on TrekDetailScreen, mobile reports components, photo picker with resize.
+
+| File | Change | Blast Radius |
+|------|--------|-------------|
+| `apps/mobile/components/trek/TrekTabBar.tsx` | `TrekTab` type: added `"reports"`; TABS: added `{ key: "reports", label: "Trail" }` | MEDIUM — `TrekTab` type used by trek detail screen; updated `TAB_SECTION_KEYS` to include `reports: null` in [slug].tsx |
+| `apps/mobile/lib/mobileApi.ts` | `apiUploadFile<T>` export added | LOW — additive export |
+| `apps/mobile/hooks/useReports.ts` (NEW) | `useReports` hook | LOW — new hook |
+| `apps/mobile/components/reports/ConditionSummaryBanner.tsx` (NEW) | Condition bars | LOW — leaf component |
+| `apps/mobile/components/reports/TripReportCard.tsx` (NEW) | Report card + gallery trigger | LOW — leaf component |
+| `apps/mobile/components/reports/PhotoGallery.tsx` (NEW) | Modal full-screen FlatList viewer | LOW — leaf component |
+| `apps/mobile/components/reports/PhotoPicker.tsx` (NEW) | expo-image-picker + resize + upload | LOW — leaf component |
+| `apps/mobile/components/reports/AddReportSheet.tsx` (NEW) | Slide-up form Modal | LOW — leaf component |
+| `apps/mobile/app/(tabs)/(home)/trek/[slug].tsx` | New imports; `addReportVisible` state; `useReports`; "Trail" tab render; `AddReportSheet` | MEDIUM — critical screen; all changes additive (new tab branch in existing if/else) |
+| `apps/mobile/package.json` | `expo-image-picker@~56.0.18` + `expo-image-manipulator@~56.0.19` added | LOW — new libraries; no API conflicts |

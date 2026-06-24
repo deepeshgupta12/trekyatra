@@ -148,6 +148,7 @@ Last updated: 2026-05-27 (Step 64)
 | `/admin/cdp/webhooks` | CDP Webhooks | Campaign trigger webhook rules CRUD — create/list/delete outbound HTTP hooks per event (Step 67) |
 | `/admin/cdp/activity` | CDP User Activity | Email lookup → chronological event timeline (Step 65) |
 | `/admin/cdp/gsc` | CDP GSC | Google Search Console performance data |
+| `/admin/reports` | Trip Reports moderation queue | Pending/Approved/Rejected filter tabs; approve or reject UGC trail condition reports — STEP-78 |
 | `/admin/logs` | System logs | NOT BUILT — post-launch |
 | `/admin/settings` | Settings | NOT BUILT — post-launch |
 
@@ -172,6 +173,12 @@ Last updated: 2026-05-27 (Step 64)
 | Pattern | Notes |
 |---------|-------|
 | `/api/v1/health` | Health check |
+| `/api/v1/public/treks/{slug}/reports` | **Public GET** — paginated approved trip reports + condition_summary envelope; STEP-78 |
+| `/api/v1/reports` | **Auth POST** — submit a trip report (status=pending); STEP-78 |
+| `/api/v1/reports/media/upload` | **Auth POST** — upload report photo to DO Spaces → CDN URL (max 5MB, JPEG/PNG/WebP); STEP-78 |
+| `/api/v1/reports/{id}` | **Auth DELETE** — delete own pending report; STEP-78 |
+| `/api/v1/admin/reports` | **Admin GET** — moderation queue filterable by status; STEP-78 |
+| `/api/v1/admin/reports/{id}/moderate` | **Admin PATCH** — approve or reject a report; STEP-78 |
 | `/api/v1/treks/{slug}/profile` | **Public GET** — full structured `TrekProfile`; Step 72 |
 | `/api/v1/treks/compare` | **Public POST** — compare 2-4 trek slugs, returns rows + cached AI trade-off summary; Step 72 |
 | `/api/v1/treks/{slug}/ask` | **Public POST** — Trek Detail Q&A (TrekSage), cached Haiku answers; Step 72 |

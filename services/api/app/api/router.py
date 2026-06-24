@@ -57,6 +57,9 @@ from app.api.routes.mobile import router as mobile_router
 from app.api.routes.auth_mobile import router as auth_mobile_router
 from app.api.routes.ai_log import router as ai_log_router
 from app.api.routes.treksage import router as treksage_router
+from app.api.routes.reports import public_router as reports_public_router
+from app.api.routes.reports import auth_router as reports_auth_router
+from app.api.routes.reports import admin_router as reports_admin_router
 
 api_router = APIRouter()
 api_router.include_router(health_router, tags=["health"])
@@ -116,3 +119,6 @@ api_router.include_router(auth_mobile_router)
 api_router.include_router(mobile_router)
 api_router.include_router(ai_log_router)
 api_router.include_router(admin_push_router)
+api_router.include_router(reports_public_router)
+api_router.include_router(reports_auth_router)
+api_router.include_router(reports_admin_router)

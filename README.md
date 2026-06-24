@@ -380,6 +380,19 @@ trekyatra/
 | **Mobile TrekSage chat tab** — center FAB (chatbubbles icon, saffron); DISCOVER/COMPARE/PLAN prompt chips; message bubbles with trek card chips; AsyncStorage session persistence; Plan tab moves to regular sparkles icon | Done |
 | `GET /api/v1/admin/treks/ai-logs` — added `source` + `tool_name` filter query params; default limit 50→100 | Done |
 
+### Community — Trip Reports + Trail Conditions (Step 78 + M17)
+| Feature | Status |
+|---------|--------|
+| User-submitted trail condition reports (open/caution/closed/unknown) with title, body, trek date | Done |
+| Photo upload to DO Spaces (Pillow resize→1920px, max 3 photos per report, max 5 MB each) | Done |
+| Admin moderation queue — pending/approved/rejected tabs, approve/reject with reason | Done |
+| Condition summary banner on trek detail page (% open/caution/closed bars, last report date) | Done |
+| Photo gallery on web (full-screen overlay, keyboard ←→Esc navigation) | Done |
+| Trail Conditions tab on mobile trek detail screen (5th "Trail" tab) | Done |
+| Mobile photo gallery (FlatList pagingEnabled full-screen viewer, expo-image) | Done |
+| Mobile photo picker (expo-image-picker + expo-image-manipulator resize, 3-photo limit) | Done |
+| Mobile AddReportSheet — slide-up form Modal with condition radio, body with char counter | Done |
+
 ---
 
 ## Local Development Setup
@@ -546,6 +559,9 @@ cd apps/web-next && npm run build
 | Admin trek data | `GET /api/v1/admin/treks/data-quality`, `PATCH /api/v1/admin/treks/{slug}/meta`, `POST /api/v1/admin/treks/{slug}/backfill`, `POST /api/v1/admin/treks/backfill-all`, `GET /api/v1/admin/treks/ai-logs` | Admin auth required |
 | "TrekSage" MCP server | `https://api.trekyatra.co.in/mcp` (Streamable HTTP, 8 tools) | Read-only tools open; `create_trek_plan_lead`/`translate_trek_content` require `X-MCP-Key` |
 | TrekSage conversational AI | `POST /api/v1/treksage/chat`, `GET /api/v1/treksage/chat/{session_key}/history` | Public (anonymous session auto-created; user auth optional for linked history) |
+| Trip Reports (public) | `GET /api/v1/public/treks/{slug}/reports` — paginated approved reports + condition_summary | Public |
+| Trip Reports (auth) | `POST /api/v1/reports`, `POST /api/v1/reports/media/upload`, `DELETE /api/v1/reports/{id}` | User auth required |
+| Trip Reports (admin) | `GET /api/v1/admin/reports`, `PATCH /api/v1/admin/reports/{id}/moderate` | Admin auth required |
 
 Full API docs available at http://localhost:8000/docs when the backend is running.
 
@@ -575,6 +591,7 @@ Full API docs available at http://localhost:8000/docs when the backend is runnin
 | Trek intelligence (Step 72, on cms_pages) | `trek_region`, `trek_max_altitude_ft`, `trek_duration_days_min/max`, `trek_best/open/avoid_months`, `trek_permit_required/notes`, `trek_budget_min/max`, `trek_themes`, `trek_crowd_level`, `trek_beginner/solo/family_friendly`, `trek_operator_available`, `trek_is_unsafe_closed`, `trek_data_confidence`, `trek_last_verified_at` |
 | AI logging + Q&A cache (Step 72) | `ai_interaction_logs`, `trek_qa_cache`; `lead_submissions.details_json` (operator-help fields) |
 | TrekSage chat (Step 73) | `treksage_chat_sessions` (id, user_id nullable FK, session_key unique, created_at, last_active_at), `treksage_chat_messages` (id, session_id FK cascade, role, content, tool_calls_json, created_at) |
+| Community / Trip Reports (Step 78) | `trip_reports` (id, user_id FK, trek_slug, title, body, condition, trek_date, status pending/approved/rejected, moderated_by nullable, moderated_at, created_at), `trek_media` (id, report_id FK, user_id, trek_slug, url, s3_key, width, height, file_size, uploaded_at) |
 | CDP (Step 64) | `analytics_events`, `analytics_sessions`, `user_traits`, `attribution_touchpoints`, `gsc_performance` |
 
 ---

@@ -31,6 +31,10 @@ import { recordTrekView } from "@/lib/behaviorProfile";
 import { contentApi } from "@/lib/mobileApi";
 import type { TrekListItem } from "@/lib/mobileApi";
 import type { Block } from "@/components/cms/types";
+import { ConditionSummaryBanner } from "@/components/reports/ConditionSummaryBanner";
+import { TripReportCard } from "@/components/reports/TripReportCard";
+import { AddReportSheet } from "@/components/reports/AddReportSheet";
+import { useReports } from "@/hooks/useReports";
 
 export default function TrekDetailScreen() {
   const { slug } = useLocalSearchParams<{ slug: string }>();
@@ -42,6 +46,8 @@ export default function TrekDetailScreen() {
   const [contentsVisible, setContentsVisible] = useState(false);
   const [checkinVisible, setCheckinVisible] = useState(false);
   const [alreadyDone, setAlreadyDone] = useState(false);
+  const [addReportVisible, setAddReportVisible] = useState(false);
+  const reports = useReports(slug ?? "");
   const { isDone } = useCheckin();
   const scrollViewRef = useRef<ScrollView>(null);
   const headingOffsets = useRef<Record<string, number>>({});
@@ -88,6 +94,7 @@ export default function TrekDetailScreen() {
     packing: "packing",
     permits: "permits",
     costs: "cost_estimate",
+    reports: null,
   };
 
   function getTabHtml(): string | null {
@@ -247,7 +254,62 @@ export default function TrekDetailScreen() {
               <Text style={[styles.contentsPillText, { color: colors.textSecondary }]}>☰ Contents</Text>
             </TouchableOpacity>
           )}
-          {getTabContent() ? (
+          {activeTab === "reports" ? (
+            <View style={styles.reportsTab}>
+              <Text style={[styles.sectionTitle, { color: colors.textPrimary }]}>Trail Conditions</Text>
+              <Text style={[styles.sectionSubtitle, { color: colors.textMuted }]}>
+                Crowdsourced reports from hikers
+              </Text>
+              {reports.loading ? (
+                <ActivityIndicator color="#E8702A" style={{ marginTop: 20 }} />
+              ) : reports.data ? (
+                <>
+                  <ConditionSummaryBanner summary={reports.data.condition_summary} />
+                  {reports.data.items.map((r) => (
+                    <TripReportCard key={r.id} report={r} />
+                  ))}
+                  {reports.data.has_more && (
+                    <TouchableOpacity
+                      onPress={reports.loadMore}
+                      disabled={reports.loadingMore}
+                      style={styles.loadMoreBtn}
+                    >
+                      {reports.loadingMore ? (
+                        <ActivityIndicator color="#E8702A" size="small" />
+                      ) : (
+                        <Text style={{ color: "#E8702A", fontSize: 13, fontWeight: "600" }}>
+                          Load more
+                        </Text>
+                      )}
+                    </TouchableOpacity>
+                  )}
+                </>
+              ) : null}
+
+              {/* Add report CTA */}
+              <View style={[styles.addReportRow, { borderTopColor: isDark ? "rgba(255,255,255,0.08)" : "rgba(0,0,0,0.08)" }]}>
+                {user ? (
+                  <TouchableOpacity
+                    style={styles.addReportBtn}
+                    onPress={() => setAddReportVisible(true)}
+                    accessibilityRole="button"
+                    accessibilityLabel="Add trail report"
+                  >
+                    <Text style={styles.addReportText}>+ Add a report</Text>
+                  </TouchableOpacity>
+                ) : (
+                  <TouchableOpacity
+                    onPress={() => router.push("/(auth)/sign-in" as never)}
+                    accessibilityRole="button"
+                  >
+                    <Text style={[styles.signInPrompt, { color: colors.textMuted }]}>
+                      <Text style={{ color: "#E8702A" }}>Sign in</Text> to add a trail report
+                    </Text>
+                  </TouchableOpacity>
+                )}
+              </View>
+            </View>
+          ) : getTabContent() ? (
             <CMSContentRenderer
               bodyJson={getTabContent()}
               onHeadingLayout={activeTab === "guide" ? handleHeadingLayout : undefined}
@@ -298,6 +360,19 @@ export default function TrekDetailScreen() {
           setCheckinVisible(false);
           setAlreadyDone(true);
         }}
+      />
+
+      {/* Add report sheet */}
+      <AddReportSheet
+        visible={addReportVisible}
+        trekSlug={trek.slug}
+        onClose={() => setAddReportVisible(false)}
+        onSubmit={async (input) => {
+          await reports.submitReport(input);
+          setAddReportVisible(false);
+          reports.reload();
+        }}
+        onUploadPhoto={reports.uploadPhoto}
       />
     </View>
   );
@@ -368,5 +443,39 @@ const styles = StyleSheet.create({
   contentsPillText: {
     fontSize: 13,
     fontWeight: "600",
+  },
+  reportsTab: {
+    paddingHorizontal: 16,
+    paddingTop: 16,
+  },
+  sectionTitle: {
+    fontSize: 18,
+    fontWeight: "700",
+    marginBottom: 4,
+  },
+  sectionSubtitle: {
+    fontSize: 13,
+    marginBottom: 16,
+  },
+  addReportRow: {
+    marginTop: 20,
+    paddingTop: 16,
+    borderTopWidth: 1,
+  },
+  addReportBtn: {
+    backgroundColor: "#E8702A",
+    borderRadius: 12,
+    paddingVertical: 12,
+    alignItems: "center",
+  },
+  addReportText: {
+    color: "#fff",
+    fontSize: 14,
+    fontWeight: "700",
+  },
+  signInPrompt: { fontSize: 13 },
+  loadMoreBtn: {
+    alignItems: "center",
+    paddingVertical: 12,
   },
 });

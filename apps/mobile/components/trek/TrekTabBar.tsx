@@ -2,13 +2,14 @@ import { View, Text, TouchableOpacity, StyleSheet } from "react-native";
 import { useTheme } from "@/hooks/useTheme";
 import { GlassSurface } from "@/components/ui/GlassSurface";
 
-export type TrekTab = "guide" | "packing" | "permits" | "costs";
+export type TrekTab = "guide" | "packing" | "permits" | "costs" | "reports";
 
 const TABS: { key: TrekTab; label: string }[] = [
   { key: "guide", label: "Guide" },
   { key: "packing", label: "Packing" },
   { key: "permits", label: "Permits" },
   { key: "costs", label: "Costs" },
+  { key: "reports", label: "Trail" },
 ];
 
 interface TrekTabBarProps {
