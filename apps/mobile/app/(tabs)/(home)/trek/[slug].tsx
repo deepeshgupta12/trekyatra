@@ -198,26 +198,30 @@ export default function TrekDetailScreen() {
               </Text>
             </TouchableOpacity>
           )}
-          {/* Check-in banner / CTA */}
-          {user && (
-            alreadyDone ? (
-              <View style={[styles.checkinBanner, { backgroundColor: isDark ? "rgba(29,162,84,0.12)" : "rgba(29,162,84,0.08)", borderColor: isDark ? "rgba(29,162,84,0.25)" : "rgba(29,162,84,0.2)" }]}>
-                <Text style={[styles.checkinBannerText, { color: isDark ? "#4ade80" : "#166534" }]}>
-                  ✓ You've done this trek
-                </Text>
-              </View>
-            ) : (
-              <TouchableOpacity
-                style={[styles.checkinCta, { backgroundColor: isDark ? "rgba(232,112,42,0.12)" : "rgba(232,112,42,0.08)", borderColor: isDark ? "rgba(232,112,42,0.25)" : "rgba(232,112,42,0.2)" }]}
-                onPress={() => setCheckinVisible(true)}
-                accessibilityRole="button"
-                accessibilityLabel="Log this trek"
-              >
-                <Text style={[styles.checkinCtaText, { color: colors.accent }]}>
-                  🏔️ I did this trek — log it
-                </Text>
-              </TouchableOpacity>
-            )
+          {/* Check-in banner / CTA — always visible; auth gate inside onPress */}
+          {alreadyDone ? (
+            <View style={[styles.checkinBanner, { backgroundColor: isDark ? "rgba(29,162,84,0.12)" : "rgba(29,162,84,0.08)", borderColor: isDark ? "rgba(29,162,84,0.25)" : "rgba(29,162,84,0.2)" }]}>
+              <Text style={[styles.checkinBannerText, { color: isDark ? "#4ade80" : "#166534" }]}>
+                ✓ You've done this trek
+              </Text>
+            </View>
+          ) : (
+            <TouchableOpacity
+              style={[styles.checkinCta, { backgroundColor: isDark ? "rgba(232,112,42,0.12)" : "rgba(232,112,42,0.08)", borderColor: isDark ? "rgba(232,112,42,0.25)" : "rgba(232,112,42,0.2)" }]}
+              onPress={() => {
+                if (!user) {
+                  router.push("/(auth)/sign-in" as never);
+                } else {
+                  setCheckinVisible(true);
+                }
+              }}
+              accessibilityRole="button"
+              accessibilityLabel="Log this trek"
+            >
+              <Text style={[styles.checkinCtaText, { color: colors.accent }]}>
+                🏔️ I did this trek — log it
+              </Text>
+            </TouchableOpacity>
           )}
         </View>
 
@@ -283,20 +287,18 @@ export default function TrekDetailScreen() {
         onClose={() => setContentsVisible(false)}
       />
 
-      {/* Trek check-in sheet */}
-      {user && (
-        <CheckinSheet
-          visible={checkinVisible}
-          trekSlug={trek.slug}
-          trekTitle={trek.title}
-          trekState={trek.trek_state ?? undefined}
-          onClose={() => setCheckinVisible(false)}
-          onSuccess={() => {
-            setCheckinVisible(false);
-            setAlreadyDone(true);
-          }}
-        />
-      )}
+      {/* Trek check-in sheet — only opens when user is signed in */}
+      <CheckinSheet
+        visible={checkinVisible}
+        trekSlug={trek.slug}
+        trekTitle={trek.title}
+        trekState={trek.trek_state ?? undefined}
+        onClose={() => setCheckinVisible(false)}
+        onSuccess={() => {
+          setCheckinVisible(false);
+          setAlreadyDone(true);
+        }}
+      />
     </View>
   );
 }
