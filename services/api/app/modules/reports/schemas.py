@@ -10,7 +10,7 @@ from pydantic import BaseModel, Field
 class ReportIn(BaseModel):
     trek_slug: str
     title: Optional[str] = None
-    body: str = Field(..., min_length=50, max_length=2000)
+    body: str = Field(..., min_length=20, max_length=2000)
     condition: Literal["open", "caution", "closed", "unknown"] = "unknown"
     trek_date: date
     photo_urls: list[str] = Field(default_factory=list, max_length=3)

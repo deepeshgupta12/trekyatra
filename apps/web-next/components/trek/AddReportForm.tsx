@@ -28,7 +28,7 @@ export function AddReportForm({ trekSlug, onSuccess }: Props) {
   const fileRef = useRef<HTMLInputElement>(null);
 
   const bodyLen = body.length;
-  const bodyValid = bodyLen >= 50 && bodyLen <= 2000;
+  const bodyValid = bodyLen >= 20 && bodyLen <= 2000;
 
   async function handlePhotoAdd(e: React.ChangeEvent<HTMLInputElement>) {
     const files = Array.from(e.target.files ?? []);
@@ -62,7 +62,7 @@ export function AddReportForm({ trekSlug, onSuccess }: Props) {
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    if (!bodyValid) { setError("Experience must be 50–2000 characters"); return; }
+    if (!bodyValid) { setError("Experience must be 20–2000 characters"); return; }
     setError("");
     setSubmitting(true);
     try {
@@ -147,7 +147,7 @@ export function AddReportForm({ trekSlug, onSuccess }: Props) {
           rows={4}
           minLength={50}
           maxLength={2000}
-          placeholder="Describe trail conditions, difficulty, what you encountered... (min 50 characters)"
+          placeholder="Describe trail conditions, difficulty, what you encountered... (min 20 characters)"
           className="w-full rounded-lg border border-foreground/15 bg-background px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-accent resize-none"
         />
         <p className={`text-xs mt-1 text-right ${bodyValid ? "text-foreground/30" : "text-amber-500"}`}>

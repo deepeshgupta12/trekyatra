@@ -74,8 +74,8 @@ export function AddReportSheet({ visible, trekSlug, onClose, onSubmit, onUploadP
   }
 
   async function handleSubmit() {
-    if (body.trim().length < 50) {
-      setError("Please write at least 50 characters.");
+    if (body.trim().length < 20) {
+      setError("Please write at least 20 characters.");
       return;
     }
     setError(null);
