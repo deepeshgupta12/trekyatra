@@ -4,6 +4,7 @@ import { useAuthStore, type AuthUser } from "@/stores/authStore";
 import * as authApiLib from "@/lib/authApi";
 import { signInWithApple as nativeAppleSignIn } from "@/lib/appleAuth";
 import { promptBiometric } from "@/lib/biometricAuth";
+import { setUserId as setAnalyticsUserId } from "@/lib/identity";
 
 const BIOMETRIC_KEY = "biometric_enabled";
 
@@ -71,18 +72,21 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const result = await authApiLib.signIn(email, password);
     const user = await resolveUser(result);
     await setAuth(result.access_token, result.refresh_token, user);
+    setAnalyticsUserId(user.id);
   }
 
   async function signUp(email: string, password: string, fullName?: string): Promise<void> {
     const result = await authApiLib.signUp(email, password, fullName);
     const user = await resolveUser(result);
     await setAuth(result.access_token, result.refresh_token, user);
+    setAnalyticsUserId(user.id);
   }
 
   async function signInWithGoogle(googleAccessToken: string): Promise<void> {
     const result = await authApiLib.signInWithGoogle(googleAccessToken);
     const user = await resolveUser(result);
     await setAuth(result.access_token, result.refresh_token, user);
+    setAnalyticsUserId(user.id);
   }
 
   async function signInWithApple(): Promise<void> {
@@ -104,7 +108,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         signUp,
         signInWithGoogle,
         signInWithApple,
-        signOut: clearAuth,
+        signOut: async () => { setAnalyticsUserId(null); await clearAuth(); },
       }}
     >
       {children}

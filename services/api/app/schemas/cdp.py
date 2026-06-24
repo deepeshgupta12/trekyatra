@@ -31,10 +31,12 @@ class EventIn(BaseModel):
     city: Optional[str] = None
     consent_given: bool = False
     is_internal: bool = False
+    platform: Optional[str] = "web"
+    app_version: Optional[str] = None
 
 
 class BatchEventIn(BaseModel):
-    events: List[EventIn] = Field(..., max_length=20)
+    events: List[EventIn] = Field(..., max_length=50)
 
 
 class EventOut(BaseModel):

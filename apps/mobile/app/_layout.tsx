@@ -28,6 +28,7 @@ import { AnimatedSplash } from "@/components/ui/AnimatedSplash";
 import { AppDrawer } from "@/components/layout/AppDrawer";
 import { incrementOpenCount, requestAndRegisterPushToken, saveToInbox } from "@/services/notificationService";
 import * as Notifications from "expo-notifications";
+import { AnalyticsProvider } from "@/providers/AnalyticsProvider";
 
 Sentry.init({
   dsn: process.env.EXPO_PUBLIC_SENTRY_DSN,
@@ -119,6 +120,7 @@ export default Sentry.wrap(function RootLayout() {
       <QueryProvider>
         <OnboardingProvider>
           <AuthProvider>
+            <AnalyticsProvider>
             <AuthGate>
               <Stack screenOptions={{ headerShown: false }}>
                 <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
@@ -128,6 +130,7 @@ export default Sentry.wrap(function RootLayout() {
               </Stack>
               <AppDrawer />
             </AuthGate>
+            </AnalyticsProvider>
           </AuthProvider>
         </OnboardingProvider>
       </QueryProvider>

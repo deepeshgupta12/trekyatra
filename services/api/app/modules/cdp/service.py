@@ -63,6 +63,8 @@ def log_event(db: Session, event_in: EventIn, user_id: Optional[uuid.UUID] = Non
         city=event_in.city,
         consent_given=event_in.consent_given,
         is_internal=_is_internal_event(event_in),
+        platform=event_in.platform,
+        app_version=event_in.app_version,
     )
     db.add(event)
     db.commit()

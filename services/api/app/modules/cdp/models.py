@@ -33,6 +33,8 @@ class AnalyticsEvent(Base):
     ip_hash = Column(String(64), nullable=True)
     consent_given = Column(Boolean(), nullable=False, default=False)
     is_internal = Column(Boolean(), nullable=False, default=False)
+    platform = Column(String(16), nullable=True, server_default="web")
+    app_version = Column(String(16), nullable=True)
     created_at = Column(DateTime(timezone=True), server_default=func.now(), nullable=False)
 
 
@@ -58,6 +60,8 @@ class AnalyticsSession(Base):
     converted = Column(Boolean(), nullable=False, default=False)
     conversion_event = Column(String(128), nullable=True)
     extra = Column(JSONB, nullable=False, default=dict)
+    platform = Column(String(16), nullable=True, server_default="web")
+    app_version = Column(String(16), nullable=True)
     created_at = Column(DateTime(timezone=True), server_default=func.now(), nullable=False)
 
 

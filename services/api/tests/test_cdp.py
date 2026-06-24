@@ -102,7 +102,7 @@ def test_batch_ingest_returns_count():
 
 
 def test_batch_ingest_exceeds_limit():
-    """TC-B06: Batch of more than 20 events returns 422."""
+    """TC-B06: Batch of more than 50 events returns 422 (limit bumped to 50 in M15)."""
     events = [
         {
             "anonymous_id": "anon-batch-overflow",
@@ -110,7 +110,7 @@ def test_batch_ingest_exceeds_limit():
             "event_name": "page_view",
             "consent_given": True,
         }
-        for _ in range(21)
+        for _ in range(51)
     ]
     res = client.post("/api/v1/analytics/events/batch", json={"events": events})
     assert res.status_code == 422
