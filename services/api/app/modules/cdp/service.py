@@ -69,6 +69,11 @@ def log_event(db: Session, event_in: EventIn, user_id: Optional[uuid.UUID] = Non
     db.add(event)
     db.commit()
     db.refresh(event)
+    # Ensure a UserTrait row exists for every event source (web + mobile app).
+    # Web users get full trait refresh via session lifecycle; mobile users only
+    # have events, so we create/update a lightweight trait here so they appear
+    # in the CDP users view.
+    _touch_user_trait(db, event_in.anonymous_id, user_id)
     return event
 
 
@@ -98,12 +103,41 @@ def batch_log_events(
             country=e.country,
             city=e.city,
             consent_given=e.consent_given,
+            platform=e.platform,
+            app_version=e.app_version,
         )
         for e in events
     ]
     db.add_all(rows)
     db.commit()
+    # Touch UserTrait for each unique anonymous_id in the batch (offline queue flush).
+    seen: set = set()
+    for e in events:
+        if e.anonymous_id not in seen:
+            _touch_user_trait(db, e.anonymous_id, user_id)
+            seen.add(e.anonymous_id)
     return len(rows)
+
+
+def _touch_user_trait(db: Session, anonymous_id: str, user_id: Optional[uuid.UUID]) -> None:
+    """Lightweight upsert of UserTrait — creates the row on first event, updates last_seen_at."""
+    now = datetime.now(timezone.utc)
+    trait = db.query(UserTrait).filter(UserTrait.anonymous_id == anonymous_id).first()
+    if not trait:
+        trait = UserTrait(
+            anonymous_id=anonymous_id,
+            user_id=user_id,
+            first_seen_at=now,
+            last_seen_at=now,
+            total_events=1,
+        )
+        db.add(trait)
+    else:
+        trait.last_seen_at = now
+        trait.total_events = (trait.total_events or 0) + 1
+        if user_id and not trait.user_id:
+            trait.user_id = user_id
+    db.commit()
 
 
 # ── Session management ────────────────────────────────────────────────────────
@@ -468,7 +502,9 @@ def get_dynamic_funnel(
 # ── Enhanced cohort retention heatmap ─────────────────────────────────────────
 
 def get_cohort_heatmap(db: Session, max_weeks: int = 9) -> Dict[str, Any]:
-    """Full N×M retention heatmap. Returns week 0–8 retention per cohort."""
+    """Full N×M retention heatmap. Returns week 0–8 retention per cohort.
+    Uses analytics_events as the universal base so mobile app users (who have
+    events but no analytics_sessions rows) are included alongside web users."""
     week_cases = " ".join(
         f"COUNT(DISTINCT CASE WHEN week_offset >= {w} AND week_offset < {w + 1} THEN anonymous_id END) AS w{w},"
         for w in range(max_weeks)
@@ -480,23 +516,25 @@ def get_cohort_heatmap(db: Session, max_weeks: int = 9) -> Dict[str, Any]:
             WITH cohort_base AS (
                 SELECT
                     anonymous_id,
-                    date_trunc('week', MIN(started_at))::date AS cohort_week
-                FROM analytics_sessions
+                    date_trunc('week', MIN(created_at))::date AS cohort_week
+                FROM analytics_events
+                WHERE is_internal = false
                 GROUP BY anonymous_id
             ),
-            all_sessions AS (
+            all_activity AS (
                 SELECT
-                    s.anonymous_id,
+                    e.anonymous_id,
                     cb.cohort_week,
-                    EXTRACT(EPOCH FROM (date_trunc('week', s.started_at) - cb.cohort_week)) / 604800.0 AS week_offset
-                FROM analytics_sessions s
-                JOIN cohort_base cb ON s.anonymous_id = cb.anonymous_id
-                WHERE cb.cohort_week >= NOW() - INTERVAL '12 weeks'
+                    EXTRACT(EPOCH FROM (date_trunc('week', e.created_at) - cb.cohort_week)) / 604800.0 AS week_offset
+                FROM analytics_events e
+                JOIN cohort_base cb ON e.anonymous_id = cb.anonymous_id
+                WHERE e.is_internal = false
+                  AND cb.cohort_week >= NOW() - INTERVAL '12 weeks'
             ),
             retention AS (
                 SELECT cohort_week,
                        {week_cases}
-                FROM all_sessions
+                FROM all_activity
                 GROUP BY cohort_week
             )
             SELECT * FROM retention ORDER BY cohort_week DESC LIMIT 12
@@ -580,6 +618,8 @@ def get_user_activity(
                 "properties": e.properties,
                 "page_url": e.page_url,
                 "page_title": e.page_title,
+                "platform": e.platform,
+                "app_version": e.app_version,
                 "created_at": e.created_at,
             }
             for e in events
@@ -630,8 +670,14 @@ SEGMENTS = [
         "filter_criteria": {"min_sessions": 2},
     },
     {
-        "name": "Mobile-First Users",
-        "description": "All recorded sessions from a mobile device",
+        "name": "App Users",
+        "description": "Users from the iOS or Android mobile app",
+        "criteria_label": "platform = ios or android",
+        "filter_criteria": {"platform_in": ["ios", "android"]},
+    },
+    {
+        "name": "Mobile Browser Users",
+        "description": "Users who accessed via a mobile web browser",
         "criteria_label": "device_type = mobile",
         "filter_criteria": {"device_type": "mobile"},
     },
@@ -711,6 +757,13 @@ def get_segments(db: Session) -> Dict[str, Any]:
                 count = (
                     db.query(func.count(UserTrait.id))
                     .filter(UserTrait.total_sessions >= criteria["min_sessions"])
+                    .scalar()
+                    or 0
+                )
+            elif "platform_in" in criteria:
+                count = (
+                    db.query(func.count(func.distinct(AnalyticsEvent.anonymous_id)))
+                    .filter(AnalyticsEvent.platform.in_(criteria["platform_in"]))
                     .scalar()
                     or 0
                 )
@@ -1209,7 +1262,7 @@ FUNNEL_TEMPLATES = [
         "description": "Full conversion funnel from first page view to plan completion",
         "steps": [
             {"event_name": "page_view"},
-            {"event_name": "trek_view"},
+            {"event_name": "trek_viewed"},
             {"event_name": "trek_plan_cta_clicked"},
             {"event_name": "plan_wizard_completed"},
         ],
@@ -1219,9 +1272,9 @@ FUNNEL_TEMPLATES = [
         "name": "Search → Trek View",
         "description": "Search-intent to trek detail engagement funnel",
         "steps": [
-            {"event_name": "trek_search"},
+            {"event_name": "search_performed"},
             {"event_name": "search_result_clicked"},
-            {"event_name": "trek_view"},
+            {"event_name": "trek_viewed"},
         ],
     },
     {
@@ -1229,7 +1282,7 @@ FUNNEL_TEMPLATES = [
         "name": "Trek View → Save",
         "description": "Content engagement to bookmarking funnel",
         "steps": [
-            {"event_name": "trek_view"},
+            {"event_name": "trek_viewed"},
             {"event_name": "trek_saved"},
         ],
     },
@@ -1238,7 +1291,7 @@ FUNNEL_TEMPLATES = [
         "name": "Trek View → Lead",
         "description": "Trek detail to lead submission conversion funnel",
         "steps": [
-            {"event_name": "trek_view"},
+            {"event_name": "trek_viewed"},
             {"event_name": "trek_plan_cta_clicked"},
             {"event_name": "lead_submitted"},
         ],
@@ -1249,7 +1302,7 @@ FUNNEL_TEMPLATES = [
         "description": "Post-signup to first meaningful engagement",
         "steps": [
             {"event_name": "user_signed_up"},
-            {"event_name": "trek_view"},
+            {"event_name": "trek_viewed"},
             {"event_name": "trek_saved"},
         ],
     },
@@ -1494,7 +1547,8 @@ def get_content_pages_analytics(
     rows = []
     for page in cms_pages:
         slug = page.slug or ""
-        # Count page_view events matching this slug
+        is_trek = page.page_type in ("trek_guide", "trek")
+
         def count_event(event_nm: str, since: datetime) -> int:
             return (
                 db.query(func.count(AnalyticsEvent.id))
@@ -1506,8 +1560,25 @@ def get_content_pages_analytics(
                 )
                 .scalar() or 0
             )
-        v7 = count_event("page_view", t7d)
-        v30 = count_event("page_view", t30d)
+
+        def count_mobile_trek_event(event_nm: str, since: datetime) -> int:
+            return (
+                db.query(func.count(AnalyticsEvent.id))
+                .filter(
+                    AnalyticsEvent.event_name == event_nm,
+                    AnalyticsEvent.created_at >= since,
+                    AnalyticsEvent.properties["trek_slug"].as_string() == slug,
+                    AnalyticsEvent.is_internal == False,
+                )
+                .scalar() or 0
+            ) if is_trek else 0
+
+        web_v7 = count_event("page_view", t7d)
+        web_v30 = count_event("page_view", t30d)
+        mob_v7 = count_mobile_trek_event("trek_viewed", t7d)
+        mob_v30 = count_mobile_trek_event("trek_viewed", t30d)
+        v7 = web_v7 + mob_v7
+        v30 = web_v30 + mob_v30
         s50 = count_event("content_scroll_50", t30d)
         s100 = count_event("content_scroll_100", t30d)
         leads = count_event("lead_submitted", t30d)
@@ -1568,10 +1639,12 @@ def get_trek_analytics(db: Session) -> Dict[str, Any]:
                 .scalar() or 0
             )
 
-        views = count_by_url("trek_view") or count_by_url("page_view")
-        plan_ctas = count_by_url("trek_plan_cta_clicked")
+        # trek_viewed via properties.trek_slug covers both web + mobile app;
+        # page_view URL fallback covers legacy web events before M15.
+        views = count_ev("trek_viewed") or count_by_url("trek_viewed") or count_by_url("page_view")
+        plan_ctas = count_ev("trek_plan_cta_clicked") or count_by_url("trek_plan_cta_clicked")
         completions = count_ev("plan_wizard_completed")
-        saves = count_by_url("trek_saved")
+        saves = count_ev("trek_saved") or count_by_url("trek_saved")
         conv_rate = round(completions / views * 100, 2) if views > 0 else 0.0
 
         rows.append({

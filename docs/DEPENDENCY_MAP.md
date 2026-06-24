@@ -2225,6 +2225,24 @@ Additive columns on existing CDP tables. New mobile analytics SDK (no existing c
 | `apps/mobile/app/_layout.tsx` | Wrapped app shell in `<AnalyticsProvider>` | MEDIUM — root layout; additive wrapping only |
 | `apps/mobile/providers/AuthProvider.tsx` | `setUserId(user.id)` on sign-in/up/Google; `setUserId(null)` on sign-out | LOW — additive side-effect calls |
 
+### CDP Mobile Full Parity — users/funnels/cohorts/segments/analytics (2026-06-24)
+
+All 8 fixes in `services/api/app/modules/cdp/service.py` — no schema changes, no migration.
+
+| Symbol changed | What changed | Blast radius |
+|----------------|-------------|-------------|
+| `_touch_user_trait` (NEW) | Lightweight UserTrait upsert — create row on first event, update last_seen_at | LOW — private helper; called by log_event + batch_log_events |
+| `log_event` | Calls `_touch_user_trait` after event commit | MEDIUM — called on every analytics event; adds 1 SELECT + 1 INSERT/UPDATE per event |
+| `batch_log_events` | Added `platform`/`app_version` to each row; calls `_touch_user_trait` per unique anon_id | LOW — additive fields; existing consumers unaffected |
+| `FUNNEL_TEMPLATES` | `trek_view`→`trek_viewed` × 5; `trek_search`→`search_performed` | LOW — static data returned by `get_funnel_templates`; no callers break |
+| `get_cohort_heatmap` | SQL rewritten: `analytics_sessions` → `analytics_events` as cohort base | LOW — same output shape; broader data coverage |
+| `SEGMENTS` | "Mobile-First Users" split into "App Users" + "Mobile Browser Users"; 10→11 segments | LOW — `get_segments` callers; test assertions updated |
+| `get_segments` | Added `platform_in` filter branch | LOW — additive handler; existing filter types unchanged |
+| `get_user_activity` | Added `platform`/`app_version` to per-event dicts | LOW — additive fields in API response |
+| `get_trek_analytics` | `count_ev("trek_viewed")` as primary; URL-based as fallback | LOW — same output shape; better mobile coverage |
+| `get_content_pages_analytics` | Added `count_mobile_trek_event("trek_viewed")` for trek pages | LOW — additive counter; view totals now include mobile |
+| `test_cdp.py`, `test_cdp_step65.py` | Segment count assertions updated 10→11 | NONE — test-only |
+
 ### CDP Analytics Parity Fix — event names + platform filter (2026-06-24)
 
 Gap 1 — Mobile event name alignment with web CDP taxonomy. Gap 2 — platform filter in backend + admin UI.

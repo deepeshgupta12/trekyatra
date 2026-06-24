@@ -258,7 +258,7 @@ def test_admin_segments_returns_list():
     assert res.status_code == 200
     data = res.json()
     assert "segments" in data
-    assert len(data["segments"]) == 10  # expanded to 10 segments in Step 65
+    assert len(data["segments"]) == 11  # 11 segments: added App Users + Mobile Browser Users (replaced Mobile-First Users)
 
 
 def test_admin_gsc_returns_rows():
