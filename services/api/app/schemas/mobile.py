@@ -1,6 +1,7 @@
 from __future__ import annotations
 
-from datetime import datetime
+import uuid
+from datetime import date, datetime
 from typing import Any, Dict, List, Optional
 
 from pydantic import BaseModel, field_validator
@@ -119,3 +120,39 @@ class SyncOut(BaseModel):
     sync_timestamp: datetime
     has_more: bool
     total_updated: int
+
+
+# ── Trek Check-in (M16) ───────────────────────────────────────────────────────
+
+class CheckinIn(BaseModel):
+    trek_slug: str
+    trek_title: Optional[str] = None
+    completion_date: date
+    duration_days: Optional[int] = None
+    rating: Optional[int] = None  # 1–5
+    notes: Optional[str] = None
+    trek_state: Optional[str] = None
+    max_altitude_ft: Optional[int] = None
+
+
+class CheckinOut(BaseModel):
+    id: uuid.UUID
+    trek_slug: str
+    trek_title: Optional[str] = None
+    completion_date: date
+    duration_days: Optional[int] = None
+    rating: Optional[int] = None
+    notes: Optional[str] = None
+    trek_state: Optional[str] = None
+    max_altitude_ft: Optional[int] = None
+    created_at: datetime
+
+    model_config = {"from_attributes": True}
+
+
+class TrekHistoryStatsOut(BaseModel):
+    total_treks: int
+    total_days: int
+    states_visited: List[str]
+    favourite_state: Optional[str]
+    badges: List[str]

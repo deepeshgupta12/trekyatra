@@ -2204,3 +2204,44 @@ New `mobile_push_log` table. New `notifications` module (backend). New push noti
 | `apps/mobile/app/notifications.tsx` (NEW) | Notification inbox screen (modal presentation, `FlatList` + empty state + mark-all-read) | LOW — new route, registered as Stack.Screen modal |
 | `apps/mobile/app/_layout.tsx` | Added `incrementOpenCount`/`requestAndRegisterPushToken`/`saveToInbox` imports + `Notifications` import; push setup `useEffect`; `notifications` Stack.Screen | MEDIUM — `_layout.tsx` is the root shell; changes lightly tested; additive only (new effect + new Screen, no logic removed) |
 | `apps/mobile/components/layout/AppDrawer.tsx` | Added "Notifications" entry to EXPLORE section of drawer | LOW — leaf drawer component, 1 upstream caller (`_layout.tsx`) |
+
+### Step M15 — Mobile CDP Analytics (2026-06-24)
+
+Additive columns on existing CDP tables. New mobile analytics SDK (no existing code modified except `AuthProvider` + `_layout.tsx`).
+
+| File | Change | Blast Radius |
+|------|--------|-------------|
+| `services/api/alembic/versions/20260623_0047_analytics_mobile_columns.py` (NEW) | `platform`+`app_version` columns on `analytics_events`/`analytics_sessions` | LOW — additive columns, server_default='web', no existing queries break |
+| `services/api/app/modules/cdp/models.py` | `platform`/`app_version` mapped columns on `AnalyticsEvent`/`AnalyticsSession` | LOW — additive ORM fields |
+| `services/api/app/schemas/cdp.py` | `platform`/`app_version` optional fields on `EventIn`; `BatchEventIn.events` max_length 20→50 | LOW — backwards compatible (optional fields, larger limit) |
+| `services/api/app/modules/cdp/service.py` | `log_event` passes `platform`/`app_version` to ORM | LOW — additive |
+| `services/api/tests/test_cdp.py` | `test_batch_ingest_exceeds_limit` updated to 51 events | LOW — test fix only |
+| `services/api/tests/test_cdp_mobile_m15.py` (NEW) | 4 tests TC-B-M15-01–04 | LOW — test file only |
+| `apps/mobile/lib/identity.ts` (NEW) | `getAnonymousId` (Crypto.randomUUID + SecureStore), `setUserId`/`getUserId` | LOW — new module; callers: `analytics.ts`, `AuthProvider.tsx` |
+| `apps/mobile/lib/analyticsQueue.ts` (NEW) | SQLite offline queue `ty_analytics_queue.db`; `enqueueEventSync`/`flushQueueSync` | LOW — new module; callers: `analytics.ts` |
+| `apps/mobile/lib/analytics.ts` (NEW) | `trackEvent`, `trackScreen`, `flushOfflineQueue`, 13 convenience helpers | LOW — new module; callers: `AnalyticsProvider.tsx`, `useAnalytics.ts`, `CheckinSheet.tsx` |
+| `apps/mobile/providers/AnalyticsProvider.tsx` (NEW) | AppState session mgmt, 15-min background threshold, cold_start flag | LOW — new provider; single caller: `app/_layout.tsx` |
+| `apps/mobile/hooks/useAnalytics.ts` (NEW) | Wraps analytics helpers with `useCallback` | LOW — new hook; used by `CheckinSheet.tsx` |
+| `apps/mobile/app/_layout.tsx` | Wrapped app shell in `<AnalyticsProvider>` | MEDIUM — root layout; additive wrapping only |
+| `apps/mobile/providers/AuthProvider.tsx` | `setUserId(user.id)` on sign-in/up/Google; `setUserId(null)` on sign-out | LOW — additive side-effect calls |
+
+### Step M16 — Trek Check-ins & History (2026-06-24)
+
+New `user_trek_history` table + checkin API routes + history screen. Trek detail screen gains "I did this trek" CTA.
+
+| File | Change | Blast Radius |
+|------|--------|-------------|
+| `services/api/alembic/versions/20260623_0048_user_trek_history.py` (NEW) | `user_trek_history` table (user_id FK → users, trek_slug, completion_date, rating, etc.) + 3 indexes | LOW — new table |
+| `services/api/app/modules/mobile/models.py` | `UserTrekHistory` ORM model added | LOW — additive |
+| `services/api/app/db/base.py` | `UserTrekHistory` imported and registered | LOW — additive import |
+| `services/api/app/schemas/mobile.py` | `CheckinIn`/`CheckinOut`/`TrekHistoryStatsOut` schemas added | LOW — additive |
+| `services/api/app/modules/mobile/service.py` | `create_checkin`, `get_user_history`, `has_user_done_trek`, `get_history_stats` + badge rules | LOW — new functions; no existing functions modified |
+| `services/api/app/api/routes/mobile.py` | 4 new checkin routes: `POST/GET /mobile/checkin`, `GET /mobile/checkin/stats`, `GET /mobile/checkin/done/{slug}` | LOW — additive routes |
+| `services/api/tests/test_checkin_m16.py` (NEW) | 8 tests TC-B-M16-01–08 | LOW — test file only |
+| `apps/mobile/hooks/useCheckin.ts` (NEW) | `createCheckin`, `getHistory`, `getStats`, `isDone` | LOW — new hook |
+| `apps/mobile/components/account/TrekHistoryCard.tsx` (NEW) | Trek history list item with rating/chips | LOW — leaf component |
+| `apps/mobile/components/account/CheckinSheet.tsx` (NEW) | Modal bottom sheet for check-in confirmation | LOW — new component |
+| `apps/mobile/app/(tabs)/account/history.tsx` (NEW) | History screen with stats, badges, FlatList | LOW — new route |
+| `apps/mobile/app/(tabs)/account/_layout.tsx` | `history` Stack.Screen added | LOW — additive Screen |
+| `apps/mobile/components/account/AccountDashboard.tsx` | "Trek History" menu row added | LOW — additive row |
+| `apps/mobile/app/(tabs)/(home)/trek/[slug].tsx` | `useCheckin.isDone` on mount; CTA + banner + `CheckinSheet` | MEDIUM — trek detail screen is critical; changes are purely additive (new state, new conditional UI elements) |

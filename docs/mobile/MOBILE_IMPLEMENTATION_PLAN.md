@@ -239,7 +239,7 @@ Full account management tab:
 - Admin panel extension: send push to segment from `/admin/cdp/segments`
 - Notification inbox screen (local notification history from AsyncStorage)
 
-### Step M15 — Mobile CDP Analytics [PENDING]
+### Step M15 — Mobile CDP Analytics [DONE]
 Mobile-adapted version of `lib/analytics.ts` for React Native:
 - `MobileAnalyticsProvider` — wraps app, initialises session
 - `trackEvent(category, event_name, properties)` — batches events, flushes on foreground/background
@@ -254,7 +254,7 @@ Mobile-adapted version of `lib/analytics.ts` for React Native:
 
 ## Phase 5 — Community Layer (Steps M16–M18)
 
-### Step M16 — Trek Check-ins & History [PENDING]
+### Step M16 — Trek Check-ins & History [DONE]
 - Check-in screen: confirm trek + completion date + duration + optional notes + rating (1–5 stars)
 - `POST /api/v1/mobile/checkin` (DB: `user_trek_history` table)
 - My Trek History screen: chronological timeline of completed treks
@@ -342,8 +342,8 @@ Mobile-adapted version of `lib/analytics.ts` for React Native:
 | Foundation (M01–M05) | ✓ DONE (M01, M02, M03, M-DS1, M04, M05 complete) |
 | Discovery (M06–M08) | ✓ DONE (M06, M07a, M07b, M07c, M08 complete) |
 | User & Commerce (M09–M13) | M09 ✓ Done — M10 ✓ Done — M11 ✓ Done — M12 ✓ Done — M13 ✓ Done |
-| Engagement & Analytics (M14–M15) | M14 ✓ Done — M15 Pending |
-| Community (M16–M18) | Pending |
+| Engagement & Analytics (M14–M15) | M14 ✓ Done — M15 ✓ Done |
+| Community (M16–M18) | M16 ✓ Done — M17–M18 Pending |
 | Contextual Intelligence (M19–M20) | Pending |
 | Content & Release (M21–M22) | Pending |
 
@@ -351,4 +351,8 @@ Mobile-adapted version of `lib/analytics.ts` for React Native:
 
 **Step M14 (2026-06-23) — DONE:** Push notifications — FCM/APNs providers (test mode), `mobile_push_log` table, permit/seasonal/news Celery tasks, admin send route, notification inbox screen, 2nd-open permission prompt, badge count, deeplink tap handler. 707 backend tests pass; tsc ✓; next build ✓.
 
-**Current next step:** M15 — Mobile CDP Analytics.
+**Step M15 (2026-06-24) — DONE:** Mobile CDP analytics — `platform`+`app_version` columns on `analytics_events`/`analytics_sessions` (migration 20260623_0047); `lib/identity.ts` (anon ID via Crypto.randomUUID + SecureStore); `lib/analyticsQueue.ts` (SQLite offline queue); `lib/analytics.ts` (trackEvent/trackScreen + 13 convenience helpers + flushOfflineQueue); `providers/AnalyticsProvider.tsx` (AppState session mgmt, 15min threshold, cold_start flag); `hooks/useAnalytics.ts`; AuthProvider wires `setUserId` on login/logout. 4 new backend tests; 719/721 pass (2 pre-existing refresh ordering failures); tsc ✓; next build ✓.
+
+**Step M16 (2026-06-24) — DONE:** Trek check-ins & history — `user_trek_history` table (migration 20260623_0048, 3 indexes); `UserTrekHistory` ORM; `CheckinIn`/`CheckinOut`/`TrekHistoryStatsOut` schemas; service layer (`create_checkin`, `get_user_history`, `has_user_done_trek`, `get_history_stats` + 6 badge rules); 4 API routes (`POST/GET /api/v1/mobile/checkin`, `/stats`, `/done/{slug}`); `hooks/useCheckin.ts`; `components/account/TrekHistoryCard.tsx`; `components/account/CheckinSheet.tsx` (modal bottom sheet, star rating, date/duration/notes); `app/(tabs)/account/history.tsx` (stats + badges + chronological list); `app/(tabs)/(home)/trek/[slug].tsx` wired with "I did this trek" CTA + "You've done this trek ✓" banner + CheckinSheet; `AccountDashboard` Trek History entry added. 8 new backend tests; 719/721 pass; tsc ✓; next build ✓.
+
+**Current next step:** M17 — Trip Reports & Trail Conditions.

@@ -20,6 +20,8 @@ import { RelatedPagesSection } from "@/components/trek/RelatedPagesSection";
 import { TrustSignals } from "@/components/trek/TrustSignals";
 import { TrekContentsSheet, type ContentsHeading } from "@/components/trek/TrekContentsSheet";
 import { TrekAskAI } from "@/components/trek/TrekAskAI";
+import { CheckinSheet } from "@/components/account/CheckinSheet";
+import { useCheckin } from "@/hooks/useCheckin";
 import { OfflineBadge } from "@/components/trek/OfflineBadge";
 import { CMSContentRenderer } from "@/components/cms/CMSContentRenderer";
 import { HtmlContentRenderer } from "@/components/cms/HtmlContentRenderer";
@@ -38,12 +40,21 @@ export default function TrekDetailScreen() {
   const [activeTab, setActiveTab] = useState<TrekTab>("guide");
   const [relatedTreks, setRelatedTreks] = useState<TrekListItem[]>([]);
   const [contentsVisible, setContentsVisible] = useState(false);
+  const [checkinVisible, setCheckinVisible] = useState(false);
+  const [alreadyDone, setAlreadyDone] = useState(false);
+  const { isDone } = useCheckin();
   const scrollViewRef = useRef<ScrollView>(null);
   const headingOffsets = useRef<Record<string, number>>({});
   const tabBodyOffset = useRef(0);
 
   const trek = data?.page;
   const fromCache = data?.fromCache ?? false;
+
+  // Check if user has already done this trek
+  useEffect(() => {
+    if (!user || !slug) return;
+    isDone(slug).then(setAlreadyDone).catch(() => {});
+  }, [slug, user]);
 
   // Record behavior
   useEffect(() => {
@@ -187,6 +198,27 @@ export default function TrekDetailScreen() {
               </Text>
             </TouchableOpacity>
           )}
+          {/* Check-in banner / CTA */}
+          {user && (
+            alreadyDone ? (
+              <View style={[styles.checkinBanner, { backgroundColor: isDark ? "rgba(29,162,84,0.12)" : "rgba(29,162,84,0.08)", borderColor: isDark ? "rgba(29,162,84,0.25)" : "rgba(29,162,84,0.2)" }]}>
+                <Text style={[styles.checkinBannerText, { color: isDark ? "#4ade80" : "#166534" }]}>
+                  ✓ You've done this trek
+                </Text>
+              </View>
+            ) : (
+              <TouchableOpacity
+                style={[styles.checkinCta, { backgroundColor: isDark ? "rgba(232,112,42,0.12)" : "rgba(232,112,42,0.08)", borderColor: isDark ? "rgba(232,112,42,0.25)" : "rgba(232,112,42,0.2)" }]}
+                onPress={() => setCheckinVisible(true)}
+                accessibilityRole="button"
+                accessibilityLabel="Log this trek"
+              >
+                <Text style={[styles.checkinCtaText, { color: colors.accent }]}>
+                  🏔️ I did this trek — log it
+                </Text>
+              </TouchableOpacity>
+            )
+          )}
         </View>
 
         {/* Sticky tab bar */}
@@ -250,6 +282,21 @@ export default function TrekDetailScreen() {
         onSelect={handleSelectHeading}
         onClose={() => setContentsVisible(false)}
       />
+
+      {/* Trek check-in sheet */}
+      {user && (
+        <CheckinSheet
+          visible={checkinVisible}
+          trekSlug={trek.slug}
+          trekTitle={trek.title}
+          trekState={trek.trek_state ?? undefined}
+          onClose={() => setCheckinVisible(false)}
+          onSuccess={() => {
+            setCheckinVisible(false);
+            setAlreadyDone(true);
+          }}
+        />
+      )}
     </View>
   );
 }
@@ -280,6 +327,24 @@ const styles = StyleSheet.create({
     borderWidth: 1,
   },
   safetyText: { color: "#ef4444", fontSize: 12, fontWeight: "500" },
+  checkinBanner: {
+    marginHorizontal: 16,
+    marginTop: 8,
+    paddingHorizontal: 14,
+    paddingVertical: 10,
+    borderRadius: 10,
+    borderWidth: 1,
+  },
+  checkinBannerText: { fontSize: 13, fontWeight: "600" },
+  checkinCta: {
+    marginHorizontal: 16,
+    marginTop: 8,
+    paddingHorizontal: 14,
+    paddingVertical: 10,
+    borderRadius: 10,
+    borderWidth: 1,
+  },
+  checkinCtaText: { fontSize: 13, fontWeight: "600" },
   emptyTab: {
     alignItems: "center",
     paddingTop: 60,

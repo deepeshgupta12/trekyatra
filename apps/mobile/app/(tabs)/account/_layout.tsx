@@ -20,6 +20,7 @@ export default function AccountLayout() {
       <Stack.Screen name="settings" />
       <Stack.Screen name="notifications" />
       <Stack.Screen name="privacy" />
+      <Stack.Screen name="history" />
     </Stack>
   );
 }

@@ -17,6 +17,7 @@ interface AccountDashboardProps {
 
 const MENU_ROWS: MenuRow[] = [
   { label: "Saved Treks", icon: "bookmark-outline", route: "/(tabs)/account/saved" },
+  { label: "Trek History", icon: "trail-sign-outline", route: "/(tabs)/account/history" },
   { label: "Downloads", icon: "download-outline", route: "/(tabs)/account/downloads" },
   { label: "Enquiries", icon: "chatbubble-outline", route: "/(tabs)/account/enquiries" },
   { label: "Premium", icon: "star-outline", route: "/(tabs)/account/premium" },

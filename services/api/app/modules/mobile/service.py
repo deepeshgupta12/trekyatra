@@ -13,9 +13,9 @@ from app.core.security import (
     hash_token,
     parse_mobile_refresh_token,
 )
-from app.modules.mobile.models import MobileDevice
+from app.modules.mobile.models import MobileDevice, UserTrekHistory
 from app.modules.cms.models import CMSPage
-from app.schemas.mobile import DeviceIn, SyncPageOut, SyncOut
+from app.schemas.mobile import DeviceIn, SyncPageOut, SyncOut, CheckinIn, CheckinOut, TrekHistoryStatsOut
 
 
 def mobile_login(
@@ -252,4 +252,87 @@ def get_sync_pages(
         sync_timestamp=now,
         has_more=(offset + limit) < total_updated,
         total_updated=total_updated,
+    )
+
+
+# ── Trek Check-in / History (M16) ─────────────────────────────────────────────
+
+def create_checkin(
+    db: Session,
+    user_id: uuid.UUID,
+    checkin_in: CheckinIn,
+) -> UserTrekHistory:
+    entry = UserTrekHistory(
+        user_id=user_id,
+        trek_slug=checkin_in.trek_slug,
+        trek_title=checkin_in.trek_title,
+        completion_date=checkin_in.completion_date,
+        duration_days=checkin_in.duration_days,
+        rating=checkin_in.rating,
+        notes=checkin_in.notes,
+        trek_state=checkin_in.trek_state,
+        max_altitude_ft=checkin_in.max_altitude_ft,
+    )
+    db.add(entry)
+    db.commit()
+    db.refresh(entry)
+    return entry
+
+
+def get_user_history(
+    db: Session,
+    user_id: uuid.UUID,
+    limit: int = 50,
+    offset: int = 0,
+) -> List[UserTrekHistory]:
+    stmt = (
+        select(UserTrekHistory)
+        .where(UserTrekHistory.user_id == user_id)
+        .order_by(UserTrekHistory.completion_date.desc())
+        .limit(limit)
+        .offset(offset)
+    )
+    return list(db.scalars(stmt).all())
+
+
+def has_user_done_trek(db: Session, user_id: uuid.UUID, trek_slug: str) -> bool:
+    stmt = select(UserTrekHistory.id).where(
+        UserTrekHistory.user_id == user_id,
+        UserTrekHistory.trek_slug == trek_slug,
+    ).limit(1)
+    return db.scalars(stmt).first() is not None
+
+
+_BADGE_RULES = {
+    "First Trek": lambda entries: len(entries) >= 1,
+    "5-Trek Club": lambda entries: len(entries) >= 5,
+    "10-Trek Veteran": lambda entries: len(entries) >= 10,
+    "Himalayan Explorer": lambda entries: sum(
+        1 for e in entries
+        if e.trek_state and e.trek_state.lower() in ("uttarakhand", "himachal pradesh", "ladakh", "sikkim", "arunachal pradesh")
+    ) >= 5,
+    "Monsoon Warrior": lambda entries: any(
+        e.completion_date.month in (6, 7, 8) for e in entries
+    ),
+    "High Altitude Ace": lambda entries: any(
+        (e.max_altitude_ft or 0) >= 14000 for e in entries
+    ),
+}
+
+
+def get_history_stats(db: Session, user_id: uuid.UUID) -> TrekHistoryStatsOut:
+    entries = get_user_history(db, user_id, limit=500)
+    total_treks = len(entries)
+    total_days = sum(e.duration_days or 0 for e in entries)
+    states = [e.trek_state for e in entries if e.trek_state]
+    states_visited = list(dict.fromkeys(states))  # deduplicated, order preserved
+    from collections import Counter
+    favourite_state = Counter(states).most_common(1)[0][0] if states else None
+    badges = [name for name, fn in _BADGE_RULES.items() if fn(entries)]
+    return TrekHistoryStatsOut(
+        total_treks=total_treks,
+        total_days=total_days,
+        states_visited=states_visited,
+        favourite_state=favourite_state,
+        badges=badges,
     )
