@@ -1092,6 +1092,7 @@ def get_events_explorer(
     date_from: Optional[str] = None,
     date_to: Optional[str] = None,
     exclude_internal: bool = True,
+    platform: Optional[str] = None,
     page: int = 1,
     page_size: int = 50,
 ) -> Dict[str, Any]:
@@ -1111,6 +1112,8 @@ def get_events_explorer(
             pass
     if page_url_contains:
         q = q.filter(AnalyticsEvent.page_url.ilike(f"%{page_url_contains}%"))
+    if platform:
+        q = q.filter(AnalyticsEvent.platform == platform)
     if date_from:
         try:
             q = q.filter(AnalyticsEvent.created_at >= datetime.fromisoformat(date_from))
@@ -1139,6 +1142,8 @@ def get_events_explorer(
                 "device_type": e.device_type,
                 "browser": e.browser,
                 "country": e.country,
+                "platform": e.platform,
+                "app_version": e.app_version,
                 "is_internal": e.is_internal,
                 "created_at": e.created_at.isoformat(),
             }
@@ -1158,6 +1163,7 @@ def get_events_export_csv(
     date_from: Optional[str] = None,
     date_to: Optional[str] = None,
     exclude_internal: bool = True,
+    platform: Optional[str] = None,
 ) -> str:
     q = db.query(AnalyticsEvent)
     if exclude_internal:
@@ -1166,6 +1172,8 @@ def get_events_export_csv(
         q = q.filter(AnalyticsEvent.event_category == category)
     if event_name:
         q = q.filter(AnalyticsEvent.event_name == event_name)
+    if platform:
+        q = q.filter(AnalyticsEvent.platform == platform)
     if date_from:
         try:
             q = q.filter(AnalyticsEvent.created_at >= datetime.fromisoformat(date_from))
@@ -1181,13 +1189,13 @@ def get_events_export_csv(
     import csv, io
     output = io.StringIO()
     writer = csv.writer(output)
-    writer.writerow(["id", "anonymous_id", "user_id", "event_category", "event_name", "page_url", "properties", "created_at"])
+    writer.writerow(["id", "anonymous_id", "user_id", "event_category", "event_name", "platform", "page_url", "properties", "created_at"])
     for ev in events:
         import json
         writer.writerow([
             str(ev.id), ev.anonymous_id, str(ev.user_id) if ev.user_id else "",
-            ev.event_category, ev.event_name, ev.page_url or "",
-            json.dumps(ev.properties), ev.created_at.isoformat(),
+            ev.event_category, ev.event_name, ev.platform or "",
+            ev.page_url or "", json.dumps(ev.properties), ev.created_at.isoformat(),
         ])
     return output.getvalue()
 

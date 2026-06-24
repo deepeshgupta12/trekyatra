@@ -11,6 +11,10 @@ import {
   trackProductPurchased,
   trackPremiumSubscribed,
   trackCheckin,
+  trackUserSignedIn,
+  trackUserSignedUp,
+  trackTrekShared,
+  trackNewsArticleViewed,
 } from "@/lib/analytics";
 
 export function useAnalytics() {
@@ -26,5 +30,9 @@ export function useAnalytics() {
     trackProductPurchased: useCallback(trackProductPurchased, []),
     trackPremiumSubscribed: useCallback(trackPremiumSubscribed, []),
     trackCheckin: useCallback(trackCheckin, []),
+    trackUserSignedIn: useCallback(trackUserSignedIn, []),
+    trackUserSignedUp: useCallback(trackUserSignedUp, []),
+    trackTrekShared: useCallback(trackTrekShared, []),
+    trackNewsArticleViewed: useCallback(trackNewsArticleViewed, []),
   };
 }

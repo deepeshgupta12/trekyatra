@@ -5,6 +5,7 @@ import * as authApiLib from "@/lib/authApi";
 import { signInWithApple as nativeAppleSignIn } from "@/lib/appleAuth";
 import { promptBiometric } from "@/lib/biometricAuth";
 import { setUserId as setAnalyticsUserId } from "@/lib/identity";
+import { trackUserSignedIn, trackUserSignedUp } from "@/lib/analytics";
 
 const BIOMETRIC_KEY = "biometric_enabled";
 
@@ -73,6 +74,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const user = await resolveUser(result);
     await setAuth(result.access_token, result.refresh_token, user);
     setAnalyticsUserId(user.id);
+    trackUserSignedIn("email").catch(() => {});
   }
 
   async function signUp(email: string, password: string, fullName?: string): Promise<void> {
@@ -80,6 +82,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const user = await resolveUser(result);
     await setAuth(result.access_token, result.refresh_token, user);
     setAnalyticsUserId(user.id);
+    trackUserSignedUp("email").catch(() => {});
   }
 
   async function signInWithGoogle(googleAccessToken: string): Promise<void> {
@@ -87,6 +90,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const user = await resolveUser(result);
     await setAuth(result.access_token, result.refresh_token, user);
     setAnalyticsUserId(user.id);
+    trackUserSignedIn("google").catch(() => {});
   }
 
   async function signInWithApple(): Promise<void> {

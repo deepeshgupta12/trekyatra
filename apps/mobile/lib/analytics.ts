@@ -63,10 +63,10 @@ export function flushOfflineQueue(): void {
 // ── Convenience helpers ────────────────────────────────────────────────────
 
 export const trackTrekView = (slug: string, state?: string) =>
-  trackEvent("engagement", "trek_view", { trek_slug: slug, state });
+  trackEvent("engagement", "trek_viewed", { trek_slug: slug, state });
 
 export const trackSearch = (query: string, resultCount: number) =>
-  trackEvent("engagement", "search_query", { query, result_count: resultCount });
+  trackEvent("engagement", "search_performed", { query, result_count: resultCount });
 
 export const trackTrekSaved = (slug: string) =>
   trackEvent("engagement", "trek_saved", { trek_slug: slug });
@@ -94,3 +94,15 @@ export const trackPremiumSubscribed = (productId: string) =>
 
 export const trackCheckin = (slug: string, date: string) =>
   trackEvent("engagement", "checkin_created", { trek_slug: slug, date });
+
+export const trackUserSignedIn = (method: string) =>
+  trackEvent("conversion", "user_signed_in", { method });
+
+export const trackUserSignedUp = (method: string) =>
+  trackEvent("conversion", "user_signed_up", { method });
+
+export const trackTrekShared = (slug: string, method: string) =>
+  trackEvent("engagement", "trek_shared", { trek_slug: slug, method });
+
+export const trackNewsArticleViewed = (slug: string, title?: string) =>
+  trackEvent("engagement", "news_article_viewed", { slug, title });

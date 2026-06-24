@@ -2225,6 +2225,19 @@ Additive columns on existing CDP tables. New mobile analytics SDK (no existing c
 | `apps/mobile/app/_layout.tsx` | Wrapped app shell in `<AnalyticsProvider>` | MEDIUM — root layout; additive wrapping only |
 | `apps/mobile/providers/AuthProvider.tsx` | `setUserId(user.id)` on sign-in/up/Google; `setUserId(null)` on sign-out | LOW — additive side-effect calls |
 
+### CDP Analytics Parity Fix — event names + platform filter (2026-06-24)
+
+Gap 1 — Mobile event name alignment with web CDP taxonomy. Gap 2 — platform filter in backend + admin UI.
+
+| File | Change | Blast Radius |
+|------|--------|-------------|
+| `apps/mobile/lib/analytics.ts` | `trek_view`→`trek_viewed`, `search_query`→`search_performed`; added `trackUserSignedIn`, `trackUserSignedUp`, `trackTrekShared`, `trackNewsArticleViewed` | LOW — function names unchanged; only the event string literals changed; all callers use wrapper functions |
+| `apps/mobile/hooks/useAnalytics.ts` | Exports 4 new analytics helpers | LOW — additive |
+| `apps/mobile/providers/AuthProvider.tsx` | `trackUserSignedIn`/`trackUserSignedUp` fire-and-forget calls added to signIn/signUp/signInWithGoogle | LOW — additive; `.catch(()=>{})` guards mean zero error impact |
+| `services/api/app/modules/cdp/service.py` | `get_events_explorer`: added `platform` filter param + `platform`/`app_version` fields in response dict; `get_events_export_csv`: added `platform` filter + column in CSV header/rows | LOW — fully additive params with `None` defaults |
+| `services/api/app/api/routes/cdp.py` | `GET /events` + `GET /events/export`: added `platform: Optional[str] = Query(None)` | LOW — backward-compatible; no callers break |
+| `apps/web-next/app/(admin)/admin/cdp/events/page.tsx` | `EventItem` interface extended; `platform` state + dropdown filter; Platform column in table header + rows; colSpan 6→7; buildQuery/export/resetFilters updated | LOW — self-contained admin page |
+
 ### Step M16 — Trek Check-ins & History (2026-06-24)
 
 New `user_trek_history` table + checkin API routes + history screen. Trek detail screen gains "I did this trek" CTA.

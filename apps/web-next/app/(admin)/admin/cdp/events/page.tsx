@@ -18,6 +18,8 @@ interface EventItem {
   device_type?: string;
   browser?: string;
   country?: string;
+  platform?: string;
+  app_version?: string;
   is_internal: boolean;
   created_at: string;
 }
@@ -48,6 +50,7 @@ export default function EventExplorerPage() {
 
   const [category, setCategory] = useState("");
   const [eventName, setEventName] = useState("");
+  const [platform, setPlatform] = useState("");
   const [anonymousId, setAnonymousId] = useState("");
   const [pageUrlContains, setPageUrlContains] = useState("");
   const [dateFrom, setDateFrom] = useState("");
@@ -60,6 +63,7 @@ export default function EventExplorerPage() {
     const q = new URLSearchParams();
     if (category) q.set("category", category);
     if (eventName) q.set("event_name", eventName);
+    if (platform) q.set("platform", platform);
     if (anonymousId) q.set("anonymous_id", anonymousId);
     if (pageUrlContains) q.set("page_url_contains", pageUrlContains);
     if (dateFrom) q.set("date_from", dateFrom);
@@ -68,7 +72,7 @@ export default function EventExplorerPage() {
     q.set("page", String(page));
     q.set("page_size", String(PAGE_SIZE));
     return q.toString();
-  }, [category, eventName, anonymousId, pageUrlContains, dateFrom, dateTo, excludeInternal, page]);
+  }, [category, eventName, platform, anonymousId, pageUrlContains, dateFrom, dateTo, excludeInternal, page]);
 
   const fetchEvents = useCallback(() => {
     setLoading(true);
@@ -91,6 +95,7 @@ export default function EventExplorerPage() {
     const q = new URLSearchParams();
     if (category) q.set("category", category);
     if (eventName) q.set("event_name", eventName);
+    if (platform) q.set("platform", platform);
     if (dateFrom) q.set("date_from", dateFrom);
     if (dateTo) q.set("date_to", dateTo);
     q.set("exclude_internal", String(excludeInternal));
@@ -98,7 +103,7 @@ export default function EventExplorerPage() {
   };
 
   const resetFilters = () => {
-    setCategory(""); setEventName(""); setAnonymousId("");
+    setCategory(""); setEventName(""); setPlatform(""); setAnonymousId("");
     setPageUrlContains(""); setDateFrom(""); setDateTo("");
     setExcludeInternal(true); setPage(1);
   };
@@ -146,6 +151,16 @@ export default function EventExplorerPage() {
               {catalog.map((e) => (
                 <option key={e.event_name} value={e.event_name}>{e.event_name} ({e.count})</option>
               ))}
+            </select>
+            <select
+              value={platform}
+              onChange={(e) => { setPlatform(e.target.value); setPage(1); }}
+              className="bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-sm text-white"
+            >
+              <option value="">All platforms</option>
+              <option value="web">web</option>
+              <option value="ios">ios</option>
+              <option value="android">android</option>
             </select>
             <input
               value={anonymousId}
@@ -195,6 +210,7 @@ export default function EventExplorerPage() {
                   <th className="text-left px-4 py-3 text-white/40 font-medium text-xs">Timestamp</th>
                   <th className="text-left px-4 py-3 text-white/40 font-medium text-xs">Category</th>
                   <th className="text-left px-4 py-3 text-white/40 font-medium text-xs">Event</th>
+                  <th className="text-left px-4 py-3 text-white/40 font-medium text-xs hidden sm:table-cell">Platform</th>
                   <th className="text-left px-4 py-3 text-white/40 font-medium text-xs hidden md:table-cell">User</th>
                   <th className="text-left px-4 py-3 text-white/40 font-medium text-xs hidden lg:table-cell">Page URL</th>
                   <th className="text-left px-4 py-3 text-white/40 font-medium text-xs hidden lg:table-cell">Properties</th>
@@ -202,10 +218,10 @@ export default function EventExplorerPage() {
               </thead>
               <tbody>
                 {loading && (
-                  <tr><td colSpan={6} className="px-4 py-8 text-center text-white/30 text-sm">Loading…</td></tr>
+                  <tr><td colSpan={7} className="px-4 py-8 text-center text-white/30 text-sm">Loading…</td></tr>
                 )}
                 {!loading && (!data?.events || data.events.length === 0) && (
-                  <tr><td colSpan={6} className="px-4 py-8 text-center text-white/30 text-sm">No events matching this filter.</td></tr>
+                  <tr><td colSpan={7} className="px-4 py-8 text-center text-white/30 text-sm">No events matching this filter.</td></tr>
                 )}
                 {!loading && data?.events?.map((ev) => (
                   <>
@@ -223,6 +239,15 @@ export default function EventExplorerPage() {
                         </span>
                       </td>
                       <td className="px-4 py-3 text-white/80 text-xs font-medium">{ev.event_name}</td>
+                      <td className="px-4 py-3 hidden sm:table-cell">
+                        {ev.platform ? (
+                          <span className={`text-[10px] font-medium px-1.5 py-0.5 rounded border ${
+                            ev.platform === "web" ? "text-blue-400 bg-blue-400/10 border-blue-400/20" :
+                            ev.platform === "ios" ? "text-purple-400 bg-purple-500/10 border-purple-400/20" :
+                            "text-pine bg-pine/10 border-pine/20"
+                          }`}>{ev.platform}</span>
+                        ) : <span className="text-white/20 text-xs">—</span>}
+                      </td>
                       <td className="px-4 py-3 text-white/40 text-xs hidden md:table-cell">
                         <div className="truncate max-w-[120px]">{ev.anonymous_id}</div>
                       </td>
@@ -237,7 +262,7 @@ export default function EventExplorerPage() {
                     </tr>
                     {expandedId === ev.id && (
                       <tr key={`${ev.id}-exp`} className="bg-white/3">
-                        <td colSpan={6} className="px-6 py-3">
+                        <td colSpan={7} className="px-6 py-3">
                           <pre className="text-xs text-white/60 font-mono overflow-x-auto whitespace-pre-wrap break-all">
                             {JSON.stringify(ev, null, 2)}
                           </pre>
