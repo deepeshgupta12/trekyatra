@@ -189,37 +189,48 @@ export function BuddySection({ trekSlug }: Props) {
         {/* Browse signals toggle */}
         {totalCount > 0 && (
           <div>
-            <button
-              onClick={showList ? () => setShowList(false) : handleShowList}
-              className="flex items-center gap-1.5 text-sm font-medium text-accent hover:text-accent/80 transition-colors"
-            >
-              {showList ? (
-                <>Hide trekkers <ChevronUp className="h-3.5 w-3.5" /></>
-              ) : (
-                <>Browse {totalCount} trekker{totalCount !== 1 ? "s" : ""} planning this route <ChevronDown className="h-3.5 w-3.5" /></>
-              )}
-            </button>
+            {isLoggedIn ? (
+              <>
+                <button
+                  onClick={showList ? () => setShowList(false) : handleShowList}
+                  className="flex items-center gap-1.5 text-sm font-medium text-accent hover:text-accent/80 transition-colors"
+                >
+                  {showList ? (
+                    <>Hide trekkers <ChevronUp className="h-3.5 w-3.5" /></>
+                  ) : (
+                    <>Browse {totalCount} trekker{totalCount !== 1 ? "s" : ""} planning this route <ChevronDown className="h-3.5 w-3.5" /></>
+                  )}
+                </button>
 
-            {showList && (
-              <div className="mt-3 space-y-2">
-                {signals === null ? (
-                  <div className="space-y-2">
-                    {[1, 2, 3].map((i) => (
-                      <div key={i} className="h-16 rounded-xl bg-foreground/5 animate-pulse" />
-                    ))}
+                {showList && (
+                  <div className="mt-3 space-y-2">
+                    {signals === null ? (
+                      <div className="space-y-2">
+                        {[1, 2, 3].map((i) => (
+                          <div key={i} className="h-16 rounded-xl bg-foreground/5 animate-pulse" />
+                        ))}
+                      </div>
+                    ) : signals.length === 0 ? (
+                      <p className="text-sm text-foreground/40 py-2">No active signals right now.</p>
+                    ) : (
+                      signals.map((s) => (
+                        <BuddySignalCard
+                          key={s.id}
+                          signal={s}
+                          onRequestSent={() => {}}
+                        />
+                      ))
+                    )}
                   </div>
-                ) : signals.length === 0 ? (
-                  <p className="text-sm text-foreground/40 py-2">No active signals right now.</p>
-                ) : (
-                  signals.map((s) => (
-                    <BuddySignalCard
-                      key={s.id}
-                      signal={s}
-                      onRequestSent={() => {}}
-                    />
-                  ))
                 )}
-              </div>
+              </>
+            ) : (
+              <a
+                href="/auth/login"
+                className="flex items-center gap-1.5 text-sm font-medium text-accent hover:text-accent/80 transition-colors"
+              >
+                Sign in to see who&apos;s planning this trek <ChevronDown className="h-3.5 w-3.5" />
+              </a>
             )}
           </div>
         )}
