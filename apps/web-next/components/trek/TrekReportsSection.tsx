@@ -7,6 +7,7 @@ import type { ReportPageOut } from "@/lib/reports";
 import { ConditionSummaryBanner } from "./ConditionSummaryBanner";
 import { TripReportCard } from "./TripReportCard";
 import { AddReportForm } from "./AddReportForm";
+import { CloudSun, Plus } from "lucide-react";
 
 interface Props {
   slug: string;
@@ -34,14 +35,13 @@ export function TrekReportsSection({ slug, initialData }: Props) {
       );
       setPage(p);
     } catch {
-      // non-fatal — section just shows empty state
+      // non-fatal
     } finally {
       setLoading(false);
       setLoadingMore(false);
     }
   }, [slug]);
 
-  // Load on mount if no initial data
   useState(() => {
     if (!initialData) { void load(1); }
   });
@@ -54,77 +54,84 @@ export function TrekReportsSection({ slug, initialData }: Props) {
   function handleSubmitSuccess() {
     setShowForm(false);
     setSubmitted(true);
-    // Reload page 1 after a short delay to reflect new report count
     setTimeout(() => void load(1), 500);
   }
 
+  const totalReports = data?.condition_summary.total_reports ?? 0;
+
   return (
-    <div>
-      <div className="flex items-center justify-between mb-6">
-        <div>
-          <h2 className="font-display text-2xl md:text-3xl font-semibold leading-tight mb-1">
-            Trail Conditions
-          </h2>
-          <p className="text-sm text-foreground/50">
-            Crowdsourced reports from hikers who&apos;ve done this trek
-          </p>
+    <div className="rounded-2xl border border-foreground/8 bg-foreground/[0.02] overflow-hidden">
+      {/* Section header */}
+      <div className="flex items-start justify-between px-6 py-5 border-b border-foreground/8">
+        <div className="flex items-center gap-3">
+          <div className="w-9 h-9 rounded-xl bg-sky-500/10 flex items-center justify-center shrink-0">
+            <CloudSun className="h-4 w-4 text-sky-500" />
+          </div>
+          <div>
+            <h2 className="font-display text-xl font-semibold leading-tight">Trail Conditions</h2>
+            <p className="text-sm text-foreground/50 mt-0.5">
+              Crowdsourced reports from trekkers who&apos;ve done this route
+            </p>
+          </div>
         </div>
-        {data && data.condition_summary.total_reports > 0 && (
-          <span className="text-sm text-foreground/40 hidden sm:block">
-            {data.condition_summary.total_reports} report{data.condition_summary.total_reports !== 1 ? "s" : ""}
+        {totalReports > 0 && (
+          <span className="text-xs text-foreground/40 font-medium mt-1 hidden sm:block shrink-0">
+            {totalReports} report{totalReports !== 1 ? "s" : ""}
           </span>
         )}
       </div>
 
-      {loading && (
-        <div className="space-y-3">
-          {[1, 2].map((i) => (
-            <div key={i} className="h-24 rounded-xl bg-foreground/5 animate-pulse" />
-          ))}
-        </div>
-      )}
-
-      {!loading && data && (
-        <>
-          <ConditionSummaryBanner summary={data.condition_summary} />
-
-          {data.items.length === 0 && (
-            <p className="text-sm text-foreground/40 py-4">
-              No approved reports yet for this trek.
-            </p>
-          )}
-
-          <div>
-            {data.items.map((report) => (
-              <TripReportCard key={report.id} report={report} />
+      {/* Body */}
+      <div className="px-6 py-5 space-y-4">
+        {loading && (
+          <div className="space-y-3">
+            {[1, 2].map((i) => (
+              <div key={i} className="h-20 rounded-xl bg-foreground/5 animate-pulse" />
             ))}
           </div>
+        )}
 
-          {data.has_more && (
-            <button
-              onClick={handleLoadMore}
-              disabled={loadingMore}
-              className="mt-4 text-sm text-accent hover:underline disabled:opacity-50"
-            >
-              {loadingMore ? "Loading…" : "Load more reports"}
-            </button>
-          )}
-        </>
-      )}
+        {!loading && data && (
+          <>
+            <ConditionSummaryBanner summary={data.condition_summary} />
 
-      {/* Add report CTA */}
-      <div className="mt-8 pt-6 border-t border-foreground/8">
+            {data.items.length === 0 && !submitted && (
+              <div className="rounded-xl border border-dashed border-foreground/15 py-8 px-5 text-center">
+                <p className="text-sm font-medium text-foreground/50 mb-1">No trail reports yet</p>
+                <p className="text-xs text-foreground/35">Be the first to share your experience on this trek.</p>
+              </div>
+            )}
+
+            <div className="space-y-3">
+              {data.items.map((report) => (
+                <TripReportCard key={report.id} report={report} />
+              ))}
+            </div>
+
+            {data.has_more && (
+              <button
+                onClick={handleLoadMore}
+                disabled={loadingMore}
+                className="text-sm text-accent hover:underline disabled:opacity-50"
+              >
+                {loadingMore ? "Loading…" : "Load more reports"}
+              </button>
+            )}
+          </>
+        )}
+
+        {/* Add report */}
         {submitted && !showForm ? (
           <div className="rounded-xl bg-emerald-500/10 border border-emerald-500/20 px-5 py-4 text-sm text-emerald-600 dark:text-emerald-400">
             ✓ Your report is under review. It will appear once approved (usually within 24h).
           </div>
         ) : showForm ? (
-          <div>
+          <div className="rounded-xl border border-foreground/10 bg-background p-4">
             <div className="flex items-center justify-between mb-4">
-              <h3 className="font-semibold text-foreground">Add a trip report</h3>
+              <h3 className="font-semibold text-foreground text-sm">Add a trip report</h3>
               <button
                 onClick={() => setShowForm(false)}
-                className="text-sm text-foreground/40 hover:text-foreground"
+                className="text-xs text-foreground/40 hover:text-foreground"
               >
                 Cancel
               </button>
@@ -134,9 +141,11 @@ export function TrekReportsSection({ slug, initialData }: Props) {
         ) : user ? (
           <button
             onClick={() => setShowForm(true)}
-            className="flex items-center gap-2 text-sm font-medium text-accent hover:text-accent/80 transition-colors"
+            className="flex items-center gap-2 text-sm font-medium text-accent hover:text-accent/80 transition-colors group"
           >
-            <span className="w-6 h-6 rounded-full bg-accent/15 flex items-center justify-center text-accent font-bold text-base leading-none">+</span>
+            <span className="w-6 h-6 rounded-full bg-accent/10 group-hover:bg-accent/20 flex items-center justify-center transition-colors">
+              <Plus className="h-3 w-3 text-accent" />
+            </span>
             Add your report
           </button>
         ) : (

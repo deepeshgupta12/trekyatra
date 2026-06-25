@@ -54,6 +54,8 @@ class UserProfile(Base):
     trek_experience: Mapped[str | None] = mapped_column(String(50), nullable=True)
     preferred_regions: Mapped[list | None] = mapped_column(JSON, nullable=True)
     budget_range: Mapped[str | None] = mapped_column(String(50), nullable=True)
+    bio: Mapped[str | None] = mapped_column(Text, nullable=True)
+    avatar_url: Mapped[str | None] = mapped_column(Text, nullable=True)
     submitted_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
     updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())

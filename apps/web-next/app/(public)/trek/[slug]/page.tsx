@@ -729,12 +729,12 @@ export default async function TrekDetailPage({ params }: { params: { slug: strin
       </section>
 
       {/* Trail Conditions — UGC Reports */}
-      <section id="trail-conditions" className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mt-16 border-t border-foreground/8 pt-12">
+      <section id="trail-conditions" className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mt-16">
         <TrekReportsSection slug={params.slug} />
       </section>
 
       {/* Trek Buddy Matching */}
-      <section id="trek-buddy" className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mt-16 border-t border-foreground/8 pt-12">
+      <section id="trek-buddy" className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mt-8">
         <BuddySection trekSlug={params.slug} />
       </section>
 
