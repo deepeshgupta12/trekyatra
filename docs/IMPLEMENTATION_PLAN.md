@@ -1049,6 +1049,45 @@ Web frontend:
 
 **Verification:** 727/729 BE tests pass (2 pre-existing) | `next build` ✅ zero errors.
 
+### Step 79 — Trek Buddy Matching (shared backend + web surfaces) [DONE — 2026-06-25]
+
+Backend (shared with STEP-M18 mobile):
+- **`alembic/versions/20260625_0050_buddy_matching.py`** (NEW): `bio`+`avatar_url` on `user_profiles`; `buddy_signals`, `buddy_requests`, `buddy_chat_messages` tables; 6 indexes; 2 unique constraints.
+- **`modules/buddies/models.py`** (NEW): `BuddySignal`, `BuddyRequest`, `BuddyChatMessage` ORM models.
+- **`modules/buddies/schemas.py`** (NEW): `SignalIn/Out`, `BuddyCountOut`, `BuddyRequestIn/Out`, `BuddyResponseIn`, `ChatMessageIn/Out`, `TrekkerProfileOut`, `MonthCount`.
+- **`modules/buddies/service.py`** (NEW): `_display_name` (privacy masking), `get_buddy_count`, `get_trekker_profile`, `list_signals_for_trek`, `create_or_replace_signal` (upsert), `deactivate_signal`, `expire_signals`, `send_request`, `respond_to_request`, `get_chat_messages` (auto-mark-read), `send_chat_message`, `mark_messages_read`.
+- **`api/routes/buddies.py`** (NEW): `public_router` (buddy count + trekker profile), `auth_router` (10 routes: signals CRUD + requests received/sent/respond + chat read/list/post; static paths before dynamic).
+- **`api/router.py`**: `buddies_public_router` + `buddies_auth_router` registered.
+- **`worker/tasks/buddies.py`** (NEW): `buddies.expire_signals` Celery task.
+- **`worker/celery_app.py`**: `app.worker.tasks.buddies` + daily beat schedule entry.
+- **`tests/test_buddies_m18.py`** (NEW): 12 tests TC-B-M18-01–12; 739/741 pass (2 pre-existing).
+
+Web frontend:
+- **`apps/web-next/lib/buddies.ts`** (NEW): TypeScript interfaces + all buddy API functions.
+- **`components/trek/BuddySignalCard.tsx`** (NEW): Privacy-safe card + inline connect composer.
+- **`components/trek/BuddySignalForm.tsx`** (NEW): Controlled form (month/group-size/experience/notes).
+- **`components/trek/BuddySection.tsx`** (NEW): `useAuth`-gated section, count display, month breakdown.
+- **`components/trek/BuddyChatPanel.tsx`** (NEW): 10s polling chat panel for accepted pairs.
+- **`app/(public)/account/buddy-requests/page.tsx`** (NEW): Received/sent tabs, accept/decline, inline chat.
+- **`app/(public)/trekker/[signalId]/page.tsx`** (NEW): Public trekker profile (no email/user_id).
+- **`app/(public)/trek/[slug]/page.tsx`**: `<BuddySection>` wired after TrekReportsSection.
+- **`app/(public)/account/layout.tsx`**: "Buddy Requests" nav item + Users icon added.
+
+**Verification:** 739/741 BE tests pass (2 pre-existing) | `next build` ✅ zero errors (199 pages) | `npx tsc --noEmit` ✅ zero errors.
+
+### Step M18 — Trek Buddy Matching (mobile surfaces) [DONE — 2026-06-25]
+
+- **`apps/mobile/hooks/useBuddies.ts`** (NEW): `buddyApi` namespace, `useTrekBuddies` + `useBuddyRequests` hooks, full TypeScript interfaces.
+- **`apps/mobile/components/buddy/BuddySignalSheet.tsx`** (NEW): pageSheet modal — month picker, group-size chips, experience toggle, notes.
+- **`apps/mobile/components/buddy/BuddyListCard.tsx`** (NEW): Privacy-safe signal card with inline connect flow.
+- **`apps/mobile/components/buddy/BuddyRequestSheet.tsx`** (NEW): Pending count badge, accept/decline, Open Chat CTA.
+- **`apps/mobile/components/buddy/BuddyChatScreen.tsx`** (NEW): pageSheet Modal, FlatList bubbles, 10s poll, KeyboardAvoidingView.
+- **`apps/mobile/components/buddy/TrekkerProfileModal.tsx`** (NEW): formSheet modal — avatar/name/bio/stats/planning context/privacy notice/connect CTA.
+- **`apps/mobile/app/(tabs)/(home)/trek/[slug].tsx`**: buddy count block + signal sheet + profile modal + chat screen wired in guide tab.
+- **`apps/mobile/app/(tabs)/account/index.tsx`**: "Trek Buddy Requests" nav row → BuddyRequestSheet + BuddyChatScreen.
+
+**Verification:** `npx tsc --noEmit` ✅ zero errors. Shared backend: STEP-79.
+
 ### Step M17 — Trip Reports + Photo Gallery (mobile surfaces) [DONE — 2026-06-24]
 
 - **`apps/mobile/components/trek/TrekTabBar.tsx`**: `TrekTab` type extended with `"reports"`; TABS array gains `{ key: "reports", label: "Trail" }`.

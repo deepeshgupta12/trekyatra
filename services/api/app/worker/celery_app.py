@@ -22,6 +22,7 @@ celery_app = Celery(
         "app.worker.tasks.cdp",
         "app.worker.tasks.trek_intelligence_tasks",
         "app.worker.tasks.notifications",
+        "app.worker.tasks.buddies",
     ],
 )
 
@@ -98,6 +99,10 @@ celery_app.conf.update(
         "weekly-push-seasonal-alerts": {
             "task": "notifications.send_seasonal_alerts",
             "schedule": 604800,  # weekly Monday 10:00 UTC
+        },
+        "daily-expire-buddy-signals": {
+            "task": "buddies.expire_signals",
+            "schedule": 86400,  # daily at 00:30 UTC
         },
     },
 )

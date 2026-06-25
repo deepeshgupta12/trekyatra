@@ -2302,6 +2302,47 @@ New `trip_reports` + `trek_media` tables, moderation queue, public reports API, 
 | `apps/web-next/app/(admin)/admin/reports/page.tsx` (NEW) | Admin moderation queue | LOW — new admin page |
 | `apps/web-next/app/(admin)/admin/layout.tsx` | "Community" nav group + Trip Reports link | LOW — additive nav group |
 
+### Step 79 — Trek Buddy Matching (shared backend + web) [DONE — 2026-06-25]
+
+`buddy_signals`, `buddy_requests`, `buddy_chat_messages` tables; public trekker profile (signal_id scoped); 10 auth + 2 public API routes; web BuddySection + chat panel + buddy requests page; Celery beat expire task.
+
+| File | Change | Blast Radius |
+|------|--------|-------------|
+| `alembic/versions/20260625_0050_buddy_matching.py` (NEW) | 3 new tables + `bio`/`avatar_url` on `user_profiles` | MEDIUM — extends existing `user_profiles` table |
+| `app/modules/buddies/models.py` (NEW) | `BuddySignal`, `BuddyRequest`, `BuddyChatMessage` ORM | LOW — new module |
+| `app/modules/buddies/schemas.py` (NEW) | Pydantic request/response schemas | LOW — new module |
+| `app/modules/buddies/service.py` (NEW) | Business logic: upsert signal, chat access guard, privacy masking | LOW — new module |
+| `app/api/routes/buddies.py` (NEW) | `public_router` + `auth_router` (10 routes, static before dynamic) | LOW — additive routes |
+| `app/api/router.py` | Buddy router registrations | LOW — additive |
+| `app/worker/tasks/buddies.py` (NEW) | `buddies.expire_signals` Celery task | LOW — new task |
+| `app/worker/celery_app.py` | New task module + beat schedule entry | LOW — additive |
+| `app/db/base.py` | 3 new ORM imports | LOW — additive |
+| `tests/test_buddies_m18.py` (NEW) | 12 tests TC-B-M18-01–12 | LOW — test file only |
+| `apps/web-next/lib/buddies.ts` (NEW) | TypeScript interfaces + API client | LOW — new module |
+| `apps/web-next/components/trek/BuddySignalCard.tsx` (NEW) | Signal card + inline connect | LOW — leaf component |
+| `apps/web-next/components/trek/BuddySignalForm.tsx` (NEW) | Signal creation form | LOW — leaf component |
+| `apps/web-next/components/trek/BuddySection.tsx` (NEW) | Trek detail buddy section | LOW — new section |
+| `apps/web-next/components/trek/BuddyChatPanel.tsx` (NEW) | 10s-polling chat panel | LOW — leaf component |
+| `apps/web-next/app/(public)/account/buddy-requests/page.tsx` (NEW) | Buddy requests dashboard | LOW — new page |
+| `apps/web-next/app/(public)/trekker/[signalId]/page.tsx` (NEW) | Public trekker profile | LOW — new dynamic page |
+| `apps/web-next/app/(public)/trek/[slug]/page.tsx` | `<BuddySection>` added | LOW — additive section |
+| `apps/web-next/app/(public)/account/layout.tsx` | "Buddy Requests" nav item | LOW — additive nav |
+
+### Step M18 — Trek Buddy Matching (mobile surfaces) [DONE — 2026-06-25]
+
+Mobile buddy matching UI consuming STEP-79 backend.
+
+| File | Change | Blast Radius |
+|------|--------|-------------|
+| `apps/mobile/hooks/useBuddies.ts` (NEW) | `buddyApi` + `useTrekBuddies` + `useBuddyRequests` | LOW — new module |
+| `apps/mobile/components/buddy/BuddySignalSheet.tsx` (NEW) | Signal creation sheet | LOW — leaf component |
+| `apps/mobile/components/buddy/BuddyListCard.tsx` (NEW) | Signal card with connect | LOW — leaf component |
+| `apps/mobile/components/buddy/BuddyRequestSheet.tsx` (NEW) | Requests modal | LOW — leaf component |
+| `apps/mobile/components/buddy/BuddyChatScreen.tsx` (NEW) | Full chat modal | LOW — leaf component |
+| `apps/mobile/components/buddy/TrekkerProfileModal.tsx` (NEW) | Public profile modal | LOW — leaf component |
+| `apps/mobile/app/(tabs)/(home)/trek/[slug].tsx` | Buddy section + 3 new modals | MEDIUM — critical screen; all changes additive |
+| `apps/mobile/app/(tabs)/account/index.tsx` | "Trek Buddy Requests" row + 2 modals | LOW — additive UI |
+
 ### Step M17 — Trip Reports + Photo Gallery (mobile surfaces) [DONE — 2026-06-24]
 
 5th "Trail" tab on TrekDetailScreen, mobile reports components, photo picker with resize.

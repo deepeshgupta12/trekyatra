@@ -35,6 +35,12 @@ import { ConditionSummaryBanner } from "@/components/reports/ConditionSummaryBan
 import { TripReportCard } from "@/components/reports/TripReportCard";
 import { AddReportSheet } from "@/components/reports/AddReportSheet";
 import { useReports } from "@/hooks/useReports";
+import { useTrekBuddies } from "@/hooks/useBuddies";
+import type { BuddyRequestOut } from "@/hooks/useBuddies";
+import { BuddySignalSheet } from "@/components/buddy/BuddySignalSheet";
+import { BuddyListCard } from "@/components/buddy/BuddyListCard";
+import { TrekkerProfileModal } from "@/components/buddy/TrekkerProfileModal";
+import { BuddyChatScreen } from "@/components/buddy/BuddyChatScreen";
 
 export default function TrekDetailScreen() {
   const { slug } = useLocalSearchParams<{ slug: string }>();
@@ -47,7 +53,12 @@ export default function TrekDetailScreen() {
   const [checkinVisible, setCheckinVisible] = useState(false);
   const [alreadyDone, setAlreadyDone] = useState(false);
   const [addReportVisible, setAddReportVisible] = useState(false);
+  const [buddySignalVisible, setBuddySignalVisible] = useState(false);
+  const [buddyListVisible, setBuddyListVisible] = useState(false);
+  const [profileSignalId, setProfileSignalId] = useState<string | null>(null);
+  const [chatReq, setChatReq] = useState<BuddyRequestOut | null>(null);
   const reports = useReports(slug ?? "");
+  const buddies = useTrekBuddies(slug ?? "");
   const { isDone } = useCheckin();
   const scrollViewRef = useRef<ScrollView>(null);
   const headingOffsets = useRef<Record<string, number>>({});
@@ -330,6 +341,52 @@ export default function TrekDetailScreen() {
           {activeTab === "guide" && (
             <>
               <TrekAskAI slug={trek.slug} trekName={trek.title} />
+
+              {/* Trek Buddy Matching */}
+              <View style={[styles.buddySection, { borderTopColor: colors.border }]}>
+                <Text style={[styles.buddySectionTitle, { color: colors.textPrimary }]}>
+                  Find a Trek Buddy
+                </Text>
+                <Text style={[styles.buddySectionSub, { color: colors.textMuted }]}>
+                  {(buddies.count?.count ?? 0) > 0
+                    ? `${buddies.count!.count} trekker${buddies.count!.count !== 1 ? "s" : ""} planning this route`
+                    : "Be the first to signal you're planning this trek"}
+                </Text>
+                {user && (
+                  <TouchableOpacity
+                    onPress={() => setBuddySignalVisible(true)}
+                    style={[styles.buddyBtn, { borderColor: colors.accent }]}
+                    accessibilityLabel="Post my trek signal"
+                  >
+                    <Text style={[styles.buddyBtnText, { color: colors.accent }]}>
+                      I'm planning this trek
+                    </Text>
+                  </TouchableOpacity>
+                )}
+                {(buddies.count?.count ?? 0) > 0 && (
+                  <TouchableOpacity
+                    onPress={() => { setBuddyListVisible(true); buddies.loadSignals(); }}
+                    accessibilityLabel="Browse trekkers"
+                  >
+                    <Text style={[styles.buddyLink, { color: colors.accent }]}>
+                      Browse {buddies.count!.count} trekker{buddies.count!.count !== 1 ? "s" : ""} →
+                    </Text>
+                  </TouchableOpacity>
+                )}
+                {buddyListVisible && buddies.signals && (
+                  <View style={{ marginTop: 12, gap: 8 }}>
+                    {buddies.signals.map((s) => (
+                      <BuddyListCard
+                        key={s.id}
+                        signal={s}
+                        onViewProfile={(id) => setProfileSignalId(id)}
+                        onRequestSent={() => {}}
+                      />
+                    ))}
+                  </View>
+                )}
+              </View>
+
               <TrekRelatedRow treks={relatedTreks} heading="You might also like" />
               <TrekNewsSection slug={trek.slug} />
               <RelatedPagesSection slug={trek.slug} />
@@ -373,6 +430,37 @@ export default function TrekDetailScreen() {
           reports.reload();
         }}
         onUploadPhoto={reports.uploadPhoto}
+      />
+
+      {/* Buddy signal sheet */}
+      <BuddySignalSheet
+        visible={buddySignalVisible}
+        trekSlug={trek.slug}
+        onClose={() => setBuddySignalVisible(false)}
+        onSubmit={async (data) => {
+          const signal = await buddies.createSignal(data);
+          setBuddySignalVisible(false);
+          return signal;
+        }}
+      />
+
+      {/* Trekker public profile modal */}
+      <TrekkerProfileModal
+        signalId={profileSignalId}
+        visible={!!profileSignalId}
+        onClose={() => setProfileSignalId(null)}
+        onConnect={(signalId) => {
+          setProfileSignalId(null);
+          // signal card inline connect flow handles the actual request
+        }}
+      />
+
+      {/* In-app chat for accepted buddy pair */}
+      <BuddyChatScreen
+        visible={!!chatReq}
+        requestId={chatReq?.id ?? null}
+        otherPartyName={chatReq?.other_party_name ?? ""}
+        onClose={() => setChatReq(null)}
       />
     </View>
   );
@@ -477,5 +565,36 @@ const styles = StyleSheet.create({
   loadMoreBtn: {
     alignItems: "center",
     paddingVertical: 12,
+  },
+  buddySection: {
+    marginHorizontal: 16,
+    marginTop: 24,
+    paddingTop: 20,
+    borderTopWidth: StyleSheet.hairlineWidth,
+    gap: 8,
+  },
+  buddySectionTitle: {
+    fontSize: 18,
+    fontWeight: "700",
+    fontFamily: "PlayfairDisplay_700Bold",
+  },
+  buddySectionSub: {
+    fontSize: 13,
+  },
+  buddyBtn: {
+    marginTop: 4,
+    alignSelf: "flex-start",
+    borderWidth: 1,
+    borderRadius: 10,
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+  },
+  buddyBtnText: {
+    fontSize: 13,
+    fontWeight: "600",
+  },
+  buddyLink: {
+    fontSize: 13,
+    fontWeight: "500",
   },
 });

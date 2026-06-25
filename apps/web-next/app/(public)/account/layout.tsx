@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Bookmark, BarChart2, Download, MessageSquare, Settings, LayoutDashboard } from "lucide-react";
+import { Bookmark, BarChart2, Download, MessageSquare, Settings, LayoutDashboard, Users } from "lucide-react";
 
 const NAV = [
   { href: "/account", label: "Dashboard", icon: LayoutDashboard, exact: true },
@@ -10,6 +10,7 @@ const NAV = [
   { href: "/account/compare", label: "Compare Lists", icon: BarChart2 },
   { href: "/account/downloads", label: "Downloads", icon: Download },
   { href: "/account/enquiries", label: "Enquiries", icon: MessageSquare },
+  { href: "/account/buddy-requests", label: "Buddy Requests", icon: Users },
   { href: "/account/settings", label: "Settings", icon: Settings },
 ];
 

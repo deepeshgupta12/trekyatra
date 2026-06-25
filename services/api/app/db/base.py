@@ -30,6 +30,7 @@ from app.modules.mobile.models import MobileDevice, UserTrekHistory
 from app.modules.notifications.models import MobilePushLog
 from app.modules.trek_intelligence.models import AIInteractionLog, TrekQACache, TreksageChatSession, TreksageChatMessage
 from app.modules.reports.models import TripReport, TrekMedia
+from app.modules.buddies.models import BuddySignal, BuddyRequest, BuddyChatMessage
 from app.modules.cdp.models import (
     AnalyticsEvent,
     AnalyticsSession,

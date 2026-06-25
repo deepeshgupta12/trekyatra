@@ -393,6 +393,24 @@ trekyatra/
 | Mobile photo picker (expo-image-picker + expo-image-manipulator resize, 3-photo limit) | Done |
 | Mobile AddReportSheet — slide-up form Modal with condition radio, body with char counter | Done |
 
+### Community — Trek Buddy Matching (Step 79 + M18)
+| Feature | Status |
+|---------|--------|
+| Privacy-first "I'm planning this trek" signal (month, group size, experience, notes) | Done |
+| Signal list with masked display names ("FirstName L.") — no contact details exposed | Done |
+| Public trekker profile page via signal UUID (no email/user_id) — viewable before mutual accept | Done |
+| Buddy request with optional connection message; 400 for own signal, 409 for duplicate | Done |
+| Accept/reject buddy request; email/contact only shared after mutual accept | Done |
+| In-app chat for accepted buddy pairs — 10s polling, text-only, both web + mobile | Done |
+| Buddy section on trek detail page (web) — count badge, month breakdown chips, signal list | Done |
+| `/account/buddy-requests` dashboard — received/sent tabs, pending count badge, inline chat | Done |
+| Mobile BuddySignalSheet — pageSheet modal with month picker, group-size/experience chips | Done |
+| Mobile BuddyListCard — privacy-safe signal card with inline connect flow | Done |
+| Mobile TrekkerProfileModal — formSheet with avatar initials, bio, stats, privacy notice | Done |
+| Mobile BuddyRequestSheet — received/sent tabs, accept/decline, Open Chat CTA | Done |
+| Mobile BuddyChatScreen — pageSheet FlatList chat, 10s polling, KeyboardAvoidingView | Done |
+| Celery beat task `buddies.expire_signals` — daily auto-expiry of past-month signals | Done |
+
 ---
 
 ## Local Development Setup
@@ -592,6 +610,7 @@ Full API docs available at http://localhost:8000/docs when the backend is runnin
 | AI logging + Q&A cache (Step 72) | `ai_interaction_logs`, `trek_qa_cache`; `lead_submissions.details_json` (operator-help fields) |
 | TrekSage chat (Step 73) | `treksage_chat_sessions` (id, user_id nullable FK, session_key unique, created_at, last_active_at), `treksage_chat_messages` (id, session_id FK cascade, role, content, tool_calls_json, created_at) |
 | Community / Trip Reports (Step 78) | `trip_reports` (id, user_id FK, trek_slug, title, body, condition, trek_date, status pending/approved/rejected, moderated_by nullable, moderated_at, created_at), `trek_media` (id, report_id FK, user_id, trek_slug, url, s3_key, width, height, file_size, uploaded_at) |
+| Community / Buddy Matching (Step 79) | `buddy_signals` (id uuid, user_id FK, trek_slug, month_year, group_size, experience, notes, active, expires_at, created_at; UNIQUE user_id+trek_slug+month_year), `buddy_requests` (id, sender_id FK, signal_id FK, message, status pending/accepted/rejected, responded_at; UNIQUE sender_id+signal_id), `buddy_chat_messages` (id, request_id FK, sender_id FK, content, is_read, created_at); `bio`+`avatar_url` added to `user_profiles` |
 | CDP (Step 64) | `analytics_events`, `analytics_sessions`, `user_traits`, `attribution_touchpoints`, `gsc_performance` |
 
 ---
@@ -666,6 +685,7 @@ Full API docs available at http://localhost:8000/docs when the backend is runnin
 | **Step 73 — TrekSage Bugfix Pass + Conversational AI** | Bulk trek data backfill (fixes 0 verified / 805 missing fields, compare "—" rows, plan card empty badges); CMS-section grounding for Ask AI (packing/itinerary/safety/faq questions answered from real `content_json.sections`); conversational follow-ups via `history` param (web + mobile); richer compare AI summary (`_SUMMARY_PROMPT_VERSION="v2"` cache-bust); `TrekProfile` expanded with `content_sections`+`faqs`; new `treksage_chat_sessions`/`treksage_chat_messages` tables; `treksage_agent.py` (Haiku + tool-calling, 5 tools, MAX_TOOL_ROUNDS=3); `/treksage` Myra-style chat page; datacenter rewritten as `?slug=` JSON viewer with 308 redirect from `/trek-guide/[slug]`; 18 new tests (683/685 pass) | Done — 2026-06-16 |
 | **Step 74 — Post-73 Bug Fixes + Mobile/TrekSage UI Revamp** | TrekSage renamed (Myra removed); bot-stopping fix (`tool_choice={"type":"none"}` on final tool round); `react-markdown` for bot replies; trek card visuals in chat; TrekSage AI home page banner; voice-crash fix (`NSSpeechRecognitionUsageDescription` in `app.config.ts`, dev-client rebuild required); mobile Plan My Trek revamped (emoji chips, hero images, match badge); mobile Compare revamped (tile grid, search input, trek image header, styled AI summary); `searchTreks()` added to mobile API; 683/685 backend pass, `next build` ✅, `tsc --noEmit` ✅ | Done — 2026-06-16 |
 | **Step 77 — TrekSage UX Overhaul + Search Fix** | `search_treks` keyword tokenization (OR-match, stop-word filter, extended haystack with structured month names); `_MONTH_ORD` full month names (December etc.); 4 new BE tests (TC-B41–B44, 676/676 pass); Myra-inspired `/treksage` split-screen (42% chat / 58% canvas); canvas slides in on first trek_cards; trek name → `/trek/[slug]?ref=treksage` analytics; "View Details" → `TrekDetailPanel` inline; "Add to Compare" → compare set → "Compare (N)" button; multi-stage thinking bubble; send/stop morph; stagger-fade cards; `TrekDetailPanel.tsx` created; `next build` ✅ 21 kB | Done — 2026-06-18 |
+| **Step 79 + M18 — Trek Buddy Matching** | Migration 20260625_0050: `buddy_signals`+`buddy_requests`+`buddy_chat_messages` tables + `bio`/`avatar_url` on `user_profiles`; `buddies` module (models, schemas, service, 10 routes); static routes before dynamic (§16); `buddies.expire_signals` Celery beat task; 12 tests (TC-B-M18-01–12, 739/741 pass); web: `lib/buddies.ts`, BuddySection+BuddySignalCard+BuddySignalForm+BuddyChatPanel components, `/account/buddy-requests` page, `/trekker/[signalId]` page; mobile: `useBuddies` hook, BuddySignalSheet+BuddyListCard+TrekkerProfileModal+BuddyRequestSheet+BuddyChatScreen components; buddy block in trek detail + account tab; upsert signal semantics; privacy: display_name="FirstName L.", profile URL via signal UUID | Done — 2026-06-25 |
 
 ## Production Infrastructure
 

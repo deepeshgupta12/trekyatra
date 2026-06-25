@@ -179,6 +179,19 @@ Last updated: 2026-05-27 (Step 64)
 | `/api/v1/reports/{id}` | **Auth DELETE** — delete own pending report; STEP-78 |
 | `/api/v1/admin/reports` | **Admin GET** — moderation queue filterable by status; STEP-78 |
 | `/api/v1/admin/reports/{id}/moderate` | **Admin PATCH** — approve or reject a report; STEP-78 |
+| `/trekker/[signalId]` | **Public** — privacy-safe trekker profile page; accessed via signal UUID (not user ID); shows display_name, bio, trek_count, experience, planning context; STEP-79 |
+| `/account/buddy-requests` | **Auth** — buddy requests dashboard (received/sent tabs, accept/decline, inline chat for accepted pairs); STEP-79 |
+| `/api/v1/public/treks/{slug}/buddy-count` | **Public GET** — total active signal count + per-month breakdown; STEP-79 |
+| `/api/v1/public/trekkers/{signal_id}` | **Public GET** — public trekker profile via signal UUID; no email/user_id in response; STEP-79 |
+| `/api/v1/buddies/signals/{trek_slug}` | **Auth GET** — list active signals for a trek (display_name masked, is_own flag); STEP-79 |
+| `/api/v1/buddies/signals` | **Auth POST** — create/upsert a buddy signal (trek_slug, month_year, group_size, experience, notes); STEP-79 |
+| `/api/v1/buddies/signals/{signal_id}` | **Auth DELETE** — deactivate own signal; STEP-79 |
+| `/api/v1/buddies/requests/received` | **Auth GET** — list requests addressed to me (static route — registered before `/{id}`); STEP-79 |
+| `/api/v1/buddies/requests/sent` | **Auth GET** — list requests I sent (static route); STEP-79 |
+| `/api/v1/buddies/requests` | **Auth POST** — send buddy request to a signal; 400 for own signal, 409 for duplicate; STEP-79 |
+| `/api/v1/buddies/requests/{request_id}` | **Auth PATCH** — accept or reject a request (receiver only, pending only); STEP-79 |
+| `/api/v1/buddies/requests/{request_id}/messages/read` | **Auth POST** — mark all unread messages as read (static — registered before `/messages`); STEP-79 |
+| `/api/v1/buddies/requests/{request_id}/messages` | **Auth GET/POST** — get chat messages (auto-marks read) / send new message; 403 if not party or not accepted; STEP-79 |
 | `/api/v1/treks/{slug}/profile` | **Public GET** — full structured `TrekProfile`; Step 72 |
 | `/api/v1/treks/compare` | **Public POST** — compare 2-4 trek slugs, returns rows + cached AI trade-off summary; Step 72 |
 | `/api/v1/treks/{slug}/ask` | **Public POST** — Trek Detail Q&A (TrekSage), cached Haiku answers; Step 72 |

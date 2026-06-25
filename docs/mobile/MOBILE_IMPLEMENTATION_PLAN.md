@@ -263,25 +263,31 @@ Mobile-adapted version of `lib/analytics.ts` for React Native:
 - Trek detail screen: shows "You've done this trek" banner for completed treks
 - `user_trek_history` visible in Account → Trek History
 
-### Step M17 — Trip Reports & Trail Conditions [PENDING]
-- Trip report submit screen: trek selection + condition type (trail open/closed/challenging) + description + photo upload
-- `expo-image-picker`: pick from gallery or camera
-- Photo uploaded to object storage; URL stored in `trip_reports.photo_urls[]`
-- `POST /api/v1/mobile/reports`
-- Admin moderation queue: reports require approval before showing on trek page
-- Trek detail screen: "Community Conditions" section showing latest 5 approved reports
-- `GET /api/v1/mobile/reports/{slug}` (paginated)
-- Reports feed per trek: timestamp, condition type badge, description, photo thumbnails, reporter username
+### Step M17 — Trip Reports & Trail Conditions [DONE — 2026-06-24]
+- `apps/mobile/lib/mobileApi.ts`: `apiUploadFile<T>` export added (multipart FormData, no Content-Type override)
+- `apps/mobile/hooks/useReports.ts` (NEW): `useReports` hook — paginated fetch, submit, photo upload, delete, reload
+- `apps/mobile/components/reports/ConditionSummaryBanner.tsx` (NEW): Condition bars, report count, last-report date
+- `apps/mobile/components/reports/TripReportCard.tsx` (NEW): Report card + gallery trigger
+- `apps/mobile/components/reports/PhotoGallery.tsx` (NEW): Modal full-screen FlatList viewer
+- `apps/mobile/components/reports/PhotoPicker.tsx` (NEW): expo-image-picker + resize + upload
+- `apps/mobile/components/reports/AddReportSheet.tsx` (NEW): Slide-up form Modal (condition radio, body with char counter)
+- `apps/mobile/components/trek/TrekTabBar.tsx`: `TrekTab` type extended with `"reports"`; TABS array gains `{ key: "reports", label: "Trail" }` — 5th tab on trek detail screen
+- `apps/mobile/app/(tabs)/(home)/trek/[slug].tsx`: "Trail" tab with ConditionSummaryBanner + TripReportCard list + AddReportSheet
+- `expo-image-picker@~56.0.18` + `expo-image-manipulator@~56.0.19` added
+- Backend: STEP-78 (shared — `trip_reports` + `trek_media` tables; moderation API; DO Spaces upload)
 
-### Step M18 — Trek Buddy Matching [PENDING]
-- Find buddy screen: select trek + planned date range
-- `GET /api/v1/mobile/buddy/match?slug=&date_from=` — returns list of trekkers with same plan
-- Buddy profile card: username, experience level, treks completed, home city
-- Send buddy request: `POST /api/v1/mobile/buddy/request`
-- Incoming requests screen: accept / decline
-- Privacy: phone/email NOT shown until both parties accept; show only username + trek history stats
-- DB: `buddy_requests` table (requester_id, target_id, trek_slug, planned_date, status)
-- Notification on buddy request received (`buddy_request` push category)
+### Step M18 — Trek Buddy Matching [DONE — 2026-06-25]
+- `hooks/useBuddies.ts` — `buddyApi` namespace, `useTrekBuddies` + `useBuddyRequests` hooks, full TypeScript interfaces (SignalOut, BuddyRequestOut, ChatMessageOut, TrekkerProfileOut)
+- `components/buddy/BuddySignalSheet.tsx` — pageSheet modal: month picker, group-size chips, experience toggle, notes; onSubmit calls `buddyApi.createSignal`
+- `components/buddy/BuddyListCard.tsx` — privacy-safe card (display_name, month, experience, notes, group_size); inline connect flow with optional message
+- `components/buddy/BuddyRequestSheet.tsx` — received/sent tabs, pending count badge, accept/decline actions, "Open Chat →" for accepted pairs
+- `components/buddy/BuddyChatScreen.tsx` — pageSheet Modal, FlatList message bubbles, 10s polling, KeyboardAvoidingView, send on Enter
+- `components/buddy/TrekkerProfileModal.tsx` — formSheet modal: avatar/name/bio/trek_count/experience/planning context/privacy notice/connect CTA
+- `app/(tabs)/(home)/trek/[slug].tsx` — buddy count block in guide tab; "I'm planning this trek" CTA → BuddySignalSheet; "Browse N trekkers" → BuddyListCard list; TrekkerProfileModal + BuddyChatScreen modals wired
+- `app/(tabs)/account/index.tsx` — "Trek Buddy Requests" nav row → BuddyRequestSheet → BuddyChatScreen for accepted pairs
+- Privacy model: display_name = "FirstName L." in signal list; profile accessed via signal_id UUID (not guessable); email/phone NOT shown — shared only after mutual accept
+- Backend: STEP-79 (shared — `buddy_signals`, `buddy_requests`, `buddy_chat_messages` tables; 10 API routes; `buddies.expire_signals` Celery beat task)
+- `npx tsc --noEmit` ✅ zero errors
 
 ---
 

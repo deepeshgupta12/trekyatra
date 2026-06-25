@@ -1,14 +1,17 @@
 # STEP-M18 — Trek Buddy Matching
 
-**Status:** Pending
+**Status:** Done
 **Phase:** Community
-**Dependencies:** STEP-M02 (auth), STEP-M05 (trek detail — buddy CTA from there), STEP-M14 (push notifications — buddy request alerts)
+**Dependencies:** STEP-M02 (auth), STEP-M05 (trek detail — buddy CTA from there), STEP-M14 (push notifications)
+**Backend step:** STEP-79 (shared backend + web surfaces — implement first)
 
 ---
 
 ## Scope
 
-Lets registered users find and connect with other trekkers planning the same route. Users set a trek + approximate date window as their "looking for buddy" signal. Other users browsing the same trek see a count of interested trekkers and can send a buddy request. Contact info is NOT shared until both users accept — privacy-first design. No in-app chat in V5; on mutual accept, both users get each other's email via push notification only.
+Mobile surfaces for Trek Buddy Matching. Backend is shared with STEP-79 (web). Expanded scope includes:
+1. **In-app chat** — text messaging between users with an accepted buddy request (polling-based, 10s interval)
+2. **Public trekker profiles** — tappable profile modal showing limited info (name, avatar, bio, experience, trek count) before mutual accept; contact info only shared via email after accept
 
 ---
 
