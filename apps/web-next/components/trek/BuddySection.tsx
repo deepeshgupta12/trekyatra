@@ -121,7 +121,7 @@ export function BuddySection({ trekSlug }: Props) {
             ) : null
           ) : (
             <a
-              href="/auth/login"
+              href="/auth/sign-in"
               className="text-xs font-semibold text-accent border border-accent/30 rounded-lg px-4 py-1.5 hover:bg-accent/5 transition-colors"
             >
               Sign in to connect
@@ -226,7 +226,7 @@ export function BuddySection({ trekSlug }: Props) {
               </>
             ) : (
               <a
-                href="/auth/login"
+                href="/auth/sign-in"
                 className="flex items-center gap-1.5 text-sm font-medium text-accent hover:text-accent/80 transition-colors"
               >
                 Sign in to see who&apos;s planning this trek <ChevronDown className="h-3.5 w-3.5" />
