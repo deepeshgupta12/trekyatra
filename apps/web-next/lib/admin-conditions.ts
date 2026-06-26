@@ -52,3 +52,13 @@ export async function refreshSingleTrek(slug: string): Promise<void> {
   });
   if (!res.ok) throw new Error(`Failed to refresh ${slug}`);
 }
+
+export async function setTrekCoordinates(slug: string, lat: number, lng: number): Promise<void> {
+  const res = await fetch(`${BASE}/${slug}/coordinates`, {
+    method: "PATCH",
+    credentials: "include",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ lat, lng }),
+  });
+  if (!res.ok) throw new Error(`Failed to set coordinates for ${slug}`);
+}

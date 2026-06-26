@@ -422,6 +422,21 @@ def seed_trek_coordinates(db: Session) -> SeedCoordinatesOut:
     return SeedCoordinatesOut(seeded=seeded, skipped=skipped)
 
 
+def set_trek_coordinates_single(db: Session, slug: str, lat: float, lng: float) -> dict:
+    """Set trek_base_lat/lng for a single trek by slug."""
+    page = (
+        db.query(CMSPage)
+        .filter(CMSPage.slug == slug, CMSPage.page_type == "trek_guide")
+        .first()
+    )
+    if page is None:
+        return {"ok": False, "error": "trek not found"}
+    page.trek_base_lat = lat
+    page.trek_base_lng = lng
+    db.commit()
+    return {"ok": True, "slug": slug, "lat": lat, "lng": lng}
+
+
 # ---------------------------------------------------------------------------
 # Admin list — all trek guides with their conditions status
 # ---------------------------------------------------------------------------

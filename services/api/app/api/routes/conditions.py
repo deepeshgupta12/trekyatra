@@ -9,12 +9,14 @@ from app.modules.conditions.schemas import (
     ConditionOut,
     ConditionsListOut,
     SeedCoordinatesOut,
+    SetCoordinateIn,
 )
 from app.modules.conditions.service import (
     get_trek_conditions,
     list_all_trek_conditions,
     refresh_trek_conditions,
     seed_trek_coordinates,
+    set_trek_coordinates_single,
 )
 
 public_router = APIRouter(prefix="/public/treks", tags=["conditions-public"])
@@ -59,6 +61,14 @@ def admin_refresh_all_dispatch() -> dict:
     from app.worker.tasks.conditions import refresh_all_task  # local import avoids circular
     task = refresh_all_task.apply_async()
     return {"task_id": str(task.id), "status": "dispatched"}
+
+
+@admin_router.patch("/{slug}/coordinates", response_model=dict)
+def admin_set_coordinates(
+    slug: str, body: SetCoordinateIn, db: Session = Depends(get_db)
+) -> dict:
+    """Admin: set trek_base_lat/lng for a single trek not in the built-in dictionary."""
+    return set_trek_coordinates_single(db, slug, body.lat, body.lng)
 
 
 # Dynamic route LAST — must not shadow static routes above

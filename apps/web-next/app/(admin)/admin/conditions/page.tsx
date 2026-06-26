@@ -9,6 +9,9 @@ import {
   AlertCircle,
   Clock,
   Zap,
+  Edit2,
+  X,
+  Save,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -16,6 +19,7 @@ import {
   seedAllCoordinates,
   dispatchRefreshAll,
   refreshSingleTrek,
+  setTrekCoordinates,
   type ConditionAdminRow,
   type ConditionsListOut,
 } from "@/lib/admin-conditions";
@@ -174,6 +178,16 @@ export default function AdminConditionsPage() {
     }
   }
 
+  async function handleSetCoords(slug: string, lat: number, lng: number) {
+    try {
+      await setTrekCoordinates(slug, lat, lng);
+      setStatus(`✓ Coordinates saved for ${slug}. Click Refresh to fetch live weather.`);
+      await load();
+    } catch {
+      setStatus(`✗ Failed to save coordinates for ${slug}.`);
+    }
+  }
+
   return (
     <div className="p-6 min-h-screen bg-[#0c0e14]">
       {/* Page header */}
@@ -311,6 +325,7 @@ export default function AdminConditionsPage() {
                     row={row}
                     refreshing={refreshing === row.slug}
                     onRefresh={() => void handleRefreshRow(row.slug)}
+                    onSetCoords={(lat, lng) => void handleSetCoords(row.slug, lat, lng)}
                   />
                 ))}
               </tbody>
@@ -328,75 +343,157 @@ function TrekRow({
   row,
   refreshing,
   onRefresh,
+  onSetCoords,
 }: {
   row: ConditionAdminRow;
   refreshing: boolean;
   onRefresh: () => void;
+  onSetCoords: (lat: number, lng: number) => void;
 }) {
+  const [editing, setEditing] = useState(false);
+  const [latVal, setLatVal] = useState(row.trek_base_lat?.toString() ?? "");
+  const [lngVal, setLngVal] = useState(row.trek_base_lng?.toString() ?? "");
+  const [saving, setSaving] = useState(false);
+
+  async function handleSave() {
+    const lat = parseFloat(latVal);
+    const lng = parseFloat(lngVal);
+    if (isNaN(lat) || isNaN(lng)) return;
+    setSaving(true);
+    onSetCoords(lat, lng);
+    setSaving(false);
+    setEditing(false);
+  }
+
   return (
-    <tr className="border-b border-white/5 last:border-0 hover:bg-white/[0.03] transition-colors">
-      {/* Trek name */}
-      <td className="px-4 py-3.5">
-        <div>
-          <p className="text-white/80 font-medium text-xs sm:text-sm leading-tight">{row.title}</p>
-          <p className="text-white/30 text-[10px] mt-0.5 font-mono">{row.slug}</p>
-        </div>
-      </td>
+    <>
+      <tr className="border-b border-white/5 last:border-0 hover:bg-white/[0.03] transition-colors">
+        {/* Trek name */}
+        <td className="px-4 py-3.5">
+          <div>
+            <p className="text-white/80 font-medium text-xs sm:text-sm leading-tight">{row.title}</p>
+            <p className="text-white/30 text-[10px] mt-0.5 font-mono">{row.slug}</p>
+          </div>
+        </td>
 
-      {/* Coords status */}
-      <td className="px-4 py-3.5">
-        {row.coords_seeded ? (
-          <span className="inline-flex items-center gap-1 text-xs font-medium text-pine">
-            <CheckCircle2 className="h-3 w-3" /> Seeded
+        {/* Coords status */}
+        <td className="px-4 py-3.5">
+          {row.coords_seeded ? (
+            <div>
+              <span className="inline-flex items-center gap-1 text-xs font-medium text-pine">
+                <CheckCircle2 className="h-3 w-3" /> Seeded
+              </span>
+              {row.trek_base_lat !== null && (
+                <p className="text-white/20 text-[10px] font-mono mt-0.5">
+                  {row.trek_base_lat.toFixed(4)}, {row.trek_base_lng?.toFixed(4)}
+                </p>
+              )}
+            </div>
+          ) : (
+            <button
+              onClick={() => setEditing((e) => !e)}
+              className="inline-flex items-center gap-1 text-xs font-medium text-amber-400 hover:text-amber-300 transition-colors"
+              title="Click to set coordinates manually"
+            >
+              <Edit2 className="h-3 w-3" /> Set Coords
+            </button>
+          )}
+        </td>
+
+        {/* Weather label */}
+        <td className="px-4 py-3.5 hidden sm:table-cell">
+          <span className="text-white/50 text-xs">
+            {row.weather_label ?? <span className="text-white/20">—</span>}
           </span>
-        ) : (
-          <span className="inline-flex items-center gap-1 text-xs font-medium text-white/30">
-            <AlertCircle className="h-3 w-3" /> Missing
+        </td>
+
+        {/* Trail status */}
+        <td className="px-4 py-3.5">
+          <StatusBadge value={row.trail_status} map={trailStyle} labelMap={trailLabel} />
+        </td>
+
+        {/* Permit */}
+        <td className="px-4 py-3.5 hidden md:table-cell">
+          <StatusBadge value={row.permit_status} map={permitStyle} labelMap={permitLabel} />
+        </td>
+
+        {/* Last refreshed */}
+        <td className="px-4 py-3.5 hidden md:table-cell">
+          <span className="text-white/40 text-xs" title={fmt(row.last_updated_at)}>
+            {relativeTime(row.last_updated_at)}
           </span>
-        )}
-        {row.trek_base_lat !== null && (
-          <p className="text-white/20 text-[10px] font-mono mt-0.5">
-            {row.trek_base_lat.toFixed(4)}, {row.trek_base_lng?.toFixed(4)}
-          </p>
-        )}
-      </td>
+        </td>
 
-      {/* Weather label */}
-      <td className="px-4 py-3.5 hidden sm:table-cell">
-        <span className="text-white/50 text-xs">
-          {row.weather_label ?? <span className="text-white/20">—</span>}
-        </span>
-      </td>
+        {/* Actions */}
+        <td className="px-4 py-3.5 text-right">
+          <div className="flex items-center justify-end gap-3">
+            {!row.coords_seeded && (
+              <button
+                onClick={() => setEditing((e) => !e)}
+                className="inline-flex items-center gap-1 text-xs font-medium text-white/30 hover:text-white/60 transition-colors"
+                title="Set coordinates"
+              >
+                <MapPin className="h-3 w-3" />
+              </button>
+            )}
+            <button
+              onClick={onRefresh}
+              disabled={refreshing || !row.coords_seeded}
+              className="inline-flex items-center gap-1 text-xs font-medium text-accent hover:text-accent/80 disabled:text-white/20 disabled:cursor-not-allowed transition-colors"
+              title={!row.coords_seeded ? "No coordinates — set coords first" : "Refresh conditions now"}
+            >
+              <RefreshCw className={`h-3 w-3 ${refreshing ? "animate-spin" : ""}`} />
+              {refreshing ? "…" : "Refresh"}
+            </button>
+          </div>
+        </td>
+      </tr>
 
-      {/* Trail status */}
-      <td className="px-4 py-3.5">
-        <StatusBadge value={row.trail_status} map={trailStyle} labelMap={trailLabel} />
-      </td>
-
-      {/* Permit */}
-      <td className="px-4 py-3.5 hidden md:table-cell">
-        <StatusBadge value={row.permit_status} map={permitStyle} labelMap={permitLabel} />
-      </td>
-
-      {/* Last refreshed */}
-      <td className="px-4 py-3.5 hidden md:table-cell">
-        <span className="text-white/40 text-xs" title={fmt(row.last_updated_at)}>
-          {relativeTime(row.last_updated_at)}
-        </span>
-      </td>
-
-      {/* Actions */}
-      <td className="px-4 py-3.5 text-right">
-        <button
-          onClick={onRefresh}
-          disabled={refreshing || !row.coords_seeded}
-          className="inline-flex items-center gap-1 text-xs font-medium text-accent hover:text-accent/80 disabled:text-white/20 disabled:cursor-not-allowed transition-colors"
-          title={!row.coords_seeded ? "No coordinates — seed first" : "Refresh conditions now"}
-        >
-          <RefreshCw className={`h-3 w-3 ${refreshing ? "animate-spin" : ""}`} />
-          {refreshing ? "…" : "Refresh"}
-        </button>
-      </td>
-    </tr>
+      {/* Inline coords editor row */}
+      {editing && (
+        <tr className="border-b border-white/5 bg-amber-400/[0.03]">
+          <td colSpan={7} className="px-4 py-3">
+            <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2">
+              <span className="text-xs text-white/50 shrink-0">Set coordinates for <span className="font-mono text-white/70">{row.slug}</span>:</span>
+              <div className="flex items-center gap-2 flex-wrap">
+                <input
+                  type="number"
+                  step="0.0001"
+                  placeholder="Latitude (e.g. 30.7333)"
+                  value={latVal}
+                  onChange={(e) => setLatVal(e.target.value)}
+                  className="bg-white/5 border border-white/15 rounded-lg px-3 py-1.5 text-xs text-white/80 placeholder:text-white/20 focus:outline-none focus:border-amber-400/40 w-44"
+                />
+                <input
+                  type="number"
+                  step="0.0001"
+                  placeholder="Longitude (e.g. 78.4333)"
+                  value={lngVal}
+                  onChange={(e) => setLngVal(e.target.value)}
+                  className="bg-white/5 border border-white/15 rounded-lg px-3 py-1.5 text-xs text-white/80 placeholder:text-white/20 focus:outline-none focus:border-amber-400/40 w-44"
+                />
+                <button
+                  onClick={() => void handleSave()}
+                  disabled={saving || !latVal || !lngVal}
+                  className="inline-flex items-center gap-1.5 text-xs font-medium bg-amber-400/15 text-amber-400 border border-amber-400/25 hover:bg-amber-400/25 disabled:opacity-40 disabled:cursor-not-allowed px-3 py-1.5 rounded-lg transition-colors"
+                >
+                  <Save className="h-3 w-3" />
+                  {saving ? "Saving…" : "Save"}
+                </button>
+                <button
+                  onClick={() => setEditing(false)}
+                  className="inline-flex items-center gap-1 text-xs text-white/30 hover:text-white/60 transition-colors"
+                >
+                  <X className="h-3 w-3" /> Cancel
+                </button>
+              </div>
+              <p className="text-[10px] text-white/25 sm:ml-auto">
+                Find coordinates: search trek name on <a href="https://www.latlong.net" target="_blank" rel="noopener noreferrer" className="underline hover:text-white/40">latlong.net</a>
+              </p>
+            </div>
+          </td>
+        </tr>
+      )}
+    </>
   );
 }

@@ -42,6 +42,11 @@ class SeedCoordinatesOut(BaseModel):
     skipped: int
 
 
+class SetCoordinateIn(BaseModel):
+    lat: float
+    lng: float
+
+
 class ConditionAdminRow(BaseModel):
     slug: str
     title: str
