@@ -17,8 +17,8 @@ from app.modules.conditions.service import (
     seed_trek_coordinates,
 )
 
-public_router = APIRouter(prefix="/api/v1/public/treks", tags=["conditions-public"])
-admin_router = APIRouter(prefix="/api/v1/admin/conditions", tags=["conditions-admin"])
+public_router = APIRouter(prefix="/public/treks", tags=["conditions-public"])
+admin_router = APIRouter(prefix="/admin/conditions", tags=["conditions-admin"])
 
 
 # ---------------------------------------------------------------------------
