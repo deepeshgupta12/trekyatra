@@ -1049,6 +1049,35 @@ Web frontend:
 
 **Verification:** 727/729 BE tests pass (2 pre-existing) | `next build` ✅ zero errors.
 
+### Step 80 — Live Trek Conditions (backend + web) [DONE — 2026-06-26]
+
+- **`alembic/versions/20260626_0051_trek_conditions_and_coords.py`** (NEW): `trek_base_lat`/`trek_base_lng` Float nullable on `cms_pages`; `trek_conditions` table (id/slug/weather_json JSONB/trail_status/permit_status/permit_notes/condition_summary/weather_updated_at/trail_updated_at/last_updated_at/created_at/updated_at + unique+index on slug).
+- **`modules/cms/models.py`**: `trek_base_lat`/`trek_base_lng` `Mapped[float | None]` columns added.
+- **`modules/conditions/__init__.py`** (NEW): Empty package marker.
+- **`modules/conditions/models.py`** (NEW): `TrekCondition` ORM.
+- **`modules/conditions/schemas.py`** (NEW): `WeatherOut`, `ForecastDayOut`, `ConditionOut`, `SeedCoordinatesOut` (Pydantic v2 ConfigDict).
+- **`modules/conditions/service.py`** (NEW): `TREK_COORDS` (40 Himalayan treks), `WMO_LABELS`, `fetch_weather` (async httpx Open-Meteo), `_parse_weather`, `derive_trail_status` (5-report majority vote + `trek_is_unsafe_closed` override), `derive_permit_status` (trek_permit_required + month), `build_condition_summary`, `refresh_trek_conditions` (async upsert), `get_trek_conditions`, `refresh_all_trek_conditions`, `seed_trek_coordinates`.
+- **`db/base.py`**: `TrekCondition` import + `__all__` registration.
+- **`api/routes/conditions.py`** (NEW): `public_router` (`GET /api/v1/public/treks/{slug}/conditions`); `admin_router` (`POST /api/v1/admin/conditions/{slug}/refresh`, `POST /api/v1/admin/conditions/seed-coordinates`).
+- **`api/router.py`**: `conditions_public_router` + `conditions_admin_router` registered.
+- **`worker/tasks/conditions.py`** (NEW): `conditions.refresh_all` Celery task (asyncio.run wrapper).
+- **`worker/celery_app.py`**: `app.worker.tasks.conditions` include + `6h-refresh-trek-conditions` beat schedule (21600s).
+- **`tests/test_conditions_m19.py`** (NEW): 9 tests TC-B-M19-01–09; 748/750 pass (2 pre-existing).
+- **`apps/web-next/lib/conditions.ts`** (NEW): `WeatherOut`/`ForecastDayOut`/`ConditionOut` TypeScript interfaces + `fetchConditions` (ISR `revalidate:3600`).
+- **`apps/web-next/components/trek/LiveConditionsWidget.tsx`** (NEW): Current weather (temp/label/humidity/wind/feels-like), WMO icons, 3-day forecast cards, trail/permit status pills, condition summary, last-updated timestamp; null-returns when no data.
+- **`apps/web-next/app/(public)/trek/[slug]/page.tsx`**: `<LiveConditionsWidget>` wired above trail-conditions section.
+
+**Verification:** 748/750 BE tests pass (2 pre-existing) | `next build` ✅ zero errors.
+
+### Step M19 — Live Trek Conditions (mobile) [DONE — 2026-06-26]
+
+- **`apps/mobile/hooks/useConditions.ts`** (NEW): `ConditionOut`/`WeatherOut`/`ForecastDayOut` interfaces; `useConditions` hook with `AsyncStorage` 6h TTL cache, 404→null graceful handling, offline fallback.
+- **`apps/mobile/components/trek/ConditionsWidget.tsx`** (NEW): Inline compact widget — WMO emoji, current temp, humidity/wind details, 3-day forecast horizontal ScrollView, trail/permit badges, "Details →" link; hidden when no data.
+- **`apps/mobile/components/conditions/LiveConditionsScreen.tsx`** (NEW): Full-screen overlay — current weather card, 3-day forecast cards, trail status card (colour + description), permit card (notes), condition summary card, pull-to-refresh `RefreshControl`, offline banner, last-updated.
+- **`apps/mobile/app/(tabs)/(home)/trek/[slug].tsx`**: `conditionsDetailVisible` state; `<ConditionsWidget>` in guide tab (between TrekAskAI and Buddy section); `<LiveConditionsScreen>` as `StyleSheet.absoluteFill` overlay.
+
+**Verification:** `npx tsc --noEmit` ✅ zero errors. Shared backend: STEP-80.
+
 ### Step 79 — Trek Buddy Matching (shared backend + web surfaces) [DONE — 2026-06-25]
 
 Backend (shared with STEP-M18 mobile):

@@ -23,6 +23,7 @@ celery_app = Celery(
         "app.worker.tasks.trek_intelligence_tasks",
         "app.worker.tasks.notifications",
         "app.worker.tasks.buddies",
+        "app.worker.tasks.conditions",
     ],
 )
 
@@ -103,6 +104,10 @@ celery_app.conf.update(
         "daily-expire-buddy-signals": {
             "task": "buddies.expire_signals",
             "schedule": 86400,  # daily at 00:30 UTC
+        },
+        "6h-refresh-trek-conditions": {
+            "task": "conditions.refresh_all",
+            "schedule": 21600,  # every 6 hours
         },
     },
 )

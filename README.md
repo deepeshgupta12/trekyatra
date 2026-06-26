@@ -411,6 +411,24 @@ trekyatra/
 | Mobile BuddyChatScreen — pageSheet FlatList chat, 10s polling, KeyboardAvoidingView | Done |
 | Celery beat task `buddies.expire_signals` — daily auto-expiry of past-month signals | Done |
 
+### Live Trek Conditions (Step 80 + M19)
+| Feature | Status |
+|---------|--------|
+| Open-Meteo weather integration — free, no API key, 10k/day; temp, feels-like, humidity, wind, WMO code | Done |
+| `trek_conditions` table + `trek_base_lat`/`trek_base_lng` on `cms_pages` | Done |
+| `TREK_COORDS` hardcoded dict for 40 Himalayan treks — fallback when DB columns null | Done |
+| Trail status derivation from last 5 approved trip reports (majority vote + `trek_is_unsafe_closed` hard override) | Done |
+| Permit status from `trek_permit_required` + current month vs `trek_open_months` | Done |
+| LLM-free condition summary (templated, zero extra cost) | Done |
+| `GET /api/v1/public/treks/{slug}/conditions` — public endpoint, 404 when no coords | Done |
+| `POST /api/v1/admin/conditions/{slug}/refresh` — admin force-refresh | Done |
+| `POST /api/v1/admin/conditions/seed-coordinates` — bulk seed 40 trek lat/lng | Done |
+| Celery beat task `conditions.refresh_all` — every 6 hours (21600s) | Done |
+| Web `LiveConditionsWidget` — current weather, 3-day forecast, trail + permit pills, summary | Done |
+| Mobile `ConditionsWidget` — inline compact widget in guide tab | Done |
+| Mobile `LiveConditionsScreen` — full-screen overlay with pull-to-refresh | Done |
+| Mobile `AsyncStorage` 6h TTL cache + offline fallback | Done |
+
 ---
 
 ## Local Development Setup
@@ -611,6 +629,7 @@ Full API docs available at http://localhost:8000/docs when the backend is runnin
 | TrekSage chat (Step 73) | `treksage_chat_sessions` (id, user_id nullable FK, session_key unique, created_at, last_active_at), `treksage_chat_messages` (id, session_id FK cascade, role, content, tool_calls_json, created_at) |
 | Community / Trip Reports (Step 78) | `trip_reports` (id, user_id FK, trek_slug, title, body, condition, trek_date, status pending/approved/rejected, moderated_by nullable, moderated_at, created_at), `trek_media` (id, report_id FK, user_id, trek_slug, url, s3_key, width, height, file_size, uploaded_at) |
 | Community / Buddy Matching (Step 79) | `buddy_signals` (id uuid, user_id FK, trek_slug, month_year, group_size, experience, notes, active, expires_at, created_at; UNIQUE user_id+trek_slug+month_year), `buddy_requests` (id, sender_id FK, signal_id FK, message, status pending/accepted/rejected, responded_at; UNIQUE sender_id+signal_id), `buddy_chat_messages` (id, request_id FK, sender_id FK, content, is_read, created_at); `bio`+`avatar_url` added to `user_profiles` |
+| Coordinates + conditions (Step 80) | `trek_base_lat`/`trek_base_lng` Float nullable added to `cms_pages`; `trek_conditions` (id uuid pk, slug unique+index, weather_json JSONB, trail_status, permit_status, permit_notes, condition_summary, weather_updated_at, trail_updated_at, last_updated_at, created_at, updated_at) |
 | CDP (Step 64) | `analytics_events`, `analytics_sessions`, `user_traits`, `attribution_touchpoints`, `gsc_performance` |
 
 ---
@@ -650,6 +669,7 @@ Full API docs available at http://localhost:8000/docs when the backend is runnin
 | Cross-platform personalization sync (behavior_profile on users, GET/PUT API, mobile pull-on-login, web sync-on-view) | Done (Bugfix Pass 2) |
 | Explore filter prominence + Go Premium drawer entry | Done (Bugfix Pass 2) |
 | Push notifications (FCM/APNs, test mode, permit/seasonal/news Celery tasks, notification inbox screen, badge count, 2nd-open permission prompt) | Done (M14) |
+| Live trek conditions — `useConditions` hook (AsyncStorage 6h cache + offline), `ConditionsWidget` (inline: WMO emoji/temp/forecast/badges), `LiveConditionsScreen` (full overlay: weather + forecast + trail/permit + summary cards, pull-to-refresh) | Done (M19) |
 
 ---
 
@@ -686,6 +706,7 @@ Full API docs available at http://localhost:8000/docs when the backend is runnin
 | **Step 74 — Post-73 Bug Fixes + Mobile/TrekSage UI Revamp** | TrekSage renamed (Myra removed); bot-stopping fix (`tool_choice={"type":"none"}` on final tool round); `react-markdown` for bot replies; trek card visuals in chat; TrekSage AI home page banner; voice-crash fix (`NSSpeechRecognitionUsageDescription` in `app.config.ts`, dev-client rebuild required); mobile Plan My Trek revamped (emoji chips, hero images, match badge); mobile Compare revamped (tile grid, search input, trek image header, styled AI summary); `searchTreks()` added to mobile API; 683/685 backend pass, `next build` ✅, `tsc --noEmit` ✅ | Done — 2026-06-16 |
 | **Step 77 — TrekSage UX Overhaul + Search Fix** | `search_treks` keyword tokenization (OR-match, stop-word filter, extended haystack with structured month names); `_MONTH_ORD` full month names (December etc.); 4 new BE tests (TC-B41–B44, 676/676 pass); Myra-inspired `/treksage` split-screen (42% chat / 58% canvas); canvas slides in on first trek_cards; trek name → `/trek/[slug]?ref=treksage` analytics; "View Details" → `TrekDetailPanel` inline; "Add to Compare" → compare set → "Compare (N)" button; multi-stage thinking bubble; send/stop morph; stagger-fade cards; `TrekDetailPanel.tsx` created; `next build` ✅ 21 kB | Done — 2026-06-18 |
 | **Step 79 + M18 — Trek Buddy Matching** | Migration 20260625_0050: `buddy_signals`+`buddy_requests`+`buddy_chat_messages` tables + `bio`/`avatar_url` on `user_profiles`; `buddies` module (models, schemas, service, 10 routes); static routes before dynamic (§16); `buddies.expire_signals` Celery beat task; 12 tests (TC-B-M18-01–12, 739/741 pass); web: `lib/buddies.ts`, BuddySection+BuddySignalCard+BuddySignalForm+BuddyChatPanel components, `/account/buddy-requests` page, `/trekker/[signalId]` page; mobile: `useBuddies` hook, BuddySignalSheet+BuddyListCard+TrekkerProfileModal+BuddyRequestSheet+BuddyChatScreen components; buddy block in trek detail + account tab; upsert signal semantics; privacy: display_name="FirstName L.", profile URL via signal UUID | Done — 2026-06-25 |
+| **Step 80 + M19 — Live Trek Conditions** | Migration 20260626_0051: `trek_base_lat`/`trek_base_lng` nullable on `cms_pages`; `trek_conditions` table (slug unique+index, weather_json JSONB, trail_status, permit_status, permit_notes, condition_summary, weather_updated_at, trail_updated_at, last_updated_at); `conditions` module (models/schemas/service); `TREK_COORDS` dict (40 Himalayan treks); Open-Meteo `fetch_weather` (async httpx, no API key); `derive_trail_status` (last-5-reports majority vote + `trek_is_unsafe_closed` override); `derive_permit_status` (permit_required + month); `conditions.refresh_all` Celery beat (21600s); 3 routes (`GET /api/v1/public/treks/{slug}/conditions`, admin refresh + seed-coordinates); 9 tests (TC-B-M19-01–09, 748/750 pass); web: `lib/conditions.ts`, `LiveConditionsWidget` (temp/WMO icon/3-day forecast/trail+permit pills/summary); mobile: `useConditions` (AsyncStorage 6h TTL cache + offline), `ConditionsWidget` (inline), `LiveConditionsScreen` (full-screen overlay); `trek/[slug]/page.tsx` + `trek/[slug].tsx` wired | Done — 2026-06-26 |
 
 ## Production Infrastructure
 

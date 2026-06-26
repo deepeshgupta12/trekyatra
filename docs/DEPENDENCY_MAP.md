@@ -2328,6 +2328,39 @@ New `trip_reports` + `trek_media` tables, moderation queue, public reports API, 
 | `apps/web-next/app/(public)/trek/[slug]/page.tsx` | `<BuddySection>` added | LOW — additive section |
 | `apps/web-next/app/(public)/account/layout.tsx` | "Buddy Requests" nav item | LOW — additive nav |
 
+### Step 80 — Live Trek Conditions (backend + web) [DONE — 2026-06-26]
+
+New `trek_conditions` module: Open-Meteo weather fetch, trail/permit status derivation, 6-hour Celery beat refresh, public conditions API, web widget.
+
+| File | Change | Blast Radius |
+|------|--------|-------------|
+| `alembic/versions/20260626_0051_trek_conditions_and_coords.py` (NEW) | `trek_base_lat`/`trek_base_lng` on `cms_pages`; `trek_conditions` table | LOW — additive columns + new table |
+| `app/modules/cms/models.py` | `trek_base_lat`/`trek_base_lng` Mapped columns | LOW — additive columns; no existing callers read them |
+| `app/modules/conditions/__init__.py` (NEW) | Package marker | LOW — new module |
+| `app/modules/conditions/models.py` (NEW) | `TrekCondition` ORM | LOW — new model |
+| `app/modules/conditions/schemas.py` (NEW) | `WeatherOut`/`ForecastDayOut`/`ConditionOut`/`SeedCoordinatesOut` Pydantic v2 | LOW — new schemas |
+| `app/modules/conditions/service.py` (NEW) | `TREK_COORDS`, `fetch_weather` (async httpx Open-Meteo), `derive_trail_status`, `derive_permit_status`, `refresh_trek_conditions`, `get_trek_conditions`, `refresh_all_trek_conditions`, `seed_trek_coordinates` | LOW — new service; reads `cms_pages` and `trip_reports` read-only |
+| `app/db/base.py` | `TrekCondition` import + `__all__` registration | LOW — additive |
+| `app/api/routes/conditions.py` (NEW) | `public_router` + `admin_router` (3 routes) | LOW — new routes; no route ordering conflict |
+| `app/api/router.py` | `conditions_public_router` + `conditions_admin_router` registered | LOW — additive include |
+| `app/worker/tasks/conditions.py` (NEW) | `conditions.refresh_all` Celery task | LOW — new task |
+| `app/worker/celery_app.py` | `app.worker.tasks.conditions` include + beat schedule (21600s) | LOW — additive entry; worker restart required after deploy |
+| `tests/test_conditions_m19.py` (NEW) | 9 tests TC-B-M19-01–09 | LOW — test file only |
+| `apps/web-next/lib/conditions.ts` (NEW) | TypeScript interfaces + `fetchConditions` (ISR revalidate:3600) | LOW — new lib module |
+| `apps/web-next/components/trek/LiveConditionsWidget.tsx` (NEW) | Current weather + 3-day forecast + status pills widget | LOW — leaf component |
+| `apps/web-next/app/(public)/trek/[slug]/page.tsx` | `<LiveConditionsWidget>` wired above trail-conditions section | MEDIUM — critical public page; change is purely additive |
+
+### Step M19 — Live Trek Conditions (mobile) [DONE — 2026-06-26]
+
+Mobile conditions hook + inline widget + full-screen overlay, consuming STEP-80 backend.
+
+| File | Change | Blast Radius |
+|------|--------|-------------|
+| `apps/mobile/hooks/useConditions.ts` (NEW) | `useConditions` hook with AsyncStorage 6h TTL cache, offline fallback, 404→null | LOW — new hook |
+| `apps/mobile/components/trek/ConditionsWidget.tsx` (NEW) | Inline compact widget: weather, forecast, trail/permit badges | LOW — leaf component |
+| `apps/mobile/components/conditions/LiveConditionsScreen.tsx` (NEW) | Full-screen overlay: weather card, forecast, trail + permit + summary cards, pull-to-refresh | LOW — leaf component |
+| `apps/mobile/app/(tabs)/(home)/trek/[slug].tsx` | `conditionsDetailVisible` state + `<ConditionsWidget>` + `<LiveConditionsScreen>` overlay | MEDIUM — critical screen; all changes additive |
+
 ### Step M18 — Trek Buddy Matching (mobile surfaces) [DONE — 2026-06-25]
 
 Mobile buddy matching UI consuming STEP-79 backend.

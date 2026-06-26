@@ -85,3 +85,7 @@ class CMSPage(UUIDPrimaryKeyMixin, TimestampMixin, Base):
     trek_is_unsafe_closed: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
     trek_data_confidence: Mapped[dict | None] = mapped_column(JSON, nullable=True)
     trek_last_verified_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+
+    # Trek base-camp coordinates for weather API (Step 80 / M19)
+    trek_base_lat: Mapped[float | None] = mapped_column(nullable=True)
+    trek_base_lng: Mapped[float | None] = mapped_column(nullable=True)

@@ -41,6 +41,8 @@ import { BuddySignalSheet } from "@/components/buddy/BuddySignalSheet";
 import { BuddyListCard } from "@/components/buddy/BuddyListCard";
 import { TrekkerProfileModal } from "@/components/buddy/TrekkerProfileModal";
 import { BuddyChatScreen } from "@/components/buddy/BuddyChatScreen";
+import { ConditionsWidget } from "@/components/trek/ConditionsWidget";
+import { LiveConditionsScreen } from "@/components/conditions/LiveConditionsScreen";
 
 export default function TrekDetailScreen() {
   const { slug } = useLocalSearchParams<{ slug: string }>();
@@ -57,6 +59,7 @@ export default function TrekDetailScreen() {
   const [buddyListVisible, setBuddyListVisible] = useState(false);
   const [profileSignalId, setProfileSignalId] = useState<string | null>(null);
   const [chatReq, setChatReq] = useState<BuddyRequestOut | null>(null);
+  const [conditionsDetailVisible, setConditionsDetailVisible] = useState(false);
   const reports = useReports(slug ?? "");
   const buddies = useTrekBuddies(slug ?? "");
   const { isDone } = useCheckin();
@@ -342,6 +345,12 @@ export default function TrekDetailScreen() {
             <>
               <TrekAskAI slug={trek.slug} trekName={trek.title} />
 
+              {/* Live Conditions Widget */}
+              <ConditionsWidget
+                slug={trek.slug}
+                onViewDetails={() => setConditionsDetailVisible(true)}
+              />
+
               {/* Trek Buddy Matching */}
               <View style={[styles.buddySection, { borderTopColor: colors.border }]}>
                 <Text style={[styles.buddySectionTitle, { color: colors.textPrimary }]}>
@@ -462,6 +471,17 @@ export default function TrekDetailScreen() {
         otherPartyName={chatReq?.other_party_name ?? ""}
         onClose={() => setChatReq(null)}
       />
+
+      {/* Live Conditions full detail */}
+      {conditionsDetailVisible && (
+        <View style={[StyleSheet.absoluteFill, { zIndex: 100 }]}>
+          <LiveConditionsScreen
+            slug={trek.slug}
+            trekName={trek.title}
+            onClose={() => setConditionsDetailVisible(false)}
+          />
+        </View>
+      )}
     </View>
   );
 }

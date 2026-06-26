@@ -28,6 +28,7 @@ import {
 import { TrekCTAs } from "@/components/trek/TrekCTAs";
 import { TrekReportsSection } from "@/components/trek/TrekReportsSection";
 import { BuddySection } from "@/components/trek/BuddySection";
+import { LiveConditionsWidget } from "@/components/trek/LiveConditionsWidget";
 import type { Trek } from "@/components/trek/TrekCard";
 
 // Allow CMS-published slugs not in static data to be served on-demand (Step 43)
@@ -728,8 +729,13 @@ export default async function TrekDetailPage({ params }: { params: { slug: strin
         </div>
       </section>
 
+      {/* Live Weather Conditions */}
+      <section id="live-conditions" className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mt-16">
+        <LiveConditionsWidget slug={params.slug} />
+      </section>
+
       {/* Trail Conditions — UGC Reports */}
-      <section id="trail-conditions" className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mt-16">
+      <section id="trail-conditions" className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mt-8">
         <TrekReportsSection slug={params.slug} />
       </section>
 

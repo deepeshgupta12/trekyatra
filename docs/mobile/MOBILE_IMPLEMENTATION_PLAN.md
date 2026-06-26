@@ -293,16 +293,15 @@ Mobile-adapted version of `lib/analytics.ts` for React Native:
 
 ## Phase 6 — Contextual Intelligence (Steps M19–M20)
 
-### Step M19 — Live Trek Conditions [PENDING]
-- Trek conditions screen per trek: live weather widget + trail status + permit status + community report summary
-- IMD (India Meteorological Department) open API integration (free tier) → weather for trek base camp coordinates
-- Crowdsourced condition summary: derive trail_status from last 5 approved trip reports
-- Permit status: cross-reference `trek_alerts` table for current permit window status
-- DB: `trek_conditions` table (slug, weather_json, trail_status, permit_status, last_updated)
-- Celery beat task: `conditions.refresh_all_treks` (every 6 hours)
-- `GET /api/v1/mobile/conditions/{slug}` → returns combined condition object
-- Trek detail screen: conditions widget pinned below hero image
-- Push alert trigger: if trail_status changes from open → closed, push to all subscribers
+### Step M19 — Live Trek Conditions [DONE — 2026-06-26]
+- **Weather API**: Open-Meteo (`api.open-meteo.com`) — free, no API key, 10k calls/day; endpoint: `GET /api/v1/public/treks/{slug}/conditions`
+- `apps/mobile/hooks/useConditions.ts` (NEW): `ConditionOut`/`WeatherOut`/`ForecastDayOut` TypeScript interfaces; `useConditions(slug)` hook — async API fetch + `AsyncStorage` cache with 6h TTL (`conditions_${slug}`); 404→null graceful (trek has no coords); offline fallback to cache; `fromCache` flag for UI banner
+- `apps/mobile/components/trek/ConditionsWidget.tsx` (NEW): Inline compact widget in guide tab — WMO emoji + current temp + humidity/wind details row + 3-day horizontal ScrollView forecast cards + trail status badge + permit status badge + "Details →" link; hidden when data is null
+- `apps/mobile/components/conditions/LiveConditionsScreen.tsx` (NEW): Full-screen overlay (StyleSheet.absoluteFill) — current weather card (emoji + big temp + feels-like/humidity/wind), 3-day forecast cards, trail status card (colour-coded + description), permit card (notes), condition summary card, pull-to-refresh RefreshControl, offline "Cached data" banner, last-updated timestamp
+- `apps/mobile/app/(tabs)/(home)/trek/[slug].tsx`: `conditionsDetailVisible` state; `<ConditionsWidget>` rendered in guide tab between TrekAskAI and Buddy section; `<LiveConditionsScreen>` rendered as StyleSheet.absoluteFill overlay with zIndex:100 when visible
+- All status values colour-coded: open=green, caution=amber, closed=red; permit_required=amber, not_required=grey, check_locally=blue; all status blocks have descriptive text for accessibility
+- Backend: STEP-80 (shared — `trek_conditions` table, Open-Meteo integration, `conditions.refresh_all` Celery beat every 6h)
+- `npx tsc --noEmit` ✅ zero errors
 
 ### Step M20 — Nearby Treks (GPS) [PENDING]
 - First-launch permission request: "Allow TrekYatra to use your location to suggest nearby treks"
@@ -349,8 +348,8 @@ Mobile-adapted version of `lib/analytics.ts` for React Native:
 | Discovery (M06–M08) | ✓ DONE (M06, M07a, M07b, M07c, M08 complete) |
 | User & Commerce (M09–M13) | M09 ✓ Done — M10 ✓ Done — M11 ✓ Done — M12 ✓ Done — M13 ✓ Done |
 | Engagement & Analytics (M14–M15) | M14 ✓ Done — M15 ✓ Done |
-| Community (M16–M18) | M16 ✓ Done — M17–M18 Pending |
-| Contextual Intelligence (M19–M20) | Pending |
+| Community (M16–M18) | M16 ✓ Done — M17 ✓ Done — M18 ✓ Done |
+| Contextual Intelligence (M19–M20) | M19 ✓ Done — M20 Pending |
 | Content & Release (M21–M22) | Pending |
 
 **Bugfix Pass 2 (2026-06-23) — DONE:** Cross-platform behavior sync (`behavior_profile` column + GET/PUT endpoints + mobile `pullAndMergeBehaviorProfile` on login + web `pullAndMergeBehaviorProfileFromBackend` on login + `syncBehaviorProfileToBackend` on trek view when authenticated); Go Premium saffron entry in AppDrawer; Explore FilterChips prominent saffron pill.
@@ -361,4 +360,10 @@ Mobile-adapted version of `lib/analytics.ts` for React Native:
 
 **Step M16 (2026-06-24) — DONE:** Trek check-ins & history — `user_trek_history` table (migration 20260623_0048, 3 indexes); `UserTrekHistory` ORM; `CheckinIn`/`CheckinOut`/`TrekHistoryStatsOut` schemas; service layer (`create_checkin`, `get_user_history`, `has_user_done_trek`, `get_history_stats` + 6 badge rules); 4 API routes (`POST/GET /api/v1/mobile/checkin`, `/stats`, `/done/{slug}`); `hooks/useCheckin.ts`; `components/account/TrekHistoryCard.tsx`; `components/account/CheckinSheet.tsx` (modal bottom sheet, star rating, date/duration/notes); `app/(tabs)/account/history.tsx` (stats + badges + chronological list); `app/(tabs)/(home)/trek/[slug].tsx` wired with "I did this trek" CTA + "You've done this trek ✓" banner + CheckinSheet; `AccountDashboard` Trek History entry added. 8 new backend tests; 719/721 pass; tsc ✓; next build ✓.
 
-**Current next step:** M17 — Trip Reports & Trail Conditions.
+**Step M17 (2026-06-24) — DONE:** Trip reports + photo gallery — 5th "Trail" tab on TrekDetailScreen, `useReports` hook, `ConditionSummaryBanner`/`TripReportCard`/`PhotoGallery`/`PhotoPicker`/`AddReportSheet` components, expo-image-picker + expo-image-manipulator resize (1920px, 3-photo limit). `npx tsc --noEmit` ✅ zero errors. Shared backend: STEP-78.
+
+**Step M18 (2026-06-25) — DONE:** Trek buddy matching — `useBuddies.ts` hook, BuddySignalSheet + BuddyListCard + BuddyRequestSheet + BuddyChatScreen + TrekkerProfileModal components; buddy block in guide tab + account Buddy Requests row; privacy masking ("FirstName L."), signal UUID-scoped profile. `npx tsc --noEmit` ✅ zero errors. Shared backend: STEP-79.
+
+**Step M19 (2026-06-26) — DONE:** Live trek conditions — `useConditions.ts` (AsyncStorage 6h TTL cache, offline fallback), `ConditionsWidget.tsx` (inline: WMO emoji, temp, forecast horizontal scroll, trail/permit badges), `LiveConditionsScreen.tsx` (full-screen overlay: weather card + 3-day forecast + trail/permit cards + summary + pull-to-refresh); wired in trek detail guide tab. `npx tsc --noEmit` ✅ zero errors. Shared backend: STEP-80.
+
+**Current next step:** M20 — Nearby Treks (GPS).

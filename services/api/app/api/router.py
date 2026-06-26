@@ -62,6 +62,8 @@ from app.api.routes.reports import auth_router as reports_auth_router
 from app.api.routes.reports import admin_router as reports_admin_router
 from app.api.routes.buddies import public_router as buddies_public_router
 from app.api.routes.buddies import auth_router as buddies_auth_router
+from app.api.routes.conditions import public_router as conditions_public_router
+from app.api.routes.conditions import admin_router as conditions_admin_router
 
 api_router = APIRouter()
 api_router.include_router(health_router, tags=["health"])
@@ -126,3 +128,5 @@ api_router.include_router(reports_auth_router)
 api_router.include_router(reports_admin_router)
 api_router.include_router(buddies_public_router)
 api_router.include_router(buddies_auth_router)
+api_router.include_router(conditions_public_router)
+api_router.include_router(conditions_admin_router)
