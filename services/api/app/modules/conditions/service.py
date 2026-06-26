@@ -10,7 +10,14 @@ from sqlalchemy.orm import Session
 
 from app.modules.cms.models import CMSPage
 from app.modules.conditions.models import TrekCondition
-from app.modules.conditions.schemas import ConditionOut, ForecastDayOut, SeedCoordinatesOut, WeatherOut
+from app.modules.conditions.schemas import (
+    ConditionAdminRow,
+    ConditionOut,
+    ConditionsListOut,
+    ForecastDayOut,
+    SeedCoordinatesOut,
+    WeatherOut,
+)
 from app.modules.reports.models import TripReport
 
 logger = logging.getLogger(__name__)
@@ -413,3 +420,66 @@ def seed_trek_coordinates(db: Session) -> SeedCoordinatesOut:
         db.commit()
 
     return SeedCoordinatesOut(seeded=seeded, skipped=skipped)
+
+
+# ---------------------------------------------------------------------------
+# Admin list — all trek guides with their conditions status
+# ---------------------------------------------------------------------------
+def list_all_trek_conditions(db: Session) -> ConditionsListOut:
+    """Return all published trek_guide pages with their current conditions status."""
+    pages = (
+        db.query(CMSPage)
+        .filter(CMSPage.page_type == "trek_guide", CMSPage.status == "published")
+        .order_by(CMSPage.title)
+        .all()
+    )
+
+    rows: list[ConditionAdminRow] = []
+    seeded_count = 0
+    refreshed_count = 0
+
+    for page in pages:
+        cond = (
+            db.query(TrekCondition)
+            .filter(TrekCondition.slug == page.slug)
+            .first()
+        )
+
+        coords_seeded = (
+            (page.trek_base_lat is not None and page.trek_base_lng is not None)
+            or page.slug in TREK_COORDS
+        )
+        if coords_seeded:
+            seeded_count += 1
+        if cond is not None and cond.last_updated_at is not None:
+            refreshed_count += 1
+
+        weather_label: str | None = None
+        if cond and cond.weather_json:
+            try:
+                wmo_code = cond.weather_json.get("current", {}).get("weather_code")
+                if wmo_code is not None:
+                    weather_label, _ = _wmo_label(wmo_code)
+            except Exception:
+                pass
+
+        rows.append(
+            ConditionAdminRow(
+                slug=page.slug,
+                title=page.title or page.slug,
+                trek_base_lat=page.trek_base_lat,
+                trek_base_lng=page.trek_base_lng,
+                coords_seeded=coords_seeded,
+                trail_status=cond.trail_status if cond else None,
+                permit_status=cond.permit_status if cond else None,
+                last_updated_at=cond.last_updated_at if cond else None,
+                weather_label=weather_label,
+            )
+        )
+
+    return ConditionsListOut(
+        total=len(rows),
+        seeded=seeded_count,
+        refreshed=refreshed_count,
+        rows=rows,
+    )

@@ -193,8 +193,11 @@ Last updated: 2026-05-27 (Step 64)
 | `/api/v1/buddies/requests/{request_id}/messages/read` | **Auth POST** — mark all unread messages as read (static — registered before `/messages`); STEP-79 |
 | `/api/v1/buddies/requests/{request_id}/messages` | **Auth GET/POST** — get chat messages (auto-marks read) / send new message; 403 if not party or not accepted; STEP-79 |
 | `/api/v1/public/treks/{slug}/conditions` | **Public GET** — live conditions (weather + trail status + permit status + summary); 404 if no coordinates; STEP-80 |
-| `/api/v1/admin/conditions/{slug}/refresh` | **Admin POST** — force-refresh a single trek's conditions from Open-Meteo; STEP-80 |
+| `/api/v1/admin/conditions` | **Admin GET** — list all published trek_guide pages with coords/trail/permit/weather status; STEP-80b |
 | `/api/v1/admin/conditions/seed-coordinates` | **Admin POST** — seed `trek_base_lat`/`trek_base_lng` on `cms_pages` from `TREK_COORDS` dict for ~40 Himalayan treks; STEP-80 |
+| `/api/v1/admin/conditions/refresh-all` | **Admin POST** — dispatch `conditions.refresh_all` Celery task immediately (returns task_id); STEP-80b |
+| `/api/v1/admin/conditions/{slug}/refresh` | **Admin POST** — force-refresh a single trek's conditions from Open-Meteo; STEP-80 |
+| `/admin/conditions` | **Admin page** — Live Conditions dashboard (KPI cards, seed + refresh-all actions, per-trek status table); STEP-80b |
 | `/api/v1/treks/{slug}/profile` | **Public GET** — full structured `TrekProfile`; Step 72 |
 | `/api/v1/treks/compare` | **Public POST** — compare 2-4 trek slugs, returns rows + cached AI trade-off summary; Step 72 |
 | `/api/v1/treks/{slug}/ask` | **Public POST** — Trek Detail Q&A (TrekSage), cached Haiku answers; Step 72 |

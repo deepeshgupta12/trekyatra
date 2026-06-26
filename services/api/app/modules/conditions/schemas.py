@@ -40,3 +40,24 @@ class ConditionOut(BaseModel):
 class SeedCoordinatesOut(BaseModel):
     seeded: int
     skipped: int
+
+
+class ConditionAdminRow(BaseModel):
+    slug: str
+    title: str
+    trek_base_lat: float | None = None
+    trek_base_lng: float | None = None
+    coords_seeded: bool
+    trail_status: str | None = None
+    permit_status: str | None = None
+    last_updated_at: datetime | None = None
+    weather_label: str | None = None
+
+    model_config = ConfigDict(from_attributes=True)
+
+
+class ConditionsListOut(BaseModel):
+    total: int
+    seeded: int
+    refreshed: int
+    rows: list[ConditionAdminRow]
