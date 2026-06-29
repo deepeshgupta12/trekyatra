@@ -3,6 +3,7 @@
 Provides two endpoints:
 - GET /public/sitemap-pages         — English published CMS pages (default; language='en')
 - GET /public/sitemap-pages/hindi   — Published Hindi trek pages with source_slug for URL building
+- GET /public/sitemap-treks         — Trek guide pages with max(updated_at, conditions last_updated_at)
 
 No authentication required. Lightweight, tuned for sitemap crawlers.
 """
@@ -12,11 +13,12 @@ from datetime import datetime
 
 from fastapi import APIRouter, Depends, Query
 from pydantic import BaseModel
-from sqlalchemy import select
+from sqlalchemy import func, outerjoin, select
 from sqlalchemy.orm import Session
 
 from app.db.session import get_db
 from app.modules.cms.models import CMSPage
+from app.modules.conditions.models import TrekCondition
 
 router = APIRouter(prefix="/public", tags=["public"])
 
@@ -67,6 +69,49 @@ def sitemap_pages(
             updated_at=r.updated_at,
             published_at=r.published_at,
         )
+        for r in rows
+    ]
+
+
+class TrekSitemapEntry(BaseModel):
+    slug: str
+    trek_state: str | None
+    last_modified: datetime
+
+
+@router.get("/sitemap-treks", response_model=list[TrekSitemapEntry])
+def sitemap_treks(
+    state: str | None = Query(default=None, description="Filter by trek_state (case-insensitive)"),
+    limit: int = Query(default=500, ge=1, le=1000),
+    db: Session = Depends(get_db),
+) -> list[TrekSitemapEntry]:
+    """Published trek_guide pages with lastmod = max(cms_pages.updated_at, trek_conditions.last_updated_at).
+    Used by state-specific XML sitemaps so Google re-crawls trek pages when conditions are refreshed.
+    """
+    stmt = (
+        select(
+            CMSPage.slug,
+            CMSPage.trek_state,
+            func.greatest(
+                CMSPage.updated_at,
+                func.coalesce(TrekCondition.last_updated_at, CMSPage.updated_at),
+            ).label("last_modified"),
+        )
+        .select_from(
+            outerjoin(CMSPage, TrekCondition, CMSPage.slug == TrekCondition.slug)
+        )
+        .where(CMSPage.status == "published")
+        .where(CMSPage.page_type == "trek_guide")
+        .where((CMSPage.language == "en") | CMSPage.language.is_(None))
+        .order_by(CMSPage.updated_at.desc())
+        .limit(limit)
+    )
+    if state:
+        stmt = stmt.where(func.lower(CMSPage.trek_state) == state.lower())
+
+    rows = db.execute(stmt).all()
+    return [
+        TrekSitemapEntry(slug=r.slug, trek_state=r.trek_state, last_modified=r.last_modified)
         for r in rows
     ]
 

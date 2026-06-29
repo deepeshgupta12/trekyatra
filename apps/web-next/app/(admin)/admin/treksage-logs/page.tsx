@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { MessageSquare, RefreshCw, Filter } from "lucide-react";
+import { MessageSquare, RefreshCw, Filter, User, UserX } from "lucide-react";
 import { fetchAiInteractionLogs, type AIInteractionLogEntry } from "@/lib/api";
 
 const SOURCES = ["all", "web", "mobile", "chatgpt", "claude"];
@@ -72,7 +72,15 @@ export default function TrekSageLogsPage() {
       </div>
 
       {/* ── KPI row ── */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-6">
+      <div className="grid grid-cols-2 sm:grid-cols-5 gap-3 mb-6">
+        <div className="bg-[#14161f] rounded-2xl border border-white/10 p-4">
+          <p className="text-white/40 text-xs font-medium uppercase tracking-wide mb-1">Known Users</p>
+          <p className="text-white font-display text-2xl font-semibold">{logs.filter((l) => !l.is_anonymous).length}</p>
+        </div>
+        <div className="bg-[#14161f] rounded-2xl border border-white/10 p-4">
+          <p className="text-white/40 text-xs font-medium uppercase tracking-wide mb-1">Anonymous</p>
+          <p className="text-white font-display text-2xl font-semibold">{logs.filter((l) => l.is_anonymous).length}</p>
+        </div>
         {(["web", "mobile", "chatgpt", "claude"] as const).map((src) => {
           const count = logs.filter((l) => l.source === src).length;
           return (
@@ -124,10 +132,11 @@ export default function TrekSageLogsPage() {
           </div>
         ) : (
           <div className="overflow-x-auto">
-            <table className="w-full text-sm min-w-[640px]">
+            <table className="w-full text-sm min-w-[780px]">
               <thead>
                 <tr className="border-b border-white/8">
                   <th className="text-left px-4 py-3 text-white/40 font-medium text-xs">Time</th>
+                  <th className="text-left px-4 py-3 text-white/40 font-medium text-xs">User</th>
                   <th className="text-left px-4 py-3 text-white/40 font-medium text-xs">Source</th>
                   <th className="text-left px-4 py-3 text-white/40 font-medium text-xs">Tool</th>
                   <th className="text-left px-4 py-3 text-white/40 font-medium text-xs">Query</th>
@@ -139,12 +148,24 @@ export default function TrekSageLogsPage() {
                   <tr key={log.id} className="border-b border-white/5 last:border-0 hover:bg-white/3 transition-colors">
                     <td className="px-4 py-3 text-white/40 text-xs whitespace-nowrap">{fmt(log.created_at)}</td>
                     <td className="px-4 py-3">
+                      {log.is_anonymous ? (
+                        <span className="inline-flex items-center gap-1 text-[10px] text-white/30">
+                          <UserX className="h-3 w-3" /> Anonymous
+                        </span>
+                      ) : (
+                        <div>
+                          <p className="text-xs text-white/70 font-medium leading-tight">{log.user_name ?? "—"}</p>
+                          <p className="text-[10px] text-white/35 font-mono">{log.user_email}</p>
+                        </div>
+                      )}
+                    </td>
+                    <td className="px-4 py-3">
                       <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-full ${SOURCE_STYLES[log.source] ?? "text-white/40 bg-white/5 border border-white/10"}`}>
                         {log.source}
                       </span>
                     </td>
                     <td className="px-4 py-3 text-white/60 text-xs font-mono">{log.tool_name}</td>
-                    <td className="px-4 py-3 text-white/70 text-xs max-w-[240px] truncate" title={log.query_summary ?? ""}>
+                    <td className="px-4 py-3 text-white/70 text-xs max-w-[220px] truncate" title={log.query_summary ?? ""}>
                       {log.query_summary ?? <span className="text-white/25">—</span>}
                     </td>
                     <td className="px-4 py-3 hidden md:table-cell">

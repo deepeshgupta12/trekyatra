@@ -154,6 +154,10 @@ class AIInteractionLogResponse(BaseModel):
     page_url: str | None = None
     trek_slugs: list[str] | None = None
     created_at: datetime
+    # User attribution — populated by joining TreksageChatSession → User
+    user_email: str | None = None
+    user_name: str | None = None
+    is_anonymous: bool = True
 
     model_config = {"from_attributes": True}
 

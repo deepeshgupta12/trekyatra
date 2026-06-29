@@ -754,10 +754,46 @@ def list_ai_interaction_logs(
     limit: int = 50,
     source: str | None = None,
     tool_name: str | None = None,
-) -> list[AIInteractionLog]:
-    stmt = select(AIInteractionLog).order_by(AIInteractionLog.created_at.desc())
+) -> list[dict]:
+    """Return AI interaction logs with user attribution via TreksageChatSession join."""
+    from app.modules.trek_intelligence.models import TreksageChatSession
+    from app.modules.auth.models import User
+    from sqlalchemy import outerjoin
+
+    stmt = (
+        select(
+            AIInteractionLog,
+            User.email.label("user_email"),
+            User.full_name.label("user_name"),
+        )
+        .select_from(
+            outerjoin(
+                AIInteractionLog,
+                TreksageChatSession,
+                AIInteractionLog.session_id == TreksageChatSession.session_key,
+            ).outerjoin(User, TreksageChatSession.user_id == User.id)
+        )
+        .order_by(AIInteractionLog.created_at.desc())
+    )
     if source:
         stmt = stmt.where(AIInteractionLog.source == source)
     if tool_name:
         stmt = stmt.where(AIInteractionLog.tool_name == tool_name)
-    return list(db.scalars(stmt.limit(limit)).all())
+
+    rows = db.execute(stmt.limit(limit)).all()
+    result = []
+    for log, user_email, user_name in rows:
+        result.append({
+            "id": str(log.id),
+            "source": log.source,
+            "tool_name": log.tool_name,
+            "query_summary": log.query_summary,
+            "result_summary": log.result_summary,
+            "page_url": log.page_url,
+            "trek_slugs": log.trek_slugs,
+            "created_at": log.created_at,
+            "user_email": user_email,
+            "user_name": user_name,
+            "is_anonymous": user_email is None,
+        })
+    return result

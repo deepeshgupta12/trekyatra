@@ -2406,6 +2406,9 @@ export interface AIInteractionLogEntry {
   page_url: string | null;
   trek_slugs: string[] | null;
   created_at: string;
+  user_email: string | null;
+  user_name: string | null;
+  is_anonymous: boolean;
 }
 
 /** Admin: recent TrekSage / MCP tool usage with optional source/tool_name filter. */

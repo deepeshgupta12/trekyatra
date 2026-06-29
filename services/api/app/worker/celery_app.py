@@ -89,6 +89,10 @@ celery_app.conf.update(
             "task": "cdp.cleanup_old_events",
             "schedule": 604800,  # 7 days
         },
+        "daily-reseed-trek-coordinates": {
+            "task": "conditions.reseed_coordinates",
+            "schedule": 86400,  # 24 hours — restores TREK_COORDS lat/lng if cleared by DB ops
+        },
         "daily-trek-alert-digest": {
             "task": "account.send_trek_alerts",
             "schedule": 86400,  # 24 hours — fires daily (cron pinning to 08:00 IST done in DO)

@@ -2392,3 +2392,18 @@ Mobile buddy matching UI consuming STEP-79 backend.
 | `apps/mobile/components/reports/AddReportSheet.tsx` (NEW) | Slide-up form Modal | LOW — leaf component |
 | `apps/mobile/app/(tabs)/(home)/trek/[slug].tsx` | New imports; `addReportVisible` state; `useReports`; "Trail" tab render; `AddReportSheet` | MEDIUM — critical screen; all changes additive (new tab branch in existing if/else) |
 | `apps/mobile/package.json` | `expo-image-picker@~56.0.18` + `expo-image-manipulator@~56.0.19` added | LOW — new libraries; no API conflicts |
+
+## Conditions Enhancement Pass (2026-06-29)
+
+| File | Change | Blast Radius |
+|------|--------|--------------|
+| `services/api/app/worker/tasks/conditions.py` | NEW: `reseed_coordinates_task` (daily beat task, safe re-seed from TREK_COORDS dict) | LOW — new task; does not overwrite non-null coords |
+| `services/api/app/worker/celery_app.py` | `daily-reseed-trek-coordinates` added to beat_schedule | LOW — additive beat schedule entry |
+| `services/api/app/api/routes/sitemap_data.py` | NEW: `GET /public/sitemap-treks?state=` endpoint + `TrekSitemapEntry` schema; imports `TrekCondition` | LOW — new additive endpoint; does not modify existing routes |
+| `apps/web-next/lib/state-sitemap.ts` | `fetchTrekPagesByState` replaced with `fetchTrekSitemapByState` (calls new `/public/sitemap-treks`); lastmod = GREATEST(updated_at, trek_conditions.last_updated_at) | LOW — only used by state-specific XML sitemap route handlers |
+| `apps/web-next/app/(public)/trek/[slug]/page.tsx` | TOC extended with 3 entries; conditions/reports/buddy sections moved from bottom into article column; `trekSchema` spread with `amenityFeature` | MEDIUM — core public page; changes are additive (sections already existed) |
+| `services/api/app/schemas/trek_intelligence.py` | `AIInteractionLogResponse` + 3 fields: `user_email`, `user_name`, `is_anonymous` | LOW — additive schema fields; existing consumers unaffected |
+| `services/api/app/modules/trek_intelligence/service.py` | `list_ai_interaction_logs` rewritten: LEFT JOIN TreksageChatSession + User; returns list[dict] | LOW — only called from `admin_treks.py` |
+| `services/api/app/api/routes/admin_treks.py` | `get_ai_interaction_logs` route simplified to use new dict response | LOW — admin-only route |
+| `apps/web-next/app/(admin)/admin/treksage-logs/page.tsx` | "User" column added; KPI row extended with Known/Anon counts; `UserX` icon import | LOW — admin-only page |
+| `apps/web-next/lib/api.ts` | `AIInteractionLogEntry`: `user_email`, `user_name`, `is_anonymous` fields added | LOW — additive; typed interface only |

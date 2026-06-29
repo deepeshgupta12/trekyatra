@@ -1,30 +1,36 @@
 /**
  * Shared helper for generating state-specific trek sitemaps.
  * Used by /uttarakhand-treks-sitemap.xml, /himachal-treks-sitemap.xml etc.
+ *
+ * lastmod = max(cms_pages.updated_at, trek_conditions.last_updated_at) so Google
+ * re-crawls trek detail pages when live conditions or trail reports are refreshed.
  */
 
 const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? "https://trekyatra.com";
 const API_BASE = process.env.NEXT_PUBLIC_API_BASE ?? "http://localhost:8000";
 
-interface CMSTrekPage {
+interface TrekSitemapEntry {
   slug: string;
-  page_type: string;
   trek_state: string | null;
-  updated_at: string;
+  last_modified: string;
 }
 
-async function fetchTrekPagesByState(stateName: string): Promise<CMSTrekPage[]> {
-  try {
-    const url = `${API_BASE}/api/v1/cms/pages?page_type=trek_guide&status=published&limit=200`;
-    const res = await fetch(url, { signal: AbortSignal.timeout(20_000), cache: "no-store" });
-    if (!res.ok) return [];
-    const pages: CMSTrekPage[] = await res.json();
-    return pages.filter(
-      (p) => p.trek_state?.toLowerCase() === stateName.toLowerCase()
-    );
-  } catch {
-    return [];
+async function fetchTrekSitemapByState(stateName: string): Promise<TrekSitemapEntry[]> {
+  const fallbackBase = "https://api.trekyatra.co.in";
+  const path = `/api/v1/public/sitemap-treks?state=${encodeURIComponent(stateName)}&limit=200`;
+
+  for (const base of [API_BASE, fallbackBase]) {
+    try {
+      const res = await fetch(`${base}${path}`, {
+        signal: AbortSignal.timeout(20_000),
+        cache: "no-store",
+      });
+      if (res.ok) return (await res.json()) as TrekSitemapEntry[];
+    } catch {
+      // try fallback
+    }
   }
+  return [];
 }
 
 function xmlEscape(s: string) {
@@ -32,12 +38,12 @@ function xmlEscape(s: string) {
 }
 
 export async function generateStateTrekSitemap(stateName: string): Promise<Response> {
-  const pages = await fetchTrekPagesByState(stateName);
+  const pages = await fetchTrekSitemapByState(stateName);
 
   const urls = pages.map((p) => `
   <url>
     <loc>${xmlEscape(`${SITE_URL}/trek/${p.slug}`)}</loc>
-    <lastmod>${new Date(p.updated_at).toISOString().split("T")[0]}</lastmod>
+    <lastmod>${new Date(p.last_modified).toISOString().split("T")[0]}</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.85</priority>
   </url>`).join("");

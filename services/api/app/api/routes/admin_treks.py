@@ -32,21 +32,9 @@ def get_ai_interaction_logs(
     tool_name: str | None = Query(default=None, description="Filter by tool name"),
     db: Session = Depends(get_db),
 ) -> list[AIInteractionLogResponse]:
-    """Step 76: recent TrekSage / MCP tool usage with optional source/tool_name filter."""
-    logs = ti_service.list_ai_interaction_logs(db, limit=limit, source=source, tool_name=tool_name)
-    return [
-        AIInteractionLogResponse(
-            id=str(log.id),
-            source=log.source,
-            tool_name=log.tool_name,
-            query_summary=log.query_summary,
-            result_summary=log.result_summary,
-            page_url=log.page_url,
-            trek_slugs=log.trek_slugs,
-            created_at=log.created_at,
-        )
-        for log in logs
-    ]
+    """Step 76: recent TrekSage / MCP tool usage with user attribution via session join."""
+    rows = ti_service.list_ai_interaction_logs(db, limit=limit, source=source, tool_name=tool_name)
+    return [AIInteractionLogResponse(**row) for row in rows]
 
 
 @router.patch("/{slug}/meta", response_model=TrekProfile, dependencies=[_admin])

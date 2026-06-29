@@ -193,6 +193,9 @@ export default async function TrekDetailPage({ params }: { params: { slug: strin
     { id: "safety",         label: "Safety" },
     { id: "alternatives",   label: "Alternatives" },
     { id: "faqs",           label: "FAQs" },
+    { id: "live-conditions",  label: "Live Conditions" },
+    { id: "trail-conditions", label: "Trail Reports" },
+    { id: "trek-buddy",       label: "Find a Buddy" },
   ];
 
   const sec = (cmsPage?.content_json?.sections ?? {}) as Record<string, string>;
@@ -220,22 +223,30 @@ export default async function TrekDetailPage({ params }: { params: { slug: strin
 
   // TouristTrip schema — enriches Article with trek-specific structured data
   // following Schema.org/TouristTrip + Google structured data guidelines.
-  const trekSchema = buildTrekSchema({
-    name:        cmsPage?.trek_name ?? cmsDisplayName ?? trek.name,
-    description: cmsPage?.seo_description ?? trek.description ?? "",
-    url:         pageUrl,
-    imageUrl:    cmsPage?.hero_image_url ?? trek.image ?? undefined,
-    publishedAt: cmsPage?.published_at ?? undefined,
-    updatedAt:   cmsPage?.updated_at ?? undefined,
-    duration:    tf.duration    || trek.duration    || null,
-    altitude:    tf.altitude    || trek.altitude    || null,
-    difficulty:  cmsPage?.trek_difficulty || tf.difficulty  || trek.difficulty || null,
-    season:      cmsPage?.trek_season     || tf.season      || trek.season     || null,
-    permits:     tf.permits     || null,
-    base:        tf.base        || null,
-    trekState:   cmsPage?.trek_state || trek.state || null,
-    suitability: cmsPage?.trek_suitability || null,
-  });
+  const trekSchema = {
+    ...buildTrekSchema({
+      name:        cmsPage?.trek_name ?? cmsDisplayName ?? trek.name,
+      description: cmsPage?.seo_description ?? trek.description ?? "",
+      url:         pageUrl,
+      imageUrl:    cmsPage?.hero_image_url ?? trek.image ?? undefined,
+      publishedAt: cmsPage?.published_at ?? undefined,
+      updatedAt:   cmsPage?.updated_at ?? undefined,
+      duration:    tf.duration    || trek.duration    || null,
+      altitude:    tf.altitude    || trek.altitude    || null,
+      difficulty:  cmsPage?.trek_difficulty || tf.difficulty  || trek.difficulty || null,
+      season:      cmsPage?.trek_season     || tf.season      || trek.season     || null,
+      permits:     tf.permits     || null,
+      base:        tf.base        || null,
+      trekState:   cmsPage?.trek_state || trek.state || null,
+      suitability: cmsPage?.trek_suitability || null,
+    }),
+    // amenityFeature: real-time and community sections now part of the page
+    amenityFeature: [
+      { "@type": "LocationFeatureSpecification", name: "Live Weather & Conditions", value: true },
+      { "@type": "LocationFeatureSpecification", name: "Community Trail Reports",   value: true },
+      { "@type": "LocationFeatureSpecification", name: "Trek Buddy Matching",       value: true },
+    ],
+  };
 
   const faqSchema = faqItems.length ? buildFAQSchema(faqItems) : null;
   // Map canonical state names to the region slug used in /regions/[slug].
@@ -649,6 +660,21 @@ export default async function TrekDetailPage({ params }: { params: { slug: strin
               updatedAt={cmsPage?.updated_at}
             />
 
+            {/* Live Conditions — in-page section, part of TOC */}
+            <section id="live-conditions" className="not-prose mb-12 scroll-mt-44">
+              <LiveConditionsWidget slug={params.slug} />
+            </section>
+
+            {/* Trail Conditions — UGC community reports */}
+            <section id="trail-conditions" className="not-prose mb-12 scroll-mt-44">
+              <TrekReportsSection slug={params.slug} />
+            </section>
+
+            {/* Trek Buddy Matching */}
+            <section id="trek-buddy" className="not-prose mb-12 scroll-mt-44">
+              <BuddySection trekSlug={params.slug} />
+            </section>
+
             {/* Mobile-only Plan CTA — desktop shows this in the right sidebar */}
             <div className="not-prose block lg:hidden mt-8 bg-gradient-pine text-surface rounded-2xl p-6 stack-shadow">
               <div className="text-xs uppercase tracking-widest text-accent-glow mb-2">Plan this trek</div>
@@ -727,21 +753,6 @@ export default async function TrekDetailPage({ params }: { params: { slug: strin
             </div>
           </aside>
         </div>
-      </section>
-
-      {/* Live Weather Conditions */}
-      <section id="live-conditions" className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mt-16">
-        <LiveConditionsWidget slug={params.slug} />
-      </section>
-
-      {/* Trail Conditions — UGC Reports */}
-      <section id="trail-conditions" className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mt-8">
-        <TrekReportsSection slug={params.slug} />
-      </section>
-
-      {/* Trek Buddy Matching */}
-      <section id="trek-buddy" className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mt-8">
-        <BuddySection trekSlug={params.slug} />
       </section>
 
       <StickyMobileCTA
