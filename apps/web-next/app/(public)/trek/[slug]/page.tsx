@@ -220,28 +220,31 @@ export default async function TrekDetailPage({ params }: { params: { slug: strin
 
   // TouristTrip schema — enriches Article with trek-specific structured data
   // following Schema.org/TouristTrip + Google structured data guidelines.
+  // additionalProperty (PropertyValue) is the correct vehicle for TouristTrip extension data —
+  // amenityFeature is only valid on Place/Accommodation subtypes, not TouristTrip.
+  const baseTrekSchema = buildTrekSchema({
+    name:        cmsPage?.trek_name ?? cmsDisplayName ?? trek.name,
+    description: cmsPage?.seo_description ?? trek.description ?? "",
+    url:         pageUrl,
+    imageUrl:    cmsPage?.hero_image_url ?? trek.image ?? undefined,
+    publishedAt: cmsPage?.published_at ?? undefined,
+    updatedAt:   cmsPage?.updated_at ?? undefined,
+    duration:    tf.duration    || trek.duration    || null,
+    altitude:    tf.altitude    || trek.altitude    || null,
+    difficulty:  cmsPage?.trek_difficulty || tf.difficulty  || trek.difficulty || null,
+    season:      cmsPage?.trek_season     || tf.season      || trek.season     || null,
+    permits:     tf.permits     || null,
+    base:        tf.base        || null,
+    trekState:   cmsPage?.trek_state || trek.state || null,
+    suitability: cmsPage?.trek_suitability || null,
+  });
   const trekSchema = {
-    ...buildTrekSchema({
-      name:        cmsPage?.trek_name ?? cmsDisplayName ?? trek.name,
-      description: cmsPage?.seo_description ?? trek.description ?? "",
-      url:         pageUrl,
-      imageUrl:    cmsPage?.hero_image_url ?? trek.image ?? undefined,
-      publishedAt: cmsPage?.published_at ?? undefined,
-      updatedAt:   cmsPage?.updated_at ?? undefined,
-      duration:    tf.duration    || trek.duration    || null,
-      altitude:    tf.altitude    || trek.altitude    || null,
-      difficulty:  cmsPage?.trek_difficulty || tf.difficulty  || trek.difficulty || null,
-      season:      cmsPage?.trek_season     || tf.season      || trek.season     || null,
-      permits:     tf.permits     || null,
-      base:        tf.base        || null,
-      trekState:   cmsPage?.trek_state || trek.state || null,
-      suitability: cmsPage?.trek_suitability || null,
-    }),
-    // amenityFeature: real-time and community sections now part of the page
-    amenityFeature: [
-      { "@type": "LocationFeatureSpecification", name: "Live Weather & Conditions", value: true },
-      { "@type": "LocationFeatureSpecification", name: "Community Trail Reports",   value: true },
-      { "@type": "LocationFeatureSpecification", name: "Trek Buddy Matching",       value: true },
+    ...baseTrekSchema,
+    additionalProperty: [
+      ...((baseTrekSchema as { additionalProperty?: object[] }).additionalProperty ?? []),
+      { "@type": "PropertyValue", name: "Live Trail Conditions",     value: "Available on page" },
+      { "@type": "PropertyValue", name: "Community Trail Reports",   value: "Available on page" },
+      { "@type": "PropertyValue", name: "Trek Buddy Matching",       value: "Available on page" },
     ],
   };
 
