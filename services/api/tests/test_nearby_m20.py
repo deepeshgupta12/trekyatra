@@ -37,7 +37,7 @@ def seed_trek_page():
                 slug=_SEED_SLUG,
                 title=_SEED_TITLE,
                 page_type="trek_guide",
-                status="live",
+                status="published",
                 trek_state="Uttarakhand",
                 trek_difficulty="Easy",
                 trek_duration="2 days",

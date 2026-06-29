@@ -141,7 +141,7 @@ def get_nearby_endpoint(
     pages: dict[str, CMSPageModel] = {
         p.slug: p
         for p in db.query(CMSPageModel)
-        .filter(CMSPageModel.slug.in_(slugs), CMSPageModel.status == "live")
+        .filter(CMSPageModel.slug.in_(slugs), CMSPageModel.status == "published")
         .all()
     }
 

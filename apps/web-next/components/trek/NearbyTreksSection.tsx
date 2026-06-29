@@ -26,7 +26,7 @@ function toTrek(item: NearbyTrekItem): Trek {
     name: item.name ?? item.slug.replace(/-/g, " ").replace(/\b\w/g, (c) => c.toUpperCase()),
     region: item.state ?? "Himalayas",
     state: item.state ?? "",
-    image: item.hero_image_url ?? "/images/placeholder-trek.webp",
+    image: item.hero_image_url ?? "/images/trek-forest.jpg",
     duration: item.trek_duration ?? "—",
     altitude: "—",
     difficulty: item.difficulty ?? "Moderate",
@@ -88,7 +88,7 @@ export function NearbyTreksSection() {
         <div className="flex items-center gap-2 mb-5">
           <MapPin className="h-5 w-5 text-accent" />
           <h2 className="font-display text-xl font-semibold">Treks Near You</h2>
-          <span className="text-xs text-muted-foreground ml-1">within 200 km</span>
+          <span className="text-xs text-muted-foreground ml-1">within 300 km</span>
         </div>
         <div className="overflow-x-auto -mx-4 px-4">
           <div className="flex gap-4 pb-2" style={{ minWidth: "max-content" }}>
