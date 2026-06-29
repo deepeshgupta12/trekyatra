@@ -10,14 +10,17 @@ from __future__ import annotations
 
 import secrets
 
-from fastapi import APIRouter, Depends, HTTPException, Response, status
+from fastapi import APIRouter, Depends, HTTPException, Request, Response, status
 from pydantic import BaseModel
+from slowapi import Limiter
+from slowapi.util import get_remote_address
 
 from app.core.config import settings
 from app.core.security import create_admin_token
 from app.modules.auth.dependencies import get_current_admin
 
 router = APIRouter(prefix="/admin/auth", tags=["admin-auth"])
+limiter = Limiter(key_func=get_remote_address)
 
 
 class AdminLoginRequest(BaseModel):
@@ -30,7 +33,8 @@ class AdminMeResponse(BaseModel):
 
 
 @router.post("/login")
-def admin_login(payload: AdminLoginRequest, response: Response) -> dict:
+@limiter.limit("5/minute")
+def admin_login(request: Request, payload: AdminLoginRequest, response: Response) -> dict:
     if not settings.admin_password:
         raise HTTPException(
             status_code=status.HTTP_503_SERVICE_UNAVAILABLE,

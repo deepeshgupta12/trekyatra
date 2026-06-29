@@ -73,6 +73,8 @@ limiter = Limiter(key_func=get_remote_address)
 app = FastAPI(
     title=settings.app_name,
     debug=settings.app_debug,
+    docs_url="/docs" if settings.app_debug else None,
+    redoc_url="/redoc" if settings.app_debug else None,
     lifespan=lifespan,
 )
 
