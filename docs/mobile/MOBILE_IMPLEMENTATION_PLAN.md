@@ -303,14 +303,14 @@ Mobile-adapted version of `lib/analytics.ts` for React Native:
 - Backend: STEP-80 (shared — `trek_conditions` table, Open-Meteo integration, `conditions.refresh_all` Celery beat every 6h)
 - `npx tsc --noEmit` ✅ zero errors
 
-### Step M20 — Nearby Treks (GPS) [PENDING]
-- First-launch permission request: "Allow TrekYatra to use your location to suggest nearby treks"
-- Background permission NOT required — only foreground location
-- `expo-location.getCurrentPositionAsync()` → lat/lng
-- `GET /api/v1/mobile/nearby?lat=&lng=&radius_km=100` → PostGIS-based query on trek base camp coordinates
-- Nearby treks screen: list sorted by distance from current location + distance badge
-- Home screen widget (State C + D): "Treks near you" section appears when location granted
-- Offline fallback: if no location, show state-level suggestion based on saved treks
+### Step M20 — Nearby Treks (GPS) [DONE — 2026-06-29]
+- expo-location foreground permission + 30-min AsyncStorage cache (`lib/location.ts`)
+- `GET /api/v1/mobile/nearby?lat=&lon=&radius_km=200&limit=10` — haversine (stdlib math, no PostGIS needed for 41-trek catalog), imports `TREK_COORDS` from conditions/service.py
+- `NearbyTreksStrip` horizontal card strip with distance badge — wired on Home + Browse screens
+- Denied state: tappable "Enable location" banner opens iOS/Android Settings
+- `NSLocationWhenInUseUsageDescription` + expo-location plugin added to `app.config.ts`
+- Web: `NearbyTreksSection` client component on `/explore` page (geolocation API, same endpoint)
+- 5 backend tests pass; `next build` clean; `npx tsc --noEmit` clean
 
 ---
 
@@ -349,7 +349,7 @@ Mobile-adapted version of `lib/analytics.ts` for React Native:
 | User & Commerce (M09–M13) | M09 ✓ Done — M10 ✓ Done — M11 ✓ Done — M12 ✓ Done — M13 ✓ Done |
 | Engagement & Analytics (M14–M15) | M14 ✓ Done — M15 ✓ Done |
 | Community (M16–M18) | M16 ✓ Done — M17 ✓ Done — M18 ✓ Done |
-| Contextual Intelligence (M19–M20) | M19 ✓ Done — M20 Pending |
+| Contextual Intelligence (M19–M20) | M19 ✓ Done — M20 ✓ Done |
 | Content & Release (M21–M22) | Pending |
 
 **Bugfix Pass 2 (2026-06-23) — DONE:** Cross-platform behavior sync (`behavior_profile` column + GET/PUT endpoints + mobile `pullAndMergeBehaviorProfile` on login + web `pullAndMergeBehaviorProfileFromBackend` on login + `syncBehaviorProfileToBackend` on trek view when authenticated); Go Premium saffron entry in AppDrawer; Explore FilterChips prominent saffron pill.
@@ -366,4 +366,6 @@ Mobile-adapted version of `lib/analytics.ts` for React Native:
 
 **Step M19 (2026-06-26) — DONE:** Live trek conditions — `useConditions.ts` (AsyncStorage 6h TTL cache, offline fallback), `ConditionsWidget.tsx` (inline: WMO emoji, temp, forecast horizontal scroll, trail/permit badges), `LiveConditionsScreen.tsx` (full-screen overlay: weather card + 3-day forecast + trail/permit cards + summary + pull-to-refresh); wired in trek detail guide tab. `npx tsc --noEmit` ✅ zero errors. Shared backend: STEP-80.
 
-**Current next step:** M20 — Nearby Treks (GPS).
+**Step M20 (2026-06-29) — DONE:** GPS nearby treks — `lib/location.ts` (foreground permission + 30-min AsyncStorage cache), `hooks/useNearbyTreks.ts` (React Query wrapper), `NearbyTreksStrip.tsx` (horizontal card strip + permission denied banner); wired on Home + Browse screens; `app.config.ts` iOS infoPlist + expo-location plugin; backend: haversine service + `GET /api/v1/mobile/nearby` + 5 tests; web: `NearbyTreksSection.tsx` on /explore. `npx tsc --noEmit` ✅ zero errors. `next build` ✅ clean.
+
+**Current next step:** M21 — News Feed + Multilingual (Hindi).

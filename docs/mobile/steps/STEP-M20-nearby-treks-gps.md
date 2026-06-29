@@ -1,6 +1,6 @@
 # STEP-M20 — Nearby Treks (GPS)
 
-**Status:** Pending
+**Status:** Done (2026-06-29)
 **Phase:** Engagement
 **Dependencies:** STEP-M01 (foundation), STEP-M03 (backend mobile extensions), STEP-M19 (trek coordinates added for weather — same lat/lon data reused here)
 
@@ -283,3 +283,39 @@ Add a "Nearby" tab to the Browse/Explore tab bar:
 - No continuous tracking — one-shot position fetch cached for 30 minutes
 - The 200km default radius is intentional: covers most treks reachable as a day drive from major Himalayan gateway cities (Rishikesh, Manali, Shimla, Srinagar, Darjeeling)
 - Future V6 upgrade: add PostGIS extension to Postgres and migrate TREK_COORDS to a proper `trek_locations` table with `geography(POINT, 4326)` column for true geospatial queries
+
+---
+
+## Implementation Notes (2026-06-29 — Done)
+
+### Deviations from step doc
+- `NearbyTrekOut`/`NearbyTreksOut` schemas placed in `services/api/app/schemas/mobile.py` (not `modules/treks/schemas.py`) to co-locate with other mobile-specific response shapes
+- `TREK_COORDS` dict imported from `app/modules/conditions/service.py` (already existed with 41 treks from Step 80b) — not duplicated
+- `NearbyTab.tsx` (dedicated Browse tab component) was replaced by wiring `NearbyTreksStrip` directly into the Browse screen header — simpler, same UX outcome without building a full tab-switcher system
+- Web `NearbyTreksSection` added to `/explore` page (outside original scope but natural complement — GPS-triggered, self-hides when no location granted or no nearby treks)
+
+### Files Created
+| File | Purpose |
+|------|---------|
+| `services/api/app/modules/treks/service.py` | Added `_haversine_km` + `get_nearby_treks` |
+| `services/api/tests/test_nearby_m20.py` | 5 backend tests (all pass) |
+| `apps/mobile/lib/location.ts` | GPS permission + AsyncStorage cache |
+| `apps/mobile/hooks/useNearbyTreks.ts` | React Query hook wrapping location + API |
+| `apps/mobile/components/home/NearbyTreksStrip.tsx` | Horizontal card strip with distance badge |
+| `apps/web-next/components/trek/NearbyTreksSection.tsx` | Web GPS strip for /explore page |
+
+### Files Modified
+| File | Change |
+|------|--------|
+| `services/api/app/schemas/mobile.py` | Added `NearbyTrekOut`, `NearbyTreksOut` |
+| `services/api/app/api/routes/mobile.py` | Added `GET /api/v1/mobile/nearby` |
+| `apps/mobile/lib/mobileApi.ts` | Added `NearbyTrekOut`, `NearbyTreksOut` interfaces; `is_premium` made optional on `CMSPage` |
+| `apps/mobile/app/(tabs)/(home)/index.tsx` | Wired `NearbyTreksStrip` after trending section |
+| `apps/mobile/app/(tabs)/browse/index.tsx` | Wired `NearbyTreksStrip` in browse header |
+| `apps/mobile/app.config.ts` | Added `NSLocationWhenInUseUsageDescription` + `expo-location` plugin |
+| `apps/web-next/app/(public)/explore/page.tsx` | Wired `NearbyTreksSection` |
+
+### Test Results
+- Backend: 753 pass / 2 pre-existing failures (test_refresh.py — unrelated)
+- Frontend web: `next build` clean
+- Mobile: `npx tsc --noEmit` clean (0 errors)

@@ -24,6 +24,9 @@ export default ({ config }: ConfigContext): any => ({
         "TrekYatra uses speech recognition to let you search for treks by voice.",
       NSMicrophoneUsageDescription:
         "TrekYatra needs microphone access for voice search.",
+      // Required by expo-location (foreground only — no background location used)
+      NSLocationWhenInUseUsageDescription:
+        "TrekYatra uses your location to show treks near you. We never track you in the background.",
       CFBundleURLTypes: [
         {
           CFBundleURLSchemes: [
@@ -55,6 +58,13 @@ export default ({ config }: ConfigContext): any => ({
     "expo-sqlite",
     "expo-image",
     "expo-sharing",
+    [
+      "expo-location",
+      {
+        locationWhenInUsePermission:
+          "TrekYatra uses your location to show treks near you. We never track you in the background.",
+      },
+    ],
     [
       "expo-speech-recognition",
       {

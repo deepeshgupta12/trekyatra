@@ -7,6 +7,7 @@ from sqlalchemy.orm import Session
 from app.db.session import get_db
 from app.modules.auth.dependencies import get_current_user_bearer
 from app.modules.auth.models import User
+from app.modules.cms.models import CMSPage as CMSPageModel
 from app.modules.mobile.service import (
     get_sync_pages,
     register_device,
@@ -16,6 +17,7 @@ from app.modules.mobile.service import (
     has_user_done_trek,
     get_history_stats,
 )
+from app.modules.treks.service import get_nearby_treks
 from app.schemas.mobile import (
     DeviceIn,
     DeviceOut,
@@ -23,6 +25,8 @@ from app.schemas.mobile import (
     CheckinIn,
     CheckinOut,
     TrekHistoryStatsOut,
+    NearbyTrekOut,
+    NearbyTreksOut,
 )
 
 router = APIRouter(prefix="/mobile", tags=["mobile"])
@@ -112,3 +116,50 @@ def check_done_endpoint(
 ) -> dict:
     """Check if the authenticated user has checked in on a specific trek."""
     return {"done": has_user_done_trek(db=db, user_id=current_user.id, trek_slug=trek_slug)}
+
+
+# ── Nearby Treks — M20 ────────────────────────────────────────────────────────
+
+@router.get("/nearby", response_model=NearbyTreksOut)
+def get_nearby_endpoint(
+    lat: float = Query(..., ge=-90, le=90, description="User latitude"),
+    lon: float = Query(..., ge=-180, le=180, description="User longitude"),
+    radius_km: float = Query(200, ge=10, le=500),
+    limit: int = Query(10, ge=1, le=20),
+    db: Session = Depends(get_db),
+) -> NearbyTreksOut:
+    """Return published treks sorted by distance from the given coordinates.
+
+    No authentication required — location is sent once per session by the client.
+    Uses haversine distance against the TREK_COORDS lookup table (no PostGIS needed).
+    """
+    raw = get_nearby_treks(lat=lat, lon=lon, radius_km=radius_km, limit=limit)
+    if not raw:
+        return NearbyTreksOut(treks=[], user_lat=lat, user_lon=lon)
+
+    slugs = [r["slug"] for r in raw]
+    pages: dict[str, CMSPageModel] = {
+        p.slug: p
+        for p in db.query(CMSPageModel)
+        .filter(CMSPageModel.slug.in_(slugs), CMSPageModel.status == "live")
+        .all()
+    }
+
+    treks: list[NearbyTrekOut] = []
+    for r in raw:
+        slug = r["slug"]
+        page = pages.get(slug)
+        treks.append(
+            NearbyTrekOut(
+                slug=slug,
+                distance_km=r["distance_km"],
+                name=page.title if page else slug.replace("-", " ").title(),
+                difficulty=page.trek_difficulty if page else None,
+                state=page.trek_state if page else None,
+                hero_image_url=page.hero_image_url if page else None,
+                trek_duration=page.trek_duration if page else None,
+                trek_altitude=None,  # stored in content_json.trek_facts — not needed for cards
+            )
+        )
+
+    return NearbyTreksOut(treks=treks, user_lat=lat, user_lon=lon)

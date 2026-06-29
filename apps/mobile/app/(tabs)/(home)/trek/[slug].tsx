@@ -43,12 +43,15 @@ import { TrekkerProfileModal } from "@/components/buddy/TrekkerProfileModal";
 import { BuddyChatScreen } from "@/components/buddy/BuddyChatScreen";
 import { ConditionsWidget } from "@/components/trek/ConditionsWidget";
 import { LiveConditionsScreen } from "@/components/conditions/LiveConditionsScreen";
+import { GatedContentOverlay } from "@/components/premium/GatedContentOverlay";
+import { usePremium } from "@/hooks/usePremium";
 
 export default function TrekDetailScreen() {
   const { slug } = useLocalSearchParams<{ slug: string }>();
   const { data, isLoading, error } = useTrekDetail(slug ?? "");
   const { colors, isDark } = useTheme();
   const { user } = useAuth();
+  const { isPremium } = usePremium();
   const [activeTab, setActiveTab] = useState<TrekTab>("guide");
   const [relatedTreks, setRelatedTreks] = useState<TrekListItem[]>([]);
   const [contentsVisible, setContentsVisible] = useState(false);
@@ -174,6 +177,7 @@ export default function TrekDetailScreen() {
 
   const isDifficultTrek =
     trek.trek_difficulty === "Challenging" || trek.trek_difficulty === "Difficult";
+  const isPremiumGated = trek.is_premium === true && !isPremium;
 
   return (
     <View style={[styles.flex, { backgroundColor: colors.background }]}>
@@ -269,6 +273,7 @@ export default function TrekDetailScreen() {
             </TouchableOpacity>
           )}
           {activeTab === "reports" ? (
+            /* reports tab — always accessible, not gated */
             <View style={styles.reportsTab}>
               <Text style={[styles.sectionTitle, { color: colors.textPrimary }]}>Trail Conditions</Text>
               <Text style={[styles.sectionSubtitle, { color: colors.textMuted }]}>
@@ -322,6 +327,13 @@ export default function TrekDetailScreen() {
                   </TouchableOpacity>
                 )}
               </View>
+            </View>
+          ) : isPremiumGated ? (
+            <View style={{ margin: 16, marginTop: 24 }}>
+              <GatedContentOverlay
+                featureName="the full trek guide"
+                onUpgrade={() => router.push("/(tabs)/account/premium" as never)}
+              />
             </View>
           ) : getTabContent() ? (
             <CMSContentRenderer

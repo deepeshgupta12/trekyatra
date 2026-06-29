@@ -26,6 +26,7 @@ import { ComparisonCTACard } from "@/components/home/ComparisonCTACard";
 import { ResourcesRow } from "@/components/home/ResourcesRow";
 import { OperatorsCTACard } from "@/components/home/OperatorsCTACard";
 import { HomeSkeleton } from "@/components/home/HomeSkeleton";
+import { NearbyTreksStrip } from "@/components/home/NearbyTreksStrip";
 
 type HomeState = "A" | "B" | "C" | "D";
 
@@ -112,6 +113,9 @@ export default function HomeScreen() {
           state={homeState as "A" | "B" | "C" | "D"}
           loading={isLoading && trending.length === 0}
         />
+
+        {/* Nearby Treks (GPS) — shown when location is granted or prompt shown when denied */}
+        <NearbyTreksStrip />
 
         {/* Category hub (packing/permits/costs/safety/plan) — all states */}
         <CategoryHubRow />

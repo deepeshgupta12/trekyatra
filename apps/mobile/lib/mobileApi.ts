@@ -18,6 +18,7 @@ export interface CMSPage {
   content_json: { sections?: Record<string, string>; [key: string]: unknown } | null;
   seo_description: string | null;
   is_published: boolean;
+  is_premium?: boolean;
   published_at: string | null;
   updated_at: string | null;
 }
@@ -570,6 +571,25 @@ export interface TreksageMobileChatResponse {
 export interface TreksageMobileMessage {
   role: "user" | "assistant";
   content: string;
+}
+
+// ── Nearby Treks — M20 ────────────────────────────────────────────────────────
+
+export interface NearbyTrekOut {
+  slug: string;
+  distance_km: number;
+  name: string | null;
+  difficulty: string | null;
+  state: string | null;
+  hero_image_url: string | null;
+  trek_duration: string | null;
+  trek_altitude: string | null;
+}
+
+export interface NearbyTreksOut {
+  treks: NearbyTrekOut[];
+  user_lat: number;
+  user_lon: number;
 }
 
 export async function treksageChatMobile(

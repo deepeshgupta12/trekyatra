@@ -5,6 +5,7 @@ import { SafeArea } from "@/components/ui/SafeArea";
 import { SearchBar, SearchBarWrapper } from "@/components/browse/SearchBar";
 import { FilterChips } from "@/components/browse/FilterChips";
 import { TrekGrid } from "@/components/browse/TrekGrid";
+import { NearbyTreksStrip } from "@/components/home/NearbyTreksStrip";
 import { useTheme } from "@/hooks/useTheme";
 import { useExplore } from "@/hooks/useExplore";
 import { useExploreStore } from "@/stores/exploreStore";
@@ -100,6 +101,9 @@ export default function BrowseScreen() {
           ))}
         </ScrollView>
       </View>
+
+      {/* Nearby Treks — GPS strip */}
+      <NearbyTreksStrip />
 
       <Text style={[styles.hubHeading, styles.gridHeading, { color: colors.textPrimary }]}>All Treks</Text>
     </View>

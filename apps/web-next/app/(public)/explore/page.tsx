@@ -11,6 +11,7 @@ import { fetchTreks } from "@/lib/trekApi";
 import { fetchAllCMSTreks, fetchTrekCMSOverrides, fetchFilterFacets, STATIC_FILTER_FACETS, type CMSTrekOverride, type FilterFacets } from "@/lib/api";
 import PersonalisedFeed from "@/components/content/PersonalisedFeed";
 import Breadcrumb from "@/components/content/Breadcrumb";
+import { NearbyTreksSection } from "@/components/trek/NearbyTreksSection";
 
 // ── Sort + pagination ─────────────────────────────────────────────────────────
 const PAGE_SIZE = 12;
@@ -325,6 +326,9 @@ function ExploreContent() {
           </div>
         </div>
       </section>
+
+      {/* Nearby Treks — GPS-based, client-only, renders nothing until location granted */}
+      <NearbyTreksSection />
 
       {/* Personalised / trending section below main grid */}
       <section className="py-12 bg-muted/30 border-t border-border">

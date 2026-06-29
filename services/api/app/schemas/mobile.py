@@ -156,3 +156,22 @@ class TrekHistoryStatsOut(BaseModel):
     states_visited: List[str]
     favourite_state: Optional[str]
     badges: List[str]
+
+
+# ── Nearby Treks (M20) ────────────────────────────────────────────────────────
+
+class NearbyTrekOut(BaseModel):
+    slug: str
+    distance_km: float
+    name: Optional[str] = None
+    difficulty: Optional[str] = None
+    state: Optional[str] = None
+    hero_image_url: Optional[str] = None
+    trek_duration: Optional[str] = None
+    trek_altitude: Optional[str] = None
+
+
+class NearbyTreksOut(BaseModel):
+    treks: List[NearbyTrekOut]
+    user_lat: float
+    user_lon: float

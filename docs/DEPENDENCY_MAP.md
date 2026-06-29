@@ -2415,3 +2415,22 @@ Mobile buddy matching UI consuming STEP-79 backend.
 | `apps/web-next/app/(public)/trek/[slug]/page.tsx` | (1) Removed `AffiliateRail` + `AffiliateCardItem` imports + hardcoded `gearItems` array; replaced with `<Suspense><MonetizationSlot slug={slug} sourcePage={pageUrl} /></Suspense>` — dynamic CTA based on `fetchIntent`; (2) Added `isPremiumGated = cmsPage?.is_premium === true`; wrapped entire article body (why-this-trek → trek-buddy) in ternary — premium pages show `GatedContent` blur overlay, free pages render normally | MEDIUM — core public page; blast radius bounded to this one page |
 | `apps/web-next/components/monetization/MonetizationSlot.tsx` | No change — now used in trek detail page (was orphaned) | — |
 | `apps/web-next/components/subscription/GatedContent.tsx` | No change — now used in trek detail page (was orphaned) | — |
+
+## Mobile GatedContentOverlay Wiring + M20 Nearby Treks GPS (2026-06-29)
+
+| File | Change | Blast Radius |
+|------|--------|--------------|
+| `apps/mobile/lib/mobileApi.ts` | `CMSPage.is_premium` made optional (`?: boolean`); `NearbyTrekOut`/`NearbyTreksOut` interfaces added | LOW — additive; optional field change does not break existing consumers |
+| `apps/mobile/app/(tabs)/(home)/trek/[slug].tsx` | Imports `GatedContentOverlay` + `usePremium`; `isPremiumGated` gate in content ternary; `NearbyTreksStrip` import (via home screen wiring) | MEDIUM — critical screen; changes additive (new ternary branch) |
+| `services/api/app/modules/treks/service.py` | Added `_haversine_km` + `get_nearby_treks`; imports `TREK_COORDS` from `conditions/service.py` | LOW — additive functions; `list_treks`/`get_trek_by_slug` untouched |
+| `services/api/app/schemas/mobile.py` | `NearbyTrekOut` + `NearbyTreksOut` schemas added | LOW — additive |
+| `services/api/app/api/routes/mobile.py` | `GET /api/v1/mobile/nearby` endpoint added; imports `get_nearby_treks`, `CMSPage as CMSPageModel` | LOW — additive endpoint; no existing routes modified |
+| `services/api/tests/test_nearby_m20.py` (NEW) | 5 tests for nearby endpoint (Rishikesh, sorted, radius, invalid lat, far location) | LOW — new test file |
+| `apps/mobile/lib/location.ts` (NEW) | `getUserLocation` + `clearLocationCache`; expo-location foreground + AsyncStorage 30-min TTL | LOW — new library module |
+| `apps/mobile/hooks/useNearbyTreks.ts` (NEW) | `useNearbyTreks` React Query hook; `locationGranted` state | LOW — new hook |
+| `apps/mobile/components/home/NearbyTreksStrip.tsx` (NEW) | Horizontal nearby strip; permission-denied banner; skeleton; distance badge | LOW — new component; wired into home + browse |
+| `apps/mobile/app/(tabs)/(home)/index.tsx` | Import + render `NearbyTreksStrip` after `HomeTrendingSection` | LOW — additive; no existing logic changed |
+| `apps/mobile/app/(tabs)/browse/index.tsx` | Import + render `NearbyTreksStrip` in header before "All Treks" | LOW — additive |
+| `apps/mobile/app.config.ts` | `NSLocationWhenInUseUsageDescription` added to iOS infoPlist; `expo-location` plugin added | LOW — config-only change |
+| `apps/web-next/components/trek/NearbyTreksSection.tsx` (NEW) | Client component: `navigator.geolocation` → `/api/v1/mobile/nearby` → horizontal trek strip | LOW — new component |
+| `apps/web-next/app/(public)/explore/page.tsx` | Import + render `NearbyTreksSection` between trek grid and PersonalisedFeed | LOW — additive |
