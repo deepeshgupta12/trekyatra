@@ -165,6 +165,44 @@ export default async function TrekDetailPage({ params }: { params: { slug: strin
     trekNewsArticles = await fetchNewsByTrek(params.slug, 3);
   } catch { /* news section degrades gracefully */ }
 
+  // Fetch live conditions + report count + buddy count for schema enrichment and effective updated date.
+  // All three are best-effort — failures degrade gracefully (schema omits the missing entries).
+  const _schemaApiBase = process.env.NEXT_PUBLIC_API_BASE ?? "http://localhost:8000";
+  let trekConditions: {
+    trail_status?: string;
+    condition_summary?: string | null;
+    weather?: { temp_c?: number | null; label?: string } | null;
+    last_updated_at?: string | null;
+  } | null = null;
+  let trekReportCount = 0;
+  let trekBuddyCount = 0;
+  {
+    const [condRes, repRes, budRes] = await Promise.allSettled([
+      fetch(`${_schemaApiBase}/api/v1/public/treks/${params.slug}/conditions`, { next: { revalidate: 60 } }),
+      fetch(`${_schemaApiBase}/api/v1/public/treks/${params.slug}/reports`, { next: { revalidate: 60 } }),
+      fetch(`${_schemaApiBase}/api/v1/public/treks/${params.slug}/buddy-count`, { next: { revalidate: 60 } }),
+    ]);
+    if (condRes.status === "fulfilled" && condRes.value.ok) {
+      try { trekConditions = await condRes.value.json(); } catch { /* ignore */ }
+    }
+    if (repRes.status === "fulfilled" && repRes.value.ok) {
+      try { const d = await repRes.value.json(); trekReportCount = (d?.total as number) ?? 0; } catch { /* ignore */ }
+    }
+    if (budRes.status === "fulfilled" && budRes.value.ok) {
+      try { const d = await budRes.value.json(); trekBuddyCount = (d?.count as number) ?? 0; } catch { /* ignore */ }
+    }
+  }
+  // Effective updated date = GREATEST(cms updated_at, conditions last_updated_at).
+  // Used in JSON-LD schemas and the hero "Updated" badge so conditions refreshes
+  // cause Google to re-crawl the page (same logic as the sitemap endpoint).
+  const _condDate = trekConditions?.last_updated_at ? new Date(trekConditions.last_updated_at) : null;
+  const _cmsDate = cmsPage?.updated_at ? new Date(cmsPage.updated_at) : null;
+  const effectiveUpdatedAt: string | undefined = (() => {
+    if (_condDate && _cmsDate) return _condDate > _cmsDate ? trekConditions!.last_updated_at! : cmsPage!.updated_at;
+    if (_condDate && trekConditions?.last_updated_at) return trekConditions.last_updated_at;
+    return cmsPage?.updated_at ?? undefined;
+  })();
+
   // Step 72 — TrekSage structured profile (permits, budget, themes, crowd level, Ask AI)
   let trekProfile: TrekProfile | null = null;
   if (cmsPage) {
@@ -214,7 +252,7 @@ export default async function TrekDetailPage({ params }: { params: { slug: strin
     description: cmsPage?.seo_description ?? trek.description ?? "",
     url: pageUrl,
     publishedAt: cmsPage?.published_at ?? undefined,
-    updatedAt: cmsPage?.updated_at ?? undefined,
+    updatedAt: effectiveUpdatedAt,
     imageUrl: cmsPage?.hero_image_url ?? trek.image ?? undefined,
   });
 
@@ -228,7 +266,7 @@ export default async function TrekDetailPage({ params }: { params: { slug: strin
     url:         pageUrl,
     imageUrl:    cmsPage?.hero_image_url ?? trek.image ?? undefined,
     publishedAt: cmsPage?.published_at ?? undefined,
-    updatedAt:   cmsPage?.updated_at ?? undefined,
+    updatedAt:   effectiveUpdatedAt,
     duration:    tf.duration    || trek.duration    || null,
     altitude:    tf.altitude    || trek.altitude    || null,
     difficulty:  cmsPage?.trek_difficulty || tf.difficulty  || trek.difficulty || null,
@@ -238,15 +276,33 @@ export default async function TrekDetailPage({ params }: { params: { slug: strin
     trekState:   cmsPage?.trek_state || trek.state || null,
     suitability: cmsPage?.trek_suitability || null,
   });
-  const trekSchema = {
+  // Build condition-related schema entries only when real data exists.
+  // Empty sections should not appear in structured data (misleads search engines).
+  const _condProps: object[] = [];
+  if (trekConditions?.last_updated_at) {
+    const w = trekConditions.weather;
+    const weatherStr = w?.temp_c != null ? `${Math.round(w.temp_c)}°C, ${(w.label ?? "").trim()}`.trim() : null;
+    const condValue = trekConditions.condition_summary
+      ?? (weatherStr
+        ? `Trail ${trekConditions.trail_status ?? "open"} — ${weatherStr}`
+        : `Trail ${trekConditions.trail_status ?? "open"}`);
+    _condProps.push({ "@type": "PropertyValue", name: "Live Trail Conditions", value: condValue });
+  }
+  if (trekReportCount > 0) {
+    _condProps.push({ "@type": "PropertyValue", name: "Community Trail Reports",
+      value: `${trekReportCount} verified report${trekReportCount !== 1 ? "s" : ""}` });
+  }
+  if (trekBuddyCount > 0) {
+    _condProps.push({ "@type": "PropertyValue", name: "Trek Buddy Matching",
+      value: `${trekBuddyCount} trekker${trekBuddyCount !== 1 ? "s" : ""} looking for a buddy` });
+  }
+  const trekSchema = _condProps.length > 0 ? {
     ...baseTrekSchema,
     additionalProperty: [
       ...((baseTrekSchema as { additionalProperty?: object[] }).additionalProperty ?? []),
-      { "@type": "PropertyValue", name: "Live Trail Conditions",     value: "Available on page" },
-      { "@type": "PropertyValue", name: "Community Trail Reports",   value: "Available on page" },
-      { "@type": "PropertyValue", name: "Trek Buddy Matching",       value: "Available on page" },
+      ..._condProps,
     ],
-  };
+  } : baseTrekSchema;
 
   const faqSchema = faqItems.length ? buildFAQSchema(faqItems) : null;
   // Map canonical state names to the region slug used in /regions/[slug].
@@ -345,7 +401,7 @@ export default async function TrekDetailPage({ params }: { params: { slug: strin
               );
             })()}
             <span className="px-3 py-1 rounded-full glass-dark text-xs uppercase tracking-widest flex items-center gap-1.5">
-              <Star className="h-3 w-3 text-accent fill-accent" /> {formatUpdatedAt(cmsPage?.published_at ?? cmsPage?.updated_at)}
+              <Star className="h-3 w-3 text-accent fill-accent" /> {formatUpdatedAt(effectiveUpdatedAt ?? cmsPage?.published_at)}
             </span>
           </div>
           <h1 className="font-display text-4xl sm:text-5xl md:text-7xl font-semibold leading-[0.95] mb-4 max-w-4xl">

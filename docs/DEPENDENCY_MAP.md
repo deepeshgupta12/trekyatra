@@ -2434,3 +2434,6 @@ Mobile buddy matching UI consuming STEP-79 backend.
 | `apps/mobile/app.config.ts` | `NSLocationWhenInUseUsageDescription` added to iOS infoPlist; `expo-location` plugin added | LOW — config-only change |
 | `apps/web-next/components/trek/NearbyTreksSection.tsx` (NEW) | Client component: `navigator.geolocation` → `/api/v1/mobile/nearby` → horizontal trek strip | LOW — new component |
 | `apps/web-next/app/(public)/explore/page.tsx` | Import + render `NearbyTreksSection` between trek grid and PersonalisedFeed | LOW — additive |
+
+### Trek page effective updated date + conditional conditions schema (2026-06-29) blast radius
+- `apps/web-next/app/(public)/trek/[slug]/page.tsx` — UPDATED: 3 parallel server-side fetches added at render time (`/conditions`, `/reports`, `/buddy-count`, all best-effort via `Promise.allSettled`); `effectiveUpdatedAt = GREATEST(cmsPage.updated_at, conditions.last_updated_at)` replaces bare `cmsPage.updated_at` in `articleSchema`, `baseTrekSchema`, and hero badge; `additionalProperty` entries for Live Trail Conditions / Community Trail Reports / Trek Buddy Matching now conditional (only emitted when real data exists) and carry real values; blast radius: LOW (leaf page — no external importers)
