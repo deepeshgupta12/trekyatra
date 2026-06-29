@@ -1,6 +1,18 @@
 # STEP-70 — Component Wiring: MonetizationSlot (Z02) + GatedContent (Z03)
 
-**Status:** Pending
+**Status:** Done (2026-06-29)
+
+## Notes
+
+- Replaced `AffiliateRail` (static hardcoded 3 gear items) with `<Suspense fallback={null}><MonetizationSlot slug={params.slug} sourcePage={pageUrl} /></Suspense>` inside the packing/gear section of the article
+- Added `const isPremiumGated = cmsPage?.is_premium === true;` and wrapped the full article body (from `why-this-trek` through `trek-buddy`) in a ternary gate — premium pages show `<GatedContent>` overlay, free pages render all sections normally
+- Mobile-only Plan CTA div remains outside the gate (always visible on premium pages too — drives conversion)
+- MonetizationSlot is an async Server Component — `Suspense` ensures streaming SSR works correctly
+- Removed `AffiliateRail` + `AffiliateCardItem` imports and the 3-item hardcoded `gearItems` array
+- `next build` ✅ zero errors — `/trek/[slug]` bundle 16.2 kB (was 14.2 kB)
+- No backend changes — purely frontend component wiring
+
+---
 **Phase:** Production Hardening
 **Dependencies:** Step 36 (MonetizationSlot built), Step 40 (GatedContent built), Step 26 (trek CMS page + is_premium field)
 

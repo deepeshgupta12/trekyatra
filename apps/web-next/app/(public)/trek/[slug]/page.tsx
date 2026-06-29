@@ -15,10 +15,11 @@ import AuthorBlock from "@/components/content/AuthorBlock";
 import SafetyDisclaimer from "@/components/content/SafetyDisclaimer";
 import SchemaInjector from "@/components/seo/SchemaInjector";
 import InArticleAdSlot from "@/components/monetization/InArticleAdSlot";
-import AffiliateRail from "@/components/monetization/AffiliateRail";
+import { Suspense } from "react";
+import MonetizationSlot from "@/components/monetization/MonetizationSlot";
 import TrustSignals from "@/components/trust/TrustSignals";
 import StickyMobileCTA from "@/components/trust/StickyMobileCTA";
-import type { AffiliateCardItem } from "@/components/monetization/AffiliateCard";
+import GatedContent from "@/components/subscription/GatedContent";
 import { buildArticleSchema, buildFAQSchema, buildBreadcrumbSchema, buildTrekSchema } from "@/lib/schema";
 import {
   Clock, TrendingUp, Calendar,
@@ -204,11 +205,7 @@ export default async function TrekDetailPage({ params }: { params: { slug: strin
   // Structured FAQ items from CMS (auto-extracted or editor-supplied)
   const faqItems: FAQItem[] = cmsPage?.content_json?.faqs ?? [];
 
-  const gearItems: AffiliateCardItem[] = [
-    { title: "Quechua SH900 Trek Jacket", description: "Waterproof, windproof — rated for high-altitude winters.", affiliateUrl: "/gear", price: "From ₹4,999", badge: "Editor's pick" },
-    { title: "Tata Trekking Pole Set", description: "Adjustable, shock-absorbing — ideal for steep descents.", affiliateUrl: "/gear", price: "From ₹1,499" },
-    { title: "Wildcraft Trekking Backpack 55L", description: "Rain-cover included, structured hip belt for load distribution.", affiliateUrl: "/gear", price: "From ₹3,299" },
-  ];
+  const isPremiumGated = cmsPage?.is_premium === true;
 
   // JSON-LD schemas
   const pageUrl = `/trek/${params.slug}`;
@@ -384,6 +381,14 @@ export default async function TrekDetailPage({ params }: { params: { slug: strin
           </aside>
 
           <article className="prose prose-lg max-w-none min-w-0">
+            {isPremiumGated ? (
+              <div className="not-prose my-8">
+                <GatedContent
+                  title={`${cmsPage!.seo_title ?? trek.name} — Premium Guide`}
+                  teaser={cmsPage?.seo_description ?? undefined}
+                />
+              </div>
+            ) : (<>
             <Block id="why-this-trek" eyebrow="Why this trek" title={`Why ${cmsDisplayName ?? trek.name} is on every trekker's list`}>
               {S("why_this_trek") ? (
                 <div className="not-prose cms-section" dangerouslySetInnerHTML={{ __html: S("why_this_trek")! }} />
@@ -559,7 +564,9 @@ export default async function TrekDetailPage({ params }: { params: { slug: strin
               )}
             </Block>
 
-            <AffiliateRail items={gearItems} title="Recommended gear for this trek" />
+            <Suspense fallback={null}>
+              <MonetizationSlot slug={params.slug} sourcePage={pageUrl} />
+            </Suspense>
 
             <Block id="safety" eyebrow="Safety" title="Staying safe on the mountain">
               {S("safety") ? (
@@ -674,6 +681,7 @@ export default async function TrekDetailPage({ params }: { params: { slug: strin
             <section id="trek-buddy" className="not-prose mb-12 scroll-mt-44">
               <BuddySection trekSlug={params.slug} />
             </section>
+            </>)}
 
             {/* Mobile-only Plan CTA — desktop shows this in the right sidebar */}
             <div className="not-prose block lg:hidden mt-8 bg-gradient-pine text-surface rounded-2xl p-6 stack-shadow">

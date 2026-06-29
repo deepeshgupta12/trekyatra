@@ -519,7 +519,7 @@
 - Production hosting, CI/CD, CDN, secrets manager
 - Real API keys (Anthropic, Stripe, Razorpay, SMTP, Google OAuth)
 - Content pipeline run + 20+ CMS pages published
-- MonetizationSlot + GatedContent wiring on trek detail pages
+- ~~MonetizationSlot + GatedContent wiring on trek detail pages~~ [DONE — Step 70, 2026-06-29]
 - Load testing, cross-browser testing
 
 ### Step 65 — CDP Analytics Enhancement [DONE — 2026-05-27]
@@ -632,7 +632,7 @@ Do not start the next step without user confirmation.
 
 ## Execution Rule
 Do not start the next step without user confirmation.
-Current next step: **Step 70** — Component wiring MonetizationSlot + GatedContent
+Step 70 complete. Next steps: Step 71–79 and remaining production hardening items.
 
 ---
 

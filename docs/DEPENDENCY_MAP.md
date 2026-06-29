@@ -2407,3 +2407,11 @@ Mobile buddy matching UI consuming STEP-79 backend.
 | `services/api/app/api/routes/admin_treks.py` | `get_ai_interaction_logs` route simplified to use new dict response | LOW — admin-only route |
 | `apps/web-next/app/(admin)/admin/treksage-logs/page.tsx` | "User" column added; KPI row extended with Known/Anon counts; `UserX` icon import | LOW — admin-only page |
 | `apps/web-next/lib/api.ts` | `AIInteractionLogEntry`: `user_email`, `user_name`, `is_anonymous` fields added | LOW — additive; typed interface only |
+
+## Step 70 — MonetizationSlot (Z02) + GatedContent (Z03) Wiring (2026-06-29)
+
+| File | Change | Blast Radius |
+|------|--------|--------------|
+| `apps/web-next/app/(public)/trek/[slug]/page.tsx` | (1) Removed `AffiliateRail` + `AffiliateCardItem` imports + hardcoded `gearItems` array; replaced with `<Suspense><MonetizationSlot slug={slug} sourcePage={pageUrl} /></Suspense>` — dynamic CTA based on `fetchIntent`; (2) Added `isPremiumGated = cmsPage?.is_premium === true`; wrapped entire article body (why-this-trek → trek-buddy) in ternary — premium pages show `GatedContent` blur overlay, free pages render normally | MEDIUM — core public page; blast radius bounded to this one page |
+| `apps/web-next/components/monetization/MonetizationSlot.tsx` | No change — now used in trek detail page (was orphaned) | — |
+| `apps/web-next/components/subscription/GatedContent.tsx` | No change — now used in trek detail page (was orphaned) | — |

@@ -209,6 +209,8 @@ trekyatra/
 | `/premium` marketing page | Done |
 | `/account/premium` dashboard (status + cancel/upgrade) | Done |
 | Admin CMS is_premium toggle per page | Done |
+| MonetizationSlot wired to trek detail page (dynamic CTA via fetchIntent) | Done |
+| GatedContent gate wired to trek detail page (article body gated when is_premium=true) | Done |
 
 ### Trip Planning Assistant
 | Feature | Status |
