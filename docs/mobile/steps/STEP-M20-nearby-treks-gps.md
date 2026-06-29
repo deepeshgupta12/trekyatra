@@ -286,6 +286,23 @@ Add a "Nearby" tab to the Browse/Explore tab bar:
 
 ---
 
+## Bugfix (2026-06-29 — TC-F-M20-01 prod failure)
+
+**Root cause:** Default `radius_km=200` was too small for most major Indian cities. Calculated distances from Delhi:
+- Nag Tibba (nearest Himalayan trek): **224 km** — just outside 200 km
+- Kedarkantha: **284 km** — outside 200 km
+
+Users in Delhi NCR, Chandigarh (partial), and all cities south of the Himalayan belt received 0 results and saw a blank (component returns null on empty results — intentional UX, but nothing to show the component ran).
+
+**Fix:** Changed default `radius_km` from 200 → **300** in `GET /api/v1/mobile/nearby` route. At 300 km:
+- Delhi → Nag Tibba ✓ (224 km), Kedarkantha ✓ (284 km), plus several Himachal/Uttarakhand treks
+- Chandigarh → all nearby Himachal treks ✓
+- Cities in South India / Mumbai: still no Himalayan treks in range (correct — they don't exist)
+
+All 5 existing tests pass (`test_nearby_m20.py` — all use explicit `radius_km` values).
+
+---
+
 ## Implementation Notes (2026-06-29 — Done)
 
 ### Deviations from step doc

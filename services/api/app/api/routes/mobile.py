@@ -124,7 +124,7 @@ def check_done_endpoint(
 def get_nearby_endpoint(
     lat: float = Query(..., ge=-90, le=90, description="User latitude"),
     lon: float = Query(..., ge=-180, le=180, description="User longitude"),
-    radius_km: float = Query(200, ge=10, le=500),
+    radius_km: float = Query(300, ge=10, le=500),
     limit: int = Query(10, ge=1, le=20),
     db: Session = Depends(get_db),
 ) -> NearbyTreksOut:

@@ -17,7 +17,7 @@ from app.modules.treks.service import get_nearby_treks
 
 client = TestClient(app, raise_server_exceptions=True)
 
-# nag-tibba is ~37km from Rishikesh — guaranteed within 200km radius
+# nag-tibba is ~37km from Rishikesh — guaranteed within 300km default radius
 _SEED_SLUG = "nag-tibba"
 _SEED_TITLE = "Nag Tibba Trek"
 
