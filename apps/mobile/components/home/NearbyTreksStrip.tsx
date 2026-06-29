@@ -13,7 +13,7 @@ function toTrekListItem(nearby: ReturnType<typeof useNearbyTreks>["treks"][numbe
     trek_difficulty: nearby.difficulty,
     trek_duration: nearby.trek_duration,
     hero_image_url: nearby.hero_image_url,
-    trek_season: null,
+    trek_season: nearby.trek_season,
   };
 }
 
@@ -127,7 +127,7 @@ const styles = StyleSheet.create({
   distanceBadge: {
     position: "absolute",
     top: 8,
-    right: 8,
+    left: 8,
     paddingHorizontal: 8,
     paddingVertical: 3,
     borderRadius: 8,
