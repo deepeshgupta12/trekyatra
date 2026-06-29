@@ -149,6 +149,12 @@ def get_nearby_endpoint(
     for r in raw:
         slug = r["slug"]
         page = pages.get(slug)
+        trek_altitude: str | None = None
+        if page and page.content_json:
+            trek_facts = page.content_json.get("trek_facts", {})
+            if isinstance(trek_facts, dict):
+                trek_altitude = trek_facts.get("altitude")
+
         treks.append(
             NearbyTrekOut(
                 slug=slug,
@@ -158,7 +164,8 @@ def get_nearby_endpoint(
                 state=page.trek_state if page else None,
                 hero_image_url=page.hero_image_url if page else None,
                 trek_duration=page.trek_duration if page else None,
-                trek_altitude=None,  # stored in content_json.trek_facts — not needed for cards
+                trek_altitude=trek_altitude,
+                trek_season=page.trek_season if page else None,
             )
         )
 

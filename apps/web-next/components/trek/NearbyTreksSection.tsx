@@ -12,6 +12,8 @@ interface NearbyTrekItem {
   state: string | null;
   hero_image_url: string | null;
   trek_duration: string | null;
+  trek_altitude: string | null;
+  trek_season: string | null;
 }
 
 interface NearbyTreksResponse {
@@ -28,9 +30,9 @@ function toTrek(item: NearbyTrekItem): Trek {
     state: item.state ?? "",
     image: item.hero_image_url ?? "/images/trek-forest.jpg",
     duration: item.trek_duration ?? "—",
-    altitude: "—",
+    altitude: item.trek_altitude ?? "—",
     difficulty: item.difficulty ?? "Moderate",
-    season: "—",
+    season: item.trek_season ?? "—",
     description: "",
   };
 }
@@ -73,9 +75,7 @@ export function NearbyTreksSection() {
         <div className="container-wide">
           <div className="flex items-center gap-3 text-sm text-muted-foreground">
             <Navigation className="h-4 w-4 shrink-0" />
-            <span>
-              Enable location in your browser to see treks near you.
-            </span>
+            <span>Enable location in your browser to see treks near you.</span>
           </div>
         </div>
       </section>
@@ -85,18 +85,23 @@ export function NearbyTreksSection() {
   return (
     <section className="py-10 border-t border-border">
       <div className="container-wide">
-        <div className="flex items-center gap-2 mb-5">
+        <div className="flex items-center gap-2 mb-1">
           <MapPin className="h-5 w-5 text-accent" />
           <h2 className="font-display text-xl font-semibold">Treks Near You</h2>
-          <span className="text-xs text-muted-foreground ml-1">within 300 km</span>
         </div>
+        <p className="text-xs text-muted-foreground mb-5">
+          Distances from your current location · showing results within 300 km
+        </p>
         <div className="overflow-x-auto -mx-4 px-4">
           <div className="flex gap-4 pb-2" style={{ minWidth: "max-content" }}>
             {treks.map((trek) => (
-              <div key={trek.slug} className="relative w-64 shrink-0">
+              <div key={trek.slug} className="shrink-0 w-64 flex flex-col">
                 <TrekCard trek={toTrek(trek)} />
-                <div className="absolute top-2 right-2 bg-accent text-white text-xs font-bold px-2 py-0.5 rounded-full shadow">
-                  {trek.distance_km} km
+                <div className="flex items-center gap-1.5 mt-2 px-1">
+                  <MapPin className="h-3 w-3 text-accent shrink-0" />
+                  <span className="text-xs text-muted-foreground font-medium">
+                    {trek.distance_km} km from your location
+                  </span>
                 </div>
               </div>
             ))}

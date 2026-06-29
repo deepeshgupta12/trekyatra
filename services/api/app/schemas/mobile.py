@@ -169,6 +169,7 @@ class NearbyTrekOut(BaseModel):
     hero_image_url: Optional[str] = None
     trek_duration: Optional[str] = None
     trek_altitude: Optional[str] = None
+    trek_season: Optional[str] = None
 
 
 class NearbyTreksOut(BaseModel):

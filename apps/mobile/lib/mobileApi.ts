@@ -584,6 +584,7 @@ export interface NearbyTrekOut {
   hero_image_url: string | null;
   trek_duration: string | null;
   trek_altitude: string | null;
+  trek_season: string | null;
 }
 
 export interface NearbyTreksOut {
