@@ -103,7 +103,7 @@ export default function CMSAdminPage() {
   async function loadPages() {
     setLoading(true);
     try {
-      const res = await fetch("/api/v1/cms/pages");
+      const res = await fetch("/api/v1/cms/pages?limit=500");
       if (res.ok) setPages(await res.json());
     } finally {
       setLoading(false);

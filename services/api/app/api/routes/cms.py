@@ -99,7 +99,7 @@ def list_cms_pages(
     trek_season: str | None = Query(default=None),
     trek_duration_min: int | None = Query(default=None, ge=0),
     trek_duration_max: int | None = Query(default=None, ge=0),
-    limit: int = Query(default=50, ge=1, le=200),
+    limit: int = Query(default=50, ge=1, le=500),
     offset: int = Query(default=0, ge=0),
     db: Session = Depends(get_db),
 ) -> list[CMSPageResponse]:
