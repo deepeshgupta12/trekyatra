@@ -35,6 +35,7 @@ class CMSPagePatch(BaseModel):
     seo_description: str | None = None
     seo_meta: dict[str, Any] | None = None
     hero_image_url: str | None = None
+    route_image_url: str | None = None
     language: str | None = None
     translations: dict[str, Any] | None = None
     is_premium: bool | None = None
@@ -61,6 +62,7 @@ class CMSPageResponse(BaseModel):
     seo_description: str | None = None
     seo_meta: dict[str, Any] | None = None
     hero_image_url: str | None = None
+    route_image_url: str | None = None
     brief_id: uuid.UUID | None = None
     cluster_id: uuid.UUID | None = None
     published_at: datetime | None = None

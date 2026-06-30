@@ -126,6 +126,7 @@ export interface TrekSchemaProps {
   description: string;
   url: string;
   imageUrl?: string | null;
+  routeImageUrl?: string | null;
   publishedAt?: string | null;
   updatedAt?: string | null;
   // Facts strip fields
@@ -147,7 +148,7 @@ function parseDurationISO(duration: string): string | null {
 }
 
 export function buildTrekSchema({
-  name, description, url, imageUrl, publishedAt, updatedAt,
+  name, description, url, imageUrl, routeImageUrl, publishedAt, updatedAt,
   duration, altitude, difficulty, season, permits, base, trekState, suitability,
 }: TrekSchemaProps) {
   const fullUrl = `${SITE_URL}${url}`;
@@ -172,9 +173,16 @@ export function buildTrekSchema({
     name,
     description,
     url: fullUrl,
-    ...(imageUrl
-      ? { image: { "@type": "ImageObject", url: imageUrl, width: 1200, height: 630 } }
-      : {}),
+    ...(imageUrl && routeImageUrl
+      ? { image: [
+          { "@type": "ImageObject", url: imageUrl, width: 1200, height: 630 },
+          { "@type": "ImageObject", url: routeImageUrl, name: "Trail Route Map" },
+        ] }
+      : imageUrl
+        ? { image: { "@type": "ImageObject", url: imageUrl, width: 1200, height: 630 } }
+        : routeImageUrl
+          ? { image: { "@type": "ImageObject", url: routeImageUrl, name: "Trail Route Map" } }
+          : {}),
     ...(publishedAt ? { datePublished: publishedAt } : {}),
     ...(updatedAt   ? { dateModified: updatedAt } : {}),
     ...(isoDuration ? { duration: isoDuration } : {}),

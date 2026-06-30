@@ -71,6 +71,10 @@ export default function CMSPageForm({ mode, existing }: Props) {
   const [seoTitle, setSeoTitle] = useState(existing?.seo_title ?? "");
   const [seoDesc, setSeoDesc] = useState(existing?.seo_description ?? "");
   const [heroImageUrl, setHeroImageUrl] = useState(existing?.hero_image_url ?? "");
+  const [routeImageUrl, setRouteImageUrl] = useState(existing?.route_image_url ?? "");
+  const [uploadingRouteImage, setUploadingRouteImage] = useState(false);
+  const [routeImageWarning, setRouteImageWarning] = useState<string | null>(null);
+  const routeFileInputRef = useRef<HTMLInputElement>(null);
   // Featured flag — marks trek as "Featured" in explore sort
   const [isFeatured, setIsFeatured] = useState(existing?.is_featured ?? false);
   // Trek metadata DB columns — editable, saved via PATCH
@@ -109,6 +113,31 @@ export default function CMSPageForm({ mode, existing }: Props) {
       if (fileInputRef.current) fileInputRef.current.value = "";
     }
   }
+
+  async function handleRouteImageUpload(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setUploadingRouteImage(true);
+    setRouteImageWarning(null);
+    try {
+      const formData = new FormData();
+      formData.append("file", file);
+      const res = await fetch("/api/v1/admin/media/upload", { method: "POST", body: formData });
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        throw new Error((err as { detail?: string }).detail ?? `Upload failed (${res.status})`);
+      }
+      const data = await res.json() as { url: string; warning?: string };
+      setRouteImageUrl(data.url);
+      if (data.warning) setRouteImageWarning(data.warning);
+    } catch (err: unknown) {
+      setRouteImageWarning((err as Error).message ?? "Upload failed.");
+    } finally {
+      setUploadingRouteImage(false);
+      if (routeFileInputRef.current) routeFileInputRef.current.value = "";
+    }
+  }
+
   const [trekFacts, setTrekFacts] = useState<TrekFacts>({
     duration: tf.duration ?? "",
     altitude: tf.altitude ?? "",
@@ -182,6 +211,7 @@ export default function CMSPageForm({ mode, existing }: Props) {
       seo_title: seoTitle.trim() || null,
       seo_description: seoDesc.trim() || null,
       hero_image_url: heroImageUrl.trim() || null,
+      route_image_url: routeImageUrl.trim() || null,
       content_json: (hasSections || hasFacts || hasFaqs)
         ? {
             sections: hasSections ? nonEmptySections : undefined,
@@ -424,6 +454,58 @@ export default function CMSPageForm({ mode, existing }: Props) {
               </select>
             </div>
           </div>
+        </div>
+      )}
+
+      {/* Route image — trek_guide only */}
+      {pageType === "trek_guide" && (
+        <div className="bg-[#14161f] rounded-2xl border border-white/10 p-5 space-y-4">
+          <div>
+            <h2 className="text-white font-semibold text-sm">Route image</h2>
+            <p className="text-white/40 text-xs mt-0.5">Trail route map or elevation profile displayed in the Route Overview section and included in Google structured data.</p>
+          </div>
+          <div className="flex flex-col sm:flex-row gap-3">
+            <input
+              className={inputCls + " flex-1"}
+              value={routeImageUrl}
+              onChange={(e) => setRouteImageUrl(e.target.value)}
+              placeholder="https://cdn.example.com/routes/kedarkantha-route-map.jpg"
+            />
+            <button
+              type="button"
+              onClick={() => routeFileInputRef.current?.click()}
+              disabled={uploadingRouteImage}
+              className="px-4 py-2 rounded-xl bg-white/5 border border-white/10 text-white/70 hover:text-white hover:bg-white/10 text-xs font-medium transition-colors disabled:opacity-50 whitespace-nowrap"
+            >
+              {uploadingRouteImage ? "Uploading…" : "Upload image"}
+            </button>
+            <input
+              ref={routeFileInputRef}
+              type="file"
+              accept="image/*"
+              className="hidden"
+              onChange={handleRouteImageUpload}
+            />
+          </div>
+          {routeImageWarning && (
+            <p className="text-amber-400 text-xs">{routeImageWarning}</p>
+          )}
+          {routeImageUrl && (
+            <div className="relative">
+              <img
+                src={routeImageUrl}
+                alt="Route map preview"
+                className="w-full max-h-48 object-contain rounded-xl border border-white/10 bg-black/20"
+              />
+              <button
+                type="button"
+                onClick={() => setRouteImageUrl("")}
+                className="absolute top-2 right-2 text-xs bg-black/60 text-white/70 hover:text-white px-2 py-1 rounded-lg border border-white/10 transition-colors"
+              >
+                Remove
+              </button>
+            </div>
+          )}
         </div>
       )}
 

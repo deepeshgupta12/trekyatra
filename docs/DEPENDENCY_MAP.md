@@ -2437,3 +2437,12 @@ Mobile buddy matching UI consuming STEP-79 backend.
 
 ### Trek page effective updated date + conditional conditions schema (2026-06-29) blast radius
 - `apps/web-next/app/(public)/trek/[slug]/page.tsx` — UPDATED: 3 parallel server-side fetches added at render time (`/conditions`, `/reports`, `/buddy-count`, all best-effort via `Promise.allSettled`); `effectiveUpdatedAt = GREATEST(cmsPage.updated_at, conditions.last_updated_at)` replaces bare `cmsPage.updated_at` in `articleSchema`, `baseTrekSchema`, and hero badge; `additionalProperty` entries for Live Trail Conditions / Community Trail Reports / Trek Buddy Matching now conditional (only emitted when real data exists) and carry real values; blast radius: LOW (leaf page — no external importers)
+
+### Route image field (2026-06-30) blast radius
+- `services/api/alembic/versions/20260630_0052_cms_route_image_url.py` — NEW migration: `route_image_url VARCHAR(512) NULLABLE` on `cms_pages`; blast radius: LOW (additive DDL)
+- `services/api/app/modules/cms/models.py` — `route_image_url` mapped column added to `CMSPage`; blast radius: LOW (additive)
+- `services/api/app/schemas/cms.py` — `route_image_url` added to `CMSPagePatch` + `CMSPageResponse`; blast radius: LOW (additive optional field)
+- `apps/web-next/lib/api.ts` — `route_image_url` added to `CMSPage` interface + `CMSPagePayload`; blast radius: LOW (additive)
+- `apps/web-next/lib/schema.ts` — `buildTrekSchema` accepts `routeImageUrl?`; `image` field becomes array when both hero + route images present; blast radius: LOW (1 caller: TrekDetailPage)
+- `apps/web-next/components/admin/CMSPageForm.tsx` — Route image card added (trek_guide only): URL input + upload + preview; `route_image_url` included in `buildPayload()`; blast radius: LOW (1 caller: admin edit page)
+- `apps/web-next/app/(public)/trek/[slug]/page.tsx` — route image displayed below Route Overview text; `routeImageUrl` passed to `buildTrekSchema`; blast radius: LOW (leaf page)

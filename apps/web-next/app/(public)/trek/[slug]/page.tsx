@@ -261,12 +261,13 @@ export default async function TrekDetailPage({ params }: { params: { slug: strin
   // additionalProperty (PropertyValue) is the correct vehicle for TouristTrip extension data —
   // amenityFeature is only valid on Place/Accommodation subtypes, not TouristTrip.
   const baseTrekSchema = buildTrekSchema({
-    name:        cmsPage?.trek_name ?? cmsDisplayName ?? trek.name,
-    description: cmsPage?.seo_description ?? trek.description ?? "",
-    url:         pageUrl,
-    imageUrl:    cmsPage?.hero_image_url ?? trek.image ?? undefined,
-    publishedAt: cmsPage?.published_at ?? undefined,
-    updatedAt:   effectiveUpdatedAt,
+    name:          cmsPage?.trek_name ?? cmsDisplayName ?? trek.name,
+    description:   cmsPage?.seo_description ?? trek.description ?? "",
+    url:           pageUrl,
+    imageUrl:      cmsPage?.hero_image_url ?? trek.image ?? undefined,
+    routeImageUrl: cmsPage?.route_image_url ?? undefined,
+    publishedAt:   cmsPage?.published_at ?? undefined,
+    updatedAt:     effectiveUpdatedAt,
     duration:    tf.duration    || trek.duration    || null,
     altitude:    tf.altitude    || trek.altitude    || null,
     difficulty:  cmsPage?.trek_difficulty || tf.difficulty  || trek.difficulty || null,
@@ -516,6 +517,16 @@ export default async function TrekDetailPage({ params }: { params: { slug: strin
                 <div className="not-prose cms-section" dangerouslySetInnerHTML={{ __html: S("route_overview")! }} />
               ) : (
                 <p>This trek follows a well-established trail from the base village through forested ridgelines to the summit. The path is clearly marked for most of the route.</p>
+              )}
+              {cmsPage?.route_image_url && (
+                <div className="not-prose mt-6">
+                  <img
+                    src={cmsPage.route_image_url}
+                    alt={`${cmsDisplayName ?? trek.name} — trail route map`}
+                    className="w-full rounded-2xl border border-border"
+                    loading="lazy"
+                  />
+                </div>
               )}
             </Block>
 

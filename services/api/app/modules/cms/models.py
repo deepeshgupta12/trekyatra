@@ -23,6 +23,7 @@ class CMSPage(UUIDPrimaryKeyMixin, TimestampMixin, Base):
     seo_description: Mapped[str | None] = mapped_column(Text, nullable=True)
     seo_meta: Mapped[dict | None] = mapped_column(JSON, nullable=True)
     hero_image_url: Mapped[str | None] = mapped_column(String(512), nullable=True)
+    route_image_url: Mapped[str | None] = mapped_column(String(512), nullable=True)
     published_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
 
     # Premium content gating (Step 40)

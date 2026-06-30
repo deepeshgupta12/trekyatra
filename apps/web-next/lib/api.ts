@@ -56,6 +56,7 @@ export interface CMSPage {
   seo_description: string | null;
   seo_meta: Record<string, unknown> | null;
   hero_image_url: string | null;
+  route_image_url: string | null;
   brief_id: string | null;
   cluster_id: string | null;
   published_at: string | null;
@@ -304,6 +305,7 @@ export interface CMSPagePayload {
   seo_title?: string | null;
   seo_description?: string | null;
   hero_image_url?: string | null;
+  route_image_url?: string | null;
   // Trek guide metadata DB columns (editable by admin)
   trek_name?: string | null;
   trek_state?: string | null;
