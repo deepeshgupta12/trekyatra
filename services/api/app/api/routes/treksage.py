@@ -23,6 +23,11 @@ _OFF_TOPIC_REPLY = (
     "Feel free to ask me anything about trekking in India!"
 )
 
+_INJECTION_REPLY = (
+    "I'm not able to help with that. I'm TrekSage, TrekYatra's trek planning assistant — "
+    "ask me anything about trekking in India: routes, permits, gear, best seasons, or comparing trails!"
+)
+
 
 class TreksageChatRequest(BaseModel):
     message: str = Field(min_length=1, max_length=1000)
@@ -61,6 +66,15 @@ def chat(request: Request, payload: TreksageChatRequest, db: Session = Depends(g
                 "Daily TrekSage limit reached. "
                 "Anonymous users get 10 messages/day; sign in for 30 messages/day."
             ),
+        )
+
+    # ── Prompt-injection guard (checked BEFORE off-topic, zero LLM cost) ─────
+    if treksage_agent.is_prompt_injection(payload.message):
+        return TreksageChatResponse(
+            session_key=session.session_key,
+            reply=_INJECTION_REPLY,
+            tool_calls=[],
+            trek_cards=[],
         )
 
     # ── Off-topic guard (no Claude call, no token cost) ────────────────────────
