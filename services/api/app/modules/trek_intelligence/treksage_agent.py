@@ -568,15 +568,24 @@ def _call_get_site_info(db: Session, topic: str) -> dict:
 
 # ── Session helpers ───────────────────────────────────────────────────────────
 
-def get_or_create_session(db: Session, session_key: str | None) -> TreksageChatSession:
+def get_or_create_session(
+    db: Session,
+    session_key: str | None,
+    anonymous_id: str | None = None,
+) -> TreksageChatSession:
     if session_key:
         existing = db.query(TreksageChatSession).filter_by(session_key=session_key).first()
         if existing:
+            # Backfill anonymous_id if not yet recorded (e.g. sessions created before this feature)
+            if anonymous_id and not existing.anonymous_id:
+                existing.anonymous_id = anonymous_id
+                db.commit()
             return existing
     new_key = secrets.token_urlsafe(32)
     session = TreksageChatSession(
         id=uuid.uuid4(),
         session_key=new_key,
+        anonymous_id=anonymous_id,
         created_at=datetime.now(timezone.utc),
         last_active_at=datetime.now(timezone.utc),
     )

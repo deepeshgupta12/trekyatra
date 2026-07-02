@@ -49,6 +49,7 @@ class TreksageChatSession(UUIDPrimaryKeyMixin, Base):
     __tablename__ = "treksage_chat_sessions"
 
     user_id: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True), nullable=True, index=True)
+    anonymous_id: Mapped[str | None] = mapped_column(String(64), nullable=True, index=True)
     session_key: Mapped[str] = mapped_column(String(64), nullable=False, unique=True, index=True)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
     last_active_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)

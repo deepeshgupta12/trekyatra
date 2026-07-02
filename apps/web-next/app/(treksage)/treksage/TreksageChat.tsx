@@ -9,6 +9,7 @@ import {
 import ReactMarkdown, { type Components } from "react-markdown";
 import remarkGfm from "remark-gfm";
 import { treksageChat, fetchTreksageChatHistory, fetchTrekProfile, type TrekProfile } from "@/lib/api";
+import { getAnonymousId } from "@/lib/analytics";
 import PlanWizard from "@/components/treksage/PlanWizard";
 import LeadCaptureModal from "@/components/treksage/LeadCaptureModal";
 import TrekDetailPanel from "./TrekDetailPanel";
@@ -506,7 +507,7 @@ export default function TreksageChat({ initialQuery }: { initialQuery?: string }
     setMessages(prev => [...prev, { role: "user", content: trimmed }]);
     setLoading(true);
     try {
-      const res = await treksageChat(trimmed, sessionKey);
+      const res = await treksageChat(trimmed, sessionKey, getAnonymousId());
       const cards = (res.trek_cards as TrekCard[] | undefined) ?? [];
       setMessages(prev => [...prev, { role: "assistant", content: res.reply, trek_cards: cards }]);
       if (cards.length > 0) {

@@ -52,7 +52,7 @@ export default function SessionTranscriptPage({ params }: { params: { session_ke
         <>
           {/* Session meta card */}
           <div className="bg-[#14161f] rounded-2xl border border-white/10 p-5 mb-4">
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+            <div className="grid grid-cols-2 sm:grid-cols-3 gap-4 mb-4">
               <div>
                 <p className="text-white/40 text-xs font-medium mb-1">User</p>
                 {transcript.is_anonymous ? (
@@ -70,6 +70,14 @@ export default function SessionTranscriptPage({ params }: { params: { session_ke
                 <p className="text-white/40 text-xs font-medium mb-1">User ID</p>
                 <p className="text-white/50 text-xs font-mono truncate">{transcript.user_id ?? "—"}</p>
               </div>
+              <div>
+                <p className="text-white/40 text-xs font-medium mb-1">CDP Anonymous ID</p>
+                <p className="text-white/50 text-xs font-mono truncate" title={transcript.anonymous_id ?? undefined}>
+                  {transcript.anonymous_id ?? <span className="text-white/20">not captured</span>}
+                </p>
+              </div>
+            </div>
+            <div className="grid grid-cols-2 gap-4 pt-4 border-t border-white/8">
               <div>
                 <p className="text-white/40 text-xs font-medium mb-1">Started</p>
                 <p className="text-white/60 text-xs">{fmt(transcript.created_at)}</p>

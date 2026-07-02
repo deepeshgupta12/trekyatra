@@ -32,6 +32,7 @@ _INJECTION_REPLY = (
 class TreksageChatRequest(BaseModel):
     message: str = Field(min_length=1, max_length=1000)
     session_key: str | None = None
+    anonymous_id: str | None = Field(default=None, max_length=64)
 
 
 class TreksageChatResponse(BaseModel):
@@ -51,7 +52,7 @@ class TreksageChatHistoryItem(BaseModel):
 def chat(request: Request, payload: TreksageChatRequest, db: Session = Depends(get_db)) -> TreksageChatResponse:
     """Send a message to the TrekSage conversational assistant."""
     # Session is created first so the key is always returned even if checks fail.
-    session = treksage_agent.get_or_create_session(db, payload.session_key)
+    session = treksage_agent.get_or_create_session(db, payload.session_key, payload.anonymous_id)
 
     # ── Daily rate limit (10/day anon, 30/day signed-in) ──────────────────────
     ip = get_remote_address(request)

@@ -215,7 +215,8 @@ def end_session(db: Session, session_end: SessionEndIn) -> Optional[AnalyticsSes
 # ── Identity stitching ────────────────────────────────────────────────────────
 
 def stitch_identity(db: Session, anonymous_id: str, user_id: uuid.UUID) -> None:
-    """Backfill user_id onto all events and sessions for this anonymous_id."""
+    """Backfill user_id onto all events, sessions, and TrekSage chats for this anonymous_id."""
+    from app.modules.trek_intelligence.models import TreksageChatSession
     db.query(AnalyticsEvent).filter(
         AnalyticsEvent.anonymous_id == anonymous_id,
         AnalyticsEvent.user_id.is_(None),
@@ -227,6 +228,11 @@ def stitch_identity(db: Session, anonymous_id: str, user_id: uuid.UUID) -> None:
     db.query(AttributionTouchpoint).filter(
         AttributionTouchpoint.anonymous_id == anonymous_id,
         AttributionTouchpoint.user_id.is_(None),
+    ).update({"user_id": user_id})
+    # Stitch TrekSage chat sessions: link anonymous conversations to the user who signed in
+    db.query(TreksageChatSession).filter(
+        TreksageChatSession.anonymous_id == anonymous_id,
+        TreksageChatSession.user_id.is_(None),
     ).update({"user_id": user_id})
     _upsert_user_trait_user_id(db, anonymous_id, user_id)
     db.commit()

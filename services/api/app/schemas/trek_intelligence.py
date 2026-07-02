@@ -183,6 +183,7 @@ class SessionMessageOut(BaseModel):
 
 class SessionTranscriptOut(BaseModel):
     session_key: str
+    anonymous_id: str | None = None
     user_id: str | None = None
     user_email: str | None = None
     user_name: str | None = None

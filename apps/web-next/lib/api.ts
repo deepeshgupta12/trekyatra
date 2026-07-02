@@ -2357,13 +2357,18 @@ export interface TreksageChatHistoryItem {
 
 export async function treksageChat(
   message: string,
-  sessionKey?: string
+  sessionKey?: string,
+  anonymousId?: string | null
 ): Promise<TreksageChatResponse> {
   const res = await fetch(`${apiBase}/api/v1/treksage/chat`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     credentials: "include",
-    body: JSON.stringify({ message, session_key: sessionKey ?? undefined }),
+    body: JSON.stringify({
+      message,
+      session_key: sessionKey ?? undefined,
+      anonymous_id: anonymousId ?? undefined,
+    }),
   });
   if (!res.ok) {
     const body = await res.json().catch(() => ({}));
@@ -2423,6 +2428,7 @@ export interface SessionMessageOut {
 
 export interface SessionTranscriptOut {
   session_key: string;
+  anonymous_id: string | null;
   user_id: string | null;
   user_email: string | null;
   user_name: string | null;

@@ -834,6 +834,7 @@ def get_session_transcript(db: Session, session_key: str) -> dict | None:
 
     return {
         "session_key": session.session_key,
+        "anonymous_id": session.anonymous_id,
         "user_id": str(session.user_id) if session.user_id else None,
         "user_email": user_email,
         "user_name": user_name,
