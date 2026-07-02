@@ -296,6 +296,13 @@
 - `premium_compendium` + `expert_guide` page types
 - Step doc: `docs/steps/STEP-40-premium-subscription.md`
 
+### TrekSage enhancements — conversation logs, rate limiting, topic guard, CMS trek filters [DONE — 2026-07-02]
+- Conversation transcript viewer: `GET /api/v1/admin/treks/ai-logs/session/{session_key}`, session page in admin
+- TrekSage rate limiting: 10 msgs/day anon (IP), 30/day auth (user_id), Redis DB 3, fail-open
+- Topic guard: off-topic detection keyword check before any Claude API call
+- CMS trek filters: state, difficulty, duration, permit_required, date ranges (all client-side)
+- `trek_permit_required` exposed in `CMSPageResponse`
+
 ### Step 41 — B2B content / API extensions [pending]
 - `partners` + `api_keys` + `api_usage_logs` tables
 - Partner API: `GET /api/partner/v1/pages`, `/treks`, `/clusters`, `/feed`; key-scoped access

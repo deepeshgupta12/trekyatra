@@ -80,6 +80,7 @@ class CMSPageResponse(BaseModel):
     trek_duration: str | None = None
     trek_season: str | None = None
     trek_suitability: str | None = None
+    trek_permit_required: bool | None = None
 
     model_config = {"from_attributes": True}
 

@@ -152,6 +152,7 @@ class AIInteractionLogResponse(BaseModel):
     query_summary: str | None = None
     result_summary: str | None = None
     page_url: str | None = None
+    session_id: str | None = None  # TreksageChatSession.session_key — used for "View conversation" link
     trek_slugs: list[str] | None = None
     created_at: datetime
     # User attribution — populated by joining TreksageChatSession → User
@@ -170,3 +171,22 @@ class BackfillTriggerResponse(BaseModel):
 class BackfillAllTriggerResponse(BaseModel):
     status: str
     trek_count: int
+
+
+# ── TrekSage session transcript (admin conversation view) ─────────────────────
+
+class SessionMessageOut(BaseModel):
+    role: str
+    content: str
+    created_at: datetime
+
+
+class SessionTranscriptOut(BaseModel):
+    session_key: str
+    user_id: str | None = None
+    user_email: str | None = None
+    user_name: str | None = None
+    is_anonymous: bool = True
+    created_at: datetime
+    last_active_at: datetime
+    messages: list[SessionMessageOut]

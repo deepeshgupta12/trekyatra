@@ -17,6 +17,8 @@ import uuid
 from datetime import datetime, timezone
 from typing import Any
 
+import redis as _redis_lib
+
 from sqlalchemy.orm import Session
 
 from app.core.config import settings
@@ -29,6 +31,93 @@ logger = logging.getLogger(__name__)
 _HAIKU_MODEL = "claude-haiku-4-5-20251001"
 MAX_TOOL_ROUNDS = 2
 MAX_HISTORY_MESSAGES = 6
+
+# ── Rate limiting ─────────────────────────────────────────────────────────────
+
+_RATE_LIMIT_DB = 3        # Redis DB slot reserved for TrekSage rate limits
+_DAILY_LIMIT_ANON = 10   # anonymous (IP-keyed)
+_DAILY_LIMIT_AUTH = 30   # signed-in users (user_id-keyed)
+_BYPASS_IPS = {"127.0.0.1", "::1", "localhost", "testclient"}
+
+# Keywords that make a message TREK-RELATED. If any match, skip off-topic gate.
+_TREK_KEYWORDS = {
+    "trek", "trekking", "hike", "hiking", "trail", "mountain", "himalayas",
+    "himalayan", "altitude", "camp", "camping", "route", "peak", "summit",
+    "base camp", "snowline", "forest", "valley", "pass", "lake", "glacier",
+    "permit", "season", "monsoon", "winter", "spring", "autumn", "snow",
+    "kedarkantha", "triund", "chopta", "hampta", "roopkund", "rupin",
+    "kuari", "har ki dun", "valley of flowers", "pin parvati", "dayara",
+    "india", "himachal", "uttarakhand", "ladakh", "sikkim", "kashmir",
+    "manali", "kasol", "rishikesh", "leh", "spiti", "dharamshala",
+    "beginner", "moderate", "difficult", "easy", "days", "night", "nights",
+    "guide", "operator", "porter", "safety", "gear", "equipment", "backpack",
+    "plan", "budget", "cost", "fee", "accommodation", "food", "guesthouse",
+    "altitude sickness", "ams", "acclimatise", "acclimatization", "acclimatize",
+    "weather", "temperature", "trekyatra", "trek yatra", "booking", "itinerary",
+}
+
+# Signals that strongly indicate an off-topic query (only apply if no trek keyword found).
+_OFF_TOPIC_SIGNALS = {
+    "recipe", "cook", "cooking", "bake", "baking", "cricket", "ipl", "football",
+    "bollywood", "movie", "film", "actor", "actress", "stock", "share price",
+    "crypto", "bitcoin", "invest", "loan", "emi", "bank", "poem", "poetry",
+    "essay", "homework", "math", "calculation", "solve this", "translate",
+    "code", "programming", "python", "java", "javascript", "debug",
+    "resume", "cv", "job interview", "relationship", "love", "marriage",
+    "doctor", "medicine", "hospital", "disease", "symptoms", "diagnosis",
+    "news", "politics", "election", "prime minister", "president",
+    "2+2", "what is 2", "who won", "capital of", "population of",
+}
+
+
+def _rate_redis() -> _redis_lib.Redis:
+    """Return a short-lived Redis client pointing at DB 3 (rate limits)."""
+    return _redis_lib.Redis(
+        host=settings.redis_host,
+        port=settings.redis_port,
+        db=_RATE_LIMIT_DB,
+        username=settings.redis_username or None,
+        password=settings.redis_password or None,
+        ssl=settings.redis_port == 25061,
+        ssl_cert_reqs="none",
+        socket_connect_timeout=1,
+        decode_responses=True,
+    )
+
+
+def is_off_topic(message: str) -> bool:
+    """Return True only when the message has NO trek keyword AND matches an off-topic signal."""
+    lower = message.lower()
+    if any(kw in lower for kw in _TREK_KEYWORDS):
+        return False
+    return any(sig in lower for sig in _OFF_TOPIC_SIGNALS)
+
+
+def check_daily_limit(user_id: str | None, ip: str) -> tuple[bool, int]:
+    """Check (and increment) the daily TrekSage usage counter.
+
+    Returns (allowed, remaining). Fails open on Redis error so a Redis outage
+    never blocks legitimate users — it only disables the limit.
+    """
+    if ip in _BYPASS_IPS:
+        return True, 999
+
+    try:
+        r = _rate_redis()
+        today = datetime.now(timezone.utc).strftime("%Y-%m-%d")
+        identifier = str(user_id) if user_id else ip
+        limit = _DAILY_LIMIT_AUTH if user_id else _DAILY_LIMIT_ANON
+        key = f"treksage:rl:{today}:{identifier}"
+        current = r.get(key)
+        count = int(current) if current else 0
+        if count >= limit:
+            return False, 0
+        r.incr(key)
+        r.expire(key, 90_000)  # 25-hour TTL covers timezone edge cases
+        return True, limit - count - 1
+    except Exception as exc:
+        logger.warning("TrekSage rate-limit Redis error (fail-open): %s", exc)
+        return True, -1
 
 _SYSTEM_PROMPT = """\
 You are TrekSage, TrekYatra's trek planning assistant for India.

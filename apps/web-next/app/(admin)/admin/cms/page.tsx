@@ -21,6 +21,10 @@ interface CMSPage {
   translations: Record<string, string> | null;
   is_premium: boolean;
   trek_name: string | null;
+  trek_state: string | null;
+  trek_difficulty: string | null;
+  trek_duration: string | null;
+  trek_permit_required: boolean | null;
 }
 
 const PAGE_PREFIX: Record<string, string> = {
@@ -98,6 +102,15 @@ export default function CMSAdminPage() {
   const [activeTab, setActiveTab] = useState<TabType>("all");
   const [statusFilter, setStatusFilter] = useState("all");
   const [languageFilter, setLanguageFilter] = useState("all");
+  // Trek-guide-specific filters (only applied when activeTab === "trek_guide")
+  const [trekStateFilter, setTrekStateFilter] = useState("all");
+  const [trekDifficultyFilter, setTrekDifficultyFilter] = useState("all");
+  const [trekDurationFilter, setTrekDurationFilter] = useState("all");
+  const [trekPermitFilter, setTrekPermitFilter] = useState("all");
+  const [publishedFrom, setPublishedFrom] = useState("");
+  const [publishedTo, setPublishedTo] = useState("");
+  const [updatedFrom, setUpdatedFrom] = useState("");
+  const [updatedTo, setUpdatedTo] = useState("");
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   async function loadPages() {
@@ -113,6 +126,31 @@ export default function CMSAdminPage() {
   useEffect(() => { loadPages(); }, []);
   useEffect(() => () => { if (timerRef.current) clearInterval(timerRef.current); }, []);
 
+  // Unique trek states from loaded pages (for state dropdown)
+  const trekStates = useMemo(() => {
+    const states = new Set<string>();
+    pages.filter((p) => p.page_type === "trek_guide" && p.trek_state).forEach((p) => states.add(p.trek_state!));
+    return Array.from(states).sort();
+  }, [pages]);
+
+  const hasTrekFilters = activeTab === "trek_guide" && (
+    trekStateFilter !== "all" || trekDifficultyFilter !== "all" ||
+    trekDurationFilter !== "all" || trekPermitFilter !== "all" ||
+    publishedFrom !== "" || publishedTo !== "" || updatedFrom !== "" || updatedTo !== ""
+  );
+
+  function clearTrekFilters() {
+    setTrekStateFilter("all"); setTrekDifficultyFilter("all");
+    setTrekDurationFilter("all"); setTrekPermitFilter("all");
+    setPublishedFrom(""); setPublishedTo(""); setUpdatedFrom(""); setUpdatedTo("");
+  }
+
+  function parseDurationDays(dur: string | null): number | null {
+    if (!dur) return null;
+    const m = dur.match(/(\d+)/);
+    return m ? parseInt(m[1], 10) : null;
+  }
+
   const visiblePages = useMemo(() => {
     let result = pages;
     if (activeTab === "trek_guide") result = result.filter((p) => p.page_type === "trek_guide");
@@ -120,8 +158,30 @@ export default function CMSAdminPage() {
     else if (activeTab === "other") result = result.filter((p) => p.page_type !== "trek_guide" && p.page_type !== "news_article");
     if (statusFilter !== "all") result = result.filter((p) => p.status === statusFilter);
     if (languageFilter !== "all") result = result.filter((p) => (p.language ?? "en") === languageFilter);
+    // Trek-specific filters (only active on trek_guide tab)
+    if (activeTab === "trek_guide") {
+      if (trekStateFilter !== "all") result = result.filter((p) => p.trek_state === trekStateFilter);
+      if (trekDifficultyFilter !== "all") result = result.filter((p) => p.trek_difficulty?.toLowerCase() === trekDifficultyFilter);
+      if (trekDurationFilter !== "all") {
+        result = result.filter((p) => {
+          const d = parseDurationDays(p.trek_duration);
+          if (d === null) return false;
+          if (trekDurationFilter === "1-3") return d >= 1 && d <= 3;
+          if (trekDurationFilter === "4-6") return d >= 4 && d <= 6;
+          if (trekDurationFilter === "7-9") return d >= 7 && d <= 9;
+          if (trekDurationFilter === "10+") return d >= 10;
+          return true;
+        });
+      }
+      if (trekPermitFilter === "yes") result = result.filter((p) => p.trek_permit_required === true);
+      if (trekPermitFilter === "no") result = result.filter((p) => p.trek_permit_required === false);
+      if (publishedFrom) result = result.filter((p) => p.published_at && p.published_at >= publishedFrom);
+      if (publishedTo) result = result.filter((p) => p.published_at && p.published_at <= publishedTo + "T23:59:59");
+      if (updatedFrom) result = result.filter((p) => p.updated_at >= updatedFrom);
+      if (updatedTo) result = result.filter((p) => p.updated_at <= updatedTo + "T23:59:59");
+    }
     return result;
-  }, [pages, activeTab, statusFilter, languageFilter]);
+  }, [pages, activeTab, statusFilter, languageFilter, trekStateFilter, trekDifficultyFilter, trekDurationFilter, trekPermitFilter, publishedFrom, publishedTo, updatedFrom, updatedTo]);
 
   async function invalidateCache(scope: "all" | "slug", slug?: string) {
     setInvalidating(true);
@@ -509,7 +569,7 @@ export default function CMSAdminPage() {
           </button>
         </div>
 
-        {/* Filter row */}
+        {/* Filter row — global */}
         <div className="flex flex-wrap items-center gap-2 px-4 py-3 border-b border-white/5">
           <select
             value={statusFilter}
@@ -543,6 +603,81 @@ export default function CMSAdminPage() {
             {visiblePages.length} of {pages.length} pages
           </span>
         </div>
+
+        {/* Trek-guide-specific filter row — only shown on Trek Guides tab */}
+        {activeTab === "trek_guide" && (
+          <div className="flex flex-wrap items-center gap-2 px-4 py-2.5 border-b border-white/5 bg-white/2">
+            <span className="text-white/30 text-[10px] font-medium uppercase tracking-wide mr-1">Trek filters:</span>
+            {/* State */}
+            <select
+              value={trekStateFilter}
+              onChange={(e) => setTrekStateFilter(e.target.value)}
+              className="bg-[#0c0e14] border border-white/10 rounded-lg px-2 py-1 text-white/60 text-xs focus:outline-none focus:border-accent/40"
+            >
+              <option value="all">All states</option>
+              {trekStates.map((s) => <option key={s} value={s}>{s}</option>)}
+            </select>
+            {/* Difficulty */}
+            <select
+              value={trekDifficultyFilter}
+              onChange={(e) => setTrekDifficultyFilter(e.target.value)}
+              className="bg-[#0c0e14] border border-white/10 rounded-lg px-2 py-1 text-white/60 text-xs focus:outline-none focus:border-accent/40"
+            >
+              <option value="all">All difficulty</option>
+              <option value="easy">Easy</option>
+              <option value="moderate">Moderate</option>
+              <option value="difficult">Difficult</option>
+            </select>
+            {/* Duration */}
+            <select
+              value={trekDurationFilter}
+              onChange={(e) => setTrekDurationFilter(e.target.value)}
+              className="bg-[#0c0e14] border border-white/10 rounded-lg px-2 py-1 text-white/60 text-xs focus:outline-none focus:border-accent/40"
+            >
+              <option value="all">All durations</option>
+              <option value="1-3">1–3 days</option>
+              <option value="4-6">4–6 days</option>
+              <option value="7-9">7–9 days</option>
+              <option value="10+">10+ days</option>
+            </select>
+            {/* Permit */}
+            <select
+              value={trekPermitFilter}
+              onChange={(e) => setTrekPermitFilter(e.target.value)}
+              className="bg-[#0c0e14] border border-white/10 rounded-lg px-2 py-1 text-white/60 text-xs focus:outline-none focus:border-accent/40"
+            >
+              <option value="all">Any permit</option>
+              <option value="yes">Permit required</option>
+              <option value="no">No permit</option>
+            </select>
+            {/* Published date range */}
+            <div className="flex items-center gap-1">
+              <span className="text-white/30 text-[10px]">Published:</span>
+              <input type="date" value={publishedFrom} onChange={(e) => setPublishedFrom(e.target.value)}
+                className="bg-[#0c0e14] border border-white/10 rounded-lg px-2 py-1 text-white/60 text-xs focus:outline-none focus:border-accent/40 w-32" />
+              <span className="text-white/20 text-[10px]">–</span>
+              <input type="date" value={publishedTo} onChange={(e) => setPublishedTo(e.target.value)}
+                className="bg-[#0c0e14] border border-white/10 rounded-lg px-2 py-1 text-white/60 text-xs focus:outline-none focus:border-accent/40 w-32" />
+            </div>
+            {/* Updated date range */}
+            <div className="flex items-center gap-1">
+              <span className="text-white/30 text-[10px]">Updated:</span>
+              <input type="date" value={updatedFrom} onChange={(e) => setUpdatedFrom(e.target.value)}
+                className="bg-[#0c0e14] border border-white/10 rounded-lg px-2 py-1 text-white/60 text-xs focus:outline-none focus:border-accent/40 w-32" />
+              <span className="text-white/20 text-[10px]">–</span>
+              <input type="date" value={updatedTo} onChange={(e) => setUpdatedTo(e.target.value)}
+                className="bg-[#0c0e14] border border-white/10 rounded-lg px-2 py-1 text-white/60 text-xs focus:outline-none focus:border-accent/40 w-32" />
+            </div>
+            {hasTrekFilters && (
+              <button
+                onClick={clearTrekFilters}
+                className="text-xs text-accent/70 hover:text-accent transition-colors flex items-center gap-1 ml-1"
+              >
+                <X className="h-3 w-3" /> Clear trek filters
+              </button>
+            )}
+          </div>
+        )}
 
         {/* Table */}
         <div className="overflow-x-auto">

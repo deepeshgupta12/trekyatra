@@ -76,6 +76,7 @@ export interface CMSPage {
   trek_duration: string | null;
   trek_season: string | null;
   trek_suitability: string | null;
+  trek_permit_required: boolean | null;
   is_featured: boolean;
 }
 
@@ -2406,11 +2407,40 @@ export interface AIInteractionLogEntry {
   query_summary: string | null;
   result_summary: string | null;
   page_url: string | null;
+  session_id: string | null;
   trek_slugs: string[] | null;
   created_at: string;
   user_email: string | null;
   user_name: string | null;
   is_anonymous: boolean;
+}
+
+export interface SessionMessageOut {
+  role: string;
+  content: string;
+  created_at: string;
+}
+
+export interface SessionTranscriptOut {
+  session_key: string;
+  user_id: string | null;
+  user_email: string | null;
+  user_name: string | null;
+  is_anonymous: boolean;
+  created_at: string;
+  last_active_at: string;
+  messages: SessionMessageOut[];
+}
+
+export async function fetchTreksageSessionTranscript(sessionKey: string): Promise<SessionTranscriptOut> {
+  const res = await fetch(`${apiBase}/api/v1/admin/treks/ai-logs/session/${encodeURIComponent(sessionKey)}`, {
+    credentials: "include",
+  });
+  if (!res.ok) {
+    const body = await res.json().catch(() => ({}));
+    throw new Error((body as { detail?: string }).detail ?? `Failed (${res.status})`);
+  }
+  return res.json();
 }
 
 /** Admin: recent TrekSage / MCP tool usage with optional source/tool_name filter. */

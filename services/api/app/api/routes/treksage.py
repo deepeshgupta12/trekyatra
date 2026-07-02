@@ -3,7 +3,7 @@ from __future__ import annotations
 
 import logging
 
-from fastapi import APIRouter, Depends, HTTPException, Request
+from fastapi import APIRouter, Depends, HTTPException, Request, status
 from pydantic import BaseModel, Field
 from slowapi import Limiter
 from slowapi.util import get_remote_address
@@ -16,6 +16,12 @@ logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/treksage", tags=["treksage"])
 limiter = Limiter(key_func=get_remote_address)
+
+_OFF_TOPIC_REPLY = (
+    "I'm TrekSage — I can only help with Indian trekking: planning routes, "
+    "comparing trails, permit requirements, gear, best seasons, and more. "
+    "Feel free to ask me anything about trekking in India!"
+)
 
 
 class TreksageChatRequest(BaseModel):
@@ -39,8 +45,33 @@ class TreksageChatHistoryItem(BaseModel):
 @limiter.limit("20/minute")
 def chat(request: Request, payload: TreksageChatRequest, db: Session = Depends(get_db)) -> TreksageChatResponse:
     """Send a message to the TrekSage conversational assistant."""
-    # Session is created first so the key is always returned, even if the agent fails.
+    # Session is created first so the key is always returned even if checks fail.
     session = treksage_agent.get_or_create_session(db, payload.session_key)
+
+    # ── Daily rate limit (10/day anon, 30/day signed-in) ──────────────────────
+    ip = get_remote_address(request)
+    allowed, remaining = treksage_agent.check_daily_limit(
+        user_id=str(session.user_id) if session.user_id else None,
+        ip=ip,
+    )
+    if not allowed:
+        raise HTTPException(
+            status_code=status.HTTP_429_TOO_MANY_REQUESTS,
+            detail=(
+                "Daily TrekSage limit reached. "
+                "Anonymous users get 10 messages/day; sign in for 30 messages/day."
+            ),
+        )
+
+    # ── Off-topic guard (no Claude call, no token cost) ────────────────────────
+    if treksage_agent.is_off_topic(payload.message):
+        return TreksageChatResponse(
+            session_key=session.session_key,
+            reply=_OFF_TOPIC_REPLY,
+            tool_calls=[],
+            trek_cards=[],
+        )
+
     try:
         result = treksage_agent.chat(db, session, payload.message)
         return TreksageChatResponse(
@@ -49,6 +80,8 @@ def chat(request: Request, payload: TreksageChatRequest, db: Session = Depends(g
             tool_calls=result["tool_calls"],
             trek_cards=result.get("trek_cards", []),
         )
+    except HTTPException:
+        raise
     except Exception as exc:
         logger.error("TrekSage agent failed for session %s: %s", session.session_key, exc)
         return TreksageChatResponse(

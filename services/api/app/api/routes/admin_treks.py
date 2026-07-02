@@ -10,6 +10,7 @@ from app.schemas.trek_intelligence import (
     AIInteractionLogResponse,
     BackfillAllTriggerResponse,
     BackfillTriggerResponse,
+    SessionTranscriptOut,
     TrekDataQualityRow,
     TrekMetaPatch,
     TrekProfile,
@@ -35,6 +36,15 @@ def get_ai_interaction_logs(
     """Step 76: recent TrekSage / MCP tool usage with user attribution via session join."""
     rows = ti_service.list_ai_interaction_logs(db, limit=limit, source=source, tool_name=tool_name)
     return [AIInteractionLogResponse(**row) for row in rows]
+
+
+@router.get("/ai-logs/session/{session_key}", response_model=SessionTranscriptOut, dependencies=[_admin])
+def get_session_transcript(session_key: str, db: Session = Depends(get_db)) -> SessionTranscriptOut:
+    """Return full chat transcript for a TrekSage session with user attribution."""
+    result = ti_service.get_session_transcript(db, session_key)
+    if not result:
+        raise HTTPException(status_code=404, detail="Session not found")
+    return SessionTranscriptOut(**result)
 
 
 @router.patch("/{slug}/meta", response_model=TrekProfile, dependencies=[_admin])

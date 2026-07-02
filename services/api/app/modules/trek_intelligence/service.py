@@ -790,6 +790,7 @@ def list_ai_interaction_logs(
             "query_summary": log.query_summary,
             "result_summary": log.result_summary,
             "page_url": log.page_url,
+            "session_id": log.session_id,
             "trek_slugs": log.trek_slugs,
             "created_at": log.created_at,
             "user_email": user_email,
@@ -797,3 +798,42 @@ def list_ai_interaction_logs(
             "is_anonymous": user_email is None,
         })
     return result
+
+
+def get_session_transcript(db: Session, session_key: str) -> dict | None:
+    """Return full chat transcript for a TrekSage session, with user attribution."""
+    from app.modules.trek_intelligence.models import TreksageChatSession, TreksageChatMessage
+    from app.modules.auth.models import User
+
+    session = db.query(TreksageChatSession).filter_by(session_key=session_key).first()
+    if not session:
+        return None
+
+    user_email: str | None = None
+    user_name: str | None = None
+    if session.user_id:
+        user = db.get(User, session.user_id)
+        if user:
+            user_email = user.email
+            user_name = user.full_name
+
+    messages = (
+        db.query(TreksageChatMessage)
+        .filter_by(session_id=session.id)
+        .order_by(TreksageChatMessage.created_at)
+        .all()
+    )
+
+    return {
+        "session_key": session.session_key,
+        "user_id": str(session.user_id) if session.user_id else None,
+        "user_email": user_email,
+        "user_name": user_name,
+        "is_anonymous": user_email is None,
+        "created_at": session.created_at,
+        "last_active_at": session.last_active_at,
+        "messages": [
+            {"role": m.role, "content": m.content, "created_at": m.created_at}
+            for m in messages
+        ],
+    }

@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import Link from "next/link";
 import { MessageSquare, RefreshCw, Filter, User, UserX } from "lucide-react";
 import { fetchAiInteractionLogs, type AIInteractionLogEntry } from "@/lib/api";
 
@@ -141,6 +142,7 @@ export default function TrekSageLogsPage() {
                   <th className="text-left px-4 py-3 text-white/40 font-medium text-xs">Tool</th>
                   <th className="text-left px-4 py-3 text-white/40 font-medium text-xs">Query</th>
                   <th className="text-left px-4 py-3 text-white/40 font-medium text-xs hidden md:table-cell">Treks</th>
+                  <th className="text-left px-4 py-3 text-white/40 font-medium text-xs hidden lg:table-cell">Conversation</th>
                 </tr>
               </thead>
               <tbody>
@@ -180,6 +182,18 @@ export default function TrekSageLogsPage() {
                             <span className="text-[9px] text-white/25">+{log.trek_slugs.length - 3}</span>
                           )}
                         </div>
+                      ) : (
+                        <span className="text-white/25">—</span>
+                      )}
+                    </td>
+                    <td className="px-4 py-3 hidden lg:table-cell">
+                      {log.session_id ? (
+                        <Link
+                          href={`/admin/treksage-logs/${encodeURIComponent(log.session_id)}`}
+                          className="text-[10px] text-accent hover:underline whitespace-nowrap"
+                        >
+                          View chat →
+                        </Link>
                       ) : (
                         <span className="text-white/25">—</span>
                       )}

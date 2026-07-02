@@ -497,6 +497,18 @@ This file tracks structural dependencies, source-of-truth modules, and Nexus/Git
 - `scripts/assign_admin.py` — NEW: CLI role assignment by email; blast radius: LOW
 - `apps/web-next/middleware.ts` — UPDATED: /admin/:path* added to matcher + redirect guard; blast radius: MEDIUM (affects all admin page requests in Next.js edge runtime)
 
+### TrekSage enhancements — conversation logs, rate limiting, topic guard, CMS trek filters (2026-07-02)
+- `services/api/app/schemas/trek_intelligence.py` — UPDATED: `session_id: str | None` added to `AIInteractionLogResponse`; new `SessionMessageOut` + `SessionTranscriptOut` models; blast radius: LOW (additive schema fields)
+- `services/api/app/modules/trek_intelligence/service.py` — UPDATED: `list_ai_interaction_logs` propagates `session_id`; `get_session_transcript(db, session_key)` function added (joins TreksageChatSession → TreksageChatMessage → User); blast radius: LOW (additive)
+- `services/api/app/api/routes/admin_treks.py` — UPDATED: `SessionTranscriptOut` imported; static route `GET /ai-logs/session/{session_key}` added BEFORE dynamic `/{slug}/` routes; blast radius: LOW (additive; static route must precede dynamic to avoid shadowing)
+- `services/api/app/modules/trek_intelligence/treksage_agent.py` — UPDATED: `_RATE_LIMIT_DB=3`, `_DAILY_LIMIT_ANON=10`, `_DAILY_LIMIT_AUTH=30`, `_BYPASS_IPS`, `_TREK_KEYWORDS`, `_OFF_TOPIC_SIGNALS`; `_rate_redis()` factory (Redis DB 3); `is_off_topic(message)` fail-open keyword check; `check_daily_limit(user_id, ip)` Redis counter with 90000s TTL; blast radius: MEDIUM (called by chat route on every TrekSage message)
+- `services/api/app/api/routes/treksage.py` — UPDATED: `check_daily_limit()` + `is_off_topic()` wired in `POST /treksage/chat`; `except HTTPException: raise` guard added before generic except; blast radius: MEDIUM (every TrekSage chat request now runs rate-limit + topic checks)
+- `services/api/app/schemas/cms.py` — UPDATED: `trek_permit_required: bool | None` added to `CMSPageResponse`; blast radius: LOW (additive field, ORM column already existed)
+- `apps/web-next/lib/api.ts` — UPDATED: `trek_permit_required` on `CMSPage` interface; `session_id` on `AIInteractionLogEntry`; `SessionMessageOut`/`SessionTranscriptOut` interfaces; `fetchTreksageSessionTranscript(sessionKey)` function; blast radius: LOW (additive)
+- `apps/web-next/app/(admin)/admin/treksage-logs/page.tsx` — UPDATED: `Link` imported; "Conversation" column header + "View chat →" link per row; blast radius: LOW (admin leaf page)
+- `apps/web-next/app/(admin)/admin/treksage-logs/[session_key]/page.tsx` — NEW: client component; session meta card + chat bubble transcript; blast radius: LOW (new page, no callers)
+- `apps/web-next/app/(admin)/admin/cms/page.tsx` — UPDATED: local `CMSPage` interface extended; 8 trek filter state vars + `trekStates` useMemo + `visiblePages` extended; trek filter UI row (state, difficulty, duration, permit, date ranges); blast radius: LOW (admin leaf page, client-side filtering only)
+
 ## Dependency Discipline Rules
 Before editing any existing frontend file:
 1. Identify entry file and route usage.

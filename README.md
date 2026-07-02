@@ -209,6 +209,9 @@ trekyatra/
 | `/premium` marketing page | Done |
 | `/account/premium` dashboard (status + cancel/upgrade) | Done |
 | Admin CMS is_premium toggle per page | Done |
+| Admin CMS trek filters (state, difficulty, duration, permit, published/updated date) | Done |
+| TrekSage conversation transcript viewer per session (/admin/treksage-logs/[session_key]) | Done |
+| TrekSage daily rate limiting (10/day anon IP, 30/day auth) + off-topic guard (no Claude call on OOT queries) | Done |
 | MonetizationSlot wired to trek detail page (dynamic CTA via fetchIntent) | Done |
 | GatedContent gate wired to trek detail page (article body gated when is_premium=true) | Done |
 
@@ -594,7 +597,7 @@ cd apps/web-next && npm run build
 | Trek intelligence | `GET /api/v1/treks/{slug}/profile`, `POST /api/v1/treks/compare`, `POST /api/v1/treks/{slug}/ask`, `GET /api/v1/treks/{slug}/content` | Public |
 | Operator-help lead | `POST /api/v1/leads/operator-help` | Public |
 | AI interaction logging | `POST /api/v1/ai/log` | Public (fire-and-forget) |
-| Admin trek data | `GET /api/v1/admin/treks/data-quality`, `PATCH /api/v1/admin/treks/{slug}/meta`, `POST /api/v1/admin/treks/{slug}/backfill`, `POST /api/v1/admin/treks/backfill-all`, `GET /api/v1/admin/treks/ai-logs` | Admin auth required |
+| Admin trek data | `GET /api/v1/admin/treks/data-quality`, `PATCH /api/v1/admin/treks/{slug}/meta`, `POST /api/v1/admin/treks/{slug}/backfill`, `POST /api/v1/admin/treks/backfill-all`, `GET /api/v1/admin/treks/ai-logs`, `GET /api/v1/admin/treks/ai-logs/session/{session_key}` | Admin auth required |
 | "TrekSage" MCP server | `https://api.trekyatra.co.in/mcp` (Streamable HTTP, 8 tools) | Read-only tools open; `create_trek_plan_lead`/`translate_trek_content` require `X-MCP-Key` |
 | TrekSage conversational AI | `POST /api/v1/treksage/chat`, `GET /api/v1/treksage/chat/{session_key}/history` | Public (anonymous session auto-created; user auth optional for linked history) |
 | Trip Reports (public) | `GET /api/v1/public/treks/{slug}/reports` — paginated approved reports + condition_summary | Public |
