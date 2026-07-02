@@ -807,6 +807,14 @@ def get_session_transcript(db: Session, session_key: str) -> dict | None:
 
     session = db.query(TreksageChatSession).filter_by(session_key=session_key).first()
     if not session:
+        # Fallback: legacy logs stored str(session.id) (UUID) instead of session_key
+        try:
+            import uuid as _uuid
+            session_uuid = _uuid.UUID(session_key)
+            session = db.get(TreksageChatSession, session_uuid)
+        except (ValueError, AttributeError):
+            pass
+    if not session:
         return None
 
     user_email: str | None = None

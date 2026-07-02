@@ -706,7 +706,7 @@ def chat(
                 tool_name=tc["tool"],
                 query_summary=user_message[:300],
                 result_summary=json.dumps(tc.get("result", ""), default=str)[:500],
-                session_id=str(session.id),
+                session_id=session.session_key,
                 trek_slugs=[r["slug"] for r in tc.get("result", []) if isinstance(r, dict) and "slug" in r] or None,
             )
         except Exception as log_exc:
