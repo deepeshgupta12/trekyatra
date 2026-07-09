@@ -14,6 +14,7 @@ import {
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useRouter } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
+import { useTheme } from "@/hooks/useTheme";
 import { treksageChatMobile, fetchTreksageHistoryMobile, type TreksageMobileMessage, type TreksageMobileTrekCard } from "@/lib/mobileApi";
 
 const PINE    = "#1D3A2E";
@@ -180,6 +181,7 @@ function ThinkingBubble({ stage }: { stage: number }) {
 
 export default function TrekSageScreen() {
   const router = useRouter();
+  const { colors, isDark } = useTheme();
   const [messages, setMessages]     = useState<Message[]>([]);
   const [input, setInput]           = useState("");
   const [loading, setLoading]       = useState(false);
@@ -289,7 +291,7 @@ export default function TrekSageScreen() {
   }
 
   return (
-    <SafeAreaView style={styles.safeArea}>
+    <SafeAreaView style={[styles.safeArea, { backgroundColor: colors.background }]}>
       <KeyboardAvoidingView
         style={styles.flex}
         behavior={Platform.OS === "ios" ? "padding" : undefined}
@@ -400,7 +402,7 @@ export default function TrekSageScreen() {
                             key={card.slug}
                             card={card}
                             isSelected={compareSet.has(card.slug)}
-                            onView={(slug) => router.push(`/trek/${slug}` as never)}
+                            onView={(slug) => router.push(`/(tabs)/(home)/trek/${slug}` as never)}
                             onToggleCompare={toggleCompare}
                           />
                         ))}
@@ -426,7 +428,7 @@ export default function TrekSageScreen() {
         )}
 
         {/* ── Input bar ── */}
-        <View style={styles.inputBar}>
+        <View style={[styles.inputBar, { backgroundColor: isDark ? colors.surface : "#fff", borderTopColor: isDark ? "rgba(255,255,255,0.08)" : `${PINE}12` }]}>
           <TextInput
             style={styles.input}
             value={input}

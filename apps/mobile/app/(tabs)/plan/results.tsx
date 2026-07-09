@@ -139,7 +139,7 @@ export default function PlanResultsScreen() {
                 key={rec.slug}
                 rec={rec}
                 rank={i + 1}
-                onPress={() => router.push(`/trek/${rec.slug}` as never)}
+                onPress={() => router.push(`/(tabs)/(home)/trek/${rec.slug}` as never)}
               />
             ))}
 

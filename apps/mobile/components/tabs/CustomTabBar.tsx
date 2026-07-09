@@ -1,4 +1,4 @@
-import { View, TouchableOpacity, Platform, StyleSheet } from "react-native";
+import { View, TouchableOpacity, Platform, StyleSheet, Text } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { router } from "expo-router";
 import { useTheme } from "@/hooks/useTheme";
@@ -99,23 +99,22 @@ export function CustomTabBar({ state, descriptors, navigation }: TabBarProps) {
           return (
             <View
               key={route.key}
-              style={{ flex: 1, alignItems: "center", justifyContent: "flex-end" }}
+              style={{ flex: 1, alignItems: "center", justifyContent: "flex-end", paddingBottom: Platform.OS === "ios" ? 10 : 6, gap: 3 }}
             >
               <TouchableOpacity
                 onPress={onPress}
                 onLongPress={onLongPress}
                 accessibilityRole="tab"
-                accessibilityLabel={options.tabBarAccessibilityLabel ?? "Plan my trek"}
+                accessibilityLabel={options.tabBarAccessibilityLabel ?? "TrekSage AI"}
                 accessibilityState={{ selected: isFocused }}
                 style={{
                   width: FAB_SIZE,
                   height: FAB_SIZE,
                   borderRadius: FAB_SIZE / 2,
-                  backgroundColor: SAFFRON,
+                  backgroundColor: isFocused ? "#c4601f" : SAFFRON,
                   alignItems: "center",
                   justifyContent: "center",
-                  marginBottom: Platform.OS === "ios" ? 12 : 4,
-                  marginTop: -20,
+                  marginTop: -18,
                   shadowColor: SAFFRON,
                   shadowOffset: { width: 0, height: 4 },
                   shadowOpacity: 0.5,
@@ -125,6 +124,18 @@ export function CustomTabBar({ state, descriptors, navigation }: TabBarProps) {
               >
                 <Ionicons name="chatbubbles" size={22} color="#ffffff" />
               </TouchableOpacity>
+              <Text
+                style={{
+                  fontSize: 10,
+                  fontWeight: isFocused ? "700" : "500",
+                  color: isFocused ? SAFFRON : inactiveColor,
+                  fontFamily: "Inter_500Medium",
+                  letterSpacing: 0.2,
+                }}
+                numberOfLines={1}
+              >
+                TrekSage
+              </Text>
             </View>
           );
         }
@@ -132,6 +143,7 @@ export function CustomTabBar({ state, descriptors, navigation }: TabBarProps) {
         const iconName = getIconName(route.name, isFocused);
         const iconColor = isFocused ? SAFFRON : inactiveColor;
         const labelText = getLabelText(route.name);
+        const labelColor = isFocused ? SAFFRON : inactiveColor;
 
         return (
           <TouchableOpacity
@@ -145,22 +157,24 @@ export function CustomTabBar({ state, descriptors, navigation }: TabBarProps) {
             style={{
               flex: 1,
               alignItems: "center",
-              justifyContent: "center",
-              paddingBottom: Platform.OS === "ios" ? 14 : 6,
+              justifyContent: "flex-end",
+              paddingBottom: Platform.OS === "ios" ? 10 : 6,
+              gap: 3,
             }}
           >
-            <Ionicons name={iconName} size={24} color={iconColor} />
-            {isFocused && (
-              <View
-                style={{
-                  width: 4,
-                  height: 4,
-                  borderRadius: 2,
-                  backgroundColor: SAFFRON,
-                  marginTop: 4,
-                }}
-              />
-            )}
+            <Ionicons name={iconName} size={22} color={iconColor} />
+            <Text
+              style={{
+                fontSize: 10,
+                fontWeight: isFocused ? "700" : "500",
+                color: labelColor,
+                fontFamily: "Inter_500Medium",
+                letterSpacing: 0.2,
+              }}
+              numberOfLines={1}
+            >
+              {labelText}
+            </Text>
           </TouchableOpacity>
         );
       })}

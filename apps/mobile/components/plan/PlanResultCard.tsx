@@ -1,4 +1,6 @@
-import { View, Text, TouchableOpacity, Image, StyleSheet } from "react-native";
+import { View, Text, TouchableOpacity, StyleSheet } from "react-native";
+import { Image } from "expo-image";
+import { LinearGradient } from "expo-linear-gradient";
 import { useTheme } from "@/hooks/useTheme";
 import type { TrekRecommendation } from "@/lib/mobileApi";
 
@@ -25,13 +27,20 @@ export function PlanResultCard({ rec, rank, onPress }: Props) {
       onPress={onPress}
       activeOpacity={0.85}
     >
-      {rec.hero_image_url ? (
-        <Image source={{ uri: rec.hero_image_url }} style={styles.img} resizeMode="cover" />
-      ) : (
-        <View style={[styles.imgPlaceholder, { backgroundColor: isDark ? "rgba(232,112,42,0.08)" : "rgba(29,58,46,0.06)" }]}>
-          <Text style={styles.imgEmoji}>⛰️</Text>
-        </View>
-      )}
+      <View style={styles.imgWrap}>
+        <Image
+          source={rec.hero_image_url ? { uri: rec.hero_image_url } : require("@/assets/onboarding-2.jpg")}
+          style={StyleSheet.absoluteFill}
+          contentFit="cover"
+          placeholder="L6PZfSi_.AyE_3t7t7R**0o#DgR4"
+          transition={250}
+        />
+        <LinearGradient
+          colors={["transparent", "rgba(0,0,0,0.5)"]}
+          locations={[0.4, 1]}
+          style={StyleSheet.absoluteFill}
+        />
+      </View>
 
       <View style={styles.body}>
         {/* Rank + match */}
@@ -92,10 +101,8 @@ export function PlanResultCard({ rec, rank, onPress }: Props) {
 }
 
 const styles = StyleSheet.create({
-  card: { borderRadius: 16, borderWidth: 1, overflow: "hidden", marginBottom: 14 },
-  img: { width: "100%", height: 160 },
-  imgPlaceholder: { width: "100%", height: 120, alignItems: "center", justifyContent: "center" },
-  imgEmoji: { fontSize: 36 },
+  card: { borderRadius: 18, borderWidth: 1, overflow: "hidden", marginBottom: 14, shadowColor: "#000", shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.18, shadowRadius: 10, elevation: 6 },
+  imgWrap: { width: "100%", height: 170, overflow: "hidden" },
   body: { padding: 14, gap: 6 },
   topRow: { flexDirection: "row", alignItems: "center", gap: 8 },
   rankBadge: { backgroundColor: "rgba(232,112,42,0.15)", borderRadius: 10, paddingHorizontal: 8, paddingVertical: 3, borderWidth: 1, borderColor: "rgba(232,112,42,0.3)" },
