@@ -181,26 +181,18 @@ export default function TrekDetailScreen() {
 
   return (
     <View style={[styles.flex, { backgroundColor: colors.background }]}>
-      {/* Share button injected into transparent header */}
-      <TouchableOpacity
-        style={styles.shareButton}
-        onPress={handleShare}
-        hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
-      >
-        <Text style={styles.shareIcon}>⬆</Text>
-      </TouchableOpacity>
-
       <ScrollView
         ref={scrollViewRef}
         style={styles.flex}
         stickyHeaderIndices={[2]}
         showsVerticalScrollIndicator={false}
       >
-        {/* Hero */}
+        {/* Hero — back button + share embedded inside */}
         <TrekHero
-          imageUrl={trek.hero_image_url}
+          imageUrl={trek.hero_image_url ?? trek.route_image_url ?? null}
           title={trek.title}
           state={trek.trek_state}
+          onShare={handleShare}
         />
 
         {/* Meta strip */}
@@ -502,19 +494,6 @@ const styles = StyleSheet.create({
   flex: { flex: 1 },
   center: { flex: 1, alignItems: "center", justifyContent: "center" },
   backBtn: { marginTop: 16 },
-  shareButton: {
-    position: "absolute",
-    top: 56,
-    right: 16,
-    zIndex: 10,
-    width: 36,
-    height: 36,
-    borderRadius: 18,
-    backgroundColor: "rgba(0,0,0,0.35)",
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  shareIcon: { color: "#fff", fontSize: 16 },
   safetyBanner: {
     marginHorizontal: 16,
     marginBottom: 4,

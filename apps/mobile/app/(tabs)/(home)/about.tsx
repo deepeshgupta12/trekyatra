@@ -1,4 +1,4 @@
-import { ScrollView, View, Text, TouchableOpacity, Linking, StyleSheet } from "react-native";
+import { ScrollView, View, Text, TouchableOpacity, Linking, StyleSheet, Image } from "react-native";
 import { SafeArea } from "@/components/ui/SafeArea";
 import { useTheme } from "@/hooks/useTheme";
 
@@ -13,10 +13,14 @@ export default function AboutScreen() {
   const { colors } = useTheme();
 
   return (
-    <SafeArea edges={["bottom"]}>
+    <SafeArea edges={["top", "bottom"]}>
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scroll}>
         <View style={[styles.logoCard, { backgroundColor: colors.surface, borderColor: colors.border }]}>
-          <Text style={styles.logoText}>🏔</Text>
+          <Image
+            source={require("@/assets/logo.png")}
+            style={styles.logoImage}
+            resizeMode="contain"
+          />
           <Text style={[styles.appName, { color: colors.textPrimary }]}>TrekYatra</Text>
           <Text style={[styles.tagline, { color: colors.textSecondary }]}>India's trekking guide</Text>
           <Text style={[styles.version, { color: colors.textMuted }]}>Version 1.0.0</Text>
@@ -61,7 +65,7 @@ const styles = StyleSheet.create({
     gap: 6,
     marginBottom: 8,
   },
-  logoText: { fontSize: 48 },
+  logoImage: { width: 80, height: 80 },
   appName: { fontSize: 24, fontWeight: "700", fontFamily: "PlayfairDisplay_700Bold" },
   tagline: { fontSize: 14 },
   version: { fontSize: 12, marginTop: 4 },

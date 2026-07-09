@@ -18,9 +18,7 @@ export default function HomeStackLayout() {
       <Stack.Screen
         name="trek/[slug]"
         options={{
-          title: "",
-          headerTransparent: true,
-          headerTintColor: "#ffffff",
+          headerShown: false,
         }}
       />
       <Stack.Screen name="guide/[slug]" options={{ title: "" }} />

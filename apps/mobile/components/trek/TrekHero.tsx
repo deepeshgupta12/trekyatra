@@ -1,18 +1,21 @@
-import { View, Text, StyleSheet } from "react-native";
+import { View, Text, StyleSheet, TouchableOpacity } from "react-native";
 import { Image } from "expo-image";
 import { LinearGradient } from "expo-linear-gradient";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { Ionicons } from "@expo/vector-icons";
+import { router } from "expo-router";
 
 interface TrekHeroProps {
   imageUrl: string | null;
   title: string;
   state: string | null;
   height?: number;
+  onShare?: () => void;
 }
 
 const FALLBACK_BLUR = "L6PZfSi_.AyE_3t7t7R**0o#DgR4";
 
-export function TrekHero({ imageUrl, title, state, height = 300 }: TrekHeroProps) {
+export function TrekHero({ imageUrl, title, state, height = 360, onShare }: TrekHeroProps) {
   const insets = useSafeAreaInsets();
 
   return (
@@ -22,16 +25,45 @@ export function TrekHero({ imageUrl, title, state, height = 300 }: TrekHeroProps
         style={StyleSheet.absoluteFill}
         contentFit="cover"
         placeholder={FALLBACK_BLUR}
-        transition={300}
+        transition={400}
       />
+      {/* Multi-stop gradient: transparent top → dark bottom */}
       <LinearGradient
-        colors={["transparent", "rgba(12,14,20,0.85)", "rgba(12,14,20,0.97)"]}
-        locations={[0.3, 0.7, 1]}
+        colors={["rgba(0,0,0,0.15)", "transparent", "rgba(0,0,0,0.5)", "rgba(0,0,0,0.88)"]}
+        locations={[0, 0.25, 0.65, 1]}
         style={StyleSheet.absoluteFill}
       />
-      <View style={[styles.titleContainer, { paddingBottom: 20 }]}>
-        {state && <Text style={styles.stateLabel}>{state}</Text>}
-        <Text style={styles.title}>{title}</Text>
+
+      {/* Back button */}
+      <TouchableOpacity
+        style={[styles.backBtn, { top: insets.top + 12 }]}
+        onPress={() => router.back()}
+        hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+        accessibilityLabel="Go back"
+      >
+        <Ionicons name="chevron-back" size={22} color="#fff" />
+      </TouchableOpacity>
+
+      {/* Share button */}
+      {onShare && (
+        <TouchableOpacity
+          style={[styles.shareBtn, { top: insets.top + 12 }]}
+          onPress={onShare}
+          hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+          accessibilityLabel="Share trek"
+        >
+          <Ionicons name="share-outline" size={20} color="#fff" />
+        </TouchableOpacity>
+      )}
+
+      {/* Title + breadcrumb */}
+      <View style={[styles.titleContainer, { paddingBottom: 22 }]}>
+        {state && (
+          <View style={styles.statePill}>
+            <Text style={styles.stateLabel}>{state.toUpperCase()}</Text>
+          </View>
+        )}
+        <Text style={styles.title} numberOfLines={3}>{title}</Text>
       </View>
     </View>
   );
@@ -42,22 +74,53 @@ const styles = StyleSheet.create({
     width: "100%",
     justifyContent: "flex-end",
   },
+  backBtn: {
+    position: "absolute",
+    left: 16,
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: "rgba(0,0,0,0.35)",
+    alignItems: "center",
+    justifyContent: "center",
+    zIndex: 10,
+  },
+  shareBtn: {
+    position: "absolute",
+    right: 16,
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: "rgba(0,0,0,0.35)",
+    alignItems: "center",
+    justifyContent: "center",
+    zIndex: 10,
+  },
   titleContainer: {
     paddingHorizontal: 20,
-    gap: 4,
+    gap: 8,
+  },
+  statePill: {
+    alignSelf: "flex-start",
+    backgroundColor: "rgba(232,112,42,0.85)",
+    borderRadius: 6,
+    paddingHorizontal: 10,
+    paddingVertical: 3,
   },
   stateLabel: {
-    fontSize: 12,
-    color: "rgba(255,255,255,0.65)",
-    fontWeight: "500",
-    textTransform: "uppercase",
-    letterSpacing: 1.2,
+    fontSize: 10,
+    color: "#ffffff",
+    fontWeight: "700",
+    letterSpacing: 1.5,
   },
   title: {
-    fontSize: 24,
+    fontSize: 28,
     fontWeight: "700",
     color: "#ffffff",
-    lineHeight: 30,
+    lineHeight: 34,
     fontFamily: "PlayfairDisplay_700Bold",
+    textShadowColor: "rgba(0,0,0,0.4)",
+    textShadowOffset: { width: 0, height: 1 },
+    textShadowRadius: 4,
   },
 });

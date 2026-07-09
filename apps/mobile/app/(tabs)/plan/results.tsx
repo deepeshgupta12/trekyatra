@@ -11,7 +11,7 @@ import { planApi, type TrekRecommendation } from "@/lib/mobileApi";
 export default function PlanResultsScreen() {
   const router = useRouter();
   const { colors } = useTheme();
-  const { isAuthenticated } = useAuth();
+  const { isAuthenticated, accessToken } = useAuth();
   const { answers } = usePlanWizardStore();
 
   const [status, setStatus] = useState<"loading" | "done" | "error" | "auth">("loading");
@@ -20,12 +20,12 @@ export default function PlanResultsScreen() {
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
   useEffect(() => {
-    if (!isAuthenticated) {
+    if (!isAuthenticated || !accessToken) {
       setStatus("auth");
       return;
     }
     fetchResults();
-  }, [isAuthenticated]);
+  }, [isAuthenticated, accessToken]);
 
   async function fetchResults() {
     setStatus("loading");
@@ -45,6 +45,11 @@ export default function PlanResultsScreen() {
       setStatus("done");
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : null;
+      // Expired/invalid token despite isAuthenticated — show re-login prompt
+      if (msg?.toLowerCase().includes("authentication required") || msg?.includes("401")) {
+        setStatus("auth");
+        return;
+      }
       setErrorMsg(msg);
       setStatus("error");
     }

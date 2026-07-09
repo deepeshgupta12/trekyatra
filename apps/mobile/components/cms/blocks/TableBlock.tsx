@@ -1,5 +1,5 @@
 import React from "react";
-import { View, Text, ScrollView } from "react-native";
+import { View, Text, ScrollView, StyleSheet } from "react-native";
 
 interface Props {
   headers: string[];
@@ -8,33 +8,20 @@ interface Props {
 
 export function TableBlock({ headers, rows }: Props) {
   return (
-    <View className="my-4 rounded-xl border border-gray-200 overflow-hidden">
-      <ScrollView horizontal showsHorizontalScrollIndicator={false}>
+    <View style={styles.container}>
+      <ScrollView horizontal showsHorizontalScrollIndicator={true}>
         <View>
           {/* Header row */}
-          <View className="flex-row bg-gray-100">
+          <View style={styles.headerRow}>
             {headers.map((h, i) => (
-              <Text
-                key={i}
-                className="text-xs font-semibold text-gray-700 px-3 py-2.5 min-w-[100px]"
-              >
-                {h}
-              </Text>
+              <Text key={i} style={styles.headerCell}>{h}</Text>
             ))}
           </View>
           {/* Data rows */}
           {rows.map((row, ri) => (
-            <View
-              key={ri}
-              className={`flex-row border-t border-gray-100 ${ri % 2 === 1 ? "bg-gray-50" : "bg-white"}`}
-            >
+            <View key={ri} style={[styles.dataRow, ri % 2 === 1 && styles.altRow]}>
               {row.map((cell, ci) => (
-                <Text
-                  key={ci}
-                  className="text-sm text-gray-700 px-3 py-2.5 min-w-[100px]"
-                >
-                  {cell}
-                </Text>
+                <Text key={ci} style={styles.dataCell}>{cell}</Text>
               ))}
             </View>
           ))}
@@ -43,3 +30,43 @@ export function TableBlock({ headers, rows }: Props) {
     </View>
   );
 }
+
+const COL_MIN_WIDTH = 120;
+
+const styles = StyleSheet.create({
+  container: {
+    marginVertical: 16,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: "#e5e7eb",
+    overflow: "hidden",
+  },
+  headerRow: {
+    flexDirection: "row",
+    backgroundColor: "#f3f4f6",
+  },
+  headerCell: {
+    fontSize: 12,
+    fontWeight: "600",
+    color: "#374151",
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+    minWidth: COL_MIN_WIDTH,
+  },
+  dataRow: {
+    flexDirection: "row",
+    borderTopWidth: 1,
+    borderTopColor: "#f3f4f6",
+    backgroundColor: "#ffffff",
+  },
+  altRow: {
+    backgroundColor: "#f9fafb",
+  },
+  dataCell: {
+    fontSize: 13,
+    color: "#374151",
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+    minWidth: COL_MIN_WIDTH,
+  },
+});

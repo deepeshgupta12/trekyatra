@@ -1,4 +1,4 @@
-import { View, Text, TouchableOpacity, StyleSheet } from "react-native";
+import { View, Text, TouchableOpacity, StyleSheet, Alert } from "react-native";
 import { router } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -22,7 +22,7 @@ export function TrekStickyBar({ slug, trekName }: TrekStickyBarProps) {
 
   async function handleSave() {
     if (!user) {
-      router.push("/(auth)/sign-in");
+      router.push("/(auth)/sign-in" as never);
       return;
     }
     if (saving || saved) return;
@@ -31,13 +31,23 @@ export function TrekStickyBar({ slug, trekName }: TrekStickyBarProps) {
       await contentApi.saveTrek(slug);
       setSaved(true);
     } catch {
-      // non-critical
+      Alert.alert("Could not save", "Something went wrong adding this to your shortlist. Please try again.");
     } finally {
       setSaving(false);
     }
   }
 
+  function handleCompare() {
+    router.push(`/(tabs)/(home)/compare?slug=${slug}` as never);
+  }
+
   const borderColor = isDark ? "rgba(255,255,255,0.10)" : "rgba(0,0,0,0.08)";
+  const saveIconColor = saved ? "#E8702A" : colors.textMuted;
+  const saveBorderColor = saved
+    ? "#E8702A"
+    : isDark
+    ? "rgba(255,255,255,0.18)"
+    : "rgba(0,0,0,0.18)";
 
   return (
     <View style={{ paddingBottom: insets.bottom + 8 }}>
@@ -50,23 +60,31 @@ export function TrekStickyBar({ slug, trekName }: TrekStickyBarProps) {
         <TouchableOpacity
           style={styles.planButton}
           activeOpacity={0.85}
-          onPress={() => router.push("/(tabs)/plan")}
+          onPress={() => router.push("/(tabs)/plan" as never)}
+          accessibilityLabel={`Plan a trek to ${trekName}`}
         >
           <Text style={styles.planText}>✦ Plan with this trek</Text>
         </TouchableOpacity>
+
         <TouchableOpacity
-          style={[styles.saveButton, { borderColor: saved ? "#E8702A" : isDark ? "rgba(255,255,255,0.18)" : "rgba(0,0,0,0.18)" }]}
+          style={[styles.iconButton, { borderColor: saveBorderColor }]}
           activeOpacity={0.8}
           onPress={handleSave}
+          disabled={saving}
+          accessibilityLabel={saved ? "Saved to shortlist" : "Save to shortlist"}
         >
-          <Text style={{ fontSize: 18, color: saved ? "#E8702A" : colors.textMuted }}>
-            {saved ? "♥" : "♡"}
-          </Text>
+          <Ionicons
+            name={saved ? "bookmark" : "bookmark-outline"}
+            size={20}
+            color={saveIconColor}
+          />
         </TouchableOpacity>
+
         <TouchableOpacity
-          style={[styles.saveButton, { borderColor: isDark ? "rgba(255,255,255,0.18)" : "rgba(0,0,0,0.18)" }]}
+          style={[styles.iconButton, { borderColor: isDark ? "rgba(255,255,255,0.18)" : "rgba(0,0,0,0.18)" }]}
           activeOpacity={0.8}
-          onPress={() => router.push(`/compare?slug=${slug}` as never)}
+          onPress={handleCompare}
+          accessibilityLabel="Compare treks"
         >
           <Ionicons name="git-compare-outline" size={20} color={colors.textMuted} />
         </TouchableOpacity>
@@ -100,7 +118,7 @@ const styles = StyleSheet.create({
     fontSize: 15,
     fontWeight: "700",
   },
-  saveButton: {
+  iconButton: {
     width: 48,
     height: 48,
     borderRadius: 14,

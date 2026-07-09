@@ -1,5 +1,6 @@
 import { View, TouchableOpacity, Platform, StyleSheet } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
+import { router } from "expo-router";
 import { useTheme } from "@/hooks/useTheme";
 import { GlassSurface } from "@/components/ui/GlassSurface";
 import { useDrawerStore } from "@/stores/drawerStore";
@@ -80,8 +81,13 @@ export function CustomTabBar({ state, descriptors, navigation }: TabBarProps) {
             target: route.key,
             canPreventDefault: true,
           });
-          if (!isFocused && !event.defaultPrevented) {
-            navigation.navigate(route.name);
+          if (!event.defaultPrevented) {
+            if (isFocused && route.name === "(home)") {
+              // Already on home tab — pop any sub-screens (e.g. About) back to root
+              router.navigate("/(tabs)/(home)" as never);
+            } else if (!isFocused) {
+              navigation.navigate(route.name);
+            }
           }
         }
 

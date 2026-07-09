@@ -1,5 +1,6 @@
 import { loadTokens, saveTokens } from "./authStorage";
 import { refreshAccessToken } from "./authApi";
+import { useAuthStore } from "@/stores/authStore";
 
 const API_BASE = process.env.EXPO_PUBLIC_API_URL ?? "http://localhost:8000";
 
@@ -8,6 +9,7 @@ export interface CMSPage {
   title: string;
   page_type: string;
   hero_image_url: string | null;
+  route_image_url?: string | null;
   trek_state: string | null;
   trek_difficulty: string | null;
   trek_duration: string | null;
@@ -226,6 +228,9 @@ function mapRecommendationToTrekListItem(item: RecommendationItem): TrekListItem
 }
 
 async function getAccessToken(): Promise<string | null> {
+  // Prefer in-memory Zustand token to avoid SecureStore async latency after login
+  const inMemory = useAuthStore.getState().accessToken;
+  if (inMemory) return inMemory;
   const { access } = await loadTokens();
   return access;
 }
