@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import {
+  Animated,
   View,
   Text,
   TextInput,
@@ -144,6 +145,26 @@ function TrekCardItem({
 // ─── Thinking animation ───────────────────────────────────────────────────────
 
 function ThinkingBubble({ stage }: { stage: number }) {
+  const dot1 = useRef(new Animated.Value(0.3)).current;
+  const dot2 = useRef(new Animated.Value(0.3)).current;
+  const dot3 = useRef(new Animated.Value(0.3)).current;
+
+  useEffect(() => {
+    const pulse = (val: Animated.Value, delay: number) =>
+      Animated.loop(
+        Animated.sequence([
+          Animated.delay(delay),
+          Animated.timing(val, { toValue: 1, duration: 350, useNativeDriver: true }),
+          Animated.timing(val, { toValue: 0.3, duration: 350, useNativeDriver: true }),
+        ])
+      );
+    const a1 = pulse(dot1, 0);
+    const a2 = pulse(dot2, 175);
+    const a3 = pulse(dot3, 350);
+    a1.start(); a2.start(); a3.start();
+    return () => { a1.stop(); a2.stop(); a3.stop(); };
+  }, []);
+
   return (
     <View style={[styles.msgRow, styles.msgRowBot]}>
       <View style={styles.botAvatar}>
@@ -151,9 +172,9 @@ function ThinkingBubble({ stage }: { stage: number }) {
       </View>
       <View style={styles.bubbleBot}>
         <View style={styles.loadingDots}>
-          <View style={[styles.dot, { opacity: 0.9 }]} />
-          <View style={[styles.dot, { opacity: 0.6 }]} />
-          <View style={[styles.dot, { opacity: 0.3 }]} />
+          <Animated.View style={[styles.dot, { opacity: dot1 }]} />
+          <Animated.View style={[styles.dot, { opacity: dot2 }]} />
+          <Animated.View style={[styles.dot, { opacity: dot3 }]} />
         </View>
         <View style={{ marginTop: 6, gap: 4 }}>
           {THINKING_STAGES.slice(0, stage + 1).map((s, i) => (
@@ -469,20 +490,20 @@ const styles = StyleSheet.create({
     alignItems: "center", justifyContent: "center",
   },
   headerNameRow: { flexDirection: "row", alignItems: "center", gap: 6 },
-  headerName: { color: "#fff", fontWeight: "700", fontSize: 14 },
+  headerName: { color: "#fff", fontWeight: "700", fontSize: 14, fontFamily: "Inter_700Bold" },
   onlineDot: { width: 6, height: 6, borderRadius: 3, backgroundColor: "#34D399" },
-  onlineText: { color: "#34D399", fontSize: 10, fontWeight: "600" },
-  headerSub: { color: "rgba(255,255,255,0.4)", fontSize: 10, marginTop: 1 },
+  onlineText: { color: "#34D399", fontSize: 10, fontWeight: "600", fontFamily: "Inter_600SemiBold" },
+  headerSub: { color: "rgba(255,255,255,0.4)", fontSize: 10, marginTop: 1, fontFamily: "Inter_400Regular" },
   newChatBtn: {
     flexDirection: "row", alignItems: "center", gap: 4,
     paddingHorizontal: 10, paddingVertical: 5, borderRadius: 10,
     borderWidth: 1, borderColor: "rgba(255,255,255,0.2)",
   },
-  newChatText: { color: "rgba(255,255,255,0.5)", fontSize: 11 },
+  newChatText: { color: "rgba(255,255,255,0.5)", fontSize: 11, fontFamily: "Inter_400Regular" },
   messageArea: { flex: 1 },
   messageContent: { padding: 16, paddingBottom: 8 },
   centerMsg: { alignItems: "center", paddingTop: 60, gap: 10 },
-  centerMsgText: { color: `${PINE}50`, fontSize: 13 },
+  centerMsgText: { color: `${PINE}50`, fontSize: 13, fontFamily: "Inter_400Regular" },
   emptyState: { alignItems: "center", paddingTop: 24, paddingBottom: 8 },
   emptyAvatar: {
     width: 64, height: 64, borderRadius: 32, backgroundColor: PINE,
@@ -490,16 +511,16 @@ const styles = StyleSheet.create({
     shadowColor: PINE, shadowOffset: { width: 0, height: 6 },
     shadowOpacity: 0.3, shadowRadius: 12, elevation: 6,
   },
-  emptyTitle: { color: PINE, fontSize: 22, fontWeight: "700", marginBottom: 4 },
-  emptySub: { color: `${PINE}80`, fontSize: 14, marginBottom: 4 },
-  emptyHint: { color: `${PINE}50`, fontSize: 12, marginBottom: 20 },
+  emptyTitle: { color: PINE, fontSize: 22, fontWeight: "700", marginBottom: 4, fontFamily: "PlayfairDisplay_700Bold" },
+  emptySub: { color: `${PINE}80`, fontSize: 14, marginBottom: 4, fontFamily: "Inter_400Regular" },
+  emptyHint: { color: `${PINE}50`, fontSize: 12, marginBottom: 20, fontFamily: "Inter_400Regular" },
   tabRow: { flexDirection: "row", gap: 8, marginBottom: 16 },
   tab: {
     paddingHorizontal: 14, paddingVertical: 7, borderRadius: 20,
     backgroundColor: "#fff", borderWidth: 1, borderColor: `${PINE}25`,
   },
   tabActive: { backgroundColor: PINE, borderColor: PINE },
-  tabText: { fontSize: 11, fontWeight: "600", color: `${PINE}60` },
+  tabText: { fontSize: 11, fontWeight: "600", color: `${PINE}60`, fontFamily: "Inter_600SemiBold" },
   tabTextActive: { color: "#fff" },
   promptList: { width: "100%", gap: 6 },
   promptChip: {
@@ -508,7 +529,7 @@ const styles = StyleSheet.create({
     backgroundColor: "#fff", borderRadius: 14,
     borderWidth: 1, borderColor: `${PINE}12`,
   },
-  promptChipText: { flex: 1, fontSize: 13, color: `${PINE}70`, marginRight: 8 },
+  promptChipText: { flex: 1, fontSize: 13, color: `${PINE}70`, marginRight: 8, fontFamily: "Inter_400Regular" },
   msgRow: { flexDirection: "row", marginBottom: 12, alignItems: "flex-start" },
   msgRowUser: { justifyContent: "flex-end" },
   msgRowBot: { justifyContent: "flex-start" },
@@ -523,7 +544,7 @@ const styles = StyleSheet.create({
     borderWidth: 1, borderColor: `${PINE}15`,
     shadowColor: "#000", shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.04, shadowRadius: 4,
   },
-  bubbleText: { fontSize: 13, color: `${PINE}85`, lineHeight: 18 },
+  bubbleText: { fontSize: 13, color: `${PINE}85`, lineHeight: 18, fontFamily: "Inter_400Regular" },
   bubbleTextUser: { color: "#fff" },
   // Trek cards
   trekCardList: { marginTop: 10, gap: 8 },
@@ -533,54 +554,54 @@ const styles = StyleSheet.create({
     padding: 10,
   },
   trekCardHeader: { flexDirection: "row", alignItems: "flex-start", gap: 8, marginBottom: 8 },
-  trekCardName: { fontSize: 13, fontWeight: "700", color: PINE, flex: 1 },
-  trekCardState: { fontSize: 11, color: `${PINE}50`, marginTop: 1 },
+  trekCardName: { fontSize: 13, fontWeight: "700", color: PINE, flex: 1, fontFamily: "Inter_700Bold" },
+  trekCardState: { fontSize: 11, color: `${PINE}50`, marginTop: 1, fontFamily: "Inter_400Regular" },
   diffBadge: {
     backgroundColor: `${PINE}12`, borderRadius: 6,
     paddingHorizontal: 7, paddingVertical: 2,
   },
-  diffBadgeText: { fontSize: 10, fontWeight: "600", color: `${PINE}70`, textTransform: "capitalize" },
+  diffBadgeText: { fontSize: 10, fontWeight: "600", color: `${PINE}70`, textTransform: "capitalize", fontFamily: "Inter_600SemiBold" },
   trekStats: {
     flexDirection: "row", backgroundColor: "#fff",
     borderRadius: 10, padding: 8, marginBottom: 6, gap: 0,
   },
   trekStatItem: { flex: 1, alignItems: "center", gap: 2 },
   trekStatBorder: { borderLeftWidth: 1, borderRightWidth: 1, borderColor: `${PINE}08` },
-  trekStatLabel: { fontSize: 9, color: `${PINE}40`, fontWeight: "600", textTransform: "uppercase" },
-  trekStatValue: { fontSize: 11, color: PINE, fontWeight: "600" },
-  trekBudget: { fontSize: 11, fontWeight: "700", color: SAFFRON, marginBottom: 8 },
+  trekStatLabel: { fontSize: 9, color: `${PINE}40`, fontWeight: "600", textTransform: "uppercase", fontFamily: "Inter_600SemiBold" },
+  trekStatValue: { fontSize: 11, color: PINE, fontWeight: "600", fontFamily: "Inter_600SemiBold" },
+  trekBudget: { fontSize: 11, fontWeight: "700", color: SAFFRON, marginBottom: 8, fontFamily: "Inter_700Bold" },
   trekCardActions: { flexDirection: "row", gap: 6 },
   viewBtn: {
     flex: 1, flexDirection: "row", alignItems: "center", justifyContent: "center",
     gap: 4, backgroundColor: SAFFRON, borderRadius: 9, paddingVertical: 8,
   },
-  viewBtnText: { fontSize: 11, fontWeight: "700", color: "#fff" },
+  viewBtnText: { fontSize: 11, fontWeight: "700", color: "#fff", fontFamily: "Inter_700Bold" },
   compareBtn: {
     flex: 1, flexDirection: "row", alignItems: "center", justifyContent: "center",
     gap: 4, borderRadius: 9, paddingVertical: 8,
     borderWidth: 1, borderColor: `${PINE}20`, backgroundColor: "#fff",
   },
   compareBtnSelected: { backgroundColor: PINE, borderColor: PINE },
-  compareBtnText: { fontSize: 11, fontWeight: "600", color: `${PINE}70` },
+  compareBtnText: { fontSize: 11, fontWeight: "600", color: `${PINE}70`, fontFamily: "Inter_600SemiBold" },
   compareBtnTextSelected: { color: "#fff" },
   // Thinking
   loadingDots: { flexDirection: "row", gap: 4, padding: 4 },
   dot: { width: 6, height: 6, borderRadius: 3, backgroundColor: SAFFRON },
   stageDot: { width: 7, height: 7, borderRadius: 3.5, backgroundColor: `${SAFFRON}60` },
-  stageText: { fontSize: 11, color: `${PINE}55` },
+  stageText: { fontSize: 11, color: `${PINE}55`, fontFamily: "Inter_400Regular" },
   // Compare bar
   compareBar: {
     flexDirection: "row", alignItems: "center", justifyContent: "space-between",
     paddingHorizontal: 16, paddingVertical: 10,
     backgroundColor: PINE,
   },
-  compareBarText: { color: "rgba(255,255,255,0.6)", fontSize: 12 },
+  compareBarText: { color: "rgba(255,255,255,0.6)", fontSize: 12, fontFamily: "Inter_400Regular" },
   compareBarBtn: {
     flexDirection: "row", alignItems: "center", gap: 6,
     backgroundColor: SAFFRON, borderRadius: 10,
     paddingHorizontal: 14, paddingVertical: 7,
   },
-  compareBarBtnText: { color: "#fff", fontSize: 12, fontWeight: "700" },
+  compareBarBtnText: { color: "#fff", fontSize: 12, fontWeight: "700", fontFamily: "Inter_700Bold" },
   // Input bar
   inputBar: {
     flexDirection: "row", alignItems: "center", gap: 8,
@@ -592,7 +613,7 @@ const styles = StyleSheet.create({
     flex: 1, fontSize: 13, paddingHorizontal: 14, paddingVertical: 10,
     borderRadius: 14, backgroundColor: CREAM,
     borderWidth: 1, borderColor: `${PINE}18`,
-    color: PINE,
+    color: PINE, fontFamily: "Inter_400Regular",
   },
   sendBtn: {
     width: 40, height: 40, borderRadius: 12,

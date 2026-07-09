@@ -5,16 +5,7 @@ import { TrekCard } from "@/components/trek/TrekCard";
 import { useRegionTreks } from "@/hooks/useRegionTreks";
 import { useTheme } from "@/hooks/useTheme";
 
-const REGIONS = [
-  "Himachal Pradesh",
-  "Uttarakhand",
-  "Jammu & Kashmir",
-  "Sikkim",
-  "Ladakh",
-  "Maharashtra",
-  "Rajasthan",
-  "Karnataka",
-];
+import { REGIONS } from "@/constants/regions";
 
 export function RegionsRow() {
   const { colors, isDark } = useTheme();

@@ -10,16 +10,7 @@ import { useTheme } from "@/hooks/useTheme";
 import { useExplore } from "@/hooks/useExplore";
 import { useExploreStore } from "@/stores/exploreStore";
 
-const REGIONS = [
-  "Himachal Pradesh",
-  "Uttarakhand",
-  "Jammu & Kashmir",
-  "Sikkim",
-  "Ladakh",
-  "Maharashtra",
-  "Rajasthan",
-  "Karnataka",
-];
+import { REGIONS } from "@/constants/regions";
 
 const SEASONS = [
   { slug: "winter", label: "Winter" },

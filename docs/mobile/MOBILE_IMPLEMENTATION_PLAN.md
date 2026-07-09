@@ -340,6 +340,25 @@ Mobile-adapted version of `lib/analytics.ts` for React Native:
 
 ---
 
+---
+
+## Audit Follow-up Bug Fix Pass (2026-07-09)
+
+Post-audit fixes based on the M01–M20 comprehensive UI/UX audit delivered 2026-07-09:
+
+| # | Bug | File | Fix |
+|---|-----|------|-----|
+| 1 | "Talk to operator" loops user back to lead form | `plan/results.tsx:148` | Changed `/(tabs)/plan/step-6` → `/(tabs)/plan` |
+| 2 | `handleRefresh` spinner disappears before data loads | `(home)/index.tsx:61` | Added `await` before `refetch()` |
+| 3 | Compare pill image has sharp corners inside round chip | `compare.tsx:358` | `borderRadius: 0` → `borderRadius: 20` in `pillImage` |
+| 4 | REGIONS array duplicated verbatim in two files | `browse/index.tsx`, `RegionsRow.tsx` | Extracted to `constants/regions.ts` (`Region[]` + union type); both files import from it |
+| 5 | TrekSage renders system default font (no `fontFamily` in any style) | `treksage.tsx` StyleSheet | Added `Inter_700Bold`/`Inter_600SemiBold`/`Inter_400Regular`/`PlayfairDisplay_700Bold` to all 22 text styles |
+| 6 | TrekSage thinking dots are static (no animation) | `treksage.tsx` `ThinkingBubble` | `Animated` added to RN imports; `useRef(new Animated.Value(0.3))` per dot; `Animated.loop(Animated.sequence([delay, timing up, timing down]))` with 175ms stagger; `Animated.View` replaces `View` for dots |
+
+`npx tsc --noEmit` ✓ zero errors after all fixes.
+
+---
+
 ## Current Status
 
 | Phase | Status |

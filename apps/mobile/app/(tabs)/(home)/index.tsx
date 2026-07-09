@@ -58,7 +58,7 @@ export default function HomeScreen() {
 
   const handleRefresh = useCallback(async () => {
     setIsRefreshing(true);
-    refetch();
+    await refetch();
     setIsRefreshing(false);
   }, [refetch]);
 

@@ -145,10 +145,10 @@ export default function PlanResultsScreen() {
 
             <TouchableOpacity
               style={styles.operatorBtn}
-              onPress={() => router.push("/(tabs)/plan/step-6" as never)}
+              onPress={() => router.push("/(tabs)/plan" as never)}
               activeOpacity={0.85}
             >
-              <Text style={styles.operatorBtnText}>Talk to an operator about any of these →</Text>
+              <Text style={styles.operatorBtnText}>Plan again or talk to an operator →</Text>
             </TouchableOpacity>
           </>
         ) : (
