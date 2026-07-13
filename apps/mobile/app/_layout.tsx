@@ -29,6 +29,7 @@ import { AppDrawer } from "@/components/layout/AppDrawer";
 import { incrementOpenCount, requestAndRegisterPushToken, saveToInbox } from "@/services/notificationService";
 import * as Notifications from "expo-notifications";
 import { AnalyticsProvider } from "@/providers/AnalyticsProvider";
+import { SafeAreaProvider, initialWindowMetrics } from "react-native-safe-area-context";
 
 Sentry.init({
   dsn: process.env.EXPO_PUBLIC_SENTRY_DSN,
@@ -116,27 +117,29 @@ export default Sentry.wrap(function RootLayout() {
   }, [fontsReady]);
 
   return (
-    <ThemeProvider>
-      <QueryProvider>
-        <OnboardingProvider>
-          <AuthProvider>
-            <AnalyticsProvider>
-            <AuthGate>
-              <Stack screenOptions={{ headerShown: false }}>
-                <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-                <Stack.Screen name="(auth)" options={{ headerShown: false }} />
-                <Stack.Screen name="notifications" options={{ headerShown: false, presentation: "modal" }} />
-                <Stack.Screen name="+not-found" />
-              </Stack>
-              <AppDrawer />
-            </AuthGate>
-            </AnalyticsProvider>
-          </AuthProvider>
-        </OnboardingProvider>
-      </QueryProvider>
-      {(!animationDone || !fontsReady) && (
-        <AnimatedSplash onFinish={() => setAnimationDone(true)} />
-      )}
-    </ThemeProvider>
+    <SafeAreaProvider initialMetrics={initialWindowMetrics}>
+      <ThemeProvider>
+        <QueryProvider>
+          <OnboardingProvider>
+            <AuthProvider>
+              <AnalyticsProvider>
+              <AuthGate>
+                <Stack screenOptions={{ headerShown: false }}>
+                  <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+                  <Stack.Screen name="(auth)" options={{ headerShown: false }} />
+                  <Stack.Screen name="notifications" options={{ headerShown: false, presentation: "modal" }} />
+                  <Stack.Screen name="+not-found" />
+                </Stack>
+                <AppDrawer />
+              </AuthGate>
+              </AnalyticsProvider>
+            </AuthProvider>
+          </OnboardingProvider>
+        </QueryProvider>
+        {(!animationDone || !fontsReady) && (
+          <AnimatedSplash onFinish={() => setAnimationDone(true)} />
+        )}
+      </ThemeProvider>
+    </SafeAreaProvider>
   );
 });

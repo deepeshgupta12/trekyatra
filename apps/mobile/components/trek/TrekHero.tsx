@@ -49,6 +49,7 @@ export function TrekHero({
   season,
 }: TrekHeroProps) {
   const insets = useSafeAreaInsets();
+  const topInset = insets.top ?? 0; // guard: NaN height collapses the hero
 
   const stats: Stat[] = [
     duration ? { icon: "time-outline", value: duration, label: "Duration" } : null,
@@ -60,7 +61,7 @@ export function TrekHero({
   ].filter(Boolean).slice(0, 3) as Stat[];
 
   return (
-    <View style={[styles.container, { height: height + insets.top }]}>
+    <View style={[styles.container, { height: height + topInset }]}>
       <Image
         source={imageUrl ? { uri: imageUrl } : undefined}
         style={StyleSheet.absoluteFill}
@@ -77,7 +78,7 @@ export function TrekHero({
 
       {/* Back button */}
       <TouchableOpacity
-        style={[styles.circleBtn, styles.backBtn, { top: insets.top + 10 }]}
+        style={[styles.circleBtn, styles.backBtn, { top: topInset + 10 }]}
         onPress={() => router.back()}
         hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
         accessibilityLabel="Go back"
@@ -88,7 +89,7 @@ export function TrekHero({
       {/* Share button */}
       {onShare && (
         <TouchableOpacity
-          style={[styles.circleBtn, styles.shareBtn, { top: insets.top + 10 }]}
+          style={[styles.circleBtn, styles.shareBtn, { top: topInset + 10 }]}
           onPress={onShare}
           hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
           accessibilityLabel="Share trek"

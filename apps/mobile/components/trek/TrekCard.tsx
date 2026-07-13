@@ -10,6 +10,9 @@ interface TrekCardProps {
   width?: number;
   height?: number;
   showMeta?: boolean;
+  /** Drop the built-in right margin (meant for horizontal scrollers) so the card
+   *  can sit in a multi-column grid without overflowing the row. */
+  noMargin?: boolean;
 }
 
 const FALLBACK_BLUR = "L6PZfSi_.AyE_3t7t7R**0o#DgR4";
@@ -24,7 +27,7 @@ function difficultyColor(d: string | null | undefined): string {
   return "#f59e0b"; // default to amber — always visible
 }
 
-export function TrekCard({ trek, width = 196, height = 260, showMeta = true }: TrekCardProps) {
+export function TrekCard({ trek, width = 196, height = 260, showMeta = true, noMargin = false }: TrekCardProps) {
   const imgSrc = trek.hero_image_url
     ? { uri: trek.hero_image_url }
     : FALLBACK_IMG;
@@ -33,7 +36,7 @@ export function TrekCard({ trek, width = 196, height = 260, showMeta = true }: T
 
   return (
     <TouchableOpacity
-      style={[styles.card, { width, height }]}
+      style={[styles.card, { width, height }, noMargin && { marginRight: 0 }]}
       activeOpacity={0.88}
       onPress={() => router.push(`/(tabs)/(home)/trek/${trek.slug}` as never)}
       accessibilityLabel={`${trek.title} — ${trek.trek_state ?? ""}`}

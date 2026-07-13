@@ -199,7 +199,6 @@ export default function TrekDetailScreen() {
       <ScrollView
         ref={scrollViewRef}
         style={styles.flex}
-        stickyHeaderIndices={[2]}
         showsVerticalScrollIndicator={false}
         onScroll={handleScroll}
         scrollEventThrottle={16}
@@ -217,7 +216,7 @@ export default function TrekDetailScreen() {
         />
 
         {/* Trust + safety + check-in block (key stats now live in the hero) */}
-        <View style={{ backgroundColor: colors.background }}>
+        <View style={{ backgroundColor: colors.background, paddingTop: 14, gap: 10 }}>
           {fromCache && <OfflineBadge visible={true} />}
           <TrustSignals publishedAt={trek.published_at} updatedAt={trek.updated_at} />
           {isDifficultTrek && (
@@ -257,13 +256,11 @@ export default function TrekDetailScreen() {
           )}
         </View>
 
-        {/* Sticky tab bar */}
+        {/* Section tab bar — inline (in flow). A pinned copy is rendered as an
+            overlay outside the ScrollView once this scrolls off, which avoids the
+            touch-desync that a dynamic-height sticky header causes. */}
         <View onLayout={(e) => { tabBarTopRef.current = e.nativeEvent.layout.y; }}>
-          <TrekTabBar
-            activeTab={activeTab}
-            onTabChange={setActiveTab}
-            topInset={tabBarStuck ? insets.top : 0}
-          />
+          <TrekTabBar activeTab={activeTab} onTabChange={setActiveTab} />
         </View>
 
         {/* Tab body */}
@@ -439,6 +436,16 @@ export default function TrekDetailScreen() {
         </View>
       </ScrollView>
 
+      {/* Pinned section tab bar — appears once the inline bar scrolls under the
+          notch. Rendered OUTSIDE the ScrollView so it never interferes with the
+          scroll content's touch hit-testing (the "taps hit the wrong section" bug).
+          topInset keeps the labels clear of the Dynamic Island. */}
+      {tabBarStuck && (
+        <View style={styles.pinnedTabBar}>
+          <TrekTabBar activeTab={activeTab} onTabChange={setActiveTab} topInset={insets.top} />
+        </View>
+      )}
+
       {/* Sticky CTA */}
       <TrekStickyBar slug={trek.slug} trekName={trek.title} />
 
@@ -523,6 +530,13 @@ export default function TrekDetailScreen() {
 
 const styles = StyleSheet.create({
   flex: { flex: 1 },
+  pinnedTabBar: {
+    position: "absolute",
+    top: 0,
+    left: 0,
+    right: 0,
+    zIndex: 20,
+  },
   center: { flex: 1, alignItems: "center", justifyContent: "center" },
   backBtn: { marginTop: 16 },
   safetyBanner: {

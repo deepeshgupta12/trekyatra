@@ -8,7 +8,8 @@ import { contentApi, type CMSPage, type TrekListItem } from "@/lib/mobileApi";
 
 const SAFFRON = "#E8702A";
 // 2-column grid: screen − horizontal padding (16×2) − inter-card gap (12), split in two.
-const CARD_WIDTH = (Dimensions.get("window").width - 32 - 12) / 2;
+// Math.floor guards against sub-pixel overflow that would wrap the row to 1 card.
+const CARD_WIDTH = Math.floor((Dimensions.get("window").width - 32 - 12) / 2);
 
 // Mirrors the web /beginner page: easy/beginner difficulty is the filter.
 function isBeginnerFriendly(difficulty: string | null | undefined): boolean {
@@ -105,7 +106,7 @@ export default function BeginnerScreen() {
             </Text>
             <View style={styles.trekGrid}>
               {beginnerTreks.map((trek) => (
-                <TrekCard key={trek.slug} trek={trek} width={CARD_WIDTH} height={220} />
+                <TrekCard key={trek.slug} trek={trek} width={CARD_WIDTH} height={220} noMargin />
               ))}
             </View>
           </View>
@@ -156,7 +157,7 @@ const styles = StyleSheet.create({
   center: { paddingVertical: 40, alignItems: "center" },
   section: { marginTop: 26 },
   sectionTitle: { fontSize: 18, fontWeight: "700", fontFamily: "PlayfairDisplay_700Bold", marginBottom: 14 },
-  trekGrid: { flexDirection: "row", flexWrap: "wrap", gap: 12, justifyContent: "space-between" },
+  trekGrid: { flexDirection: "row", flexWrap: "wrap", gap: 12 },
   hubCard: { borderRadius: 14, borderWidth: 1, padding: 14, gap: 4, marginTop: 14 },
   hubCardTitle: { fontSize: 15, fontWeight: "600" },
   hubCardDesc: { fontSize: 13, lineHeight: 18 },

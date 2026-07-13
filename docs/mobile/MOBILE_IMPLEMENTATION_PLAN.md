@@ -428,6 +428,21 @@ Fourth review surfaced 6 issues; a shared backend auth root cause explained seve
 
 ---
 
+## Screenshot Bug Fix Pass 5 (2026-07-13) — SafeAreaProvider root cause + trek detail robust redesign
+
+| # | Bug | Root cause | Fix |
+|---|-----|-----------|-----|
+| 1 | Trek detail collides with Dynamic Island; hero collapsed | **No `SafeAreaProvider` in the app** → `useSafeAreaInsets()` returns undefined → `height + insets.top` = NaN → RN drops the hero height → hero collapses to content, pinning title under the notch | Added `<SafeAreaProvider initialMetrics={initialWindowMetrics}>` at root `app/_layout.tsx`; `TrekHero` uses `topInset = insets.top ?? 0` |
+| 2 | Navigation broken — "clicks go to the wrong section" | Collapsed hero (NaN height) + `stickyHeaderIndices` = desynced ScrollView touch hit-testing | Removed `stickyHeaderIndices`; tab bar renders inline (constant height) + a pinned overlay copy OUTSIDE the ScrollView (absolute, appears on scroll, `topInset`) — no sticky-height change → no touch desync |
+| 3 | No padding in updated-date / "log it" sections | Side effect of the collapsed hero cramping everything upward | Fixed by #1; added `paddingTop:14` + `gap:10` to the trust/safety/check-in block |
+| 4 | Beginner shows 1 card per row (should be 2) | `TrekCard` has a hardcoded `marginRight:14` (for horizontal scrollers) → 2 cards + margins overflow the row → wrap | `TrekCard` gains optional `noMargin` prop (default false); `beginner.tsx` grid uses `Math.floor` width + `noMargin` |
+
+**Design authority:** `.claude/skills/mobile-design-system/SKILL.md`. (There is no separate "UI UX Pro Max" skill installed in this repo; premium design craft applied on top of the mobile-design-system tokens.)
+
+`npx tsc --noEmit` ✓ zero errors. Build Succeeded on iPhone 17 Pro. **Frontend-only — no backend deploy required.**
+
+---
+
 ## Current Status
 
 | Phase | Status |
