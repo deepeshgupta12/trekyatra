@@ -16,13 +16,12 @@ const FALLBACK_BLUR = "L6PZfSi_.AyE_3t7t7R**0o#DgR4";
 const FALLBACK_IMG = require("@/assets/onboarding-2.jpg");
 
 function difficultyColor(d: string | null | undefined): string {
-  switch (d?.toLowerCase()) {
-    case "easy": return "#22c55e";
-    case "moderate": return "#f59e0b";
-    case "challenging":
-    case "difficult": return "#ef4444";
-    default: return "rgba(255,255,255,0.55)";
-  }
+  const key = d?.toLowerCase() ?? "";
+  if (key === "easy") return "#22c55e";
+  if (key.includes("moderate") && key.includes("difficult")) return "#f59e0b";
+  if (key === "moderate") return "#f59e0b";
+  if (key === "challenging" || key === "difficult" || key === "hard") return "#ef4444";
+  return "#f59e0b"; // default to amber — always visible
 }
 
 export function TrekCard({ trek, width = 196, height = 260, showMeta = true }: TrekCardProps) {
@@ -58,7 +57,7 @@ export function TrekCard({ trek, width = 196, height = 260, showMeta = true }: T
 
       {/* Difficulty badge — top right */}
       {showMeta && trek.trek_difficulty && (
-        <View style={[styles.diffBadge, { borderColor: diffColor + "55", backgroundColor: diffColor + "22" }]}>
+        <View style={styles.diffBadge}>
           <View style={[styles.diffDot, { backgroundColor: diffColor }]} />
           <Text style={[styles.diffText, { color: diffColor }]}>
             {trek.trek_difficulty}
@@ -101,16 +100,15 @@ const styles = StyleSheet.create({
   },
   diffBadge: {
     position: "absolute",
-    top: 12,
-    right: 12,
+    top: 10,
+    right: 10,
     flexDirection: "row",
     alignItems: "center",
-    gap: 5,
-    paddingHorizontal: 9,
+    gap: 4,
+    paddingHorizontal: 8,
     paddingVertical: 4,
     borderRadius: 20,
-    borderWidth: 1,
-    backdropFilter: "blur(8px)",
+    backgroundColor: "rgba(0,0,0,0.62)",
   },
   diffDot: {
     width: 5,

@@ -359,6 +359,20 @@ Post-audit fixes based on the M01–M20 comprehensive UI/UX audit delivered 2026
 
 ---
 
+## Screenshot Bug Fix Pass (2026-07-13)
+
+Post-build screenshot review (iPhone 17 Pro simulator) surfaced 3 rendering bugs:
+
+| # | Bug | File | Fix |
+|---|-----|------|-----|
+| 1 | Difficulty badge invisible on bright images | `components/trek/TrekCard.tsx` | `difficultyColor()` default → amber `#f59e0b`; "Moderate-Difficult" compound handled; badge `backgroundColor` → solid `rgba(0,0,0,0.62)` dark pill (was 8% opacity tinted, invisible) |
+| 2 | Costs section table columns stacked not side-by-side | `components/cms/HtmlContentRenderer.tsx` | Added `splitByTables()` + `parseTableHtml()` helpers; HTML split at `<table>` boundaries; table segments parsed to `{headers, rows}` and rendered with native `TableBlock`; non-table HTML still uses `react-native-render-html` |
+| 3 | Compare AI summary shows raw `**...**` markdown | `app/(tabs)/(home)/compare.tsx` | `MarkdownText` component added — splits on `**text**` pattern, renders bold spans; replaces bare `<Text>` for `ai_summary` |
+
+`npx tsc --noEmit` ✓ zero errors after all fixes.
+
+---
+
 ## Current Status
 
 | Phase | Status |

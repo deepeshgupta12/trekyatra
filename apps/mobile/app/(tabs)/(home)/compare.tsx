@@ -12,6 +12,22 @@ import { contentApi, trekIntelligenceApi, accountApi, type TrekListItem, type Co
 
 const MAX_SELECTION = 3;
 
+// Render **bold** markdown inline without showing raw asterisks
+function MarkdownText({ text, style }: { text: string; style?: object }) {
+  const parts = text.split(/(\*\*[^*]+\*\*)/g);
+  return (
+    <Text style={style}>
+      {parts.map((part, i) =>
+        part.startsWith("**") && part.endsWith("**") ? (
+          <Text key={i} style={{ fontWeight: "700" }}>{part.slice(2, -2)}</Text>
+        ) : (
+          part
+        )
+      )}
+    </Text>
+  );
+}
+
 // Fields where a clear "winner" can be determined
 function getWinnerIdx(field: string, values: (string | number | boolean | null)[]): number | null {
   const valid = values.map((v, i) => ({ v, i })).filter(({ v }) => v !== null && v !== undefined);
@@ -319,7 +335,7 @@ export default function CompareScreen() {
                 <Text style={styles.summaryBadgeText}>✨ TrekSage says</Text>
               </View>
             </View>
-            <Text style={[styles.summaryText, { color: colors.textSecondary }]}>{compareData.ai_summary}</Text>
+            <MarkdownText text={compareData.ai_summary} style={[styles.summaryText, { color: colors.textSecondary }]} />
           </GlassSurface>
         )}
 
