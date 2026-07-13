@@ -5,13 +5,54 @@ description: "Use whenever creating or modifying any screen/component under apps
 
 # TrekYatra Mobile Design System (apps/mobile)
 
-> **Two-skill design system.** This skill (`mobile-design-system`) owns the **material
-> layer** — color/font/spacing tokens, navigation conventions, API contracts, and
-> `GlassSurface`. Its companion **`ui-ux-pro-max`** (`.claude/skills/ui-ux-pro-max/SKILL.md`)
-> owns the **taste layer** — how those materials are composed into premium, low-cognitive-load
-> screens (hero + overlaid stats, at-a-glance panels, section rhythm, grid math, safe-area
-> hard rules, the pinned-bar overlay pattern, and a pre-ship checklist).
-> **When designing or redesigning any screen, read BOTH.**
+> **Two-skill design system.** This skill (`mobile-design-system`) owns the
+> **TrekYatra-specific layer** — color/font/spacing tokens, navigation conventions, API
+> contracts, `GlassSurface`, and the hard-won layout rules below (safe-area, pinned-bar
+> pattern, grid math). Its companion **`ui-ux-pro-max`**
+> (`.claude/skills/ui-ux-pro-max/SKILL.md`, installed from
+> [nextlevelbuilder/ui-ux-pro-max-skill](https://github.com/nextlevelbuilder/ui-ux-pro-max-skill))
+> is the **generic design-intelligence engine** — a searchable local database (84 UI
+> styles, 161 color palettes, 99 UX guidelines, 25 chart types, 16 tech stacks incl.
+> `react-native`) driven by a Python CLI. Use it to *derive* a design system, palette,
+> type pairing, or run a UX/accessibility review; use *this* skill for how those decisions
+> land in the TrekYatra codebase. **When designing or redesigning any screen, read BOTH.**
+>
+> **ui-ux-pro-max CLI quickstart** (Python 3, stdlib only, no network):
+> ```bash
+> # Full design-system recommendation for a screen/product
+> python3 .claude/skills/ui-ux-pro-max/scripts/search.py "<product type> <keywords>" --design-system --stack react-native -f markdown
+> # Deep-dive a dimension: --domain style|color|typography|ux|chart|landing|product
+> python3 .claude/skills/ui-ux-pro-max/scripts/search.py "safe area touch targets" --domain ux -n 5
+> # Stack-specific implementation guidance
+> python3 .claude/skills/ui-ux-pro-max/scripts/search.py "list performance navigation" --stack react-native
+> ```
+
+## TrekYatra Mobile — Hard-Won Layout Rules (read before any redesign)
+
+These caused real crashes/collisions in Passes 3–5; they are non-negotiable house rules
+that sit on top of the generic `ui-ux-pro-max` guidance.
+
+1. **`SafeAreaProvider` MUST wrap the app root** (`app/_layout.tsx`, with
+   `initialMetrics={initialWindowMetrics}`). Without it `useSafeAreaInsets()` returns
+   undefined and every inset-aware component silently breaks.
+2. **Never do `height + insets.top` unguarded.** `number + undefined = NaN` → RN drops
+   the style → a full-bleed hero **collapses to content height** under the notch. Always
+   `const topInset = insets.top ?? 0;`.
+3. **No dynamic-height sticky headers.** A `stickyHeaderIndices` header whose height
+   changes while pinned (e.g. adding a safe-area inset on scroll) **desyncs RN touch
+   hit-testing** — taps land on the wrong element. Instead render the bar **inline**
+   (constant height) + a **second copy as an absolute overlay OUTSIDE the ScrollView**
+   (`position:absolute, top:0, zIndex:20`, with `topInset`), toggled on scroll offset.
+   Reference: pinned `TrekTabBar` in `app/(tabs)/(home)/trek/[slug].tsx`.
+4. **Full-bleed hero = facts on the image.** Overlay the 2–3 key stats (duration/altitude/
+   difficulty) on the hero instead of a separate plain meta strip — less cognitive load.
+   Reference: `components/trek/TrekHero.tsx`.
+5. **Multi-column grids: `Math.floor` the width.** `Math.floor((width - 2*gutter - gap)/cols)`;
+   sub-pixel overflow silently wraps to 1 column. If the card self-margins (built for
+   horizontal scrollers, e.g. `TrekCard`'s `marginRight`), pass `noMargin` in grids.
+6. **Motion:** simple fades/press → RN `Animated` (`useNativeDriver`). `react-native-reanimated`
+   can crash on New-Arch **Fast-Refresh reload races** (`uiManager_==nullptr` commit assert) —
+   a dev-only transient, not production; keep reanimated usage minimal.
 
 ## When to Use
 
@@ -93,4 +134,4 @@ Since M-DS8, the app uses a platform-adaptive "Glass UI" aesthetic via a single 
 
 ## Process Hook
 
-This skill is referenced from the root `CLAUDE.md` "Pre-Step Checklist" for any mobile step (`docs/mobile/steps/STEP-M*.md`). Read it — **and its companion `ui-ux-pro-max`** — before implementing or modifying any `apps/mobile/` screen, and re-run the font/route-name/API-contract checks above as part of build validation (in addition to `tsc --noEmit`). For any screen where **visual quality / redesign** is in scope, `ui-ux-pro-max` is mandatory (layout patterns, safe-area hard rules, pinned-bar overlay pattern, pre-ship checklist).
+This skill is referenced from the root `CLAUDE.md` "Pre-Step Checklist" for any mobile step (`docs/mobile/steps/STEP-M*.md`). Read it — **and its companion `ui-ux-pro-max`** — before implementing or modifying any `apps/mobile/` screen, and re-run the font/route-name/API-contract checks above as part of build validation (in addition to `tsc --noEmit`). For any screen where **visual quality / redesign** is in scope: (1) run the `ui-ux-pro-max` CLI to derive/validate the design system, palette, type, and UX pass; (2) apply the **TrekYatra Hard-Won Layout Rules** above (safe-area, pinned-bar overlay, grid math) — these are codebase-specific and override generic guidance where they conflict.

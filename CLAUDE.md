@@ -65,7 +65,7 @@ Run all of these before touching a single file:
 9. For any `apps/mobile/` step or screen change:
    - Read `docs/mobile/MOBILE_IMPLEMENTATION_PLAN.md` — confirms which mobile steps are done/pending and the mobile-specific execution rules (offline parity, both-platform testing, no `any` types, accessibility props)
    - Read `.claude/skills/mobile-design-system/SKILL.md` — confirms theme tokens, font loading, tab-bar route-name conventions, and API contract checks (the **material layer**)
-   - Read `.claude/skills/ui-ux-pro-max/SKILL.md` — premium layout patterns, safe-area hard rules (`SafeAreaProvider` at root, never unguarded `height + insets`), the pinned-bar overlay pattern, grid math, and the pre-ship checklist (the **taste layer**). **Mandatory for any screen redesign / visual-quality work.**
+   - Read `.claude/skills/ui-ux-pro-max/SKILL.md` — the design-intelligence engine (from [nextlevelbuilder/ui-ux-pro-max-skill](https://github.com/nextlevelbuilder/ui-ux-pro-max-skill)): a searchable local database (84 styles, 161 palettes, 99 UX guidelines, 25 chart types, 16 stacks incl. `react-native`) with a Python CLI. **Mandatory for any screen redesign / visual-quality work** — run `python3 .claude/skills/ui-ux-pro-max/scripts/search.py "<keywords>" --design-system --stack react-native` to derive the design system, then apply the TrekYatra Hard-Won Layout Rules in `mobile-design-system` (safe-area, pinned-bar overlay, grid math) which override generic guidance where they conflict.
 
 Do not begin implementation until all 9 checks are complete.
 
