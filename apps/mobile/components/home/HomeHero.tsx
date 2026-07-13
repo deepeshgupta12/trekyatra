@@ -1,4 +1,4 @@
-import { View, Text, StyleSheet, Pressable } from "react-native";
+import { View, Text, StyleSheet, Pressable, Animated } from "react-native";
 import { Image } from "expo-image";
 import { LinearGradient } from "expo-linear-gradient";
 import { Ionicons } from "@expo/vector-icons";
@@ -35,29 +35,41 @@ export function HomeHero() {
   const [activeIdx, setActiveIdx] = useState(0);
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const season = MONTH_SEASONS[new Date().getMonth()];
+  // One Animated.Value per image — start with first image fully visible
+  const opacities = useRef(IMAGES.map((_, i) => new Animated.Value(i === 0 ? 1 : 0))).current;
+
+  function crossfadeTo(next: number) {
+    setActiveIdx((prev) => {
+      Animated.parallel([
+        Animated.timing(opacities[prev], { toValue: 0, duration: 900, useNativeDriver: true }),
+        Animated.timing(opacities[next], { toValue: 1, duration: 900, useNativeDriver: true }),
+      ]).start();
+      return next;
+    });
+  }
 
   useEffect(() => {
     timerRef.current = setInterval(() => {
-      setActiveIdx((prev) => (prev + 1) % IMAGES.length);
+      crossfadeTo((activeIdx + 1) % IMAGES.length);
     }, 5000);
     return () => {
       if (timerRef.current) clearInterval(timerRef.current);
     };
-  }, []);
+  }, [activeIdx]);
 
   return (
     <View style={[styles.container, { paddingTop: insets.top }]}>
-      {/* Cycling images — expo-image cross-fade handles transition */}
+      {/* Cycling images — Animated.View crossfade for smooth transition */}
       {IMAGES.map((src, i) => (
-        <Image
-          key={i}
-          source={src}
-          style={[StyleSheet.absoluteFill, { opacity: i === activeIdx ? 1 : 0 }]}
-          contentFit="cover"
-          placeholder={FALLBACK_BLUR}
-          transition={i === activeIdx ? 800 : 0}
-          cachePolicy="memory-disk"
-        />
+        <Animated.View key={i} style={[StyleSheet.absoluteFill, { opacity: opacities[i] }]}>
+          <Image
+            source={src}
+            style={StyleSheet.absoluteFill}
+            contentFit="cover"
+            placeholder={FALLBACK_BLUR}
+            cachePolicy="memory-disk"
+          />
+        </Animated.View>
       ))}
 
       {/* Gradient overlay */}
@@ -81,7 +93,7 @@ export function HomeHero() {
         {/* Search bar */}
         <Pressable
           style={styles.searchBar}
-          onPress={() => router.push("/(tabs)/browse" as never)}
+          onPress={() => router.push("/(tabs)/browse/search" as never)}
           accessibilityLabel="Search treks"
           accessibilityRole="search"
         >
@@ -95,7 +107,7 @@ export function HomeHero() {
         {/* Progress dots */}
         <View style={styles.dots}>
           {IMAGES.map((_, i) => (
-            <Pressable key={i} onPress={() => setActiveIdx(i)} accessibilityLabel={`Go to image ${i + 1}`}>
+            <Pressable key={i} onPress={() => crossfadeTo(i)} accessibilityLabel={`Go to image ${i + 1}`}>
               <View style={[styles.dot, i === activeIdx && styles.dotActive]} />
             </Pressable>
           ))}

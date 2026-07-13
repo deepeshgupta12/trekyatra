@@ -104,6 +104,8 @@ export default function CompareScreen() {
   const [savedId, setSavedId] = useState<string | null>(null);
 
   const searchTimeout = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const scrollViewRef = useRef<ScrollView>(null);
+  const compareOffsetRef = useRef<number>(0);
 
   useEffect(() => {
     contentApi
@@ -149,6 +151,15 @@ export default function CompareScreen() {
     return () => { cancelled = true; };
   }, [selected]);
 
+  // Auto-scroll to comparison table when results arrive
+  useEffect(() => {
+    if (!compareData) return;
+    const timer = setTimeout(() => {
+      scrollViewRef.current?.scrollTo({ y: compareOffsetRef.current, animated: true });
+    }, 300);
+    return () => clearTimeout(timer);
+  }, [compareData]);
+
   function selectTrek(slug: string, name: string, image: string | null) {
     if (selected.includes(slug)) {
       setSelected(selected.filter((s) => s !== slug));
@@ -191,7 +202,7 @@ export default function CompareScreen() {
 
   return (
     <SafeArea edges={["bottom"]}>
-      <ScrollView style={styles.flex} contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
+      <ScrollView ref={scrollViewRef} style={styles.flex} contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
         <Text style={[styles.heroTitle, { color: colors.textPrimary }]}>Compare treks</Text>
         <Text style={[styles.heroSubtitle, { color: colors.textSecondary }]}>
           Pick 2–3 treks to compare side by side with an AI trade-off summary.
@@ -285,7 +296,10 @@ export default function CompareScreen() {
 
         {/* Comparison table */}
         {compareData && compareData.treks.length >= 2 && (
-          <View style={[styles.table, { borderColor: border, backgroundColor: bg, marginTop: 24 }]}>
+          <View
+            style={[styles.table, { borderColor: border, backgroundColor: bg, marginTop: 24 }]}
+            onLayout={(e) => { compareOffsetRef.current = e.nativeEvent.layout.y; }}
+          >
             {/* Trek image header row */}
             <View style={[styles.tableRow, { borderTopWidth: 0 }]}>
               <View style={styles.labelCol} />

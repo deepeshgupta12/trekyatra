@@ -8,7 +8,6 @@ import {
 import { useState, useCallback } from "react";
 import { SafeArea } from "@/components/ui/SafeArea";
 import { HomeHero } from "@/components/home/HomeHero";
-import { HomeSearchBar } from "@/components/home/HomeSearchBar";
 import { useAuth } from "@/hooks/useAuth";
 import { useBehaviorProfile } from "@/hooks/useBehaviorProfile";
 import { useHomeData } from "@/hooks/useHomeData";
@@ -72,7 +71,6 @@ export default function HomeScreen() {
       <SafeArea>
         <StatusBar barStyle={isDark ? "light-content" : "dark-content"} />
         <HomeHero />
-        <HomeSearchBar />
         <HomeSkeleton />
       </SafeArea>
     );
@@ -94,7 +92,6 @@ export default function HomeScreen() {
         }
       >
         <HomeHero />
-        <HomeSearchBar />
 
         {/* Welcome Banner — States A + B */}
         {homeState === "A" && <HomeWelcomeBannerA firstName={firstName} />}

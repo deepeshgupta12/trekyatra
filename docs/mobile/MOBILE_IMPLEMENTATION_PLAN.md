@@ -373,6 +373,23 @@ Post-build screenshot review (iPhone 17 Pro simulator) surfaced 3 rendering bugs
 
 ---
 
+## Screenshot Bug Fix Pass 2 (2026-07-13)
+
+Second build review (iPhone 17 Pro simulator) surfaced 6 bugs; all fixed in this pass:
+
+| # | Bug | File(s) | Fix |
+|---|-----|---------|-----|
+| 1 | Two search bars on Home screen | `app/(tabs)/(home)/index.tsx`, `components/home/HomeHero.tsx` | Removed `HomeSearchBar` import and all render sites from `index.tsx`; hero search `onPress` updated to `/(tabs)/browse/search` so it navigates directly to the search screen |
+| 2 | Hero carousel — instant image cut, no crossfade | `components/home/HomeHero.tsx` | Added `Animated` from react-native; `opacities` ref (one `Animated.Value` per image, first=1 rest=0); `crossfadeTo(next)` using `Animated.parallel` (900ms, `useNativeDriver: true`); `Animated.View` wraps each `expo-image` `Image`; dot taps call `crossfadeTo(i)` |
+| 3 | Back button broken on Trek Operators screen | `app/(tabs)/browse/operators.tsx` | Changed `router.back()` → `router.canGoBack() ? router.back() : router.push("/(tabs)/browse")` — handles cross-tab navigation where browse stack starts at operators with no prior entry |
+| 4 | Table cells truncating at 120px (e.g. "₹400–6") | `components/cms/blocks/TableBlock.tsx` | Complete rewrite: fixed `width: COL_WIDTH` (160px) on `View`-based cells inside horizontal `ScrollView` with `flexShrink: 0` wrapper; cells now wrap text within their column instead of truncating |
+| 5 | Shortlist/bookmark icon navigates user to Home | `components/trek/TrekStickyBar.tsx` | Replaced immediate `router.push("/(auth)/sign-in")` with `Alert.alert("Sign in to save", ..., [Cancel, Sign In])` — user stays on trek detail; only navigates to sign-in if they tap the alert button |
+| 6 | Compare screen: no auto-scroll to comparison table | `app/(tabs)/(home)/compare.tsx` | Added `scrollViewRef` on outer `ScrollView`; `compareOffsetRef` updated via `onLayout` on the comparison table `View`; `useEffect` watching `compareData` scrolls 300ms after comparison arrives |
+
+`npx tsc --noEmit` ✓ zero errors after all fixes.
+
+---
+
 ## Current Status
 
 | Phase | Status |

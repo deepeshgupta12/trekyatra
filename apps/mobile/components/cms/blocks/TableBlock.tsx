@@ -7,21 +7,29 @@ interface Props {
 }
 
 export function TableBlock({ headers, rows }: Props) {
+  const numCols = Math.max(headers.length, ...rows.map((r) => r.length), 1);
+
   return (
     <View style={styles.container}>
-      <ScrollView horizontal showsHorizontalScrollIndicator={true}>
-        <View>
+      <ScrollView horizontal showsHorizontalScrollIndicator={false}>
+        <View style={{ flexShrink: 0 }}>
           {/* Header row */}
-          <View style={styles.headerRow}>
-            {headers.map((h, i) => (
-              <Text key={i} style={styles.headerCell}>{h}</Text>
-            ))}
-          </View>
+          {headers.length > 0 && (
+            <View style={styles.headerRow}>
+              {headers.map((h, i) => (
+                <View key={i} style={styles.headerCell}>
+                  <Text style={styles.headerText}>{h}</Text>
+                </View>
+              ))}
+            </View>
+          )}
           {/* Data rows */}
           {rows.map((row, ri) => (
             <View key={ri} style={[styles.dataRow, ri % 2 === 1 && styles.altRow]}>
-              {row.map((cell, ci) => (
-                <Text key={ci} style={styles.dataCell}>{cell}</Text>
+              {Array.from({ length: numCols }).map((_, ci) => (
+                <View key={ci} style={styles.dataCell}>
+                  <Text style={styles.dataText}>{row[ci] ?? ""}</Text>
+                </View>
               ))}
             </View>
           ))}
@@ -31,11 +39,11 @@ export function TableBlock({ headers, rows }: Props) {
   );
 }
 
-const COL_MIN_WIDTH = 120;
+const COL_WIDTH = 160;
 
 const styles = StyleSheet.create({
   container: {
-    marginVertical: 16,
+    marginVertical: 14,
     borderRadius: 12,
     borderWidth: 1,
     borderColor: "#e5e7eb",
@@ -44,14 +52,18 @@ const styles = StyleSheet.create({
   headerRow: {
     flexDirection: "row",
     backgroundColor: "#f3f4f6",
+    borderBottomWidth: 1,
+    borderBottomColor: "#e5e7eb",
   },
   headerCell: {
-    fontSize: 12,
-    fontWeight: "600",
-    color: "#374151",
+    width: COL_WIDTH,
     paddingHorizontal: 12,
     paddingVertical: 10,
-    minWidth: COL_MIN_WIDTH,
+  },
+  headerText: {
+    fontSize: 12,
+    fontWeight: "700",
+    color: "#1f2937",
   },
   dataRow: {
     flexDirection: "row",
@@ -63,10 +75,15 @@ const styles = StyleSheet.create({
     backgroundColor: "#f9fafb",
   },
   dataCell: {
-    fontSize: 13,
-    color: "#374151",
+    width: COL_WIDTH,
     paddingHorizontal: 12,
     paddingVertical: 10,
-    minWidth: COL_MIN_WIDTH,
+    borderRightWidth: 1,
+    borderRightColor: "#f3f4f6",
+  },
+  dataText: {
+    fontSize: 13,
+    color: "#374151",
+    lineHeight: 18,
   },
 });

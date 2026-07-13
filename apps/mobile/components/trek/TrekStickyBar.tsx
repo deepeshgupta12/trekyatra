@@ -22,7 +22,14 @@ export function TrekStickyBar({ slug, trekName }: TrekStickyBarProps) {
 
   async function handleSave() {
     if (!user) {
-      router.push("/(auth)/sign-in" as never);
+      Alert.alert(
+        "Sign in to save",
+        "Create a free account to shortlist treks and plan your Himalayan adventure.",
+        [
+          { text: "Cancel", style: "cancel" },
+          { text: "Sign In", onPress: () => router.push("/(auth)/sign-in" as never) },
+        ]
+      );
       return;
     }
     if (saving || saved) return;
