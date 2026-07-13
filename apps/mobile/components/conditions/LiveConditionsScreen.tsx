@@ -7,6 +7,7 @@ import {
   ActivityIndicator,
   RefreshControl,
 } from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useTheme } from "@/hooks/useTheme";
 import { useConditions } from "@/hooks/useConditions";
 import type { ForecastDayOut } from "@/hooks/useConditions";
@@ -80,6 +81,7 @@ function ForecastCard({ day, isDark }: { day: ForecastDayOut; isDark: boolean })
 
 export function LiveConditionsScreen({ slug, trekName, onClose }: Props) {
   const { colors, isDark } = useTheme();
+  const insets = useSafeAreaInsets();
   const { data, loading, fromCache, reload } = useConditions(slug);
 
   const trail = TRAIL_CONFIG[data?.trail_status ?? "open"] ?? TRAIL_CONFIG.open;
@@ -88,7 +90,7 @@ export function LiveConditionsScreen({ slug, trekName, onClose }: Props) {
   return (
     <View style={[styles.container, { backgroundColor: colors.background }]}>
       {/* Header */}
-      <View style={[styles.header, { borderBottomColor: isDark ? "rgba(255,255,255,0.08)" : "rgba(0,0,0,0.07)" }]}>
+      <View style={[styles.header, { paddingTop: insets.top + 16, borderBottomColor: isDark ? "rgba(255,255,255,0.08)" : "rgba(0,0,0,0.07)" }]}>
         <TouchableOpacity
           onPress={onClose}
           hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
@@ -267,7 +269,9 @@ const styles = StyleSheet.create({
   container: { flex: 1 },
   center: { flex: 1, justifyContent: "center", alignItems: "center", padding: 24 },
   header: {
-    padding: 16,
+    paddingHorizontal: 16,
+    paddingBottom: 16,
+    paddingTop: 16,
     borderBottomWidth: 1,
     gap: 2,
   },

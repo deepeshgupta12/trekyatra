@@ -1,4 +1,4 @@
-import { View, Text, TouchableOpacity, StyleSheet, Alert } from "react-native";
+import { View, Text, TouchableOpacity, StyleSheet, Alert, Platform } from "react-native";
 import { router } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -57,13 +57,12 @@ export function TrekStickyBar({ slug, trekName }: TrekStickyBarProps) {
     : "rgba(0,0,0,0.18)";
 
   return (
-    <View style={{ paddingBottom: insets.bottom + 8 }}>
-      <GlassSurface
-        rounded="none"
-        bordered={false}
-        style={[StyleSheet.absoluteFill, { borderTopWidth: 1, borderTopColor: borderColor }]}
-      />
-      <View style={styles.bar}>
+    <GlassSurface
+      rounded="none"
+      bordered={false}
+      style={{ borderTopWidth: 1, borderTopColor: borderColor }}
+    >
+      <View style={[styles.bar, { paddingBottom: insets.bottom > 0 ? insets.bottom : (Platform.OS === "ios" ? 20 : 8) }]}>
         <TouchableOpacity
           style={styles.planButton}
           activeOpacity={0.85}
@@ -96,7 +95,7 @@ export function TrekStickyBar({ slug, trekName }: TrekStickyBarProps) {
           <Ionicons name="git-compare-outline" size={20} color={colors.textMuted} />
         </TouchableOpacity>
       </View>
-    </View>
+    </GlassSurface>
   );
 }
 

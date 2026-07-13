@@ -365,7 +365,7 @@ export default function TrekDetailScreen() {
                     ? `${buddies.count!.count} trekker${buddies.count!.count !== 1 ? "s" : ""} planning this route`
                     : "Be the first to signal you're planning this trek"}
                 </Text>
-                {user && (
+                {user ? (
                   <TouchableOpacity
                     onPress={() => setBuddySignalVisible(true)}
                     style={[styles.buddyBtn, { borderColor: colors.accent }]}
@@ -373,6 +373,16 @@ export default function TrekDetailScreen() {
                   >
                     <Text style={[styles.buddyBtnText, { color: colors.accent }]}>
                       I'm planning this trek
+                    </Text>
+                  </TouchableOpacity>
+                ) : (
+                  <TouchableOpacity
+                    onPress={() => router.push("/(auth)/sign-in" as never)}
+                    style={[styles.buddyBtn, { borderColor: colors.accent }]}
+                    accessibilityLabel="Sign in to find a trek buddy"
+                  >
+                    <Text style={[styles.buddyBtnText, { color: colors.accent }]}>
+                      Sign in to find a trek buddy →
                     </Text>
                   </TouchableOpacity>
                 )}

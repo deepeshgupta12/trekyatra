@@ -51,10 +51,10 @@ export default function OperatorsScreen() {
         }}
       >
         <TouchableOpacity
-          onPress={() => router.canGoBack() ? router.back() : router.push("/(tabs)/browse" as never)}
+          onPress={() => router.navigate("/(tabs)/browse" as never)}
           hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
           accessibilityRole="button"
-          accessibilityLabel="Go back"
+          accessibilityLabel="Go back to browse"
         >
           <Ionicons name="chevron-back" size={24} color={colors.textPrimary} />
         </TouchableOpacity>

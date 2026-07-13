@@ -390,6 +390,25 @@ Second build review (iPhone 17 Pro simulator) surfaced 6 bugs; all fixed in this
 
 ---
 
+---
+
+## Screenshot Bug Fix Pass 3 (2026-07-13)
+
+Third screenshot review (iPhone 17 Pro) surfaced 6 bugs; all fixed in this pass:
+
+| # | Bug | File(s) | Fix |
+|---|-----|---------|-----|
+| 1 | Trek buddy section shows nothing for non-signed-in users | `app/(tabs)/(home)/trek/[slug].tsx` | `{user && CTA}` changed to `{user ? CTA : sign-in nudge}` — non-auth users now see "Sign in to find a trek buddy →" |
+| 2 | LiveConditions screen distorted + no back action | `components/conditions/LiveConditionsScreen.tsx` | Added `useSafeAreaInsets` from react-native-safe-area-context; `paddingTop: insets.top + 16` applied to header — content starts below Dynamic Island; Close button already exists in header |
+| 3 | Tab bar hidden when user scrolls trek detail screen | `components/trek/TrekStickyBar.tsx` | Removed `StyleSheet.absoluteFill` on `GlassSurface`; `GlassSurface` is now the direct layout container — eliminates `GlassView` visual bleed outside frame bounds on iOS 26 Liquid Glass |
+| 4 | 2-column tables have extra whitespace on the right | `components/cms/blocks/TableBlock.tsx` | `numCols <= 2` → `flex: 1` cells, no horizontal ScrollView; `numCols >= 3` → fixed `COL_WIDTH = 160` with horizontal ScrollView (unchanged) |
+| 5 | "Your first trek" editorial card navigates incorrectly | `components/home/EditorialFeatureCard.tsx` | `router.push("/beginner")` → `router.push("/(tabs)/(home)/beginner")` — explicit home-stack path |
+| 6 | Operators back button still broken cross-tab | `app/(tabs)/browse/operators.tsx` | `router.canGoBack() ? router.back() : router.push(...)` → `router.navigate("/(tabs)/browse")` unconditionally |
+
+`npx tsc --noEmit` ✓ zero errors. Build Succeeded on iPhone 17 Pro (0 errors, 3 pre-existing warnings).
+
+---
+
 ## Current Status
 
 | Phase | Status |

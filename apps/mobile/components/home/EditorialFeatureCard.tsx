@@ -6,7 +6,7 @@ import { GlassSurface } from "@/components/ui/GlassSurface";
 export function EditorialFeatureCard() {
   return (
     <View style={styles.container}>
-      <TouchableOpacity activeOpacity={0.9} onPress={() => router.push("/beginner" as never)}>
+      <TouchableOpacity activeOpacity={0.9} onPress={() => router.push("/(tabs)/(home)/beginner" as never)}>
         <ImageBackground
           source={{ uri: "https://images.unsplash.com/photo-1551632811-561732d1e306?w=1200&q=70" }}
           style={styles.image}
