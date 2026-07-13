@@ -5,6 +5,14 @@ description: "Use whenever creating or modifying any screen/component under apps
 
 # TrekYatra Mobile Design System (apps/mobile)
 
+> **Two-skill design system.** This skill (`mobile-design-system`) owns the **material
+> layer** — color/font/spacing tokens, navigation conventions, API contracts, and
+> `GlassSurface`. Its companion **`ui-ux-pro-max`** (`.claude/skills/ui-ux-pro-max/SKILL.md`)
+> owns the **taste layer** — how those materials are composed into premium, low-cognitive-load
+> screens (hero + overlaid stats, at-a-glance panels, section rhythm, grid math, safe-area
+> hard rules, the pinned-bar overlay pattern, and a pre-ship checklist).
+> **When designing or redesigning any screen, read BOTH.**
+
 ## When to Use
 
 - Building or editing any screen/component in `apps/mobile/app/**` or `apps/mobile/components/**`
@@ -85,4 +93,4 @@ Since M-DS8, the app uses a platform-adaptive "Glass UI" aesthetic via a single 
 
 ## Process Hook
 
-This skill is referenced from the root `CLAUDE.md` "Pre-Step Checklist" for any mobile step (`docs/mobile/steps/STEP-M*.md`). Read it before implementing or modifying any `apps/mobile/` screen, and re-run the font/route-name/API-contract checks above as part of build validation (in addition to `tsc --noEmit`).
+This skill is referenced from the root `CLAUDE.md` "Pre-Step Checklist" for any mobile step (`docs/mobile/steps/STEP-M*.md`). Read it — **and its companion `ui-ux-pro-max`** — before implementing or modifying any `apps/mobile/` screen, and re-run the font/route-name/API-contract checks above as part of build validation (in addition to `tsc --noEmit`). For any screen where **visual quality / redesign** is in scope, `ui-ux-pro-max` is mandatory (layout patterns, safe-area hard rules, pinned-bar overlay pattern, pre-ship checklist).

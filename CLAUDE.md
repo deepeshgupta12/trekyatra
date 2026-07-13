@@ -1,7 +1,7 @@
 <!-- gitnexus:start -->
 # GitNexus — Code Intelligence
 
-This project is indexed by GitNexus as **trekyatra** (442679 symbols, 739465 relationships, 300 execution flows). Use the GitNexus MCP tools to understand code, assess impact, and navigate safely.
+This project is indexed by GitNexus as **trekyatra** (517479 symbols, 772863 relationships, 300 execution flows). Use the GitNexus MCP tools to understand code, assess impact, and navigate safely.
 
 > If any GitNexus tool warns the index is stale, run `npx gitnexus analyze` in terminal first.
 
@@ -64,7 +64,8 @@ Run all of these before touching a single file:
 8. Confirm the previous step's tests still pass (`make test`) before starting new work
 9. For any `apps/mobile/` step or screen change:
    - Read `docs/mobile/MOBILE_IMPLEMENTATION_PLAN.md` — confirms which mobile steps are done/pending and the mobile-specific execution rules (offline parity, both-platform testing, no `any` types, accessibility props)
-   - Read `.claude/skills/mobile-design-system/SKILL.md` — confirms theme tokens, font loading, tab-bar route-name conventions, and API contract checks
+   - Read `.claude/skills/mobile-design-system/SKILL.md` — confirms theme tokens, font loading, tab-bar route-name conventions, and API contract checks (the **material layer**)
+   - Read `.claude/skills/ui-ux-pro-max/SKILL.md` — premium layout patterns, safe-area hard rules (`SafeAreaProvider` at root, never unguarded `height + insets`), the pinned-bar overlay pattern, grid math, and the pre-ship checklist (the **taste layer**). **Mandatory for any screen redesign / visual-quality work.**
 
 Do not begin implementation until all 9 checks are complete.
 
