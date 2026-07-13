@@ -66,18 +66,26 @@ All env vars below must be set in DigitalOcean App Platform → `api` component 
 
 | # | Item | Status | Notes |
 |---|------|--------|-------|
-| D01 | `apps/mobile/eas.json` created with dev/preview/production profiles | `[ ]` | M22 — `co.in.trekyatra.app` bundle ID |
+| D01 | `apps/mobile/eas.json` created with dev/preview/production profiles | `[ ]` | M22 — confirm bundle ID matches App Store Connect exactly |
 | D02 | `apps/mobile/app.config.ts` dynamic config created | `[ ]` | M22 |
-| D03 | `google-services.json` (Android) added as EAS secret (NOT git-committed) | `[ ]` | `eas secret:create --scope project --name GOOGLE_SERVICES_JSON --type file` |
-| D04 | `GoogleServiceInfo.plist` (iOS) added as EAS secret | `[ ]` | Same command, `--name GOOGLE_SERVICE_INFO_PLIST` |
-| D05 | APNs Auth Key (.p8) uploaded via `eas credentials` | `[ ]` | `eas credentials` → iOS → Push Notification Key |
-| D06 | iOS distribution certificate generated via `eas credentials` | `[ ]` | EAS manages this automatically in auto-signing mode |
-| D07 | Android keystore generated (production signing) via EAS | `[ ]` | `eas credentials` → Android → Keystore |
-| D08 | GitHub secrets set: `EXPO_TOKEN`, `EAS_PROJECT_ID`, `EXPO_PUBLIC_API_BASE_URL`, `EXPO_PUBLIC_SENTRY_DSN`, `GOOGLE_IOS_CLIENT_ID` | `[ ]` | M22 |
-| D09 | Development build installs on physical Android device | `[ ]` | `eas build --profile development --platform android` |
-| D10 | Development build installs on iOS simulator or physical device | `[ ]` | `eas build --profile development --platform ios` |
-| D11 | Preview build distributed to internal testers via TestFlight | `[ ]` | `eas build --profile preview --platform ios` + `eas submit` |
-| D12 | Preview build distributed to internal testers via Play Internal Testing | `[ ]` | `eas build --profile preview --platform android` + `eas submit` |
+| D03 | **`expo-notifications` plugin added to `plugins` array in `app.config.ts`** | `[ ]` | **BLOCKING** — without this, APNs entitlements are NOT in the native binary even if `expo-notifications` package is installed |
+| D04 | **`expo-updates` package installed** (`npx expo install expo-updates`) | `[ ]` | **BLOCKING for OTA** — not in `package.json` yet; required for `eas update` |
+| D05 | **`runtimeVersion.policy: "appVersion"` set in `app.config.ts`** | `[ ]` | Required alongside `expo-updates` for OTA channels |
+| D06 | **Splash screen image created** (1284×2778 PNG) and referenced as `splash.image` in `app.config.ts` | `[ ]` | Currently only `splash.backgroundColor` is set — native splash will be blank dark screen |
+| D07 | **`PrivacyInfo.xcprivacy` privacy manifest created** in `apps/mobile/ios/TrekYatra/` | `[ ]` | **Required by Apple since May 2024** for all new submissions. Must declare API reasons for: `NSLocationWhenInUseUsageDescription`, `NSFaceIDUsageDescription`, `NSUserDefaults` (expo-secure-store), file timestamp APIs (expo-local-authentication). Rejection guaranteed without this. |
+| D08 | **Sentry package version aligned to Expo SDK 56** (`@sentry/react-native ~6.x` not `~7.11.0`) | `[ ]` | Current `~7.11.0` is mismatched — may cause build failures and symbolication issues |
+| D09 | **`ascAppId` and `appleTeamId` populated in `eas.json`** | `[ ]` | Currently empty strings — EAS submit will fail |
+| D10 | **Bundle ID verified consistent**: `app.config.ts` uses `in.co.trekyatra.app`; checklist and PRODUCTION_SETUP.md reference `co.in.trekyatra.app` — pick one and align all files before first EAS build | `[ ]` | Bundle ID cannot be changed after App Store Connect registration |
+| D11 | `google-services.json` (Android) added as EAS secret (NOT git-committed) | `[ ]` | `eas secret:create --scope project --name GOOGLE_SERVICES_JSON --type file` |
+| D12 | `GoogleServiceInfo.plist` (iOS) added as EAS secret | `[ ]` | Same command, `--name GOOGLE_SERVICE_INFO_PLIST` |
+| D13 | APNs Auth Key (.p8) uploaded via `eas credentials` | `[ ]` | `eas credentials` → iOS → Push Notification Key |
+| D14 | iOS distribution certificate generated via `eas credentials` | `[ ]` | EAS manages this automatically in auto-signing mode |
+| D15 | Android keystore generated (production signing) via EAS | `[ ]` | `eas credentials` → Android → Keystore |
+| D16 | GitHub secrets set: `EXPO_TOKEN`, `EAS_PROJECT_ID`, `EXPO_PUBLIC_API_BASE_URL`, `EXPO_PUBLIC_SENTRY_DSN`, `GOOGLE_IOS_CLIENT_ID` | `[ ]` | M22 |
+| D17 | Development build installs on physical Android device | `[ ]` | `eas build --profile development --platform android` |
+| D18 | Development build installs on iOS simulator or physical device | `[ ]` | `eas build --profile development --platform ios` |
+| D19 | Preview build distributed to internal testers via TestFlight | `[ ]` | `eas build --profile preview --platform ios` + `eas submit` |
+| D20 | Preview build distributed to internal testers via Play Internal Testing | `[ ]` | `eas build --profile preview --platform android` + `eas submit` |
 
 ---
 
@@ -139,6 +147,7 @@ Each step below must be implemented, tested, and all verification TCs passed bef
 | M20 | Nearby treks | `[ ]` | GPS location used; nearby treks displayed |
 | M21 | News feed + multilingual | `[ ]` | Hindi content renders in Hindi locale |
 | M22 | EAS Build + store submission | `[ ]` | Production build submitted to both stores |
+| — | **OTP / Forgot Password / Reset Password screens** | `[ ]` | Listed in V5 screen inventory — not yet implemented; auth is email + Google only |
 
 ---
 
@@ -172,6 +181,8 @@ These are known limitations at V5 launch — acceptable for initial release:
 | MZ05 | Razorpay webhook — fully manual verify until webhook endpoint confirmed | Medium | Before M12 impl |
 | MZ06 | Background location for trail tracking | Medium | Phase 6+ (privacy concerns) |
 | MZ07 | PostGIS-based nearby query (using Haversine in Python for V5) | Low | Post-launch |
+| MZ08 | Buddy chat uses 10-second polling (not WebSocket) | Low | Acceptable for V5; WebSocket upgrade post-launch |
+| MZ09 | `user_badges` table not a separate DB table — badge logic embedded in service layer | Low | Post-launch refactor if needed |
 
 ---
 
