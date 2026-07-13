@@ -409,6 +409,25 @@ Third screenshot review (iPhone 17 Pro) surfaced 6 bugs; all fixed in this pass:
 
 ---
 
+## Screenshot Bug Fix Pass 4 (2026-07-13) — Auth systemic fix + Trek detail redesign
+
+Fourth review surfaced 6 issues; a shared backend auth root cause explained several at once.
+
+| # | Bug | Root cause | Fix |
+|---|-----|-----------|-----|
+| 1 | "Could not save" when logged in | `get_current_user` accepted only the web session **cookie**; mobile sends a **Bearer** `mobile_access` token → 401 on every `account/*` route (and subscriptions/plan/reports/buddies/checkout — 11 route files). Confirmed live. | `services/api/app/modules/auth/dependencies.py` — `get_current_user` rewritten to accept Bearer OR cookie (strict superset, web unchanged). 3 regression tests (TC-B25/26/27). **Needs prod deploy.** |
+| 2 | Sign Out shows when logged out; `user` null after cold start | iOS Keychain survives reinstall → `loadStoredToken` set `isAuthenticated=true` but never restored `user`; drawer showed Sign In + Sign Out together | `providers/AuthProvider.tsx` boot validates token via `getMe` + rehydrates `user` (or signs out); `components/layout/AppDrawer.tsx` Sign Out gated on `isAuthenticated && user` |
+| 3 | Trek detail nav hidden behind Dynamic Island on scroll | Sticky `TrekTabBar` (stickyHeaderIndices) pins to y=0 on a headerless screen | `TrekTabBar` `topInset` prop applied only while pinned; `[slug].tsx` scroll-tracks stuck state and adds `insets.top` |
+| 4 | Sign-in/out inconsistent app-wide | Same `user`-null-after-restart root as #2 | Resolved by #1 (API now authenticates) + #2 (user restored) |
+| 5 | Beginner screen blank | Queried only `beginner_guide` (0 pages); web falls back to easy `trek_guide` (19) + editorial | `beginner.tsx` rewritten to mirror web: easy trek_guide TrekCards + "11 mistakes" + "best first treks by city" |
+| 6 | Trek detail "blanch", high cognitive load | Underused hero + separate plain meta strip | `TrekHero` redesigned — cinematic gradient, state pill, dramatic title, at-a-glance stats overlaid on hero; standalone `TrekMetaStrip` removed (facts moved into hero) |
+
+`npx tsc --noEmit` ✓ zero errors. Build Succeeded on iPhone 17 Pro. 756 backend tests pass.
+
+**⚠️ Deployment note:** the mobile app targets production (`api.trekyatra.co.in`), so Bug 1's backend fix only takes effect on the device **after** the API is deployed. Bugs 2–6 (frontend) work in the local rebuild immediately.
+
+---
+
 ## Current Status
 
 | Phase | Status |

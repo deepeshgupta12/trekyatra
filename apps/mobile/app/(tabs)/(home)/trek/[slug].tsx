@@ -6,12 +6,14 @@ import {
   TouchableOpacity,
   StyleSheet,
   ActivityIndicator,
+  type NativeSyntheticEvent,
+  type NativeScrollEvent,
 } from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useLocalSearchParams, router } from "expo-router";
 import { useEffect, useRef, useState } from "react";
 import { useTrekDetail } from "@/hooks/useTrekDetail";
 import { TrekHero } from "@/components/trek/TrekHero";
-import { TrekMetaStrip } from "@/components/trek/TrekMetaStrip";
 import { TrekTabBar, type TrekTab } from "@/components/trek/TrekTabBar";
 import { TrekStickyBar } from "@/components/trek/TrekStickyBar";
 import { TrekRelatedRow } from "@/components/trek/TrekRelatedRow";
@@ -69,6 +71,19 @@ export default function TrekDetailScreen() {
   const scrollViewRef = useRef<ScrollView>(null);
   const headingOffsets = useRef<Record<string, number>>({});
   const tabBodyOffset = useRef(0);
+  const insets = useSafeAreaInsets();
+  // The Guide/Packing/… tab bar becomes a sticky header (stickyHeaderIndices) and
+  // pins to the very top of the screen. Because the screen is headerless (full-bleed
+  // hero), it would slide under the Dynamic Island. Track when it's pinned so we can
+  // add a safe-area top inset only in that state (no gap in normal flow).
+  const [tabBarStuck, setTabBarStuck] = useState(false);
+  const tabBarTopRef = useRef(0);
+
+  function handleScroll(e: NativeSyntheticEvent<NativeScrollEvent>) {
+    const y = e.nativeEvent.contentOffset.y;
+    const stuck = tabBarTopRef.current > 0 && y >= tabBarTopRef.current;
+    if (stuck !== tabBarStuck) setTabBarStuck(stuck);
+  }
 
   const trek = data?.page;
   const fromCache = data?.fromCache ?? false;
@@ -186,24 +201,24 @@ export default function TrekDetailScreen() {
         style={styles.flex}
         stickyHeaderIndices={[2]}
         showsVerticalScrollIndicator={false}
+        onScroll={handleScroll}
+        scrollEventThrottle={16}
       >
-        {/* Hero — back button + share embedded inside */}
+        {/* Hero — back button, share + at-a-glance stats embedded inside */}
         <TrekHero
           imageUrl={trek.hero_image_url ?? trek.route_image_url ?? null}
           title={trek.title}
           state={trek.trek_state}
           onShare={handleShare}
+          duration={trek.trek_duration}
+          altitude={trek.trek_altitude}
+          difficulty={trek.trek_difficulty}
+          season={trek.trek_season}
         />
 
-        {/* Meta strip */}
+        {/* Trust + safety + check-in block (key stats now live in the hero) */}
         <View style={{ backgroundColor: colors.background }}>
           {fromCache && <OfflineBadge visible={true} />}
-          <TrekMetaStrip
-            duration={trek.trek_duration}
-            altitude={trek.trek_altitude}
-            difficulty={trek.trek_difficulty}
-            season={trek.trek_season}
-          />
           <TrustSignals publishedAt={trek.published_at} updatedAt={trek.updated_at} />
           {isDifficultTrek && (
             <TouchableOpacity
@@ -243,7 +258,13 @@ export default function TrekDetailScreen() {
         </View>
 
         {/* Sticky tab bar */}
-        <TrekTabBar activeTab={activeTab} onTabChange={setActiveTab} />
+        <View onLayout={(e) => { tabBarTopRef.current = e.nativeEvent.layout.y; }}>
+          <TrekTabBar
+            activeTab={activeTab}
+            onTabChange={setActiveTab}
+            topInset={tabBarStuck ? insets.top : 0}
+          />
+        </View>
 
         {/* Tab body */}
         <View

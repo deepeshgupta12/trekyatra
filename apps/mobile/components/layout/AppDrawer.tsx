@@ -238,7 +238,7 @@ export function AppDrawer() {
           <View style={styles.section}>
             <Text style={[styles.sectionLabel, { color: colors.textMuted }]}>MORE</Text>
             {INFO_MENU.map(renderRow)}
-            {isAuthenticated && (
+            {isAuthenticated && user && (
               <TouchableOpacity
                 style={[styles.row, { backgroundColor: "rgba(239,68,68,0.06)" }]}
                 onPress={handleSignOut}

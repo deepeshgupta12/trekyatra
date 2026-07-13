@@ -26,7 +26,7 @@ interface AuthContextValue {
 const AuthContext = createContext<AuthContextValue | null>(null);
 
 export function AuthProvider({ children }: { children: ReactNode }) {
-  const { user, accessToken, isLoading, isAuthenticated, setAuth, clearAuth, loadStoredToken } =
+  const { user, accessToken, isLoading, isAuthenticated, setAuth, setUser, clearAuth, loadStoredToken } =
     useAuthStore();
   const [requiresBiometric, setRequiresBiometric] = useState(false);
 
@@ -35,15 +35,35 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       await loadStoredToken();
       const { accessToken: tok } = useAuthStore.getState();
       if (!tok) return;
+
       const bioPref = await AsyncStorage.getItem(BIOMETRIC_KEY);
-      if (bioPref !== "true") return;
-      // Token exists + biometric enabled → gate the session
-      setRequiresBiometric(true);
-      const passed = await promptBiometric();
-      if (passed) {
+      if (bioPref === "true") {
+        // Token exists + biometric enabled → gate the session
+        setRequiresBiometric(true);
+        const passed = await promptBiometric();
         setRequiresBiometric(false);
-      } else {
-        setRequiresBiometric(false);
+        if (!passed) {
+          await clearAuth();
+          return;
+        }
+      }
+
+      // A token was restored from secure storage (which on iOS survives app
+      // reinstall via the Keychain). Validate it AND rehydrate the user profile —
+      // loadStoredToken only sets isAuthenticated, leaving `user` null, which made
+      // the app show an inconsistent half-signed-in state (Sign In + Sign Out at
+      // once, save/buddy CTAs misfiring). Re-fetch the profile; if the token is
+      // stale/expired, sign out cleanly so the UI reflects a true logged-out state.
+      try {
+        const me = await authApiLib.getMe(tok);
+        setUser({
+          id: me.id,
+          email: me.email ?? null,
+          fullName: me.full_name ?? null,
+          isVerified: me.is_verified_email,
+        });
+        setAnalyticsUserId(me.id);
+      } catch {
         await clearAuth();
       }
     }

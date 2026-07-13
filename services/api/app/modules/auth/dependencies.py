@@ -86,12 +86,45 @@ def get_current_session(
     return session
 
 
+def _user_from_bearer(token: str, db: Session) -> User:
+    """Resolve a mobile ``Bearer`` access token (``typ == "mobile_access"``) to a User."""
+    payload = parse_access_token(token)
+    if not payload or payload.get("typ") != "mobile_access":
+        raise _unauthorized("Invalid or expired mobile token.")
+    raw_user_id = payload.get("sub")
+    if not raw_user_id:
+        raise _unauthorized("Invalid token payload.")
+    try:
+        user_id = uuid.UUID(str(raw_user_id))
+    except ValueError as exc:
+        raise _unauthorized("Invalid token payload.") from exc
+    user = db.scalar(select(User).where(User.id == user_id, User.is_active == True))  # noqa: E712
+    if not user:
+        raise _unauthorized("User not found or inactive.")
+    return user
+
+
 def get_current_user(
-    session: UserSession = Depends(get_current_session),
+    request: Request,
     db: Session = Depends(get_db),
 ) -> User:
-    statement = select(User).where(User.id == session.user_id)
-    user = db.scalar(statement)
+    """Resolve the authenticated user from EITHER a web session cookie OR a mobile
+    ``Authorization: Bearer`` token.
+
+    This is a strict superset of the original cookie-only behaviour: the web cookie
+    path (``typ == "access"``, validated via ``get_current_session``) is unchanged,
+    and a mobile Bearer token (``typ == "mobile_access"``) is now accepted as well.
+    Every user-scoped route (bookmarks, comparisons, downloads, subscriptions, plan,
+    reports, buddies, …) therefore works identically from the web app and the mobile
+    app without per-route changes.
+    """
+    auth_header = request.headers.get("Authorization", "")
+    if auth_header.startswith("Bearer "):
+        return _user_from_bearer(auth_header[len("Bearer "):], db)
+
+    # No bearer header → web session cookie path (unchanged behaviour).
+    session = get_current_session(request, db)
+    user = db.scalar(select(User).where(User.id == session.user_id))
     if not user or not user.is_active:
         raise _unauthorized("User not found or inactive.")
     return user

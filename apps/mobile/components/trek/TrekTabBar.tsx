@@ -15,13 +15,16 @@ const TABS: { key: TrekTab; label: string }[] = [
 interface TrekTabBarProps {
   activeTab: TrekTab;
   onTabChange: (tab: TrekTab) => void;
+  /** Safe-area top padding applied only while the bar is stuck to the top of the
+   *  screen — keeps the labels clear of the Dynamic Island / status bar. */
+  topInset?: number;
 }
 
-export function TrekTabBar({ activeTab, onTabChange }: TrekTabBarProps) {
+export function TrekTabBar({ activeTab, onTabChange, topInset = 0 }: TrekTabBarProps) {
   const { colors, isDark } = useTheme();
 
   return (
-    <View style={styles.container}>
+    <View style={[styles.container, topInset > 0 && { paddingTop: topInset }]}>
       <GlassSurface
         rounded="none"
         bordered={false}

@@ -294,3 +294,44 @@ def test_api_behavior_profile_view_cap(authed_client):
     resp = authed_client.put("/api/v1/account/behavior-profile", json=payload)
     assert resp.status_code == 200
     assert len(resp.json()["views"]) == 50
+
+
+# --- Mobile Bearer-token auth on account routes (get_current_user flexible path) ---
+
+# TC-B25: a real mobile Bearer token authenticates on account routes (no cookie).
+# Regression guard for the mobile "Could not save" bug — account routes previously
+# only accepted the web session cookie, so mobile Bearer requests 401'd.
+def test_account_route_accepts_mobile_bearer_token(test_user):
+    from app.core.security import create_mobile_access_token
+
+    token, _ = create_mobile_access_token(test_user.id, device_id="test-device")
+    resp = client.get(
+        "/api/v1/account/bookmarks",
+        headers={"Authorization": f"Bearer {token}"},
+    )
+    assert resp.status_code == 200
+    assert isinstance(resp.json(), list)
+
+
+# TC-B26: POST bookmark-by-slug (the exact call the mobile save button makes) works with a Bearer token.
+def test_bookmark_by_slug_accepts_mobile_bearer_token(test_user, test_cms_page):
+    from app.core.security import create_mobile_access_token
+
+    token, _ = create_mobile_access_token(test_user.id, device_id="test-device")
+    resp = client.post(
+        "/api/v1/account/bookmarks/by-slug",
+        json={"trek_slug": test_cms_page.slug},
+        headers={"Authorization": f"Bearer {token}"},
+    )
+    assert resp.status_code == 200
+    # A bookmark row is created/returned (auth succeeded — no 401).
+    assert resp.json()["id"]
+
+
+# TC-B27: an invalid Bearer token is still rejected (no auth bypass).
+def test_account_route_rejects_bad_bearer_token():
+    resp = client.get(
+        "/api/v1/account/bookmarks",
+        headers={"Authorization": "Bearer not-a-real-token"},
+    )
+    assert resp.status_code == 401
