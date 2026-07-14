@@ -38,8 +38,12 @@ export const dynamicParams = true;
 export const revalidate = 60;
 
 export async function generateStaticParams() {
-  const treks = await fetchTreks();
-  return treks.map((t) => ({ slug: t.slug }));
+  // Render on-demand (dynamicParams=true). These pages fetch the CMS with `no-store`,
+  // which is incompatible with static/ISR prerendering — Next throws "Page changed
+  // from static to dynamic at runtime" (500). fetchTreks() is now CMS-backed and would
+  // return hundreds of real slugs to prerender-then-crash, so we keep this empty and
+  // let every trek page render dynamically on demand (its pre-CMS-migration behavior).
+  return [];
 }
 
 export async function generateMetadata({ params }: { params: { slug: string } }): Promise<Metadata> {

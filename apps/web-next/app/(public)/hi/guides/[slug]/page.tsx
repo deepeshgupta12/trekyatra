@@ -10,12 +10,9 @@ import { fetchTreks } from "@/lib/trekApi";
 export const revalidate = 3600;
 
 export async function generateStaticParams() {
-  try {
-    const treks = await fetchTreks();
-    return treks.map((t) => ({ slug: t.slug }));
-  } catch {
-    return [];
-  }
+  // Render on-demand — CMS fetch is `no-store`, incompatible with static/ISR
+  // prerendering (see trek/[slug]/page.tsx). Kept [] to avoid the static-to-dynamic 500.
+  return [];
 }
 
 export async function generateMetadata({ params }: { params: { slug: string } }): Promise<Metadata> {
