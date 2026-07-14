@@ -341,6 +341,25 @@ export async function fetchComparisonPair(pair: string): Promise<ComparisonDetai
   return apiFetch<ComparisonDetail>(`/public/comparisons/${pair}`);
 }
 
+export interface ComparisonBackfillResponse {
+  treks_processed: number;
+  comparison_pairs: number;
+}
+
+/** Admin: record comparison pairs for every published trek's same-state peers.
+ *  Runs synchronously; returns the counts. Cookie-authed (admin). */
+export async function triggerComparisonBackfill(): Promise<ComparisonBackfillResponse> {
+  const res = await fetch(`${apiBase}/api/v1/admin/comparisons/backfill`, {
+    method: "POST",
+    credentials: "include",
+  });
+  if (!res.ok) {
+    const body = await res.json().catch(() => ({}));
+    throw new Error((body as { detail?: string }).detail ?? `Failed (${res.status})`);
+  }
+  return res.json();
+}
+
 export interface CMSPagePayload {
   slug?: string;
   page_type?: string;

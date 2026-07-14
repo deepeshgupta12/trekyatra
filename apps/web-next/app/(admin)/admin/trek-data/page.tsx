@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Mountain, RefreshCw, Sparkles, ChevronDown, ChevronUp, ShieldAlert, Bot } from "lucide-react";
+import { Mountain, RefreshCw, Sparkles, ChevronDown, ChevronUp, ShieldAlert, Bot, GitCompare } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   TrekDataQualityRow,
@@ -13,6 +13,7 @@ import {
   updateTrekMeta,
   triggerTrekBackfill,
   triggerTrekBackfillAll,
+  triggerComparisonBackfill,
   fetchAiInteractionLogs,
 } from "@/lib/api";
 
@@ -244,6 +245,7 @@ export default function TrekDataPage() {
   const [expandedSlug, setExpandedSlug] = useState<string | null>(null);
   const [backfillingSlug, setBackfillingSlug] = useState<string | null>(null);
   const [backfillingAll, setBackfillingAll] = useState(false);
+  const [generatingPairs, setGeneratingPairs] = useState(false);
   const [feedback, setFeedback] = useState<string | null>(null);
   const [feedbackError, setFeedbackError] = useState(false);
 
@@ -309,6 +311,23 @@ export default function TrekDataPage() {
     }
   }
 
+  async function handleGeneratePairs() {
+    setGeneratingPairs(true);
+    setFeedback(null);
+    setFeedbackError(false);
+    try {
+      const res = await triggerComparisonBackfill();
+      setFeedback(
+        `Generated ${res.comparison_pairs} comparison pair(s) across ${res.treks_processed} trek(s). Clean /compare/{a-vs-b} URLs are now live and in the sitemap.`
+      );
+    } catch (err: unknown) {
+      setFeedback(err instanceof Error ? err.message : "Generate comparison pairs failed");
+      setFeedbackError(true);
+    } finally {
+      setGeneratingPairs(false);
+    }
+  }
+
   return (
     <div className="space-y-6">
       {/* Header */}
@@ -327,6 +346,10 @@ export default function TrekDataPage() {
             <Button variant="hero" size="sm" className="w-fit" disabled={backfillingAll} onClick={handleBackfillAll}>
               <Sparkles className="h-3.5 w-3.5 mr-1.5" />
               {backfillingAll ? "Queuing…" : "Backfill All Treks"}
+            </Button>
+            <Button variant="outline" size="sm" className="border-white/20 text-white/60 hover:text-white w-fit" disabled={generatingPairs} onClick={handleGeneratePairs}>
+              <GitCompare className="h-3.5 w-3.5 mr-1.5" />
+              {generatingPairs ? "Generating…" : "Generate Comparison Pairs"}
             </Button>
           </div>
           {feedback && (
