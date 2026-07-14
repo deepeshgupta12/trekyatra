@@ -8,7 +8,7 @@ import { Mountain, Sparkles, ArrowRight, Star, Shield, FileCheck, Backpack, Wall
 import { Button } from "@/components/ui/button";
 import { TrekCard } from "@/components/trek/TrekCard";
 import { fetchTreks } from "@/lib/trekApi";
-import { fetchCMSPages, fetchTrendingTreks, fetchTrekCMSOverrides, fetchTrekStateCounts, type CMSTrekCard, type CMSTrekOverride } from "@/lib/api";
+import { fetchCMSPages, fetchTrendingTreks, fetchTrekCMSOverrides, fetchTrekStateCounts, fetchComparisonPairs, type CMSTrekCard, type CMSTrekOverride } from "@/lib/api";
 import SchemaInjector from "@/components/seo/SchemaInjector";
 import { buildWebSiteSchema } from "@/lib/schema";
 import HomeSearchBar from "@/components/home/HomeSearchBar";
@@ -56,36 +56,29 @@ const trustStats = [
 ];
 
 export default async function Home() {
-  const [trekList, cmsTrekPages, trendingCMS, cmsOverrides, stateCounts, comparisonPages] = await Promise.all([
+  const [trekList, cmsTrekPages, trendingCMS, cmsOverrides, stateCounts, comparisonPairs] = await Promise.all([
     fetchTreks(),
     fetchCMSPages({ page_type: "trek_guide", status: "published", limit: 50 }).catch(() => []),
     fetchTrendingTreks(4).catch((): CMSTrekCard[] => []),
     fetchTrekCMSOverrides().catch((): Record<string, CMSTrekOverride> => ({})),
     fetchTrekStateCounts().catch(() => []),
-    fetchCMSPages({ page_type: "comparison", status: "published", limit: 60 }).catch(() => []),
+    fetchComparisonPairs(60).catch(() => []),
   ]);
 
-  // #3 Home comparisons — build cards from REAL published /compare/[pair] pages,
-  // flagging any comparison that involves a currently-trending trek (server signal).
-  // The client component re-ranks by the viewer's difficulty/region behavior.
+  // #3 Home comparisons — build cards from registered /compare/[pair] pairs
+  // (trek_comparisons table; served live from trek data, no CMS pages), flagging any
+  // pair that involves a currently-trending trek. The client component re-ranks by
+  // the viewer's difficulty/region behavior.
   const trendingSlugs = new Set(trendingCMS.map((t) => t.slug));
-  const comparisonCards: HomeComparisonCard[] = comparisonPages
-    .map((p): HomeComparisonCard | null => {
-      const c = (p.content_json as { comparison?: { trek_a?: Record<string, unknown>; trek_b?: Record<string, unknown> } } | null)?.comparison;
-      const a = c?.trek_a as { slug?: string; name?: string; difficulty?: string; state?: string } | undefined;
-      const b = c?.trek_b as { slug?: string; name?: string; difficulty?: string } | undefined;
-      if (!a?.name || !b?.name) return null;
-      return {
-        slug: p.slug,
-        aName: a.name,
-        bName: b.name,
-        aDifficulty: a.difficulty,
-        bDifficulty: b.difficulty,
-        state: a.state,
-        trending: (a.slug ? trendingSlugs.has(a.slug) : false) || (b.slug ? trendingSlugs.has(b.slug) : false),
-      };
-    })
-    .filter((c): c is HomeComparisonCard => c !== null);
+  const comparisonCards: HomeComparisonCard[] = comparisonPairs.map((p): HomeComparisonCard => ({
+    slug: p.pair_slug,
+    aName: p.name_a,
+    bName: p.name_b,
+    aDifficulty: p.difficulty_a ?? undefined,
+    bDifficulty: p.difficulty_b ?? undefined,
+    state: p.state ?? undefined,
+    trending: trendingSlugs.has(p.slug_a) || trendingSlugs.has(p.slug_b),
+  }));
 
   // Interactive-tool fallback pairs (used only when no clean comparison pages exist yet).
   const comparisonFallback = [

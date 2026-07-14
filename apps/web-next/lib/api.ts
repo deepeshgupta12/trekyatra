@@ -307,6 +307,40 @@ export async function fetchTrekStateCounts(): Promise<TrekStateCount[]> {
   return apiFetch<TrekStateCount[]>("/public/trek-state-counts");
 }
 
+// --- Clean comparison pairs (#8 / Step 81) — served live from trek data, no CMS pages ---
+export interface ComparisonPair {
+  pair_slug: string;
+  slug_a: string;
+  slug_b: string;
+  state: string | null;
+  name_a: string;
+  name_b: string;
+  difficulty_a: string | null;
+  difficulty_b: string | null;
+}
+export interface ComparisonSide {
+  slug: string; name: string; image: string; state: string; region: string;
+  difficulty: string; duration: string; season: string; altitude_label: string;
+  permit_label: string; budget_label: string; description: string;
+}
+export interface ComparisonDetail {
+  pair_slug: string; heading: string; seo_title: string; seo_description: string;
+  hero_image_url: string;
+  trek_a: ComparisonSide; trek_b: ComparisonSide;
+  rows: { label: string; a: string; b: string }[];
+  verdict: { picks: Record<string, string>; summary: string };
+}
+
+/** Registered comparison pairs (both treks published) — home section + sitemap. */
+export async function fetchComparisonPairs(limit = 500): Promise<ComparisonPair[]> {
+  return apiFetch<ComparisonPair[]>(`/public/comparisons?limit=${limit}`);
+}
+
+/** Live comparison payload for a curated pair slug (throws on 404). */
+export async function fetchComparisonPair(pair: string): Promise<ComparisonDetail> {
+  return apiFetch<ComparisonDetail>(`/public/comparisons/${pair}`);
+}
+
 export interface CMSPagePayload {
   slug?: string;
   page_type?: string;

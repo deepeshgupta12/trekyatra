@@ -45,6 +45,25 @@ async function fetchCmsSitemapPages(): Promise<CmsSitemapEntry[]> {
   return [];
 }
 
+/** Fetch registered comparison pairs → clean /compare/{pair} sitemap URLs (#8). */
+async function fetchComparisonPairsForSitemap(): Promise<string[]> {
+  const primaryBase = process.env.NEXT_PUBLIC_API_BASE ?? "http://localhost:8000";
+  const fallbackBase = "https://api.trekyatra.co.in";
+  const path = "/api/v1/public/comparisons?limit=1000";
+  for (const base of [primaryBase, fallbackBase]) {
+    try {
+      const res = await fetch(`${base}${path}`, { signal: AbortSignal.timeout(20_000), cache: "no-store" });
+      if (res.ok) {
+        const pairs = (await res.json()) as { pair_slug: string }[];
+        return pairs.map((p) => p.pair_slug);
+      }
+    } catch {
+      // try next base
+    }
+  }
+  return [];
+}
+
 const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? "https://trekyatra.com";
 
 function url(path: string, priority = 0.7, changefreq: MetadataRoute.Sitemap[0]["changeFrequency"] = "weekly") {
@@ -117,7 +136,9 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     permit_guide: "/permits", beginner_guide: "/guides", beginner_roundup: "/guides",
     cost_guide: "/guides", gear_guide: "/guides", safety_guide: "/guides",
     itinerary: "/guides", expert_guide: "/guides", premium_compendium: "/guides",
-    comparison: "/compare", seasonal: "/seasons", seasonal_hub: "/seasons",
+    // NOTE: clean comparison URLs are emitted separately from the trek_comparisons
+    // pair table below (they are NOT page_type="comparison" CMS pages).
+    seasonal: "/seasons", seasonal_hub: "/seasons",
     cluster_hub: "/trek-types", regional_hub: "/regions", editorial: "/",
   };
   const cmsPages = await fetchCmsSitemapPages();
@@ -134,6 +155,17 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
         priority: p.page_type === "editorial" ? 0.5 : 0.8,
       });
     }
+  }
+
+  // Clean comparison pages — /compare/{pair} from the trek_comparisons table (#8)
+  const comparisonPairs = await fetchComparisonPairsForSitemap();
+  for (const pair of comparisonPairs) {
+    entries.push({
+      url: `${SITE_URL}/compare/${pair}`,
+      lastModified: new Date(),
+      changeFrequency: "weekly",
+      priority: 0.7,
+    });
   }
 
   // Deduplicate by URL

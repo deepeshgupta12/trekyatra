@@ -1,87 +1,56 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { fetchCMSPage, fetchCMSPages, type CMSPage } from "@/lib/api";
+import { fetchComparisonPair, fetchComparisonPairs, type ComparisonDetail } from "@/lib/api";
 import Breadcrumb from "@/components/content/Breadcrumb";
 import SchemaInjector from "@/components/seo/SchemaInjector";
 import { buildArticleSchema, buildBreadcrumbSchema } from "@/lib/schema";
 import { ArrowRight, Trophy, Sparkles } from "lucide-react";
 
-// Clean, SEO+AEO comparison page (#8 / Step 81). Server-rendered from the
-// `comparison` CMS page auto-created by the publish-triggered comparison agent.
-// Slug is canonical `{a}-vs-{b}` (alphabetical), so it de-dupes both orderings.
+// Clean, SEO+AEO comparison page (#8 / Step 81). Served LIVE from the two trek_guide
+// pages' data via GET /public/comparisons/{pair} — no page_type="comparison" CMS page.
+// Only pairs the comparison agent registered (trek_comparisons table) resolve; others 404.
 
 export const revalidate = 3600;
 
-interface TrekSide {
-  slug: string;
-  name: string;
-  image: string;
-  state: string;
-  region: string;
-  difficulty: string;
-  duration: string;
-  season: string;
-  altitude_label: string;
-  permit_label: string;
-  budget_label: string;
-  description: string;
-}
-interface ComparisonRow { label: string; a: string; b: string }
-interface ComparisonPayload {
-  trek_a: TrekSide;
-  trek_b: TrekSide;
-  rows: ComparisonRow[];
-  verdict: { picks: Record<string, string>; summary: string };
-}
-
-function getComparison(page: CMSPage): ComparisonPayload | null {
-  const c = (page.content_json as { comparison?: ComparisonPayload } | null)?.comparison;
-  return c && c.trek_a && c.trek_b ? c : null;
-}
-
-async function loadPage(pair: string): Promise<CMSPage | null> {
+async function loadPair(pair: string): Promise<ComparisonDetail | null> {
   try {
-    const page = await fetchCMSPage(pair);
-    if (page.status === "published" && page.page_type === "comparison") return page;
-  } catch { /* not found */ }
-  return null;
+    return await fetchComparisonPair(pair);
+  } catch {
+    return null;
+  }
 }
 
 export async function generateStaticParams() {
   try {
-    const pages = await fetchCMSPages({ page_type: "comparison", status: "published", limit: 500 });
-    return pages.map((p) => ({ pair: p.slug }));
+    const pairs = await fetchComparisonPairs(500);
+    return pairs.map((p) => ({ pair: p.pair_slug }));
   } catch {
     return [];
   }
 }
 
 export async function generateMetadata({ params }: { params: { pair: string } }): Promise<Metadata> {
-  const page = await loadPage(params.pair);
+  const data = await loadPair(params.pair);
   const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? "https://trekyatra.com";
   const canonical = `${siteUrl}/compare/${params.pair}`;
-  if (!page) {
-    return { title: "Trek comparison | TrekYatra", alternates: { canonical } };
-  }
-  const title = page.seo_title ?? `${page.title} | TrekYatra`;
-  const description = page.seo_description ?? "Compare two Himalayan treks side by side.";
+  if (!data) return { title: "Trek comparison | TrekYatra", alternates: { canonical } };
   return {
-    title,
-    description,
+    title: data.seo_title,
+    description: data.seo_description,
     alternates: { canonical },
     openGraph: {
-      title,
-      description,
+      title: data.seo_title,
+      description: data.seo_description,
       url: canonical,
       type: "article",
-      images: page.hero_image_url ? [{ url: page.hero_image_url }] : undefined,
+      images: data.hero_image_url ? [{ url: data.hero_image_url }] : undefined,
     },
-    twitter: { card: "summary_large_image", title, description },
+    twitter: { card: "summary_large_image", title: data.seo_title, description: data.seo_description },
   };
 }
 
-function TrekColumn({ trek, badge }: { trek: TrekSide; badge?: string }) {
+function TrekColumn({ trek, badge }: { trek: ComparisonDetail["trek_a"]; badge?: string }) {
   return (
     <Link
       href={`/trek/${trek.slug}`}
@@ -117,12 +86,10 @@ function TrekColumn({ trek, badge }: { trek: TrekSide; badge?: string }) {
 }
 
 export default async function ComparePairPage({ params }: { params: { pair: string } }) {
-  const page = await loadPage(params.pair);
-  if (!page) notFound();
-  const comparison = getComparison(page);
-  if (!comparison) notFound();
+  const data = await loadPair(params.pair);
+  if (!data) notFound();
 
-  const { trek_a: a, trek_b: b, rows, verdict } = comparison;
+  const { trek_a: a, trek_b: b, rows, verdict } = data;
   const beginnerPick = verdict.picks?.beginner;
 
   const breadcrumbSchema = buildBreadcrumbSchema([
@@ -131,11 +98,9 @@ export default async function ComparePairPage({ params }: { params: { pair: stri
     { label: `${a.name} vs ${b.name}` },
   ]);
   const articleSchema = buildArticleSchema({
-    title: page.seo_title ?? page.title,
-    description: page.seo_description ?? "",
+    title: data.seo_title,
+    description: data.seo_description,
     url: `/compare/${params.pair}`,
-    publishedAt: page.published_at ?? undefined,
-    updatedAt: page.updated_at ?? undefined,
   });
 
   return (
@@ -148,21 +113,19 @@ export default async function ComparePairPage({ params }: { params: { pair: stri
           <h1 className="mt-5 font-display text-3xl font-semibold leading-tight md:text-4xl">
             {a.name} <span className="text-accent">vs</span> {b.name}
           </h1>
-          {page.seo_description && (
-            <p className="mt-3 max-w-2xl text-lg text-muted-foreground">{page.seo_description}</p>
+          {data.seo_description && (
+            <p className="mt-3 max-w-2xl text-lg text-muted-foreground">{data.seo_description}</p>
           )}
         </div>
       </section>
 
       <section className="py-10">
         <div className="container-wide max-w-4xl space-y-10">
-          {/* Two trek columns */}
           <div className="grid gap-4 sm:grid-cols-2">
             <TrekColumn trek={a} badge={beginnerPick === a.slug ? "Best for beginners" : undefined} />
             <TrekColumn trek={b} badge={beginnerPick === b.slug ? "Best for beginners" : undefined} />
           </div>
 
-          {/* Verdict */}
           <div className="rounded-2xl border border-accent/20 bg-accent/5 p-5">
             <div className="mb-2 flex items-center gap-2">
               <Sparkles className="h-5 w-5 text-accent" />
@@ -171,7 +134,6 @@ export default async function ComparePairPage({ params }: { params: { pair: stri
             <p className="text-muted-foreground">{verdict.summary}</p>
           </div>
 
-          {/* Comparison table */}
           <div className="overflow-x-auto rounded-2xl border border-border">
             <table className="w-full min-w-[420px] text-sm">
               <thead>
@@ -197,7 +159,6 @@ export default async function ComparePairPage({ params }: { params: { pair: stri
             </table>
           </div>
 
-          {/* CTAs */}
           <div className="flex flex-col gap-3 sm:flex-row">
             <Link
               href={`/trek/${a.slug}`}

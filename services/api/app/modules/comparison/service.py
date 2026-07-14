@@ -1,28 +1,30 @@
-"""Deterministic trek-vs-trek comparison page generation (#8 / Step 81).
+"""Deterministic trek-vs-trek comparison PAIRS (#8 / Step 81, rebuilt).
 
-Comparison pages are ordinary CMS rows with ``page_type = "comparison"`` and a
-canonical slug ``{a}-vs-{b}`` (the two trek slugs sorted alphabetically so
-``a-vs-b`` and ``b-vs-a`` collapse to one page). Everything on the page is
-derived deterministically from each trek's first-class columns (with a
-``content_json.trek_facts`` fallback) — no LLM. A short rule-based verdict tells
-the reader which trek suits which intent.
+The comparison agent records suitable PAIRS in the ``trek_comparisons`` table
+(one row per pair) — it does NOT create ``page_type="comparison"`` CMS pages.
+The clean page at ``/compare/{pair_slug}`` renders live from the two published
+``trek_guide`` CMS pages' backfill fields (same data the ``/compare?slugs=`` tool
+uses). This module:
 
-Generation is idempotent: re-running upserts the same slug. The publish-trigger
-(``comparison.generate_for_trek`` Celery task) pairs a newly-published trek with
-up to 3 other published treks in the same state (closest difficulty).
+- picks pairs (same-state, closest difficulty, top 3) on trek publish → upserts rows
+- computes the comparison payload on demand from live trek data (verdict + table)
+- lists existing pairs for the sitemap + home section
+
+Everything is deterministic — no LLM.
 """
 from __future__ import annotations
 
 import logging
 
 from sqlalchemy import select
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, aliased
 
 from app.modules.cms.models import CMSPage
+from app.modules.comparison.models import TrekComparison
 
 logger = logging.getLogger(__name__)
 
-# How many same-state peers a newly-published trek is auto-compared against.
+# How many same-state peers a newly-published trek is auto-paired with.
 MAX_PAIRS_PER_TREK = 3
 
 # Difficulty ordering — lower is easier. Unknown difficulties sort last.
@@ -47,22 +49,21 @@ def _facts(page: CMSPage) -> dict:
 
 
 def pair_slug(slug_a: str, slug_b: str) -> str:
-    """Canonical, order-independent comparison slug: the two slugs sorted then
-    joined with ``-vs-``. Ensures ``a-vs-b`` and ``b-vs-a`` are the same page."""
+    """Canonical, order-independent pair slug: the two trek slugs sorted then
+    joined with ``-vs-`` (so ``a-vs-b`` and ``b-vs-a`` collapse to one URL)."""
     lo, hi = sorted([slug_a, slug_b])
     return f"{lo}-vs-{hi}"
 
 
-def trek_summary(page: CMSPage) -> dict:
-    """Flatten a trek_guide CMSPage into the comparison-card shape the FE renders.
+# ---------------------------------------------------------------------------
+# Live comparison compute (from real trek_guide data — no stored content)
+# ---------------------------------------------------------------------------
 
-    Prefers first-class columns; falls back to ``content_json.trek_facts`` free
-    text so older pages without structured columns still compare cleanly.
-    """
+def trek_summary(page: CMSPage) -> dict:
+    """Flatten a trek_guide CMSPage into the comparison-card shape."""
     tf = _facts(page)
-    altitude_ft = page.trek_max_altitude_ft
-    budget_min = page.trek_budget_min
-    budget_max = page.trek_budget_max
+    alt = page.trek_max_altitude_ft
+    bmin, bmax = page.trek_budget_min, page.trek_budget_max
     return {
         "slug": page.slug,
         "name": page.trek_name or page.title,
@@ -73,30 +74,26 @@ def trek_summary(page: CMSPage) -> dict:
         "duration": page.trek_duration or tf.get("duration") or "—",
         "duration_days_min": page.trek_duration_days_min,
         "season": page.trek_season or tf.get("season") or "—",
-        "altitude_ft": altitude_ft,
-        "altitude_label": (f"{altitude_ft:,} ft" if altitude_ft else tf.get("altitude") or "—"),
+        "altitude_ft": alt,
+        "altitude_label": (f"{alt:,} ft" if alt else tf.get("altitude") or "—"),
         "permit_required": page.trek_permit_required,
         "permit_label": (
             "Permit required"
             if page.trek_permit_required is True
             else ("No permit" if page.trek_permit_required is False else tf.get("permits") or "—")
         ),
-        "budget_min": budget_min,
-        "budget_max": budget_max,
-        "budget_label": (
-            f"₹{budget_min:,}–₹{budget_max:,}" if budget_min and budget_max else (tf.get("cost") or "—")
-        ),
+        "budget_min": bmin,
+        "budget_max": bmax,
+        "budget_label": (f"₹{bmin:,}–₹{bmax:,}" if bmin and bmax else (tf.get("cost") or "—")),
         "beginner_friendly": page.trek_beginner_friendly,
         "description": page.seo_description or tf.get("summary") or "",
     }
 
 
 def build_verdict(a: dict, b: dict) -> dict:
-    """Rule-based verdict — no LLM. Picks a trek per common decision axis and
-    composes a one-line summary sentence."""
+    """Rule-based verdict — picks a trek per decision axis, composes a summary."""
     picks: dict[str, str] = {}
 
-    # Beginner pick — explicit flag wins, else the easier difficulty.
     if a["beginner_friendly"] and not b["beginner_friendly"]:
         picks["beginner"] = a["slug"]
     elif b["beginner_friendly"] and not a["beginner_friendly"]:
@@ -106,15 +103,12 @@ def build_verdict(a: dict, b: dict) -> dict:
         if ra != rb:
             picks["beginner"] = a["slug"] if ra < rb else b["slug"]
 
-    # Higher / more dramatic altitude.
     if a["altitude_ft"] and b["altitude_ft"] and a["altitude_ft"] != b["altitude_ft"]:
         picks["altitude"] = a["slug"] if a["altitude_ft"] > b["altitude_ft"] else b["slug"]
 
-    # Quicker / shorter getaway.
     if a["duration_days_min"] and b["duration_days_min"] and a["duration_days_min"] != b["duration_days_min"]:
         picks["shorter"] = a["slug"] if a["duration_days_min"] < b["duration_days_min"] else b["slug"]
 
-    # Budget-friendlier.
     if a["budget_min"] and b["budget_min"] and a["budget_min"] != b["budget_min"]:
         picks["budget"] = a["slug"] if a["budget_min"] < b["budget_min"] else b["slug"]
 
@@ -143,7 +137,6 @@ def build_verdict(a: dict, b: dict) -> dict:
 
 
 def _comparison_rows(a: dict, b: dict) -> list[dict]:
-    """The side-by-side table rows the FE renders."""
     return [
         {"label": "Difficulty", "a": a["difficulty"], "b": b["difficulty"]},
         {"label": "Duration", "a": a["duration"], "b": b["duration"]},
@@ -155,99 +148,83 @@ def _comparison_rows(a: dict, b: dict) -> list[dict]:
     ]
 
 
-def build_comparison_content(page_a: CMSPage, page_b: CMSPage) -> dict:
-    """Full ``content_json`` payload for a comparison page."""
-    # Order trek_a/trek_b to match the canonical slug (alphabetical) so the page
-    # heading reads the same as its URL.
+def compute_comparison(page_a: CMSPage, page_b: CMSPage) -> dict:
+    """Full comparison payload computed live from two trek_guide pages.
+
+    trek_a/trek_b are ordered to match the canonical (alphabetical) pair slug so
+    the page heading reads the same as its URL. Includes SEO title/description.
+    """
     if page_a.slug > page_b.slug:
         page_a, page_b = page_b, page_a
     a = trek_summary(page_a)
     b = trek_summary(page_b)
     verdict = build_verdict(a, b)
-    return {
-        "comparison": {
-            "trek_a": a,
-            "trek_b": b,
-            "rows": _comparison_rows(a, b),
-            "verdict": verdict,
-        }
-    }
-
-
-def _seo_for(a: dict, b: dict, verdict: dict) -> tuple[str, str, str]:
-    title = f"{a['name']} vs {b['name']}: Which Trek Should You Choose?"
     heading = f"{a['name']} vs {b['name']}"
-    desc = (
+    seo_title = f"{a['name']} vs {b['name']}: Which Trek Should You Choose? | TrekYatra"
+    seo_description = (
         f"Compare {a['name']} and {b['name']} side by side — difficulty, duration, "
         f"altitude, best season, permits and cost. {verdict['summary']}"
     )[:320]
-    return title, heading, desc
-
-
-def generate_comparison_page(db: Session, *, slug_a: str, slug_b: str) -> CMSPage | None:
-    """Create or update the ``comparison`` CMS page for two trek slugs.
-
-    Idempotent upsert keyed on the canonical ``pair_slug``. Returns None if
-    either trek is not a published ``trek_guide`` (nothing to compare).
-    """
-    if slug_a == slug_b:
-        return None
-
-    pages = {
-        p.slug: p
-        for p in db.scalars(
-            select(CMSPage).where(
-                CMSPage.slug.in_([slug_a, slug_b]),
-                CMSPage.page_type == "trek_guide",
-                CMSPage.status == "published",
-            )
-        ).all()
+    return {
+        "pair_slug": pair_slug(a["slug"], b["slug"]),
+        "heading": heading,
+        "seo_title": seo_title,
+        "seo_description": seo_description,
+        "hero_image_url": a["image"],
+        "trek_a": a,
+        "trek_b": b,
+        "rows": _comparison_rows(a, b),
+        "verdict": verdict,
     }
-    page_a, page_b = pages.get(slug_a), pages.get(slug_b)
+
+
+def _published_trek(db: Session, slug: str) -> CMSPage | None:
+    return db.scalar(
+        select(CMSPage).where(
+            CMSPage.slug == slug,
+            CMSPage.page_type == "trek_guide",
+            CMSPage.status == "published",
+        )
+    )
+
+
+def get_comparison_for_pair(db: Session, pslug: str) -> dict | None:
+    """Live comparison payload for a curated pair slug, or None if the pair is
+    not registered or either trek is no longer a published trek_guide."""
+    row = db.scalar(select(TrekComparison).where(TrekComparison.pair_slug == pslug))
+    if not row:
+        return None
+    page_a = _published_trek(db, row.slug_a)
+    page_b = _published_trek(db, row.slug_b)
     if not page_a or not page_b:
         return None
+    return compute_comparison(page_a, page_b)
 
-    content = build_comparison_content(page_a, page_b)
-    a = content["comparison"]["trek_a"]
-    b = content["comparison"]["trek_b"]
-    verdict = content["comparison"]["verdict"]
-    title, heading, desc = _seo_for(a, b, verdict)
-    cslug = pair_slug(slug_a, slug_b)
 
-    existing = db.scalar(select(CMSPage).where(CMSPage.slug == cslug))
+# ---------------------------------------------------------------------------
+# Pair curation (the "agent") — records pairs, never creates CMS pages
+# ---------------------------------------------------------------------------
+
+def upsert_pair(db: Session, slug_a: str, slug_b: str, state: str | None) -> str | None:
+    """Insert/refresh a trek_comparisons row for a pair. Returns pair_slug, or
+    None for a self-pair. Idempotent on the canonical pair_slug."""
+    if slug_a == slug_b:
+        return None
+    lo, hi = sorted([slug_a, slug_b])
+    pslug = f"{lo}-vs-{hi}"
+    existing = db.scalar(select(TrekComparison).where(TrekComparison.pair_slug == pslug))
     if existing:
-        existing.title = heading
-        existing.content_json = content
-        existing.seo_title = f"{title} | TrekYatra"
-        existing.seo_description = desc
-        existing.hero_image_url = a["image"]
-        existing.status = "published"
+        existing.slug_a, existing.slug_b, existing.state = lo, hi, state
         db.flush()
-        return existing
-
-    page = CMSPage(
-        slug=cslug,
-        page_type="comparison",
-        title=heading,
-        content_html="",
-        content_json=content,
-        status="published",
-        seo_title=f"{title} | TrekYatra",
-        seo_description=desc,
-        hero_image_url=a["image"],
-        language="en",
-    )
-    from datetime import datetime, timezone
-
-    page.published_at = datetime.now(timezone.utc)
-    db.add(page)
+        return pslug
+    db.add(TrekComparison(pair_slug=pslug, slug_a=lo, slug_b=hi, state=state))
     db.flush()
-    return page
+    return pslug
 
 
 def _same_state_peers(db: Session, page: CMSPage, limit: int) -> list[CMSPage]:
     """Published trek_guide peers in the same state, ranked by closeness of
-    difficulty to ``page`` (so comparisons are relevant), excluding itself."""
+    difficulty (relevance), excluding self and *test* fixtures."""
     if not page.trek_state:
         return []
     peers = list(
@@ -257,6 +234,7 @@ def _same_state_peers(db: Session, page: CMSPage, limit: int) -> list[CMSPage]:
                 CMSPage.status == "published",
                 CMSPage.trek_state == page.trek_state,
                 CMSPage.slug != page.slug,
+                CMSPage.slug.notilike("%test%"),
             )
         ).all()
     )
@@ -266,51 +244,77 @@ def _same_state_peers(db: Session, page: CMSPage, limit: int) -> list[CMSPage]:
 
 
 def generate_comparisons_for_trek(db: Session, slug: str) -> list[str]:
-    """Publish-trigger entrypoint: generate comparison pages pairing the given
-    trek with its same-state peers. Returns the list of comparison slugs created
-    or updated. Safe to call for non-trek/unpublished slugs (returns [])."""
-    page = db.scalar(
-        select(CMSPage).where(
-            CMSPage.slug == slug,
-            CMSPage.page_type == "trek_guide",
-            CMSPage.status == "published",
-        )
-    )
-    if not page:
+    """Publish-trigger entrypoint: record comparison pairs for the given trek and
+    its same-state peers. Returns the pair slugs upserted. Safe for
+    non-trek/unpublished/test slugs (returns [])."""
+    if "test" in slug.lower():
+        return []
+    page = _published_trek(db, slug)
+    if not page or not page.trek_state:
         return []
     created: list[str] = []
     for peer in _same_state_peers(db, page, MAX_PAIRS_PER_TREK):
-        result = generate_comparison_page(db, slug_a=page.slug, slug_b=peer.slug)
-        if result:
-            created.append(result.slug)
+        pslug = upsert_pair(db, page.slug, peer.slug, page.trek_state)
+        if pslug:
+            created.append(pslug)
     return created
 
 
 def backfill_all_comparisons(db: Session) -> dict:
-    """Generate comparison pages for every published trek's same-state peers.
-    Idempotent — safe to re-run. Returns a summary count."""
+    """Record comparison pairs for every published trek's same-state peers.
+    Idempotent. Returns a summary count."""
     treks = list(
         db.scalars(
             select(CMSPage).where(
                 CMSPage.page_type == "trek_guide",
                 CMSPage.status == "published",
+                CMSPage.trek_state.isnot(None),
+                CMSPage.trek_state != "",
+                CMSPage.slug.notilike("%test%"),
             )
         ).all()
     )
-    all_slugs: set[str] = set()
+    all_pairs: set[str] = set()
     for trek in treks:
-        for cslug in generate_comparisons_for_trek(db, trek.slug):
-            all_slugs.add(cslug)
-    return {"treks_processed": len(treks), "comparison_pages": len(all_slugs)}
+        for pslug in generate_comparisons_for_trek(db, trek.slug):
+            all_pairs.add(pslug)
+    return {"treks_processed": len(treks), "comparison_pairs": len(all_pairs)}
 
 
-def list_comparison_pages(db: Session, *, limit: int = 500) -> list[CMSPage]:
-    """All published comparison pages (for sitemap / static params)."""
-    return list(
-        db.scalars(
-            select(CMSPage)
-            .where(CMSPage.page_type == "comparison", CMSPage.status == "published")
-            .order_by(CMSPage.updated_at.desc())
-            .limit(limit)
-        ).all()
-    )
+def list_comparison_pairs(db: Session, *, limit: int = 500) -> list[dict]:
+    """All registered pairs where BOTH treks are still published — for the
+    sitemap + home section. Includes each trek's name/difficulty (one query)."""
+    A = aliased(CMSPage)
+    B = aliased(CMSPage)
+    rows = db.execute(
+        select(
+            TrekComparison.pair_slug,
+            TrekComparison.slug_a,
+            TrekComparison.slug_b,
+            TrekComparison.state,
+            TrekComparison.updated_at,
+            A.trek_name.label("a_name"),
+            A.title.label("a_title"),
+            A.trek_difficulty.label("a_diff"),
+            B.trek_name.label("b_name"),
+            B.title.label("b_title"),
+            B.trek_difficulty.label("b_diff"),
+        )
+        .join(A, (A.slug == TrekComparison.slug_a) & (A.status == "published") & (A.page_type == "trek_guide"))
+        .join(B, (B.slug == TrekComparison.slug_b) & (B.status == "published") & (B.page_type == "trek_guide"))
+        .order_by(TrekComparison.updated_at.desc())
+        .limit(limit)
+    ).all()
+    return [
+        {
+            "pair_slug": r.pair_slug,
+            "slug_a": r.slug_a,
+            "slug_b": r.slug_b,
+            "state": r.state,
+            "name_a": r.a_name or r.a_title,
+            "name_b": r.b_name or r.b_title,
+            "difficulty_a": r.a_diff,
+            "difficulty_b": r.b_diff,
+        }
+        for r in rows
+    ]

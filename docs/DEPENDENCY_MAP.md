@@ -2478,3 +2478,16 @@ Mobile buddy matching UI consuming STEP-79 backend.
 - `apps/web-next/components/home/HomeComparisonsSection.tsx` — NEW client component: ranks clean `/compare/[pair]` links by trending + `getBehaviorProfile()` difficulty/region. Blast radius: LOW (1 caller: home).
 - `apps/mobile/components/trek/TrekTabBar.tsx` — reports-tab label → "Trail Conditions"; label `numberOfLines={2}` + centered. Blast radius: LOW (leaf).
 - Tests: `test_treks.py` rewritten (self-contained CMS-backed), `test_treks_seasonal.py` slug-route test de-hardcoded.
+
+### Step 81 comparison rebuild — pair table, no CMS pages (2026-07-14) blast radius
+- `services/api/alembic/versions/20260714_0054_trek_comparisons.py` — NEW migration: `trek_comparisons` table (pair_slug unique + slug_a/slug_b/state + 4 indexes). Blast radius: LOW (additive DDL).
+- `services/api/app/modules/comparison/models.py` — NEW `TrekComparison` ORM + `db/base.py` registration. Blast radius: LOW.
+- `services/api/app/modules/comparison/service.py` — REWRITTEN: pair-based (`upsert_pair`, `generate_comparisons_for_trek`, `backfill_all_comparisons`, `list_comparison_pairs`) + live compute (`compute_comparison`, `get_comparison_for_pair`); removed `generate_comparison_page`/`build_comparison_content`/`list_comparison_pages` (CMS-page approach). Blast radius: MEDIUM — consumers = comparison routes + Celery task + publish trigger (all updated).
+- `services/api/app/api/routes/comparison.py` — REWRITTEN: added `public_router` (`GET /public/comparisons`, `GET /public/comparisons/{pair}`); admin routes now upsert pairs. Registered in `api/router.py`. Blast radius: LOW (additive public routes).
+- `services/api/app/worker/tasks/comparison.py` — return key `comparison_pages`→`comparison_pairs`; still calls pair-based service. Blast radius: LOW.
+- `apps/web-next/lib/api.ts` — NEW `fetchComparisonPairs`/`fetchComparisonPair` + `ComparisonPair`/`ComparisonDetail`/`ComparisonSide` types. Blast radius: LOW (additive).
+- `apps/web-next/app/(public)/compare/[pair]/page.tsx` — REWRITTEN: renders from `GET /public/comparisons/{pair}` (live), `generateStaticParams` from `GET /public/comparisons`; no CMS page read. Blast radius: LOW (leaf).
+- `apps/web-next/app/(public)/page.tsx` — home comparison cards built from `fetchComparisonPairs` (was `fetchCMSPages({page_type:"comparison"})`). Blast radius: LOW (home leaf).
+- `apps/web-next/app/sitemap.ts` — emits `/compare/{pair}` from `/public/comparisons`; dropped `comparison` PAGE_PREFIX mapping. Blast radius: LOW.
+- Tests: `test_comparison.py` rewritten for pair table + live compute + routes.
+- REMOVED behavior: agent no longer creates `page_type="comparison"` CMS pages (per user requirement). Existing such pages (if any) are orphaned/ignorable; dev copies were deleted.

@@ -4,6 +4,7 @@ from app.modules.cannibalization.models import CannibalizationIssue
 from app.modules.agents.models import AgentRun
 from app.modules.auth.models import AuthIdentity, User, UserSession
 from app.modules.cms.models import CMSPage
+from app.modules.comparison.models import TrekComparison
 from app.modules.content.models import BriefVersion, ContentBrief, ContentDraft, DraftClaim, KeywordCluster, PublishLog, TopicOpportunity
 from app.modules.leads.models import LeadSubmission
 from app.modules.operators.models import Operator, OperatorSpecialization, OperatorReview, OperatorAgreement
@@ -113,4 +114,5 @@ __all__ = [
     "TripReport",
     "TrekMedia",
     "TrekCondition",
+    "TrekComparison",
 ]

@@ -165,7 +165,7 @@ trekyatra/
 | Email verification auto-sent on signup (immediately on email+password registration) | Done |
 | Email address standardised to explore@trekyatra.co.in across all pages and transactional emails | Done |
 | Compare page — CMS data source (100+ treks vs 12 static), generateMetadata, 8 compare fields, AuthGateModal save, share feedback | Done |
-| Clean comparison pages — server-rendered `/compare/{a-vs-b}` with SEO+AEO JSON-LD, auto-created on trek publish by the deterministic comparison agent, in sitemap under `/compare/`; interactive `/compare?slugs=` tool intact (Step 81) | Done |
+| Clean comparison URLs — `/compare/{a-vs-b}` rendered **live** from trek data (no CMS pages); pairs recorded in `trek_comparisons` by the publish-triggered agent (same-state top-3), served via `/public/comparisons`, SEO+AEO JSON-LD, in sitemap under `/compare/`; interactive `/compare?slugs=` tool intact (Step 81) | Done |
 | Home comparisons section — personalized (trending + viewer difficulty) cards linking to clean `/compare/{pair}` pages (Step 81) | Done |
 | Trek data is CMS-only — 12 hardcoded stub trek pages removed; `/api/v1/treks` serves real published guides; legacy `/trek/{clean-slug}` 308-redirects to the CMS trek (Step 81) | Done |
 | Account dashboard "Compare Lists" tile shows real saved comparison count | Done |

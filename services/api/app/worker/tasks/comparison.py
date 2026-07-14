@@ -24,8 +24,8 @@ def generate_for_trek_task(self, slug: str) -> dict:  # type: ignore[override]
     try:
         created = generate_comparisons_for_trek(db, slug)
         db.commit()
-        logger.info("[comparison.generate_for_trek] slug=%s created=%d", slug, len(created))
-        return {"slug": slug, "comparison_pages": created}
+        logger.info("[comparison.generate_for_trek] slug=%s pairs=%d", slug, len(created))
+        return {"slug": slug, "comparison_pairs": created}
     except Exception as exc:
         db.rollback()
         logger.error("[comparison.generate_for_trek] slug=%s error: %s", slug, exc)
