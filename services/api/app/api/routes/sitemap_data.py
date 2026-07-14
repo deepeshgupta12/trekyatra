@@ -116,6 +116,33 @@ def sitemap_treks(
     ]
 
 
+class TrekStateCount(BaseModel):
+    state: str
+    count: int
+
+
+@router.get("/trek-state-counts", response_model=list[TrekStateCount])
+def trek_state_counts(db: Session = Depends(get_db)) -> list[TrekStateCount]:
+    """Published trek_guide counts grouped by trek_state — powers the dynamic
+    'trekking regions' home section. New states appear automatically as treks are
+    published; counts stay live. Public, no auth.
+    """
+    rows = db.execute(
+        select(CMSPage.trek_state, func.count().label("count"))
+        .where(CMSPage.status == "published")
+        .where(CMSPage.page_type == "trek_guide")
+        .where(CMSPage.trek_state.isnot(None))
+        .where(CMSPage.trek_state != "")
+        # Exclude *test* pipeline fixtures so home region counts reflect real treks
+        # only (production-safe: no real trek slug contains "test").
+        .where(CMSPage.slug.notilike("%test%"))
+        .where((CMSPage.language == "en") | CMSPage.language.is_(None))
+        .group_by(CMSPage.trek_state)
+        .order_by(func.count().desc(), CMSPage.trek_state)
+    ).all()
+    return [TrekStateCount(state=r.trek_state, count=int(r.count)) for r in rows]
+
+
 @router.get("/sitemap-pages/hindi", response_model=list[HindiSitemapEntry])
 def sitemap_pages_hindi(
     limit: int = Query(default=500, ge=1, le=1000),

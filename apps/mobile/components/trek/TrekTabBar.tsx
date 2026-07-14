@@ -9,7 +9,7 @@ const TABS: { key: TrekTab; label: string }[] = [
   { key: "packing", label: "Packing" },
   { key: "permits", label: "Permits" },
   { key: "costs", label: "Costs" },
-  { key: "reports", label: "Trail" },
+  { key: "reports", label: "Trail Conditions" },
 ];
 
 interface TrekTabBarProps {
@@ -40,6 +40,7 @@ export function TrekTabBar({ activeTab, onTabChange, topInset = 0 }: TrekTabBarP
             activeOpacity={0.7}
           >
             <Text
+              numberOfLines={2}
               style={[
                 styles.label,
                 {
@@ -66,10 +67,13 @@ const styles = StyleSheet.create({
     flex: 1,
     alignItems: "center",
     paddingVertical: 12,
+    paddingHorizontal: 2,
     position: "relative",
   },
   label: {
-    fontSize: 13,
+    fontSize: 12,
+    textAlign: "center",
+    lineHeight: 15,
   },
   indicator: {
     position: "absolute",

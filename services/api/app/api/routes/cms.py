@@ -173,6 +173,16 @@ def patch_cms_page(
     page = cms_service.update_page(db, page=page, patch=body)
     db.commit()
     db.refresh(page)
+    # Publish trigger (#8 / Step 81): when a trek_guide is published, regenerate
+    # its same-state comparison pages. Guarded so a down broker never fails the
+    # publish; falls back silently if Celery is unreachable.
+    if page.page_type == "trek_guide" and page.status == "published":
+        try:
+            from app.worker.tasks.comparison import generate_for_trek_task
+
+            generate_for_trek_task.delay(page.slug)
+        except Exception:  # pragma: no cover - broker unavailable in dev/test
+            pass
     return CMSPageResponse.model_validate(page)
 
 

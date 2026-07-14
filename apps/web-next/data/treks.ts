@@ -1,30 +1,8 @@
 import type { Trek } from "@/components/trek/TrekCard";
 
-export const treks: Trek[] = [
-  { slug: "kedarkantha", name: "Kedarkantha", region: "Garhwal Himalayas", state: "Uttarakhand", image: "/images/region-uttarakhand-snow.jpg", duration: "6 days", altitude: "12,500 ft", difficulty: "Moderate", season: "Dec – Apr", beginner: true,
-    description: "India's most loved beginner snow trek — 360° summit views, frozen forest campsites, and a gentle ridge climb." },
-  { slug: "valley-of-flowers", name: "Valley of Flowers", region: "Garhwal Himalayas", state: "Uttarakhand", image: "/images/trek-forest.jpg", duration: "6 days", altitude: "14,400 ft", difficulty: "Moderate", season: "Jul – Sep",
-    description: "A monsoon-only UNESCO valley carpeted in over 500 species of alpine flowers." },
-  { slug: "hampta-pass", name: "Hampta Pass", region: "Pir Panjal", state: "Himachal Pradesh", image: "/images/region-himachal-camp.jpg", duration: "5 days", altitude: "14,100 ft", difficulty: "Moderate", season: "Jun – Sep",
-    description: "A dramatic crossover from green Kullu to barren Lahaul — the closest thing India has to a magical pass trek." },
-  { slug: "kashmir-great-lakes", name: "Kashmir Great Lakes", region: "Kashmir Valley", state: "Jammu & Kashmir", image: "/images/region-kashmir.jpg", duration: "8 days", altitude: "13,800 ft", difficulty: "Difficult", season: "Jul – Sep",
-    description: "Seven turquoise alpine lakes, rolling meadows, and the most scenic high-altitude trek in India." },
-  { slug: "rajmachi", name: "Rajmachi Monsoon Trek", region: "Sahyadris", state: "Maharashtra", image: "/images/region-sahyadri.jpg", duration: "2 days", altitude: "2,710 ft", difficulty: "Easy", season: "Jun – Sep", beginner: true,
-    description: "Twin forts, rain-washed plateaus, and fireflies — the quintessential weekend monsoon trek from Mumbai/Pune." },
-  { slug: "markha-valley", name: "Markha Valley", region: "Ladakh", state: "Ladakh", image: "/images/region-ladakh.jpg", duration: "8 days", altitude: "17,100 ft", difficulty: "Difficult", season: "Jun – Sep",
-    description: "Ladakh's classic teahouse trek — Buddhist villages, river crossings, and the Kang Yatse panorama." },
-  { slug: "brahmatal", name: "Brahmatal", region: "Garhwal Himalayas", state: "Uttarakhand", image: "/images/region-uttarakhand-snow.jpg", duration: "6 days", altitude: "12,250 ft", difficulty: "Moderate", season: "Dec – Mar", beginner: true,
-    description: "The quieter snow-trek alternative to Kedarkantha — frozen lakes and the Trishul-Nanda Ghunti wall up close." },
-  { slug: "rupin-pass", name: "Rupin Pass", region: "Western Himalayas", state: "Himachal Pradesh", image: "/images/trek-summit.jpg", duration: "8 days", altitude: "15,250 ft", difficulty: "Challenging", season: "May – Jun, Sep – Oct",
-    description: "A trek that changes scenery every 2 hours — hanging villages, three-stage waterfall, and a snow-wall pass crossing." },
-  { slug: "kalsubai", name: "Kalsubai", region: "Sahyadris", state: "Maharashtra", image: "/images/region-sahyadri.jpg", duration: "1 day", altitude: "5,400 ft", difficulty: "Moderate", season: "Oct – Feb",
-    description: "Maharashtra's highest peak — iron-ladder thrill and a night-trek tradition for Mumbai trekkers." },
-  { slug: "sandakphu", name: "Sandakphu Phalut", region: "Singalila Ridge", state: "West Bengal / Sikkim", image: "/images/trek-forest.jpg", duration: "6 days", altitude: "11,950 ft", difficulty: "Moderate", season: "Oct – Dec, Mar – May",
-    description: "The only trek that shows you Everest, Kanchenjunga, Lhotse and Makalu lined up at sunrise." },
-  { slug: "chadar", name: "Chadar Frozen River", region: "Zanskar", state: "Ladakh", image: "/images/region-ladakh.jpg", duration: "9 days", altitude: "11,150 ft", difficulty: "Challenging", season: "Jan – Feb",
-    description: "Walking on the frozen Zanskar river at -25°C — bucket-list winter expedition for serious trekkers." },
-  { slug: "harishchandragad", name: "Harishchandragad", region: "Sahyadris", state: "Maharashtra", image: "/images/region-sahyadri.jpg", duration: "2 days", altitude: "4,670 ft", difficulty: "Moderate", season: "Oct – Mar",
-    description: "Konkan Kada cliff at sunrise, ancient caves, and the most photographed plateau in the Sahyadris." },
-];
-
-export const featuredImage = "/images/hero-himalaya-dawn.jpg";
+// The static trek dataset has been removed — the CMS is now the sole source of trek
+// data (see #4 / Step 81). Previously this held 12 hardcoded "stub" treks used as an
+// offline fallback, which rendered thin stub pages at /trek/<slug> for any slug lacking
+// a published CMS page. Kept as an empty typed export so existing importers compile and
+// fall through to CMS content instead of static stubs.
+export const treks: Trek[] = [];

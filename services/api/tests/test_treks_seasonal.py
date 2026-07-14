@@ -92,9 +92,17 @@ def test_seasonal_treks_wraparound_season():
 
 
 def test_seasonal_route_does_not_break_slug_route():
-    response = client.get("/api/v1/treks/kedarkantha")
-    assert response.status_code == 200
-    assert response.json()["slug"] == "kedarkantha"
+    # PT4 / Step 81: /{slug} now serves real CMS trek_guide pages. Create one and
+    # confirm the dynamic route still resolves (not shadowed by /seasonal).
+    with SessionLocal() as db:
+        page = _make_published_trek(db, slug="slug-route-check", season="Jun - Sep")
+        try:
+            response = client.get(f"/api/v1/treks/{page.slug}")
+            assert response.status_code == 200
+            assert response.json()["slug"] == page.slug
+        finally:
+            db.query(CMSPage).filter(CMSPage.slug == "slug-route-check").delete(synchronize_session=False)
+            db.commit()
 
 
 def test_seasonal_route_does_not_break_filter_facets():

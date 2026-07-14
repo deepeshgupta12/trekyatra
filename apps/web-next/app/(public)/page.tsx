@@ -4,11 +4,11 @@ export const dynamic = "force-dynamic";
 
 import Link from "next/link";
 import Image from "next/image";
-import { Mountain, Sparkles, ArrowRight, Star, Shield, FileCheck, Backpack, Wallet, Compass, ChevronRight, Clock } from "lucide-react";
+import { Mountain, Sparkles, ArrowRight, Star, Shield, FileCheck, Backpack, Wallet, Compass, Clock } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { TrekCard } from "@/components/trek/TrekCard";
 import { fetchTreks } from "@/lib/trekApi";
-import { fetchCMSPages, fetchTrendingTreks, fetchTrekCMSOverrides, type CMSTrekCard, type CMSTrekOverride } from "@/lib/api";
+import { fetchCMSPages, fetchTrendingTreks, fetchTrekCMSOverrides, fetchTrekStateCounts, type CMSTrekCard, type CMSTrekOverride } from "@/lib/api";
 import SchemaInjector from "@/components/seo/SchemaInjector";
 import { buildWebSiteSchema } from "@/lib/schema";
 import HomeSearchBar from "@/components/home/HomeSearchBar";
@@ -16,6 +16,7 @@ import { SeasonalTreksSection } from "@/components/home/SeasonalTreksSection";
 import { DifficultyTabsSection } from "@/components/home/DifficultyTabsSection";
 import { HomeWelcomeBanner } from "@/components/home/HomeWelcomeBanner";
 import { HomeTrendingHeader } from "@/components/home/HomeTrendingHeader";
+import HomeComparisonsSection, { type HomeComparisonCard } from "@/components/home/HomeComparisonsSection";
 import makeDynamic from "next/dynamic";
 
 // Below-fold client components deferred to reduce initial JS bundle and TBT
@@ -28,13 +29,24 @@ const PersonalisedFeed = makeDynamic(
   { ssr: false }
 );
 
-const regions = [
-  { name: "Himachal Pradesh", count: "48 treks", image: "/images/region-himachal-camp.webp", slug: "himachal" },
-  { name: "Uttarakhand", count: "62 treks", image: "/images/region-uttarakhand-snow.webp", slug: "uttarakhand" },
-  { name: "Kashmir & Ladakh", count: "29 treks", image: "/images/region-kashmir.webp", slug: "kashmir" },
-  { name: "Sahyadris", count: "70+ treks", image: "/images/region-sahyadri.webp", slug: "maharashtra" },
-  { name: "Sikkim & NE", count: "24 treks", image: "/images/region-ladakh.webp", slug: "sikkim" },
-];
+// Per-state metadata for the dynamic regions section. Counts come live from the API
+// (fetchTrekStateCounts); this only maps a state → its real image + /regions/ slug.
+// A state not listed here still appears (slugified, default image) so newly-introduced
+// states show up automatically — redirections stay on the /regions/{slug} pattern.
+const STATE_META: Record<string, { slug: string; image: string }> = {
+  "Uttarakhand": { slug: "uttarakhand", image: "/images/region-uttarakhand-snow.webp" },
+  "Himachal Pradesh": { slug: "himachal", image: "/images/region-himachal-camp.webp" },
+  "Ladakh": { slug: "ladakh", image: "/images/region-ladakh.webp" },
+  "Jammu & Kashmir": { slug: "kashmir", image: "/images/region-kashmir.webp" },
+  "Kashmir": { slug: "kashmir", image: "/images/region-kashmir.webp" },
+  "Maharashtra": { slug: "maharashtra", image: "/images/region-sahyadri.webp" },
+  "Sikkim": { slug: "sikkim", image: "/images/region-ladakh.webp" },
+  "West Bengal": { slug: "west-bengal", image: "/images/region-ladakh.webp" },
+};
+const DEFAULT_REGION_IMAGE = "/images/region-himachal-camp.webp";
+function slugifyState(s: string): string {
+  return s.toLowerCase().replace(/&/g, "and").replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
+}
 
 const trustStats = [
   { value: "250+", label: "Trek guides" },
@@ -44,12 +56,81 @@ const trustStats = [
 ];
 
 export default async function Home() {
-  const [trekList, cmsTrekPages, trendingCMS, cmsOverrides] = await Promise.all([
+  const [trekList, cmsTrekPages, trendingCMS, cmsOverrides, stateCounts, comparisonPages] = await Promise.all([
     fetchTreks(),
     fetchCMSPages({ page_type: "trek_guide", status: "published", limit: 50 }).catch(() => []),
     fetchTrendingTreks(4).catch((): CMSTrekCard[] => []),
     fetchTrekCMSOverrides().catch((): Record<string, CMSTrekOverride> => ({})),
+    fetchTrekStateCounts().catch(() => []),
+    fetchCMSPages({ page_type: "comparison", status: "published", limit: 60 }).catch(() => []),
   ]);
+
+  // #3 Home comparisons — build cards from REAL published /compare/[pair] pages,
+  // flagging any comparison that involves a currently-trending trek (server signal).
+  // The client component re-ranks by the viewer's difficulty/region behavior.
+  const trendingSlugs = new Set(trendingCMS.map((t) => t.slug));
+  const comparisonCards: HomeComparisonCard[] = comparisonPages
+    .map((p): HomeComparisonCard | null => {
+      const c = (p.content_json as { comparison?: { trek_a?: Record<string, unknown>; trek_b?: Record<string, unknown> } } | null)?.comparison;
+      const a = c?.trek_a as { slug?: string; name?: string; difficulty?: string; state?: string } | undefined;
+      const b = c?.trek_b as { slug?: string; name?: string; difficulty?: string } | undefined;
+      if (!a?.name || !b?.name) return null;
+      return {
+        slug: p.slug,
+        aName: a.name,
+        bName: b.name,
+        aDifficulty: a.difficulty,
+        bDifficulty: b.difficulty,
+        state: a.state,
+        trending: (a.slug ? trendingSlugs.has(a.slug) : false) || (b.slug ? trendingSlugs.has(b.slug) : false),
+      };
+    })
+    .filter((c): c is HomeComparisonCard => c !== null);
+
+  // Interactive-tool fallback pairs (used only when no clean comparison pages exist yet).
+  const comparisonFallback = [
+    { a: "Kedarkantha", b: "Brahmatal", slugs: "kedarkantha,brahmatal" },
+    { a: "Hampta Pass", b: "Bhrigu Lake", slugs: "hampta-pass,bhrigu-lake" },
+    { a: "Valley of Flowers", b: "Hampta Pass", slugs: "valley-of-flowers,hampta-pass" },
+    { a: "Kashmir Lakes", b: "Sandakphu", slugs: "kashmir-great-lakes,sandakphu" },
+  ];
+
+  // #1 Dynamic regions — real states + live counts + real images, sorted by count.
+  // New states appear automatically as treks publish; redirects stay /regions/{slug}.
+  const regionCards = stateCounts
+    .filter((s) => s.count > 0)
+    .slice(0, 8)
+    .map((s) => {
+      const meta = STATE_META[s.state];
+      return {
+        name: s.state,
+        count: `${s.count} trek${s.count !== 1 ? "s" : ""}`,
+        image: meta?.image ?? DEFAULT_REGION_IMAGE,
+        slug: meta?.slug ?? slugifyState(s.state),
+      };
+    });
+  const regionsAllHref = `/regions/${regionCards[0]?.slug ?? "uttarakhand"}`;
+
+  // #2 Editorial spotlight — feature a REAL published trek guide end-to-end:
+  // real hero image, real name, real excerpt, real difficulty/duration chips, real
+  // "updated" date, and a link to the actual guide. Prefer a high-altitude guide
+  // (matches the "first trek above 12,000 ft" hook) then fall back to newest.
+  const editorialCandidates = [...cmsTrekPages]
+    .filter((p) => p.hero_image_url && (p.seo_description || p.trek_name))
+    .sort((a, b) => (b.published_at ?? "").localeCompare(a.published_at ?? ""));
+  const editorialSource =
+    editorialCandidates.find((p) =>
+      /12,?000|13,?000|14,?000|15,?000|high[- ]altitude|snow line|acclimati/i.test(
+        `${p.seo_description ?? ""} ${p.trek_name ?? ""}`
+      )
+    ) ?? editorialCandidates[0];
+  const hasRealEditorial = !!editorialSource;
+  const editorialImage = editorialSource?.hero_image_url ?? "/images/trek-summit.webp";
+  const editorialName = editorialSource?.trek_name ?? editorialSource?.title ?? "";
+  const editorialExcerpt = editorialSource?.seo_description ?? "";
+  const editorialUpdated = editorialSource?.updated_at
+    ? new Date(editorialSource.updated_at).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" })
+    : null;
 
   // Robust fallback: apply CMS overrides to static list so images/names are always real
   const staticEnhanced = trekList.slice(0, 4).map(t => {
@@ -246,21 +327,23 @@ export default async function Home() {
         </div>
       </section>
 
-      {/* REGIONS */}
-      <Section eyebrow="Explore by geography" title="India's great trekking regions" cta={{ label: "All regions", to: "/regions/himachal" }}>
-        <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-5 gap-4">
-          {regions.map((r) => (
-            <Link key={r.slug} href={`/regions/${r.slug}`} className="group relative h-72 overflow-hidden rounded-2xl lift">
-              <img src={r.image} alt={r.name} loading="lazy" width={500} height={700} className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110" />
-              <div className="absolute inset-0 bg-gradient-to-t from-foreground via-foreground/20 to-transparent" />
-              <div className="absolute bottom-0 inset-x-0 p-5 text-surface">
-                <h3 className="font-display text-xl font-semibold leading-tight">{r.name}</h3>
-                <div className="text-xs text-accent-glow uppercase tracking-widest mt-1">{r.count}</div>
-              </div>
-            </Link>
-          ))}
-        </div>
-      </Section>
+      {/* REGIONS — dynamic: real states + live counts + real images (#1) */}
+      {regionCards.length > 0 && (
+        <Section eyebrow="Explore by geography" title="India's great trekking regions" cta={{ label: "All regions", to: regionsAllHref }}>
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+            {regionCards.map((r) => (
+              <Link key={r.slug} href={`/regions/${r.slug}`} className="group relative h-72 overflow-hidden rounded-2xl lift">
+                <img src={r.image} alt={`${r.name} treks`} loading="lazy" width={500} height={700} className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110" />
+                <div className="absolute inset-0 bg-gradient-to-t from-foreground via-foreground/20 to-transparent" />
+                <div className="absolute bottom-0 inset-x-0 p-5 text-surface">
+                  <h3 className="font-display text-xl font-semibold leading-tight">{r.name}</h3>
+                  <div className="text-xs text-accent-glow uppercase tracking-widest mt-1">{r.count}</div>
+                </div>
+              </Link>
+            ))}
+          </div>
+        </Section>
+      )}
 
       {/* DIFFICULTY TABS — Easy | Moderate | Challenging with view-all per tab */}
       <DifficultyTabsSection treks={trekList} cmsPages={cmsTrekPages} />
@@ -270,25 +353,44 @@ export default async function Home() {
         <div className="container-wide">
           <div className="grid lg:grid-cols-2 gap-10 items-center">
             <div className="relative h-[520px] rounded-2xl overflow-hidden stack-shadow">
-              <img src="/images/trek-summit.webp" alt="Trekker at Himalayan summit" loading="lazy" width={1200} height={1200} className="w-full h-full object-cover" />
+              <img src={editorialImage} alt={hasRealEditorial ? `${editorialName} trek` : "Trekker at Himalayan summit"} loading="lazy" width={1200} height={1200} className="w-full h-full object-cover" />
               <div className="absolute top-5 left-5 px-3 py-1 rounded-full bg-accent text-accent-foreground text-xs uppercase tracking-widest font-semibold">Editorial spotlight</div>
             </div>
             <div>
-              <div className="text-xs uppercase tracking-[0.25em] text-accent mb-4">The first Himalayan trek</div>
-              <h2 className="font-display text-4xl md:text-5xl font-semibold leading-tight mb-6">What nobody tells you about your first trek above 12,000 ft.</h2>
-              <p className="text-muted-foreground text-lg leading-relaxed mb-6">Acclimatisation isn&apos;t optional. Cotton kills above the snowline. Our editor walks you through the 11 things that decide whether your first Himalayan trek becomes a story you tell forever.</p>
-              <div className="flex flex-wrap items-center gap-4 mb-8 text-sm text-muted-foreground">
-                <div className="flex items-center gap-2">
-                  <div className="h-9 w-9 rounded-full bg-gradient-pine" />
-                  <div><div className="text-foreground font-medium">TrekYatra Editorial</div><div className="text-xs">Verified by our editorial team</div></div>
-                </div>
-                <span className="flex items-center gap-1.5"><Clock className="h-3.5 w-3.5" /> 12 min read</span>
-                <span className="flex items-center gap-1.5"><Star className="h-3.5 w-3.5 text-accent fill-accent" /> Updated last week</span>
+              <div className="text-xs uppercase tracking-[0.25em] text-accent mb-4">
+                {hasRealEditorial ? (editorialSource!.trek_state ?? "Featured trek guide") : "The first Himalayan trek"}
               </div>
-              {/* Static editorial — links to beginner guide hub, not a specific trek */}
-              <Link href="/beginner">
-                <Button variant="default" size="lg">Explore beginner treks <ArrowRight className="h-4 w-4" /></Button>
-              </Link>
+              {hasRealEditorial ? (
+                <>
+                  <h2 className="font-display text-4xl md:text-5xl font-semibold leading-tight mb-6">{editorialName}</h2>
+                  {editorialExcerpt && (
+                    <p className="text-muted-foreground text-lg leading-relaxed mb-6">{editorialExcerpt}</p>
+                  )}
+                  {/* Real, verifiable chips — no invented stats */}
+                  <div className="flex flex-wrap items-center gap-2.5 mb-8 text-sm">
+                    {editorialSource!.trek_difficulty && (
+                      <span className="px-3 py-1 rounded-full bg-accent/10 text-accent font-medium">{editorialSource!.trek_difficulty}</span>
+                    )}
+                    {editorialSource!.trek_duration && (
+                      <span className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-muted text-muted-foreground"><Clock className="h-3.5 w-3.5" /> {editorialSource!.trek_duration}</span>
+                    )}
+                    {editorialUpdated && (
+                      <span className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-muted text-muted-foreground"><Star className="h-3.5 w-3.5 text-accent fill-accent" /> Updated {editorialUpdated}</span>
+                    )}
+                  </div>
+                  <Link href={`/trek/${editorialSource!.slug}`}>
+                    <Button variant="default" size="lg">Read the full guide <ArrowRight className="h-4 w-4" /></Button>
+                  </Link>
+                </>
+              ) : (
+                <>
+                  <h2 className="font-display text-4xl md:text-5xl font-semibold leading-tight mb-6">What nobody tells you about your first trek above 12,000 ft.</h2>
+                  <p className="text-muted-foreground text-lg leading-relaxed mb-6">Acclimatisation isn&apos;t optional. Cotton kills above the snowline. Our editors walk you through what decides whether your first Himalayan trek becomes a story you tell forever.</p>
+                  <Link href="/beginner">
+                    <Button variant="default" size="lg">Explore beginner treks <ArrowRight className="h-4 w-4" /></Button>
+                  </Link>
+                </>
+              )}
             </div>
           </div>
         </div>
@@ -305,56 +407,8 @@ export default async function Home() {
           never renders for State C (when PersonalisedFeed returns null). */}
       <PersonalisedFeed limit={6} />
 
-      {/* COMPARISON CTA */}
-      <section className="py-12 md:py-20 bg-gradient-pine text-surface relative overflow-hidden">
-        <div className="absolute inset-0 opacity-10">
-          <svg width="100%" height="100%" viewBox="0 0 1200 600" preserveAspectRatio="none">
-            <path d="M0,400 L120,340 L240,360 L360,300 L480,340 L600,260 L720,310 L840,250 L960,320 L1080,260 L1200,310 L1200,600 L0,600 Z" fill="hsl(var(--accent))" />
-          </svg>
-        </div>
-        <div className="container-wide relative grid lg:grid-cols-2 gap-8 lg:gap-12 items-center">
-          <div>
-            <div className="text-xs uppercase tracking-[0.25em] text-accent-glow mb-3">Decision-grade comparisons</div>
-            {/* Constrained heading — no overflow on any viewport */}
-            <h2 className="font-display text-2xl sm:text-3xl md:text-4xl font-semibold leading-tight mb-4">
-              Kedarkantha vs Brahmatal?<br className="hidden sm:block" /> Hampta vs Bhrigu?
-            </h2>
-            <p className="text-surface/80 text-base leading-relaxed mb-6 max-w-xl">
-              Side-by-side comparisons scoring difficulty, scenery, snow probability, beginner-fit, cost, and logistics.
-            </p>
-            <div className="flex flex-wrap gap-3">
-              <Link href="/compare"><Button variant="hero" size="sm">Browse comparisons</Button></Link>
-              <Link href="/explore"><Button variant="glass" size="sm">Explore all treks</Button></Link>
-            </div>
-          </div>
-
-          {/* Comparison cards — 2 cols on all sizes, smaller text + padding on mobile */}
-          <div className="grid grid-cols-2 gap-2 md:gap-3 mt-6 lg:mt-0">
-            {[
-              ["Kedarkantha", "Brahmatal"],
-              ["Hampta Pass", "Bhrigu Lake"],
-              ["Valley of Flowers", "Hampta Pass"],
-              ["Kashmir Lakes", "Sandakphu"],
-            ].map(([a, b]) => (
-              <Link
-                key={a + b}
-                href="/compare"
-                className="glass-dark rounded-xl p-3 md:p-4 hover:bg-surface/10 transition-colors"
-              >
-                <div className="text-[10px] uppercase tracking-widest text-accent-glow mb-1.5">vs</div>
-                <div className="font-display text-sm md:text-base font-semibold leading-snug">
-                  {a}
-                </div>
-                <div className="text-surface/55 text-xs font-normal font-sans my-1">vs</div>
-                <div className="font-display text-sm md:text-base font-semibold leading-snug">
-                  {b}
-                </div>
-                <ChevronRight className="h-3.5 w-3.5 mt-2 text-accent" />
-              </Link>
-            ))}
-          </div>
-        </div>
-      </section>
+      {/* COMPARISON — enhanced + personalized, links to clean /compare/[pair] pages (#3) */}
+      <HomeComparisonsSection comparisons={comparisonCards} fallbackPairs={comparisonFallback} />
 
       {/* RESOURCES */}
       <Section eyebrow="Free downloads" title="Planning resources, made by trekkers">

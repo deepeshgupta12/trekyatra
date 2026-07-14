@@ -24,6 +24,7 @@ celery_app = Celery(
         "app.worker.tasks.notifications",
         "app.worker.tasks.buddies",
         "app.worker.tasks.conditions",
+        "app.worker.tasks.comparison",
     ],
 )
 

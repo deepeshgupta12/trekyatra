@@ -112,10 +112,11 @@ def get_treks(
     beginner: bool | None = Query(None),
     state: str | None = Query(None),
     difficulty: str | None = Query(None),
+    db: Session = Depends(get_db),
 ) -> TrekListResponse:
-    treks = list_treks(beginner=beginner, state=state, difficulty=difficulty)
+    treks = list_treks(db, beginner=beginner, state=state, difficulty=difficulty)
     return TrekListResponse(
-        treks=[TrekSummary(**vars(t)) for t in treks],
+        treks=[TrekSummary(**t) for t in treks],
         total=len(treks),
     )
 
@@ -165,8 +166,8 @@ def ask_trek_question(
 
 
 @router.get("/{slug}", response_model=TrekDetailResponse)
-def get_trek(slug: str) -> TrekDetailResponse:
-    trek = get_trek_by_slug(slug)
+def get_trek(slug: str, db: Session = Depends(get_db)) -> TrekDetailResponse:
+    trek = get_trek_by_slug(db, slug)
     if trek is None:
         raise HTTPException(status_code=404, detail="Trek not found")
-    return TrekDetailResponse(**vars(trek))
+    return TrekDetailResponse(**trek)

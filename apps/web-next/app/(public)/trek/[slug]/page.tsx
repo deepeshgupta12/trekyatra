@@ -106,25 +106,28 @@ export default async function TrekDetailPage({ params }: { params: { slug: strin
     if (page.status === "published") cmsPage = page;
   } catch { /* render with static data only */ }
 
-  if (!trekRaw && !cmsPage) notFound();
-
-  // Issue 2 — Deduplication: when a static trek exists at this slug BUT no CMS page
-  // exists here, check if the pipeline created a richer CMS page whose slug starts with
-  // this slug (e.g. kedarkantha-trek-complete-guide starts with kedarkantha).
-  // If found → 301 redirect to the CMS page URL so Google only indexes one canonical URL.
-  // With our _slugify fix, future pipeline runs create pages at the same canonical slug,
-  // so this redirect only activates for pages created before the fix.
-  if (trekRaw && !cmsPage) {
+  // Legacy / clean-slug redirect (PT4 / Step 81): the 12 hardcoded stub trek pages
+  // were removed, so a bare slug like /trek/kedarkantha no longer resolves on its own.
+  // If a real CMS trek exists whose slug starts with this slug (e.g.
+  // kedarkantha-trek-guide-xxxx) or whose name slugifies to it, permanently redirect
+  // so old URLs + inbound links/SEO are preserved. permanentRedirect() is called
+  // OUTSIDE the try/catch — its internal NEXT_REDIRECT signal must not be swallowed.
+  let redirectTarget: string | null = null;
+  if (!cmsPage) {
     try {
-      const allGuides = await fetchCMSPages({ page_type: "trek_guide", status: "published", limit: 100 });
+      const allGuides = await fetchCMSPages({ page_type: "trek_guide", status: "published", limit: 200 });
+      const slugify = (s: string) => s.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
       const cmsVersion = allGuides.find(
-        (p) => p.slug !== params.slug && p.slug.startsWith(params.slug)
+        (p) =>
+          p.slug !== params.slug &&
+          (p.slug.startsWith(params.slug) || (p.trek_name ? slugify(p.trek_name) === params.slug : false))
       );
-      if (cmsVersion) {
-        permanentRedirect(`/trek/${cmsVersion.slug}`);
-      }
-    } catch { /* API unavailable — render static fallback */ }
+      if (cmsVersion) redirectTarget = `/trek/${cmsVersion.slug}`;
+    } catch { /* API unavailable — fall through to notFound/static */ }
   }
+  if (redirectTarget) permanentRedirect(redirectTarget);
+
+  if (!trekRaw && !cmsPage) notFound();
 
   const cmsDisplayName = cmsPage?.title
     ? cmsPage.title.split(/[:—]/)[0].trim()
@@ -786,9 +789,12 @@ export default async function TrekDetailPage({ params }: { params: { slug: strin
                   <div className="text-xs uppercase tracking-widest text-muted-foreground mb-3">Quick utilities</div>
                   <div className="space-y-2">
                     {[
-                      [Backpack, "Packing checklist", `/trek/${params.slug}/packing`],
-                      [FileCheck, "Permit guide", `/trek/${params.slug}/permits`],
-                      [Wallet, "Cost calculator", `/trek/${params.slug}/costs`],
+                      // Jump to the in-page sections (always rendered) — the per-trek
+                      // /packing|/permits|/costs sub-pages 404 unless a dedicated CMS
+                      // page exists for this slug, so link to the guaranteed anchors.
+                      [Backpack, "Packing checklist", `#packing`],
+                      [FileCheck, "Permit guide", `#permits`],
+                      [Wallet, "Cost calculator", `#cost-estimate`],
                     ].map(([Icon, label, to]: any) => (
                       <Link key={to} href={to} className="flex items-center justify-between p-3 rounded-xl hover:bg-muted transition-colors">
                         <span className="flex items-center gap-2.5 text-sm font-medium"><Icon className="h-4 w-4 text-accent" /> {label}</span>

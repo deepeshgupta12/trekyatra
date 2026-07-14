@@ -296,6 +296,17 @@ export async function fetchCMSPages(filters?: {
   return apiFetch<CMSPage[]>(`/cms/pages${params}`);
 }
 
+export interface TrekStateCount {
+  state: string;
+  count: number;
+}
+
+/** Published trek_guide counts grouped by trek_state — powers the dynamic home
+ *  "trekking regions" section (new states appear automatically). */
+export async function fetchTrekStateCounts(): Promise<TrekStateCount[]> {
+  return apiFetch<TrekStateCount[]>("/public/trek-state-counts");
+}
+
 export interface CMSPagePayload {
   slug?: string;
   page_type?: string;

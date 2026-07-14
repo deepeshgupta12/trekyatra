@@ -2,27 +2,87 @@ from __future__ import annotations
 
 from math import asin, cos, radians, sin, sqrt
 
-from app.modules.treks.data import TREKS, TrekRecord
+from sqlalchemy import select
+from sqlalchemy.orm import Session
+
+from app.modules.cms.models import CMSPage
 from app.modules.conditions.service import TREK_COORDS
+
+# PT4 (Step 81) — the 12 hardcoded stub treks (old app/modules/treks/data.py) were
+# removed. The CMS is now the sole source of trek data: /api/v1/treks and
+# /api/v1/treks/{slug} serve real published trek_guide pages. A "real" trek is a
+# published English trek_guide with a non-null trek_state whose slug is not a test
+# fixture (excludes both the stateless seed rows and any *test* pipeline fixtures).
+# Ordered newest-published first. Production-safe: no real trek slug contains "test".
+
+_DEFAULT_IMAGE = "/images/trek-forest.jpg"
+
+
+def _facts(page: CMSPage) -> dict:
+    return (page.content_json or {}).get("trek_facts", {}) or {}
+
+
+def _cms_to_trek(page: CMSPage) -> dict:
+    """Map a trek_guide CMSPage to the TrekSummary/TrekDetailResponse shape."""
+    tf = _facts(page)
+    alt = page.trek_max_altitude_ft
+    return {
+        "slug": page.slug,
+        "name": page.trek_name or page.title,
+        "region": page.trek_region or page.trek_state or "",
+        "state": page.trek_state or "",
+        "duration": page.trek_duration or tf.get("duration") or "—",
+        "altitude": f"{alt:,} ft" if alt else (tf.get("altitude") or "—"),
+        "difficulty": page.trek_difficulty or tf.get("difficulty") or "Moderate",
+        "season": page.trek_season or tf.get("season") or "—",
+        "description": page.seo_description or "",
+        "beginner": bool(page.trek_beginner_friendly),
+        "image": page.hero_image_url or _DEFAULT_IMAGE,
+    }
+
+
+def _real_trek_query():
+    return (
+        select(CMSPage)
+        .where(
+            CMSPage.page_type == "trek_guide",
+            CMSPage.status == "published",
+            CMSPage.trek_state.isnot(None),
+            CMSPage.trek_state != "",
+            CMSPage.slug.notilike("%test%"),
+            (CMSPage.language == "en") | CMSPage.language.is_(None),
+        )
+        .order_by(CMSPage.published_at.desc().nullslast(), CMSPage.trek_name)
+    )
 
 
 def list_treks(
+    db: Session,
     beginner: bool | None = None,
     state: str | None = None,
     difficulty: str | None = None,
-) -> list[TrekRecord]:
-    result = list(TREKS)
-    if beginner is not None:
-        result = [t for t in result if t.beginner == beginner]
+    limit: int = 200,
+) -> list[dict]:
+    q = _real_trek_query()
     if state:
-        result = [t for t in result if t.state.lower() == state.lower()]
+        q = q.where(CMSPage.trek_state == state)
     if difficulty:
-        result = [t for t in result if t.difficulty.lower() == difficulty.lower()]
-    return result
+        q = q.where(CMSPage.trek_difficulty.ilike(difficulty))
+    if beginner is not None:
+        q = q.where(CMSPage.trek_beginner_friendly.is_(beginner))
+    pages = db.scalars(q.limit(limit)).all()
+    return [_cms_to_trek(p) for p in pages]
 
 
-def get_trek_by_slug(slug: str) -> TrekRecord | None:
-    return next((t for t in TREKS if t.slug == slug), None)
+def get_trek_by_slug(db: Session, slug: str) -> dict | None:
+    page = db.scalar(
+        select(CMSPage).where(
+            CMSPage.slug == slug,
+            CMSPage.page_type == "trek_guide",
+            CMSPage.status == "published",
+        )
+    )
+    return _cms_to_trek(page) if page else None
 
 
 def _haversine_km(lat1: float, lon1: float, lat2: float, lon2: float) -> float:

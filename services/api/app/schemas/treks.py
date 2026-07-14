@@ -14,6 +14,7 @@ class TrekSummary(BaseModel):
     season: str
     description: str
     beginner: bool
+    image: str | None = None
 
 
 class TrekListResponse(BaseModel):

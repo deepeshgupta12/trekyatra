@@ -2458,3 +2458,23 @@ Mobile buddy matching UI consuming STEP-79 backend.
 - `apps/web-next/lib/schema.ts` — `buildTrekSchema` accepts `routeImageUrl?`; `image` field becomes array when both hero + route images present; blast radius: LOW (1 caller: TrekDetailPage)
 - `apps/web-next/components/admin/CMSPageForm.tsx` — Route image card added (trek_guide only): URL input + upload + preview; `route_image_url` included in `buildPayload()`; blast radius: LOW (1 caller: admin edit page)
 - `apps/web-next/app/(public)/trek/[slug]/page.tsx` — route image displayed below Route Overview text; `routeImageUrl` passed to `buildTrekSchema`; blast radius: LOW (leaf page)
+
+### Step 81 — Comparison pages + publish-triggered comparison agent (2026-07-14) blast radius
+- `services/api/app/modules/comparison/service.py` — NEW: deterministic comparison generation (`pair_slug`, `trek_summary`, `build_verdict`, `build_comparison_content`, `generate_comparison_page` idempotent upsert, `_same_state_peers` null-state-guarded, `generate_comparisons_for_trek` same-state top-3, `backfill_all_comparisons`, `list_comparison_pages`). Reads `CMSPage` first-class trek columns + `content_json.trek_facts`; writes `page_type="comparison"` rows. Blast radius: LOW (new module, no external importers)
+- `services/api/app/worker/tasks/comparison.py` — NEW: `comparison.generate_for_trek` + `comparison.backfill_all` Celery tasks; registered in `worker/celery_app.py` include list. Blast radius: LOW (additive)
+- `services/api/app/api/routes/comparison.py` — NEW: admin `POST /admin/comparisons/backfill` + `/generate/{slug}` (`get_current_admin`); registered in `api/router.py`. Blast radius: LOW (additive routes; distinct prefix from existing `/account/comparisons`)
+- `services/api/app/api/routes/cms.py` — `patch_cms_page` UPDATED: after commit, dispatches `generate_for_trek.delay(slug)` when a trek_guide is published (try/except-guarded so a down broker never fails publish). Blast radius: MEDIUM (hot publish path — guarded, additive side-effect only)
+- `apps/web-next/app/(public)/compare/[pair]/page.tsx` — NEW: server-rendered comparison page; reads comparison CMS row via `fetchCMSPage`, `generateStaticParams` via `fetchCMSPages({page_type:"comparison"})`, breadcrumb + Article JSON-LD. Blast radius: LOW (new leaf route; sitemap already maps `comparison`→`/compare` via FE `PAGE_PREFIX`)
+- Sitemap: NO code change — `app/sitemap.ts` `PAGE_PREFIX["comparison"]="/compare"` already routes published comparison pages into the sitemap.
+
+### Step 81 gap-closure — editorial/compare/stub/app-tab (2026-07-14) blast radius
+- `services/api/app/modules/treks/data.py` — DELETED (12 hardcoded stub treks). No importers besides service.py (verified). Blast radius: was the source of `/trek/{clean-slug}` stub pages.
+- `services/api/app/modules/treks/service.py` — REWRITTEN CMS-backed: `list_treks(db,...)`/`get_trek_by_slug(db, slug)` now query published trek_guide CMSPages (non-null trek_state, newest first); `_cms_to_trek` maps incl. real `image`; `get_nearby_treks`/`_haversine_km` unchanged. Blast radius: MEDIUM — `GET /api/v1/treks` + `/api/v1/treks/{slug}` (web `fetchTreks`/`fetchTrekBySlug`, 39 usages). Mobile unaffected (never calls these).
+- `services/api/app/schemas/treks.py` — `TrekSummary.image: str | None` added. Blast radius: LOW (additive optional field; web-only consumer).
+- `services/api/app/api/routes/treks.py` — `get_treks`/`get_trek` now inject `db`; build responses from dicts. Blast radius: LOW.
+- `apps/web-next/lib/trekApi.ts` — `mergeImage` uses real API `image` (falls back to default). Blast radius: LOW.
+- `apps/web-next/app/(public)/trek/[slug]/page.tsx` — legacy-slug redirect generalized (fires for any unresolved slug via CMS slug-prefix / slugified trek_name); `permanentRedirect()` moved OUTSIDE try/catch (bugfix: NEXT_REDIRECT was being swallowed). Blast radius: LOW (leaf page).
+- `apps/web-next/app/(public)/page.tsx` — PT2 editorial block now real-trek-backed; PT3 replaces the hardcoded compare CTA with `<HomeComparisonsSection>` + server-built `comparisonCards`/`comparisonFallback`; added a 6th parallel fetch (`comparison` pages). Blast radius: LOW (home leaf).
+- `apps/web-next/components/home/HomeComparisonsSection.tsx` — NEW client component: ranks clean `/compare/[pair]` links by trending + `getBehaviorProfile()` difficulty/region. Blast radius: LOW (1 caller: home).
+- `apps/mobile/components/trek/TrekTabBar.tsx` — reports-tab label → "Trail Conditions"; label `numberOfLines={2}` + centered. Blast radius: LOW (leaf).
+- Tests: `test_treks.py` rewritten (self-contained CMS-backed), `test_treks_seasonal.py` slug-route test de-hardcoded.

@@ -25,6 +25,7 @@ interface CMSPage {
   trek_difficulty: string | null;
   trek_duration: string | null;
   trek_permit_required: boolean | null;
+  route_image_url: string | null;
 }
 
 const PAGE_PREFIX: Record<string, string> = {
@@ -107,6 +108,7 @@ export default function CMSAdminPage() {
   const [trekDifficultyFilter, setTrekDifficultyFilter] = useState("all");
   const [trekDurationFilter, setTrekDurationFilter] = useState("all");
   const [trekPermitFilter, setTrekPermitFilter] = useState("all");
+  const [routeImageFilter, setRouteImageFilter] = useState("all");
   const [publishedFrom, setPublishedFrom] = useState("");
   const [publishedTo, setPublishedTo] = useState("");
   const [updatedFrom, setUpdatedFrom] = useState("");
@@ -135,13 +137,13 @@ export default function CMSAdminPage() {
 
   const hasTrekFilters = activeTab === "trek_guide" && (
     trekStateFilter !== "all" || trekDifficultyFilter !== "all" ||
-    trekDurationFilter !== "all" || trekPermitFilter !== "all" ||
+    trekDurationFilter !== "all" || trekPermitFilter !== "all" || routeImageFilter !== "all" ||
     publishedFrom !== "" || publishedTo !== "" || updatedFrom !== "" || updatedTo !== ""
   );
 
   function clearTrekFilters() {
     setTrekStateFilter("all"); setTrekDifficultyFilter("all");
-    setTrekDurationFilter("all"); setTrekPermitFilter("all");
+    setTrekDurationFilter("all"); setTrekPermitFilter("all"); setRouteImageFilter("all");
     setPublishedFrom(""); setPublishedTo(""); setUpdatedFrom(""); setUpdatedTo("");
   }
 
@@ -175,13 +177,15 @@ export default function CMSAdminPage() {
       }
       if (trekPermitFilter === "yes") result = result.filter((p) => p.trek_permit_required === true);
       if (trekPermitFilter === "no") result = result.filter((p) => p.trek_permit_required === false);
+      if (routeImageFilter === "published") result = result.filter((p) => !!p.route_image_url);
+      if (routeImageFilter === "missing") result = result.filter((p) => !p.route_image_url);
       if (publishedFrom) result = result.filter((p) => p.published_at && p.published_at >= publishedFrom);
       if (publishedTo) result = result.filter((p) => p.published_at && p.published_at <= publishedTo + "T23:59:59");
       if (updatedFrom) result = result.filter((p) => p.updated_at >= updatedFrom);
       if (updatedTo) result = result.filter((p) => p.updated_at <= updatedTo + "T23:59:59");
     }
     return result;
-  }, [pages, activeTab, statusFilter, languageFilter, trekStateFilter, trekDifficultyFilter, trekDurationFilter, trekPermitFilter, publishedFrom, publishedTo, updatedFrom, updatedTo]);
+  }, [pages, activeTab, statusFilter, languageFilter, trekStateFilter, trekDifficultyFilter, trekDurationFilter, trekPermitFilter, routeImageFilter, publishedFrom, publishedTo, updatedFrom, updatedTo]);
 
   async function invalidateCache(scope: "all" | "slug", slug?: string) {
     setInvalidating(true);
@@ -649,6 +653,16 @@ export default function CMSAdminPage() {
               <option value="all">Any permit</option>
               <option value="yes">Permit required</option>
               <option value="no">No permit</option>
+            </select>
+            {/* Route image published/missing */}
+            <select
+              value={routeImageFilter}
+              onChange={(e) => setRouteImageFilter(e.target.value)}
+              className="bg-[#0c0e14] border border-white/10 rounded-lg px-2 py-1 text-white/60 text-xs focus:outline-none focus:border-accent/40"
+            >
+              <option value="all">Any route image</option>
+              <option value="published">Route image ✓</option>
+              <option value="missing">Route image missing</option>
             </select>
             {/* Published date range */}
             <div className="flex items-center gap-1">

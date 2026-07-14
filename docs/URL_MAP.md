@@ -15,7 +15,8 @@ Last updated: 2026-05-27 (Step 64)
 | `/` | Homepage | — | Hero, trending, seasonal tabs, regions, feed |
 | `/explore` | Trek explorer | — | Full grid with filters |
 | `/search` | Search | — | Fuse.js fuzzy + semantic for long queries |
-| `/compare` | Trek comparison | — | Side-by-side compare tool |
+| `/compare` | Trek comparison tool | — | Side-by-side compare tool (`?slugs=a,b` interactive form — stays intact) |
+| `/compare/[pair]` | Clean comparison page | `comparison` | Server-rendered `<a>-vs-<b>` (e.g. `/compare/kedarkantha-vs-brahmatal`); auto-created by the publish-triggered comparison agent as `comparison` CMS pages; full SEO+AEO (JSON-LD); listed in sitemap under the `/compare/` directory — Step 81 |
 | `/treksage` | TrekSage AI chat assistant | — | Myra-style conversational assistant (code-defined, not CMS); session persisted via `treksage_chat_sessions`; calls `POST /api/v1/treksage/chat`; Step 73 |
 | `/plan` | Trip planning wizard | — | 6-step intent wizard — Step 57 (done) |
 | `/plan/results` | Trek recommendation output | — | Top 5 CMS treks with match scores + lead capture — Step 57 (done) |

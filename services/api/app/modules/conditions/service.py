@@ -445,7 +445,7 @@ def list_all_trek_conditions(db: Session) -> ConditionsListOut:
     pages = (
         db.query(CMSPage)
         .filter(CMSPage.page_type == "trek_guide", CMSPage.status == "published")
-        .order_by(CMSPage.title)
+        .order_by(CMSPage.published_at.desc().nullslast())
         .all()
     )
 

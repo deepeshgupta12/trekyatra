@@ -705,7 +705,7 @@ def backfill_all_trek_meta(db: Session) -> dict:
 
 def list_trek_data_quality(db: Session) -> list[TrekDataQualityRow]:
     pages = db.scalars(
-        select(CMSPage).where(CMSPage.page_type == "trek_guide").order_by(CMSPage.title)
+        select(CMSPage).where(CMSPage.page_type == "trek_guide").order_by(CMSPage.published_at.desc().nullslast())
     ).all()
     rows: list[TrekDataQualityRow] = []
     for page in pages:
