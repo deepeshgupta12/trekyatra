@@ -1,12 +1,19 @@
-import { revalidatePath } from "next/cache";
+import { revalidatePath, revalidateTag } from "next/cache";
 import { NextRequest, NextResponse } from "next/server";
 
+// On-demand invalidation for the Master CMS cache-clear (single + bulk) and the
+// publish/save flow. IMPORTANT: pages read CMS content through `fetchCMSPage`, whose
+// response lives in Next's Data Cache tagged `cms:{slug}` / `cms:all`. `revalidatePath`
+// alone only busts a route's rendered HTML — on re-render it would still read STALE
+// cached CMS data until the 60s window. So we ALSO `revalidateTag` to bust the CMS
+// fetch data, guaranteeing published edits show instantly.
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
 
     if (body.scope === "all") {
-      revalidatePath("/", "layout");
+      revalidateTag("cms:all");        // bust every CMS fetch entry
+      revalidatePath("/", "layout");   // bust every rendered route
       return NextResponse.json({ revalidated: true, scope: "all" });
     }
 
@@ -22,7 +29,8 @@ export async function POST(req: NextRequest) {
     }
 
     for (const slug of slugs) {
-      revalidatePath(`/trek/${slug}`);
+      revalidateTag(`cms:${slug}`);    // bust this page's CMS fetch data (any route using it)
+      revalidatePath(`/trek/${slug}`); // bust the trek page's rendered HTML
     }
 
     return NextResponse.json({ revalidated: true, slugs });

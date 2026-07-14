@@ -32,14 +32,14 @@ import { BuddySection } from "@/components/trek/BuddySection";
 import { LiveConditionsWidget } from "@/components/trek/LiveConditionsWidget";
 import type { Trek } from "@/components/trek/TrekCard";
 
-// Force dynamic (SSR) rendering. This page fetches the CMS with `cache: "no-store"`
-// (fetchCMSPage + trek profile / related fetches). That is fundamentally incompatible
-// with static/ISR rendering: with `revalidate` or `generateStaticParams` set, Next 14
-// throws "Page changed from static to dynamic at runtime" (500) on every trek page.
-// force-dynamic makes the route always dynamic, so no-store is valid. Fully server-
-// rendered HTML is still crawlable → no SEO impact. (ISR perf can be restored later by
-// switching the CMS fetches from no-store to revalidate-based caching.)
-export const dynamic = "force-dynamic";
+// ISR: cached statically, revalidated every 60s. Safe now that every CMS fetch on this
+// page is cacheable (fetchCMSPage is ISR-tagged; conditions/reports/buddy use
+// next:{revalidate}; the rest use apiFetch's default cache) — no `no-store` fetch remains
+// to trigger "static to dynamic at runtime". On-demand slugs render + cache via
+// dynamicParams; the Master CMS cache-clear / publish flow busts them instantly through
+// /api/revalidate (revalidateTag `cms:{slug}` + revalidatePath `/trek/{slug}`).
+export const dynamicParams = true;
+export const revalidate = 60;
 
 export async function generateMetadata({ params }: { params: { slug: string } }): Promise<Metadata> {
   let cmsPage: CMSPage | null = null;

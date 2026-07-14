@@ -2491,3 +2491,12 @@ Mobile buddy matching UI consuming STEP-79 backend.
 - `apps/web-next/app/sitemap.ts` — emits `/compare/{pair}` from `/public/comparisons`; dropped `comparison` PAGE_PREFIX mapping. Blast radius: LOW.
 - Tests: `test_comparison.py` rewritten for pair table + live compute + routes.
 - REMOVED behavior: agent no longer creates `page_type="comparison"` CMS pages (per user requirement). Existing such pages (if any) are orphaned/ignorable; dev copies were deleted.
+
+### Prod 500 fix + ISR caching restore (2026-07-14) blast radius
+- `apps/web-next/lib/api.ts` — `fetchCMSPage` cache: `no-store` → `next:{revalidate:60, tags:["cms:{slug}","cms:all"]}`; removed `AbortSignal.timeout` (a signal opts a fetch OUT of Next's Data Cache). Blast radius: **CRITICAL per impact analysis (44 impacted / 36 direct / 18 public pages: trek, guides, permits, packing, costs, regions, seasons, trek-types, compare/[pair], contact/about/privacy/terms/methodology/affiliate, hi/*)** — all verified 200 + 0 static-to-dynamic errors in prod-mode `next start`.
+- `apps/web-next/app/(public)/trek/[slug]/page.tsx` — reverted emergency `force-dynamic` → `dynamicParams=true` + `revalidate=60` (ISR); removed `generateStaticParams` (on-demand + ISR, no build prerender-explosion). Blast radius: LOW (leaf).
+- `apps/web-next/app/(public)/hi/{trek,guides,packing}/[slug]/page.tsx` — `force-dynamic` → `dynamicParams=true` + `revalidate=3600`. Blast radius: LOW.
+- `apps/web-next/app/api/revalidate/route.ts` — added `revalidateTag`: single slug → `revalidateTag("cms:{slug}")` + `revalidatePath("/trek/{slug}")`; bulk → `revalidateTag("cms:all")` + `revalidatePath("/","layout")`. Busts the CMS **fetch data cache** (not just route HTML) so cache-clear/publish edits are instant. Callers unchanged: admin `invalidateCache` (admin/cms/page.tsx) + publish flow (CMSPageForm.tsx) already POST both `/api/v1/cms/cache/invalidate` (Redis) and `/api/revalidate` (Next). Blast radius: LOW.
+- Backend `cms/service.py cache_invalidate` (Redis DB2) + `/cms/cache/invalidate` route: UNCHANGED (pre-existing layer).
+- Caveat recorded: trek pages still render dynamically (pre-existing `apiFetch` timeout-signal on trek profile/related/news); page-HTML caching served by Cloudflare `s-maxage=300`. Full-page ISR would require making `apiFetch` cacheable (separate, high-blast-radius change — deferred).
+- Lesson: static↔dynamic errors surface only under `next start` (prod), never `next build` — any change to `generateStaticParams`/`revalidate`/fetch-cache must be prod-mode smoke-tested before push.

@@ -121,9 +121,14 @@ export async function cancelSubscription(): Promise<{ message: string }> {
 export async function fetchCMSPage(slug: string, lang?: string): Promise<CMSPage> {
   const params = lang && lang !== "en" ? `?lang=${lang}` : "";
   const url = `${apiBase}/api/v1/cms/pages/${slug}${params}`;
+  // ISR-cached (60s) + tagged so the Master CMS cache-clear / publish flow can bust it
+  // on demand via /api/revalidate (revalidateTag). NOTE: `no-store` here previously
+  // forced every consuming page dynamic and, once real slugs entered generateStaticParams,
+  // caused "static to dynamic at runtime" 500s. Caching + on-demand tag invalidation
+  // restores fast ISR while keeping published edits instant. Do NOT add an AbortSignal —
+  // a `signal` opts a fetch OUT of Next's Data Cache, silently disabling ISR.
   const res = await fetch(url, {
-    signal: AbortSignal.timeout(3000),
-    cache: "no-store",
+    next: { revalidate: 60, tags: [`cms:${slug}`, "cms:all"] },
   });
   if (!res.ok) throw new Error(`CMS ${res.status}: /cms/pages/${slug}`);
   return res.json() as Promise<CMSPage>;
