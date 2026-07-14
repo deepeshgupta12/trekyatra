@@ -8,6 +8,22 @@
 const STORAGE_KEY = "ty_behavior_v1";
 const MAX_ENTRIES = 50;
 
+/** Fired (client-only) whenever the local behavior profile changes — a new trek view,
+ *  or a cross-device merge pulled from the backend on login / session-restore.
+ *  Personalised UI (e.g. the home comparisons section) listens for this to re-read the
+ *  profile so a logged-in user's server-synced cross-device signal takes effect without
+ *  a page reload — even though the merge completes asynchronously after mount. */
+export const BEHAVIOR_UPDATED_EVENT = "ty:behavior-updated";
+
+function broadcastBehaviorUpdated(): void {
+  if (typeof window === "undefined") return;
+  try {
+    window.dispatchEvent(new Event(BEHAVIOR_UPDATED_EVENT));
+  } catch {
+    // no-op
+  }
+}
+
 export interface TrekViewEntry {
   slug: string;
   region: string;
@@ -33,6 +49,7 @@ export function recordTrekView(entry: Omit<TrekViewEntry, "ts">): void {
       ...existing.filter((v) => v.slug !== entry.slug),
     ].slice(0, MAX_ENTRIES);
     localStorage.setItem(STORAGE_KEY, JSON.stringify(updated));
+    broadcastBehaviorUpdated();
   } catch {
     // localStorage may be unavailable (private browsing, storage quota)
   }
@@ -117,6 +134,9 @@ export async function pullAndMergeBehaviorProfileFromBackend(): Promise<void> {
       .sort((a, b) => b.ts - a.ts)
       .slice(0, MAX_ENTRIES);
     localStorage.setItem(STORAGE_KEY, JSON.stringify(merged));
+    // Cross-device signal is now merged into localStorage — tell personalised UI to
+    // re-read (this resolves after mount, so a one-shot mount read would miss it).
+    broadcastBehaviorUpdated();
     // Push merged back to backend
     await syncBehaviorProfileToBackend();
   } catch {

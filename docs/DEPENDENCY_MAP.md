@@ -2500,3 +2500,9 @@ Mobile buddy matching UI consuming STEP-79 backend.
 - Backend `cms/service.py cache_invalidate` (Redis DB2) + `/cms/cache/invalidate` route: UNCHANGED (pre-existing layer).
 - Caveat recorded: trek pages still render dynamically (pre-existing `apiFetch` timeout-signal on trek profile/related/news); page-HTML caching served by Cloudflare `s-maxage=300`. Full-page ISR would require making `apiFetch` cacheable (separate, high-blast-radius change — deferred).
 - Lesson: static↔dynamic errors surface only under `next start` (prod), never `next build` — any change to `generateStaticParams`/`revalidate`/fetch-cache must be prod-mode smoke-tested before push.
+
+### Home comparisons cross-device personalization (2026-07-14) blast radius
+- `apps/web-next/lib/behavior-tracker.ts` — NEW export `BEHAVIOR_UPDATED_EVENT` + `broadcastBehaviorUpdated()`; fired at end of `pullAndMergeBehaviorProfileFromBackend` (server merge) and in `recordTrekView`. Blast radius: LOW (impact = AuthProvider only; additive — no contract change).
+- `apps/web-next/components/home/HomeComparisonsSection.tsx` — reads behavior profile on mount + subscribes to `BEHAVIOR_UPDATED_EVENT` (re-reads when the async cross-device merge lands). Blast radius: LOW (1 caller: home page).
+- Flow (unchanged wiring, now observable): login/session-restore → `auth-context.pullAndMergeBehaviorProfileFromBackend()` → `GET /api/v1/account/behavior-profile` (server `User.behavior_profile`) → merge into localStorage → fire event → compare cards re-rank by cross-device difficulty/region.
+- `PersonalisedFeed` unchanged (already server-driven via `fetchPersonalisedRecommendations`).

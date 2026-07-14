@@ -3,7 +3,7 @@
 import { useMemo } from "react";
 import Link from "next/link";
 import { useEffect, useState } from "react";
-import { getBehaviorProfile } from "@/lib/behavior-tracker";
+import { getBehaviorProfile, BEHAVIOR_UPDATED_EVENT } from "@/lib/behavior-tracker";
 import { Button } from "@/components/ui/button";
 import { ArrowRight, TrendingUp, Scale } from "lucide-react";
 
@@ -33,12 +33,20 @@ export default function HomeComparisonsSection({ comparisons, fallbackPairs }: P
   const [topDifficulties, setTopDifficulties] = useState<string[]>([]);
   const [topRegions, setTopRegions] = useState<string[]>([]);
 
+  // Read the behavior profile on mount AND whenever it changes. On a fresh logged-in
+  // device the server-synced cross-device profile is merged into localStorage
+  // asynchronously (auth-context → pullAndMergeBehaviorProfileFromBackend), which fires
+  // BEHAVIOR_UPDATED_EVENT after this component has already mounted — so a one-shot mount
+  // read would miss it. Subscribing re-ranks the cards once the synced signal lands.
   useEffect(() => {
-    const profile = getBehaviorProfile();
-    if (profile) {
-      setTopDifficulties(profile.topDifficulties.map((d) => d.toLowerCase()));
-      setTopRegions(profile.topRegions.map((r) => r.toLowerCase()));
-    }
+    const loadProfile = () => {
+      const profile = getBehaviorProfile();
+      setTopDifficulties(profile ? profile.topDifficulties.map((d) => d.toLowerCase()) : []);
+      setTopRegions(profile ? profile.topRegions.map((r) => r.toLowerCase()) : []);
+    };
+    loadProfile();
+    window.addEventListener(BEHAVIOR_UPDATED_EVENT, loadProfile);
+    return () => window.removeEventListener(BEHAVIOR_UPDATED_EVENT, loadProfile);
   }, []);
 
   const ranked = useMemo(() => {
