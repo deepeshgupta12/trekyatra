@@ -32,19 +32,14 @@ import { BuddySection } from "@/components/trek/BuddySection";
 import { LiveConditionsWidget } from "@/components/trek/LiveConditionsWidget";
 import type { Trek } from "@/components/trek/TrekCard";
 
-// Allow CMS-published slugs not in static data to be served on-demand (Step 43)
-export const dynamicParams = true;
-// Revalidate cached pages every 60s so newly published CMS content appears quickly
-export const revalidate = 60;
-
-export async function generateStaticParams() {
-  // Render on-demand (dynamicParams=true). These pages fetch the CMS with `no-store`,
-  // which is incompatible with static/ISR prerendering — Next throws "Page changed
-  // from static to dynamic at runtime" (500). fetchTreks() is now CMS-backed and would
-  // return hundreds of real slugs to prerender-then-crash, so we keep this empty and
-  // let every trek page render dynamically on demand (its pre-CMS-migration behavior).
-  return [];
-}
+// Force dynamic (SSR) rendering. This page fetches the CMS with `cache: "no-store"`
+// (fetchCMSPage + trek profile / related fetches). That is fundamentally incompatible
+// with static/ISR rendering: with `revalidate` or `generateStaticParams` set, Next 14
+// throws "Page changed from static to dynamic at runtime" (500) on every trek page.
+// force-dynamic makes the route always dynamic, so no-store is valid. Fully server-
+// rendered HTML is still crawlable → no SEO impact. (ISR perf can be restored later by
+// switching the CMS fetches from no-store to revalidate-based caching.)
+export const dynamic = "force-dynamic";
 
 export async function generateMetadata({ params }: { params: { slug: string } }): Promise<Metadata> {
   let cmsPage: CMSPage | null = null;

@@ -7,13 +7,10 @@ import Breadcrumb from "@/components/content/Breadcrumb";
 import AuthorBlock from "@/components/content/AuthorBlock";
 import { fetchTreks } from "@/lib/trekApi";
 
-export const revalidate = 3600;
-
-export async function generateStaticParams() {
-  // Render on-demand — CMS fetch is `no-store`, incompatible with static/ISR
-  // prerendering (see trek/[slug]/page.tsx). Kept [] to avoid the static-to-dynamic 500.
-  return [];
-}
+// Force dynamic (SSR) — CMS fetch is `no-store`, incompatible with static/ISR; with
+// `revalidate` set Next throws "static to dynamic at runtime" (500). SSR HTML is still
+// crawlable → no SEO impact. See trek/[slug]/page.tsx for the full rationale.
+export const dynamic = "force-dynamic";
 
 export async function generateMetadata({ params }: { params: { slug: string } }): Promise<Metadata> {
   const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? "https://trekyatra.com";
