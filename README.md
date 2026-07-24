@@ -437,6 +437,23 @@ trekyatra/
 | Mobile `LiveConditionsScreen` — full-screen overlay with pull-to-refresh | Done |
 | Mobile `AsyncStorage` 6h TTL cache + offline fallback | Done |
 
+### Home/CMS Enhancement + Bugfix Pass (Step 81 + July 2026)
+
+| Feature / Fix | Status |
+|---------|--------|
+| Home "trekking regions" — dynamic states + live counts (`/public/trek-state-counts`), real images | Done |
+| Home editorial spotlight backed by a real published guide (name/excerpt/chips/link) | Done |
+| Clean comparison URLs `/compare/{a-vs-b}` — rendered LIVE from trek data (no CMS pages); pairs in `trek_comparisons`, publish-triggered agent, SEO+AEO JSON-LD, in sitemap; `/compare?slugs=` tool intact | Done |
+| Home comparisons section — personalized (trending + viewer difficulty) linking to clean pairs; server-synced cross-device profile via `BEHAVIOR_UPDATED_EVENT` | Done |
+| Trek data CMS-only — 12 hardcoded stub trek pages removed; `/api/v1/treks` CMS-backed (excludes `%test%` fixtures); legacy `/trek/{clean-slug}` 308-redirects | Done |
+| Trek-detail Quick Utilities link to in-page anchors (no 404); admin CMS route-image filter; Trek Data + Live Conditions ordered by publish date | Done |
+| ISR caching restored for CMS pages — `fetchCMSPage` uses `next:{revalidate,tags}`; `/api/revalidate` `revalidateTag` integrates with the Master CMS cache-clear (instant edits) | Done |
+| Prod 500 fix — `/trek/[slug]` + hi/* pages: `no-store` CMS fetch was incompatible with ISR/static params (static→dynamic crash); resolved via ISR + cacheable fetch | Done |
+| **Fix:** auto trek-guide brief generation gated OFF by default (`ENABLE_DAILY_DISCOVERY`, was burning LLM tokens daily) | Done |
+| **Fix:** news articles no longer duplicate at `/trek/{news-slug}` — `/trek/{news-slug}` → 404 (deleted); news served only at `/news/{slug}` (direct 200); `scripts/purge_news_from_linking.py` cleans existing rows | Done |
+| **Fix:** "In this cluster" shows only published trek links + this trek's news (as `/news/{slug}`); `get_related_pages` filters by REAL CMS page_type so mis-typed news can't leak (mobile deferred) | Done |
+| App trek-detail tab renamed "Trail Conditions" | Done |
+
 ---
 
 ## Local Development Setup

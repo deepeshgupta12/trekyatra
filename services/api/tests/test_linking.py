@@ -185,3 +185,43 @@ def test_news_article_excluded_from_linking_graph():
         db.query(CMSPage).filter(CMSPage.slug == slug).delete(synchronize_session=False)
         db.commit()
         db.close()
+
+
+def test_get_related_pages_excludes_mistyped_news():
+    """A news_article mis-typed as trek_guide in the linking graph must NOT leak into a
+    trek's related list — get_related_pages filters on the REAL CMS page_type. Isolated in
+    a dedicated cluster so it only sees these rows (dev DB has many trek_guide pages)."""
+    from datetime import datetime, timezone
+    import uuid as _uuid
+    from app.db.session import SessionLocal
+    from app.modules.cms.models import CMSPage
+    from app.modules.content.models import KeywordCluster
+    from app.modules.linking.models import Page
+    from app.modules.linking.service import get_related_pages
+
+    db = SessionLocal()
+    now = datetime.now(timezone.utc)
+    src, sib, news = f"rel-src-{_uid()}", f"rel-sib-{_uid()}", f"rel-news-{_uid()}-2026-07"
+    slugs = [src, sib, news]
+    cluster = KeywordCluster(name=f"rel-cluster-{_uid()}", primary_keyword="rel test",
+                             supporting_keywords=[], status="active", created_at=now, updated_at=now)
+    db.add(cluster); db.flush()
+    cid = cluster.id
+    try:
+        src_cms = CMSPage(slug=src, title="Src Trek", page_type="trek_guide", status="published", content_html="", language="en", published_at=now, created_at=now, updated_at=now)
+        sib_cms = CMSPage(slug=sib, title="Sibling Trek", page_type="trek_guide", status="published", content_html="", language="en", published_at=now, created_at=now, updated_at=now)
+        news_cms = CMSPage(slug=news, title="Some News", page_type="news_article", status="published", content_html="", language="en", published_at=now, created_at=now, updated_at=now)
+        db.add_all([src_cms, sib_cms, news_cms]); db.flush()
+        # Linking rows in the SAME cluster — ALL typed trek_guide (news mis-typed, as the default did)
+        db.add(Page(id=_uuid.uuid4(), slug=src, title="Src Trek", page_type="trek_guide", published_at=now, cluster_id=cid, cms_page_id=src_cms.id, indexed_at=now, created_at=now))
+        db.add(Page(id=_uuid.uuid4(), slug=sib, title="Sibling Trek", page_type="trek_guide", published_at=now, cluster_id=cid, cms_page_id=sib_cms.id, indexed_at=now, created_at=now))
+        db.add(Page(id=_uuid.uuid4(), slug=news, title="Some News", page_type="trek_guide", published_at=now, cluster_id=cid, cms_page_id=news_cms.id, indexed_at=now, created_at=now))
+        db.commit()
+        rslugs = [p.slug for p in get_related_pages(db, slug=src, limit=20)]
+        assert sib in rslugs        # real sibling trek IS returned (same cluster)
+        assert news not in rslugs   # mis-typed news EXCLUDED (real CMS type = news_article)
+    finally:
+        db.query(Page).filter(Page.slug.in_(slugs)).delete(synchronize_session=False)
+        db.query(CMSPage).filter(CMSPage.slug.in_(slugs)).delete(synchronize_session=False)
+        db.query(KeywordCluster).filter(KeywordCluster.id == cid).delete(synchronize_session=False)
+        db.commit(); db.close()

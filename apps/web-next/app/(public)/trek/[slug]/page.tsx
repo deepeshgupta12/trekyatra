@@ -106,21 +106,24 @@ export default async function TrekDetailPage({ params }: { params: { slug: strin
   } catch { /* render with static data only */ }
 
   // Route guard (Bug fix): /trek/[slug] must serve ONLY trek_guide pages. A CMS page of
-  // another type sharing this slug (e.g. a news_article that leaked into the trek linking
-  // graph and surfaced in "In this cluster") must NOT render here as a broken trek page —
-  // 301-redirect it to its canonical URL so Google consolidates the duplicate. If the type
-  // has no public prefix, 404. permanentRedirect()/notFound() are OUTSIDE try/catch so their
-  // internal control-flow signals are never swallowed.
+  // another type sharing this slug must NOT render here as a broken trek page.
+  //   - news_article: the /trek/{news-slug} pattern is DELETED → 404 (per product decision).
+  //     News lives ONLY at /news/{slug} (a direct 200); we do NOT redirect — the spurious
+  //     duplicate is simply removed. Internal links no longer point here (news is excluded
+  //     from the linking graph + the cluster URL builder), so nothing legitimately 404s.
+  //   - other content types: 301/308-redirect to their canonical prefix so any inbound
+  //     links are preserved.
+  // notFound()/permanentRedirect() are OUTSIDE try/catch so their control-flow signals
+  // are never swallowed.
   if (cmsPage && cmsPage.page_type !== "trek_guide") {
-    const CANONICAL_PREFIX: Record<string, string> = {
-      news_article: "/news",
+    const REDIRECT_PREFIX: Record<string, string> = {
       packing_list: "/packing", packing_guide: "/packing",
       permit_guide: "/permits",
       beginner_guide: "/guides", beginner_roundup: "/guides", cost_guide: "/guides",
       gear_guide: "/guides", safety_guide: "/guides", itinerary: "/guides", expert_guide: "/guides",
       seasonal: "/seasons", trek_types: "/trek-types",
     };
-    const prefix = CANONICAL_PREFIX[cmsPage.page_type];
+    const prefix = REDIRECT_PREFIX[cmsPage.page_type]; // news_article intentionally absent → 404
     if (prefix) permanentRedirect(`${prefix}/${cmsPage.slug}`);
     notFound();
   }
@@ -823,25 +826,21 @@ export default async function TrekDetailPage({ params }: { params: { slug: strin
                   </div>
                 </div>
 
-                {/* "In this cluster" — related CMS pages in the same content cluster */}
-                {clusterPages.length > 0 && (
+                {/* "In this cluster" — ONLY published trek detail links + this trek's news
+                    (as /news/{slug}). news_article is excluded from the linking graph (so
+                    clusterPages carries none), and we additionally filter to trek_guide as a
+                    belt so a graph-mis-typed page can never render at /trek/. News comes from
+                    the trek's own news feed (fetchNewsByTrek) and is routed to /news/{slug}. */}
+                {(clusterPages.some((p) => p.page_type === "trek_guide") || trekNewsArticles.length > 0) && (
                   <div className="bg-card border border-border rounded-2xl p-5">
                     <div className="text-xs uppercase tracking-widest text-muted-foreground mb-3">In this cluster</div>
                     <div className="space-y-2">
-                      {clusterPages.map((page) => {
-                        // Route each related page by its (linking-graph) page_type. news_article
-                        // is excluded from the linking graph, so it never reaches here — but map
-                        // defensively and never default a non-trek page to /trek/ (duplicate-URL bug).
-                        const CLUSTER_PREFIX: Record<string, string> = {
-                          trek_guide: "/trek", packing_list: "/packing", permit_guide: "/permits",
-                          beginner_guide: "/guides", seasonal: "/seasons", comparison: "/compare",
-                          news_article: "/news",
-                        };
-                        const href = `${CLUSTER_PREFIX[page.page_type] ?? "/guides"}/${page.slug}`;
-                        return (
+                      {clusterPages
+                        .filter((page) => page.page_type === "trek_guide")
+                        .map((page) => (
                           <Link
                             key={page.id}
-                            href={href}
+                            href={`/trek/${page.slug}`}
                             className="flex items-start gap-2.5 p-2.5 rounded-xl hover:bg-muted transition-colors group"
                           >
                             <Mountain className="h-3.5 w-3.5 text-accent flex-shrink-0 mt-0.5" />
@@ -851,8 +850,21 @@ export default async function TrekDetailPage({ params }: { params: { slug: strin
                               </p>
                             </div>
                           </Link>
-                        );
-                      })}
+                        ))}
+                      {trekNewsArticles.map((article) => (
+                        <Link
+                          key={`news-${article.id}`}
+                          href={`/news/${article.slug}`}
+                          className="flex items-start gap-2.5 p-2.5 rounded-xl hover:bg-muted transition-colors group"
+                        >
+                          <Newspaper className="h-3.5 w-3.5 text-accent flex-shrink-0 mt-0.5" />
+                          <div className="min-w-0">
+                            <p className="text-sm font-medium leading-snug line-clamp-2 group-hover:text-accent transition-colors">
+                              {article.title}
+                            </p>
+                          </div>
+                        </Link>
+                      ))}
                     </div>
                   </div>
                 )}

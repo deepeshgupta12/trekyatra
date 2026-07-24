@@ -134,43 +134,54 @@ def get_related_pages(db: Session, *, slug: str, limit: int = 5) -> list[Page]:
     Fallback: most-recent pages of the same page_type.
 
     Editorial, hub, and policy pages are always excluded regardless of cluster.
+
+    ROBUSTNESS: candidates are filtered by the REAL CMS page_type (join to cms_pages),
+    not the linking-graph page_type. This is deliberate — `_page_type_from_cms` defaults
+    unknown types (e.g. news_article) to "trek_guide", so a mis-typed row could otherwise
+    leak news into a trek's related list and render at /trek/{news-slug}. Filtering on the
+    source-of-truth CMS type excludes such rows regardless of the linking graph's state
+    (no dependency on a re-sync/purge having run).
     """
     source = db.scalar(select(Page).where(Page.slug == slug))
     if source is None:
         return []
 
-    # Base filter: exclude page types that don't belong in a trek sidebar
+    # Content types allowed in a trek sidebar (news_article intentionally excluded — news
+    # is surfaced via its own trek-news feed and lives at /news/{slug}, not the cluster).
     safe_types = list(
         {"trek_guide", "packing_list", "permit_guide", "beginner_guide", "comparison", "seasonal"}
         - _EXCLUDED_FROM_LINKING
     )
 
+    # Join to the CMS page and filter on its REAL page_type + published status.
+    base = (
+        select(Page)
+        .join(CMSPage, Page.cms_page_id == CMSPage.id)
+        .where(
+            Page.id != source.id,
+            CMSPage.page_type.in_(safe_types),
+            CMSPage.status == "published",
+        )
+    )
+
     # Primary: same cluster
     if source.cluster_id:
         siblings = db.scalars(
-            select(Page)
-            .where(
-                Page.cluster_id == source.cluster_id,
-                Page.id != source.id,
-                Page.page_type.in_(safe_types),
-            )
+            base.where(Page.cluster_id == source.cluster_id)
             .order_by(Page.published_at.desc())
             .limit(limit)
         ).all()
         if siblings:
             return list(siblings)
 
-    # Fallback: same page_type, most recent, excluding self and editorial pages
-    return list(db.scalars(
-        select(Page)
-        .where(
-            Page.page_type == source.page_type,
-            Page.id != source.id,
-            Page.page_type.in_(safe_types),
-        )
-        .order_by(Page.published_at.desc())
-        .limit(limit)
-    ).all())
+    # Fallback: same (linking) page_type as the source, most recent
+    return list(
+        db.scalars(
+            base.where(Page.page_type == source.page_type)
+            .order_by(Page.published_at.desc())
+            .limit(limit)
+        ).all()
+    )
 
 
 def get_orphan_pages(db: Session) -> list[Page]:

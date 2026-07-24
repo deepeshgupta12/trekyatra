@@ -20,7 +20,7 @@ Last updated: 2026-05-27 (Step 64)
 | `/treksage` | TrekSage AI chat assistant | — | Myra-style conversational assistant (code-defined, not CMS); session persisted via `treksage_chat_sessions`; calls `POST /api/v1/treksage/chat`; Step 73 |
 | `/plan` | Trip planning wizard | — | 6-step intent wizard — Step 57 (done) |
 | `/plan/results` | Trek recommendation output | — | Top 5 CMS treks with match scores + lead capture — Step 57 (done) |
-| `/trek/[slug]` | Trek detail | `trek_guide` | CMS-first, static fallback |
+| `/trek/[slug]` | Trek detail | `trek_guide` | CMS-first, ISR. **Serves ONLY `trek_guide` pages** — a CMS page of another type at this slug never renders here: `news_article` → **404** (news lives only at `/news/{slug}`); other content types 301/308-redirect to their canonical prefix. "In this cluster" shows only published trek links + this trek's news (as `/news/`). |
 | `/trek/[slug]/packing` | Trek-specific packing guide | `packing_list` | Links to the packing guide CMS page for this trek slug; 404 if no packing page exists |
 | `/trek/[slug]/permits` | Trek-specific permit guide | `permit_guide` | Links to the permit guide CMS page for this trek slug; 404 if no permit page exists |
 | `/trek/[slug]/costs` | Trek-specific cost guide | `cost_guide` | Links to the cost guide CMS page for this trek slug; 404 if no cost page exists |

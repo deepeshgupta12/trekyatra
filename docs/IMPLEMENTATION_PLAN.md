@@ -643,6 +643,15 @@ Step 70 complete. Next steps: Step 71–79 and remaining production hardening it
 
 ---
 
+### CMS/Website Bugfix Pass — auto-brief gate + news duplicate-URL + cluster [DONE — 2026-07-21]
+
+- **Auto-brief gate:** `pipeline.daily_discovery` (daily beat) gated behind `ENABLE_DAILY_DISCOVERY` (default false) — stops unattended LLM brief generation.
+- **News duplicate URL:** `/trek/{news-slug}` (a news article rendered as a broken trek page via the linking graph) removed. `/trek/[slug]` now serves only `trek_guide`; `news_article` → 404 (news lives only at `/news/{slug}`, direct 200). news_article excluded from the linking graph (`_EXCLUDED_FROM_LINKING`).
+- **"In this cluster" reconciliation:** shows only published trek links + this trek's news (as `/news/`). `get_related_pages` filters candidates by the REAL CMS `page_type` (join to `cms_pages`) so linking-graph mis-typing can't leak news. Desktop merges trek news via `fetchNewsByTrek`; mobile `RelatedPagesSection` deferred (divergence tracked).
+- **Cleanup:** `scripts/purge_news_from_linking.py` (or `POST /admin/links/sync`) purges existing mis-typed news rows.
+- Tests: `test_daily_discovery_disabled_by_default`, `test_news_article_excluded_from_linking_graph`, `test_get_related_pages_excludes_mistyped_news`. Full suite 765 pass (2 pre-existing); `next build` ✓; prod-mode smoke ✓.
+- Also: iOS launch-readiness audit appended to `docs/mobile/MOBILE_PRELAUNCH_CHECKLIST.md`.
+
 ### Step 71 — Core Web Vitals Optimisation [DONE]
 
 Spec: `docs/steps/STEP-71-page-vitals-optimisation.md`
