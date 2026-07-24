@@ -11,7 +11,8 @@ import {
 } from "@/lib/api";
 
 function FeedCard({ item }: { item: RecommendationItem }) {
-  const href = `/${item.page_type === "trek_guide" ? "trek" : "guides"}/${item.slug}`;
+  // This feed only shows trek guides (filtered below), so the link is always the trek page.
+  const href = `/trek/${item.slug}`;
   return (
     <Link
       href={href}
@@ -30,7 +31,7 @@ function FeedCard({ item }: { item: RecommendationItem }) {
       )}
       <div className="flex-1 min-w-0">
         <p className="text-[10px] uppercase tracking-widest text-accent font-medium mb-0.5">
-          {item.page_type?.replace("_", " ")}
+          Trek guide
         </p>
         <p className="font-semibold text-sm leading-snug line-clamp-2 group-hover:text-accent transition-colors">
           {item.title}
@@ -81,8 +82,10 @@ export default function PersonalisedFeed({ limit = 6 }: { limit?: number }) {
       fetcher = fetchAnonymousRecommendations;
     }
 
-    fetcher(limit)
-      .then((data) => setItems(data.items))
+    // "Treks based on your browsing history" — show ONLY trek guides. Recommendations can
+    // include news/guides; filter them out. Fetch extra so enough treks remain after filtering.
+    fetcher(Math.max(limit * 3, 18))
+      .then((data) => setItems(data.items.filter((i) => i.page_type === "trek_guide")))
       .catch(() => setItems([]))
       .finally(() => setLoading(false));
   }, [user, authLoading, limit]);

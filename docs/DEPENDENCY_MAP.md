@@ -2522,3 +2522,11 @@ Mobile buddy matching UI consuming STEP-79 backend.
 - `apps/web-next/app/(public)/trek/[slug]/page.tsx` — "In this cluster" section rewritten: `clusterPages.filter(page_type==="trek_guide")` (trek links only) + `trekNewsArticles` (from `fetchNewsByTrek`) rendered as `/news/{slug}`. news_article route guard = `notFound()` (404, no redirect). Blast radius: LOW (leaf).
 - Mobile `apps/mobile/components/trek/RelatedPagesSection.tsx` — UNCHANGED (user deferred). Still routes trek_guide→/trek, others→/guide. Now receives a news-free cluster from the shared endpoint. Desktop/mobile diverge intentionally (tracked for follow-up).
 - Tests: `test_linking.py::test_get_related_pages_excludes_mistyped_news` (creates a mis-typed-news-in-cluster scenario, asserts exclusion + real sibling retained).
+
+### Home page — news out of trek sections + Recent News section (2026-07-21) blast radius
+- `apps/web-next/components/home/RecentlyViewedSection.tsx` — views filtered to real treks (slug ∈ trekList or cmsImageMap) before mapping to chips; excludes stale news slugs. Blast radius: LOW (home leaf).
+- `apps/web-next/components/content/PersonalisedFeed.tsx` — items filtered to `page_type==="trek_guide"` (fetch `limit*3`); `FeedCard` href always `/trek/{slug}` (was `/guides/` for non-trek). Used on home + `/explore`. Blast radius: LOW (both should be trek-only — consistent). Recommendations backend UNCHANGED (shared with native app — deliberately not restricted).
+- `apps/web-next/components/home/RecentNewsSection.tsx` — NEW client component: groups `GET /public/news` articles into per-trek tabs (trek_slug → name map), ≤5/tab, newest-first, "View all" → `/news`. Blast radius: LOW (new, home only).
+- `apps/web-next/app/(public)/page.tsx` — added `fetchNewsArticles(60)` to the parallel fetch + `trekNameMap` (trek_slug→name from trekList) + `<RecentNewsSection>` after `<PersonalisedFeed>`. Blast radius: LOW (home leaf).
+- No backend changes. Existing endpoints reused: `GET /public/news` (list newest-first, has `content_json.trek_slug`), `/recommendations`.
+- Impact analysis: gitnexus MCP disconnected → manual (all leaf home components; no shared-symbol/backend change).

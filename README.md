@@ -452,6 +452,8 @@ trekyatra/
 | **Fix:** auto trek-guide brief generation gated OFF by default (`ENABLE_DAILY_DISCOVERY`, was burning LLM tokens daily) | Done |
 | **Fix:** news articles no longer duplicate at `/trek/{news-slug}` — `/trek/{news-slug}` → 404 (deleted); news served only at `/news/{slug}` (direct 200); `scripts/purge_news_from_linking.py` cleans existing rows | Done |
 | **Fix:** "In this cluster" shows only published trek links + this trek's news (as `/news/{slug}`); `get_related_pages` filters by REAL CMS page_type so mis-typed news can't leak (mobile deferred) | Done |
+| **Fix:** home "Pick up where you left off" + "Treks based on your browsing history" show ONLY treks (news filtered out; wrong `/guides/{news}` URLs removed) | Done |
+| **New:** home **Recent News** section — published news grouped into per-trek tabs (newest→oldest, ≤5/tab, ≥1 to show), "View all News Articles" → `/news` | Done |
 | App trek-detail tab renamed "Trail Conditions" | Done |
 
 ---

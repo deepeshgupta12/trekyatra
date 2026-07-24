@@ -36,7 +36,14 @@ export function RecentlyViewedSection({ trekList, cmsImageMap = {} }: Props) {
     const profile = getBehaviorProfile();
     if (!profile) return;
 
-    const enriched = profile.views.slice(0, 5).map((v) => {
+    // Show ONLY treks. Past visits to /trek/{news-slug} (before that route started 404-ing)
+    // recorded news slugs into the behavior profile; exclude any view whose slug is not a
+    // real trek (present in the trek catalog trekList or the CMS trek image map).
+    const trekSlugs = new Set(trekList.map((t) => t.slug));
+    const enriched = profile.views
+      .filter((v) => trekSlugs.has(v.slug) || !!cmsImageMap[v.slug])
+      .slice(0, 5)
+      .map((v) => {
       const staticMatch = trekList.find((t) => t.slug === v.slug);
       return {
         slug: v.slug,

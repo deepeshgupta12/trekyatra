@@ -8,7 +8,7 @@ import { Mountain, Sparkles, ArrowRight, Star, Shield, FileCheck, Backpack, Wall
 import { Button } from "@/components/ui/button";
 import { TrekCard } from "@/components/trek/TrekCard";
 import { fetchTreks } from "@/lib/trekApi";
-import { fetchCMSPages, fetchTrendingTreks, fetchTrekCMSOverrides, fetchTrekStateCounts, fetchComparisonPairs, type CMSTrekCard, type CMSTrekOverride } from "@/lib/api";
+import { fetchCMSPages, fetchTrendingTreks, fetchTrekCMSOverrides, fetchTrekStateCounts, fetchComparisonPairs, fetchNewsArticles, type CMSTrekCard, type CMSTrekOverride, type NewsArticle } from "@/lib/api";
 import SchemaInjector from "@/components/seo/SchemaInjector";
 import { buildWebSiteSchema } from "@/lib/schema";
 import HomeSearchBar from "@/components/home/HomeSearchBar";
@@ -17,6 +17,7 @@ import { DifficultyTabsSection } from "@/components/home/DifficultyTabsSection";
 import { HomeWelcomeBanner } from "@/components/home/HomeWelcomeBanner";
 import { HomeTrendingHeader } from "@/components/home/HomeTrendingHeader";
 import HomeComparisonsSection, { type HomeComparisonCard } from "@/components/home/HomeComparisonsSection";
+import RecentNewsSection from "@/components/home/RecentNewsSection";
 import makeDynamic from "next/dynamic";
 
 // Below-fold client components deferred to reduce initial JS bundle and TBT
@@ -56,14 +57,19 @@ const trustStats = [
 ];
 
 export default async function Home() {
-  const [trekList, cmsTrekPages, trendingCMS, cmsOverrides, stateCounts, comparisonPairs] = await Promise.all([
+  const [trekList, cmsTrekPages, trendingCMS, cmsOverrides, stateCounts, comparisonPairs, newsArticles] = await Promise.all([
     fetchTreks(),
     fetchCMSPages({ page_type: "trek_guide", status: "published", limit: 50 }).catch(() => []),
     fetchTrendingTreks(4).catch((): CMSTrekCard[] => []),
     fetchTrekCMSOverrides().catch((): Record<string, CMSTrekOverride> => ({})),
     fetchTrekStateCounts().catch(() => []),
     fetchComparisonPairs(60).catch(() => []),
+    fetchNewsArticles(60).catch((): NewsArticle[] => []),
   ]);
+
+  // trek_slug → trek name, for the Recent News section's per-trek tabs.
+  const trekNameMap: Record<string, string> = {};
+  for (const t of trekList) trekNameMap[t.slug] = t.name;
 
   // #3 Home comparisons — build cards from registered /compare/[pair] pairs
   // (trek_comparisons table; served live from trek data, no CMS pages), flagging any
@@ -399,6 +405,9 @@ export default async function Home() {
           PersonalisedFeed manages its own section wrapper + heading so the Section title
           never renders for State C (when PersonalisedFeed returns null). */}
       <PersonalisedFeed limit={6} />
+
+      {/* RECENT NEWS — news articles grouped into per-trek tabs (latest→oldest, ≤5/tab), View all → /news */}
+      <RecentNewsSection articles={newsArticles} trekNameMap={trekNameMap} />
 
       {/* COMPARISON — enhanced + personalized, links to clean /compare/[pair] pages (#3) */}
       <HomeComparisonsSection comparisons={comparisonCards} fallbackPairs={comparisonFallback} />

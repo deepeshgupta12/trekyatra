@@ -643,6 +643,13 @@ Step 70 complete. Next steps: Step 71–79 and remaining production hardening it
 
 ---
 
+### Home Page Pass — news out of trek sections + Recent News section [DONE — 2026-07-21]
+
+Web (desktop + mobile-web). All frontend, no backend change.
+- "Pick up where you left off" (`RecentlyViewedSection`) + "Treks based on your browsing history" (`PersonalisedFeed`) now show ONLY treks — news (leaked via stale `/trek/{news}` views + recommendations) is filtered out; wrong `/guides/{news-slug}` URLs removed (feed links always `/trek/{slug}`).
+- NEW Recent News section (`RecentNewsSection`) after the personalised feed: news grouped into per-trek tabs (newest→oldest, ≤5/tab, ≥1 to show a tab); "View all News Articles" → `/news`. Uses existing `GET /public/news`.
+- Verified: `next build` ✓; prod-mode (home 200, 24 trek tabs, 0 `/guides/{news}` links, 0 errors).
+
 ### CMS/Website Bugfix Pass — auto-brief gate + news duplicate-URL + cluster [DONE — 2026-07-21]
 
 - **Auto-brief gate:** `pipeline.daily_discovery` (daily beat) gated behind `ENABLE_DAILY_DISCOVERY` (default false) — stops unattended LLM brief generation.
