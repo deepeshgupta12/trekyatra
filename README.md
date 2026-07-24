@@ -454,6 +454,8 @@ trekyatra/
 | **PSI #3 (Spaces `Cache-Control: None`, ~5.2MB on repeat visits):** upload now sets `CacheControl: public, max-age=31536000, immutable` (`media.py`) + `scripts/backfill_spaces_cache_control.py` for existing objects (run once on DO) | Done |
 | **PSI #5 (3rd-party JS ~95KB):** Google Sign-In (`gsi/client`) no longer loads on every page — `GoogleOAuthProvider` moved out of app-wide `Providers` into `GoogleAuthButton`, used only by sign-in/sign-up/plan-gate | Done |
 | **PSI #4 (hydration hardening):** TZ/ICU-deterministic `lib/date.ts` (`formatDate`) on home/trek/news (flagged editorial date is a Server Component → not the mismatch source; home tree verified hydration-clean) | Done |
+| **PSI #4 (Footer year):** `© 2023–{new Date().getFullYear()}` → `suppressHydrationWarning` — fixes a New-Year static-vs-client hydration mismatch | Done |
+| **PSI #4 (debug aid):** `productionBrowserSourceMaps: true` — **temporary**, to demap the live #418/#423/#425 to source; revert after the culprit is found | Temporary |
 | **Fix:** auto trek-guide brief generation gated OFF by default (`ENABLE_DAILY_DISCOVERY`, was burning LLM tokens daily) | Done |
 | **Fix:** news articles no longer duplicate at `/trek/{news-slug}` — `/trek/{news-slug}` → 404 (deleted); news served only at `/news/{slug}` (direct 200); `scripts/purge_news_from_linking.py` cleans existing rows | Done |
 | **Fix:** "In this cluster" shows only published trek links + this trek's news (as `/news/{slug}`); `get_related_pages` filters by REAL CMS page_type so mis-typed news can't leak (mobile deferred) | Done |

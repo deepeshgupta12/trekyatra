@@ -111,7 +111,12 @@ export const Footer = () => (
 
       <div className="border-t border-surface/10 pt-8 flex flex-col gap-3 md:flex-row md:justify-between md:items-center text-xs text-surface/50">
         <div className="flex flex-col gap-1.5 sm:flex-row sm:items-center sm:gap-4">
-          <span className="flex items-center gap-1.5 font-medium text-surface/60">
+          {/* suppressHydrationWarning: the year is computed at render time, so a page cached
+              as static/ISR can render one year in the build's HTML and a different one on the
+              client across a New-Year boundary (a #425 text mismatch). This is React's official
+              escape hatch for timestamps — it keeps the correct year in the server HTML (good
+              for SEO, no flash) and silences the spurious warning without a mount-guard. */}
+          <span suppressHydrationWarning className="flex items-center gap-1.5 font-medium text-surface/60">
             © 2023–{new Date().getFullYear()} TrekYatra. All rights reserved.
           </span>
           <span className="flex items-center gap-1.5">

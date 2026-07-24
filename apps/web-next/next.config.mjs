@@ -1,5 +1,11 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
+  // TEMPORARY (hydration debugging): emit client-side source maps in production so the
+  // minified React hydration errors (#418/#423/#425) on the live home demap to real source
+  // locations. Runtime JS/HTML is UNCHANGED — this only additionally emits *.js.map files, so
+  // it cannot alter site behaviour. Trade-offs while on: larger/slower build + publicly
+  // readable source. REVERT this line once the culprit component is identified.
+  productionBrowserSourceMaps: true,
   transpilePackages: ["@react-oauth/google"],
   experimental: {
     proxyTimeout: 120_000, // 2 minutes — LLM-backed endpoints can take 30-60s
