@@ -17,6 +17,7 @@ import { fetchTreks } from "@/lib/trekApi";
 import { fetchCMSPages, fetchTrendingTreks, fetchTrekCMSOverrides, fetchTrekStateCounts, fetchComparisonPairs, fetchNewsArticles, type CMSTrekCard, type CMSTrekOverride, type NewsArticle } from "@/lib/api";
 import SchemaInjector from "@/components/seo/SchemaInjector";
 import { buildWebSiteSchema } from "@/lib/schema";
+import { formatDate } from "@/lib/date";
 import HomeSearchBar from "@/components/home/HomeSearchBar";
 import { SeasonalTreksSection } from "@/components/home/SeasonalTreksSection";
 import { DifficultyTabsSection } from "@/components/home/DifficultyTabsSection";
@@ -145,9 +146,7 @@ export default async function Home() {
   const editorialImage = editorialSource?.hero_image_url ?? "/images/trek-summit.webp";
   const editorialName = editorialSource?.trek_name ?? editorialSource?.title ?? "";
   const editorialExcerpt = editorialSource?.seo_description ?? "";
-  const editorialUpdated = editorialSource?.updated_at
-    ? new Date(editorialSource.updated_at).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" })
-    : null;
+  const editorialUpdated = editorialSource?.updated_at ? formatDate(editorialSource.updated_at) : null;
 
   // Robust fallback: apply CMS overrides to static list so images/names are always real
   const staticEnhanced = trekList.slice(0, 4).map(t => {

@@ -8,6 +8,7 @@ import TableOfContents from "@/components/content/TableOfContents";
 import Breadcrumb from "@/components/content/Breadcrumb";
 import AuthorBlock from "@/components/content/AuthorBlock";
 import { buildBreadcrumbSchema, buildFAQSchema } from "@/lib/schema";
+import { formatDate as formatDateUtil } from "@/lib/date";
 import { Calendar, Newspaper, ChevronRight, ExternalLink, MapPin } from "lucide-react";
 
 export const dynamic = "force-dynamic";
@@ -25,10 +26,7 @@ function extractTocItems(html: string): { id: string; label: string }[] {
 }
 
 function formatDate(dateStr: string | null): string {
-  if (!dateStr) return "";
-  return new Date(dateStr).toLocaleDateString("en-IN", {
-    day: "numeric", month: "long", year: "numeric",
-  });
+  return formatDateUtil(dateStr, "long");
 }
 
 export async function generateMetadata({ params }: { params: { slug: string } }): Promise<Metadata> {

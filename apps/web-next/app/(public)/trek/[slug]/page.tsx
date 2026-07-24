@@ -21,6 +21,7 @@ import TrustSignals from "@/components/trust/TrustSignals";
 import StickyMobileCTA from "@/components/trust/StickyMobileCTA";
 import GatedContent from "@/components/subscription/GatedContent";
 import { buildArticleSchema, buildFAQSchema, buildBreadcrumbSchema, buildTrekSchema } from "@/lib/schema";
+import { formatDate } from "@/lib/date";
 import {
   Clock, TrendingUp, Calendar,
   Shield, FileCheck, Backpack, Wallet, ChevronRight, Star, MapPin,
@@ -891,7 +892,7 @@ function formatUpdatedAt(dateStr?: string | null): string {
   if (diffDays === 0) return "Updated today";
   if (diffDays === 1) return "Updated yesterday";
   if (diffDays < 30) return `Updated ${diffDays} days ago`;
-  return `Updated ${date.toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" })}`;
+  return `Updated ${formatDate(date)}`;
 }
 
 function Block({ id, eyebrow, title, children }: { id: string; eyebrow: string; title: string; children: React.ReactNode }) {

@@ -48,6 +48,10 @@ def _upload_to_spaces(file_content: bytes, filename: str, content_type: str) -> 
             Body=file_content,
             ContentType=content_type,
             ACL="public-read",
+            # Immutable long cache: filenames are content-unique (uuid4), so the object
+            # never changes under a given key. Lets browsers + Cloudflare cache media
+            # for a year instead of re-downloading on every visit (PSI #3).
+            CacheControl="public, max-age=31536000, immutable",
         )
     except (BotoCoreError, ClientError) as exc:
         raise HTTPException(status_code=500, detail=f"DO Spaces upload failed: {exc}") from exc

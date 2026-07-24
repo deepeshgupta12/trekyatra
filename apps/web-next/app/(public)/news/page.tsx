@@ -4,6 +4,7 @@ import { fetchNewsArticles, type NewsArticle } from "@/lib/api";
 import { Newspaper, Calendar, ChevronRight } from "lucide-react";
 import SchemaInjector from "@/components/seo/SchemaInjector";
 import { buildBreadcrumbSchema } from "@/lib/schema";
+import { formatDate as formatDateUtil } from "@/lib/date";
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
@@ -25,8 +26,7 @@ export const metadata: Metadata = {
 };
 
 function formatDate(dateStr: string | null): string {
-  if (!dateStr) return "";
-  return new Date(dateStr).toLocaleDateString("en-IN", { day: "numeric", month: "long", year: "numeric" });
+  return formatDateUtil(dateStr, "long");
 }
 
 function extractTrekSlug(article: NewsArticle): string | null {
