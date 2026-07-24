@@ -1,11 +1,12 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  // TEMPORARY (hydration debugging): emit client-side source maps in production so the
-  // minified React hydration errors (#418/#423/#425) on the live home demap to real source
-  // locations. Runtime JS/HTML is UNCHANGED — this only additionally emits *.js.map files, so
-  // it cannot alter site behaviour. Trade-offs while on: larger/slower build + publicly
-  // readable source. REVERT this line once the culprit component is identified.
-  productionBrowserSourceMaps: true,
+  // NOTE: productionBrowserSourceMaps was enabled temporarily (commit 69f602f) to demap the
+  // live #418/#423/#425 hydration errors. Reverted — the stack frames are pure React reconciler
+  // internals (no app frame), so source maps could not name the component, and prod React emits
+  // no component stack. The errors reproduce ONLY in the live production build (never in dev or
+  // local prod, with or without the real-data path), produce NO DOM change, and match the known
+  // benign App-Router `next/dynamic({ ssr:false })` Suspense-boundary hydration warning. See
+  // docs/MASTER_TRACKER.md PSI #4. Keeping source maps off (avoids exposing source + build bloat).
   transpilePackages: ["@react-oauth/google"],
   experimental: {
     proxyTimeout: 120_000, // 2 minutes — LLM-backed endpoints can take 30-60s
