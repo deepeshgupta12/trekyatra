@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
+import Image from "next/image";
 import { Bookmark, Mountain, Clock, TrendingUp } from "lucide-react";
 import { addBookmarkBySlug, removeBookmarkBySlug } from "@/lib/api";
 
@@ -79,7 +80,15 @@ export const TrekCard = ({ trek, featured = false, initialBookmarked = false }: 
     <Link href={`/trek/${trek.slug}`} className="group block">
       <article className={`relative overflow-hidden rounded-2xl bg-card border border-border lift ${featured ? "h-[480px]" : "h-[420px]"}`}>
         <div className="absolute inset-0">
-          <img src={trek.image} alt={trek.name} loading="lazy" width={800} height={1000} className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105" />
+          {/* Next/Image: auto WebP/AVIF + resize + responsive srcset (PSI #2). `fill` fits the
+              positioned parent; `sizes` reflects the card grid (1 col mobile → up to 3 cols). */}
+          <Image
+            src={trek.image}
+            alt={trek.name}
+            fill
+            sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
+            className="object-cover transition-transform duration-700 group-hover:scale-105"
+          />
           <div className="absolute inset-0 bg-gradient-to-t from-foreground/90 via-foreground/30 to-transparent" />
         </div>
 

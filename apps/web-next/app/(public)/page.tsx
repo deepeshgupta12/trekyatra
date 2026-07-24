@@ -1,6 +1,12 @@
-// Always render fresh — never serve a build-time static snapshot that was
-// generated when the backend wasn't running (CMS pages would be empty → stubs).
-export const dynamic = "force-dynamic";
+// ISR: the home shell is cached (revalidated every 5 min) instead of force-dynamic, so
+// the HTML is served from Next's cache + Cloudflare's edge — cutting TTFB from ~3.7s to
+// edge latency (PSI #1). `force-dynamic` sent `Cache-Control: no-store`, which blocked ALL
+// caching. Personalisation (RecentlyViewed / PersonalisedFeed / HomeComparisons) is
+// client-side (makeDynamic ssr:false), so a cached shell is safe. The 7 catalog fetches go
+// through apiFetch (AbortSignal → uncacheable → would force the route dynamic), so they are
+// wrapped in `unstable_cache` below (revalidate + tag "cms:all") — this is what actually lets
+// the route be statically/ISR rendered. The Master CMS cache-clear already revalidateTag("cms:all").
+export const revalidate = 300;
 
 import Link from "next/link";
 import Image from "next/image";
@@ -19,6 +25,7 @@ import { HomeTrendingHeader } from "@/components/home/HomeTrendingHeader";
 import HomeComparisonsSection, { type HomeComparisonCard } from "@/components/home/HomeComparisonsSection";
 import RecentNewsSection from "@/components/home/RecentNewsSection";
 import makeDynamic from "next/dynamic";
+import { unstable_cache } from "next/cache";
 
 // Below-fold client components deferred to reduce initial JS bundle and TBT
 const RecentlyViewedSection = makeDynamic(
@@ -56,16 +63,27 @@ const trustStats = [
   { value: "100%", label: "Editorially reviewed" },
 ];
 
+// The 7 catalog fetches go through apiFetch (AbortSignal → uncacheable → would force this
+// route dynamic). Wrapping them in unstable_cache caches the combined result in Next's Data
+// Cache (revalidate 5 min, tag "cms:all" so the Master CMS cache-clear busts it) and lets the
+// route render as ISR — the fetches run at most once per 5 min, and the page is edge-cacheable.
+const getHomeData = unstable_cache(
+  async () =>
+    Promise.all([
+      fetchTreks(),
+      fetchCMSPages({ page_type: "trek_guide", status: "published", limit: 50 }).catch(() => []),
+      fetchTrendingTreks(4).catch((): CMSTrekCard[] => []),
+      fetchTrekCMSOverrides().catch((): Record<string, CMSTrekOverride> => ({})),
+      fetchTrekStateCounts().catch(() => []),
+      fetchComparisonPairs(60).catch(() => []),
+      fetchNewsArticles(60).catch((): NewsArticle[] => []),
+    ] as const),
+  ["home-page-catalog-v1"],
+  { revalidate: 300, tags: ["cms:all"] }
+);
+
 export default async function Home() {
-  const [trekList, cmsTrekPages, trendingCMS, cmsOverrides, stateCounts, comparisonPairs, newsArticles] = await Promise.all([
-    fetchTreks(),
-    fetchCMSPages({ page_type: "trek_guide", status: "published", limit: 50 }).catch(() => []),
-    fetchTrendingTreks(4).catch((): CMSTrekCard[] => []),
-    fetchTrekCMSOverrides().catch((): Record<string, CMSTrekOverride> => ({})),
-    fetchTrekStateCounts().catch(() => []),
-    fetchComparisonPairs(60).catch(() => []),
-    fetchNewsArticles(60).catch((): NewsArticle[] => []),
-  ]);
+  const [trekList, cmsTrekPages, trendingCMS, cmsOverrides, stateCounts, comparisonPairs, newsArticles] = await getHomeData();
 
   // trek_slug → trek name, for the Recent News section's per-trek tabs.
   const trekNameMap: Record<string, string> = {};

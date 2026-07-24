@@ -449,6 +449,8 @@ trekyatra/
 | Trek-detail Quick Utilities link to in-page anchors (no 404); admin CMS route-image filter; Trek Data + Live Conditions ordered by publish date | Done |
 | ISR caching restored for CMS pages — `fetchCMSPage` uses `next:{revalidate,tags}`; `/api/revalidate` `revalidateTag` integrates with the Master CMS cache-clear (instant edits) | Done |
 | Prod 500 fix — `/trek/[slug]` + hi/* pages: `no-store` CMS fetch was incompatible with ISR/static params (static→dynamic crash); resolved via ISR + cacheable fetch | Done |
+| **PSI #1 (TTFB 3.7s→edge):** home `page.tsx` no longer `force-dynamic` — 7 catalog fetches wrapped in `unstable_cache({revalidate:300, tags:["cms:all"]})` → home is ISR/edge-cacheable (`s-maxage=300`), busted by the CMS cache-clear; personalisation stays client-side | Done |
+| **PSI #2 (image weight ~4.7MB):** `TrekCard` `<img>` → Next `<Image fill sizes=…>` → auto WebP/AVIF + resize + responsive srcset (was raw 2MB Spaces JPEGs) | Done |
 | **Fix:** auto trek-guide brief generation gated OFF by default (`ENABLE_DAILY_DISCOVERY`, was burning LLM tokens daily) | Done |
 | **Fix:** news articles no longer duplicate at `/trek/{news-slug}` — `/trek/{news-slug}` → 404 (deleted); news served only at `/news/{slug}` (direct 200); `scripts/purge_news_from_linking.py` cleans existing rows | Done |
 | **Fix:** "In this cluster" shows only published trek links + this trek's news (as `/news/{slug}`); `get_related_pages` filters by REAL CMS page_type so mis-typed news can't leak (mobile deferred) | Done |
