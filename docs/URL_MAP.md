@@ -16,7 +16,7 @@ Last updated: 2026-05-27 (Step 64)
 | `/explore` | Trek explorer | — | Full grid with filters |
 | `/search` | Search | — | Fuse.js fuzzy + semantic for long queries |
 | `/compare` | Trek comparison tool | — | Side-by-side compare tool (`?slugs=a,b` interactive form — stays intact) |
-| `/compare/[pair]` | Clean comparison page | — | Server-rendered `{a}-vs-{b}` (e.g. `/compare/kedarkantha-vs-brahmatal`); rendered **live** from the two `trek_guide` pages' backfill data via `GET /api/v1/public/comparisons/{pair}` — **NOT** a CMS page. Pairs are recorded in the `trek_comparisons` table by the publish-triggered comparison agent (same-state top-3); full SEO+AEO (JSON-LD); listed in sitemap under `/compare/` from `GET /api/v1/public/comparisons` — Step 81 |
+| `/compare/[pair]` | Clean comparison page | — | Server-rendered `{a}-vs-{b}` (e.g. `/compare/kedarkantha-vs-brahmatal`); rendered **live** from the two `trek_guide` pages' backfill data via `GET /api/v1/public/comparisons/{pair}` — **NOT** a CMS page. Pairs are recorded in the `trek_comparisons` table by the publish-triggered comparison agent (same-state top-3); full SEO+AEO (JSON-LD); listed in the separate `/compare-sitemap.xml` (referenced from core `sitemap.xml`) — Step 81 |
 | `/treksage` | TrekSage AI chat assistant | — | Myra-style conversational assistant (code-defined, not CMS); session persisted via `treksage_chat_sessions`; calls `POST /api/v1/treksage/chat`; Step 73 |
 | `/plan` | Trip planning wizard | — | 6-step intent wizard — Step 57 (done) |
 | `/plan/results` | Trek recommendation output | — | Top 5 CMS treks with match scores + lead capture — Step 57 (done) |
@@ -84,7 +84,8 @@ Last updated: 2026-05-27 (Step 64)
 |-------------|------|-------|
 | `/news` | Trek news hub | Lists all news_article pages grouped by trek — Step 56 |
 | `/news/[slug]` | Trek news article | `news_article` | Auto-generated weekly; slug `{trek_slug}-news-{YYYY-WW}` — Step 56 |
-| `/news-sitemap.xml` | Google News sitemap | Dynamic XML; includes `<news:news>` elements — Step 56 |
+| `/news-sitemap.xml` | Google News sitemap | Dynamic XML; includes `<news:news>` elements + all `/news/{slug}` `<url>` entries. **All news URLs live here** — NOT in core sitemap.xml. Referenced from core — Step 56 |
+| `/compare-sitemap.xml` | Comparison sitemap | Dynamic XML; all `/compare/{a-vs-b}` `<url>` entries from `GET /public/comparisons`. **All compare URLs live here** — NOT in core sitemap.xml. Referenced from core — 2026-07-21 |
 | `/newsletter` | Subscribe | Trail Letter |
 
 ## Editorial / Trust Pages (CMS-driven, editorial page_type)
@@ -157,7 +158,7 @@ Last updated: 2026-05-27 (Step 64)
 
 | URL | Purpose | Notes |
 |-----|---------|-------|
-| `/sitemap.xml` | XML sitemap | Auto-generated, force-dynamic |
+| `/sitemap.xml` | Core XML sitemap | Auto-generated, force-dynamic. Hub/editorial/guide pages + **references** child sitemaps (state-trek, hi-trek, `/news-sitemap.xml`, `/compare-sitemap.xml`). News & compare URLs are NOT listed directly here. |
 | `/robots.txt` | Robots rules | Auto-generated from robots.ts |
 | `/api/revalidate` | Next.js cache revalidate | POST, internal |
 

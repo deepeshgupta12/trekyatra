@@ -2530,3 +2530,9 @@ Mobile buddy matching UI consuming STEP-79 backend.
 - `apps/web-next/app/(public)/page.tsx` — added `fetchNewsArticles(60)` to the parallel fetch + `trekNameMap` (trek_slug→name from trekList) + `<RecentNewsSection>` after `<PersonalisedFeed>`. Blast radius: LOW (home leaf).
 - No backend changes. Existing endpoints reused: `GET /public/news` (list newest-first, has `content_json.trek_slug`), `/recommendations`.
 - Impact analysis: gitnexus MCP disconnected → manual (all leaf home components; no shared-symbol/backend change).
+
+### Sitemap — separate news + compare child sitemaps (2026-07-21) blast radius
+- `apps/web-next/app/compare-sitemap.xml/route.ts` — NEW leaf route: fetches `GET /public/comparisons?limit=1000`, emits `<url>` per `/compare/{pair}`. force-dynamic. Blast radius: LOW (new leaf; referenced from core sitemap).
+- `apps/web-next/app/sitemap.ts` — `PAGE_PREFIX.news_article` → `undefined` (news URLs no longer emitted in core; live only in `/news-sitemap.xml`); removed the direct compare-pairs loop + `fetchComparisonPairsForSitemap` helper; added `url("/compare-sitemap.xml")` reference. Blast radius: LOW code (leaf, no importers) but SEO-critical → verified: core has 0 direct `/news/` + 0 direct `/compare/` `<loc>` entries, references both child sitemaps.
+- `app/news-sitemap.xml/route.ts` — UNCHANGED (already lists all `/news/{slug}` via `GET /public/news?limit=200`).
+- Impact analysis: gitnexus MCP disconnected → manual (leaf routes; no backend/shared-symbol change).

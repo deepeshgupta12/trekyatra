@@ -643,6 +643,10 @@ Step 70 complete. Next steps: Step 71–79 and remaining production hardening it
 
 ---
 
+### Sitemap Restructure — separate news + compare child sitemaps [DONE — 2026-07-21]
+
+- News (`/news/{slug}`) and compare (`/compare/{a-vs-b}`) URLs were emitted directly into the core `sitemap.xml`; moved into separate `/news-sitemap.xml` (already existed, lists all news) + NEW `/compare-sitemap.xml`, both referenced from core. Frontend-only (leaf routes). Verified: core has 0 direct /news/ + 0 direct /compare/ entries; children list 106 news + 131 compare URLs.
+
 ### Home Page Pass — news out of trek sections + Recent News section [DONE — 2026-07-21]
 
 Web (desktop + mobile-web). All frontend, no backend change.

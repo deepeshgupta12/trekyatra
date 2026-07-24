@@ -454,6 +454,7 @@ trekyatra/
 | **Fix:** "In this cluster" shows only published trek links + this trek's news (as `/news/{slug}`); `get_related_pages` filters by REAL CMS page_type so mis-typed news can't leak (mobile deferred) | Done |
 | **Fix:** home "Pick up where you left off" + "Treks based on your browsing history" show ONLY treks (news filtered out; wrong `/guides/{news}` URLs removed) | Done |
 | **New:** home **Recent News** section — published news grouped into per-trek tabs (newest→oldest, ≤5/tab, ≥1 to show), "View all News Articles" → `/news` | Done |
+| **Fix:** sitemap restructured -- news (`/news/{slug}`) and compare (`/compare/{a-vs-b}`) URLs moved OUT of core `sitemap.xml` into separate `/news-sitemap.xml` + `/compare-sitemap.xml` (referenced from core) | Done |
 | App trek-detail tab renamed "Trail Conditions" | Done |
 
 ---

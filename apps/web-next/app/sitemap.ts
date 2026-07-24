@@ -45,25 +45,6 @@ async function fetchCmsSitemapPages(): Promise<CmsSitemapEntry[]> {
   return [];
 }
 
-/** Fetch registered comparison pairs → clean /compare/{pair} sitemap URLs (#8). */
-async function fetchComparisonPairsForSitemap(): Promise<string[]> {
-  const primaryBase = process.env.NEXT_PUBLIC_API_BASE ?? "http://localhost:8000";
-  const fallbackBase = "https://api.trekyatra.co.in";
-  const path = "/api/v1/public/comparisons?limit=1000";
-  for (const base of [primaryBase, fallbackBase]) {
-    try {
-      const res = await fetch(`${base}${path}`, { signal: AbortSignal.timeout(20_000), cache: "no-store" });
-      if (res.ok) {
-        const pairs = (await res.json()) as { pair_slug: string }[];
-        return pairs.map((p) => p.pair_slug);
-      }
-    } catch {
-      // try next base
-    }
-  }
-  return [];
-}
-
 const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? "https://trekyatra.com";
 
 function url(path: string, priority = 0.7, changefreq: MetadataRoute.Sitemap[0]["changeFrequency"] = "weekly") {
@@ -103,8 +84,10 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     url("/karnataka-treks-sitemap.xml",   0.8, "weekly"),
     // Hindi trek pages — separate sitemap with hreflang alternates
     url("/hi-trek-sitemap.xml",           0.6, "weekly"),
-    // News articles — separate Google News sitemap
+    // News articles — separate sitemap (all /news/{slug} URLs live here, NOT in core)
     url("/news-sitemap.xml",              0.8, "daily"),
+    // Comparison pages — separate sitemap (all /compare/{a-vs-b} URLs live here, NOT in core)
+    url("/compare-sitemap.xml",           0.7, "weekly"),
     // News hub page
     url("/news",                          0.8, "daily"),
     // Difficulty category pages
@@ -131,7 +114,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   // they are already listed in state-specific sitemaps (/uttarakhand-treks-sitemap.xml etc.)
   const PAGE_PREFIX: Record<string, string | undefined> = {
     trek_guide: undefined, // excluded — covered by state-specific sitemaps
-    news_article: "/news",
+    news_article: undefined, // excluded — all /news/{slug} URLs live in /news-sitemap.xml
     packing_list: "/packing", packing_guide: "/packing",
     permit_guide: "/permits", beginner_guide: "/guides", beginner_roundup: "/guides",
     cost_guide: "/guides", gear_guide: "/guides", safety_guide: "/guides",
@@ -157,16 +140,8 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     }
   }
 
-  // Clean comparison pages — /compare/{pair} from the trek_comparisons table (#8)
-  const comparisonPairs = await fetchComparisonPairsForSitemap();
-  for (const pair of comparisonPairs) {
-    entries.push({
-      url: `${SITE_URL}/compare/${pair}`,
-      lastModified: new Date(),
-      changeFrequency: "weekly",
-      priority: 0.7,
-    });
-  }
+  // NOTE: clean comparison URLs (/compare/{a-vs-b}) are NOT emitted here — they live in the
+  // separate /compare-sitemap.xml (referenced above), keeping the core sitemap lean.
 
   // Deduplicate by URL
   const seen = new Set<string>();
