@@ -12,6 +12,11 @@ class Settings(BaseSettings):
     app_port: int = 8000
     api_v1_prefix: str = "/api/v1"
 
+    # When False (default), the daily content-discovery beat task (trend discovery →
+    # content-brief generation) is a no-op — it does NOT auto-create trek-guide briefs
+    # or spend LLM tokens. Set ENABLE_DAILY_DISCOVERY=true to resume automatic discovery.
+    enable_daily_discovery: bool = False
+
     postgres_server: str = "localhost"
     postgres_port: int = 5433
     postgres_db: str = "trekyatra"

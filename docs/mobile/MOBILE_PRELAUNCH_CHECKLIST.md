@@ -201,3 +201,37 @@ Sign-off required from the product owner before the app is submitted to App Stor
 | I07 | Crash-free rate >99% in 24h post-preview-build testing | `[ ]` |
 
 **Go for submission:** All I01–I07 must be `[x]` before `eas submit --platform all --profile production`.
+
+---
+
+## iOS Launch-Readiness Audit — 2026-07-21 (code-grounded)
+
+Full audit of `apps/mobile/` + backend + DO for the first iOS App Store submission. Product features M01–M20 are built; the **release-engineering layer (M22) is unstarted** and there are hard compliance + config gates. Every item traces to a file.
+
+### 🔴 BLOCKERS (App Store rejection or broken app)
+- **[3.1.1] Digital products sold via Razorpay on iOS** — `hooks/usePurchase.ts` ("Buy & Download ₹x", `app/(tabs)/browse/products/[slug].tsx`). Must be StoreKit IAP or removed from the iOS build.
+- **[3.1.1] Premium subscription runs in test-mode** — `services/iapService.ts` stub + `hooks/usePremium.ts` grants premium with fake receipt `test_receipt_no_iap_credentials`; `react-native-iap` not installed. Wire real StoreKit IAP + server receipt validation.
+- **[3.1.1] "Subscribe via website" external link** in paywall — `app/(tabs)/account/premium.tsx` `Linking.openURL(".../premium")`. Anti-steering; remove from iOS.
+- **[4.8] Sign in with Apple stubbed** ("coming soon") while Google sign-in is live — `providers/AuthProvider.tsx` throws; M04 Apple backend endpoint missing. Must implement + enable.
+- **Prod API URL not in build config** — resolved only from `.env.local` (gitignored); `eas.json` has no `env` block → cloud EAS prod build inlines `http://localhost:8000` (`lib/mobileApi.ts`, `authApi.ts`, `syncService.ts`). App can't reach backend. Move `EXPO_PUBLIC_*` to EAS env/secrets.
+- **`eas.json submit.production.ios` missing `ascAppId` + `appleTeamId`** (empty) → `eas submit` fails.
+- **EAS `projectId` empty** (`app.config.ts` `EXPO_PROJECT_ID ?? ""`) → no project binding; run `eas init`.
+- **App icon 500×500 with alpha** — Apple requires 1024×1024, no alpha. Binary validation fails.
+- **APNs entitlement `aps-environment = development`** — must be `production` for store build.
+- **Cloudflare `enhanced_threat_control` may 403 the native app** — challenges non-browser clients on `api.trekyatra.co.in`; existing bypass only covers `www/api`, not the `api.` subdomain the app uses. VERIFY on a real device/TestFlight build.
+- **M22 release engineering unstarted** — Apple Developer account, ASC app record, APNs `.p8` key, EAS creds, screenshots, privacy labels all pending.
+- **Bundle-ID inconsistency** — code `in.co.trekyatra.app` vs docs `co.in.trekyatra.app` vs backend APNs default `co.trekyatra.app`. Reconcile BEFORE ASC registration (irreversible).
+
+### 🟠 IMPORTANT (rejection risk / broken features)
+- Backend prod env unset: `APNS_KEY_ID/TEAM_ID/KEY_P8` (push disabled), `APPLE_IAP_SHARED_SECRET` (IAP test-mode grants premium without receipt check), `DO_SPACES_*` (media ephemeral).
+- Universal Links not configured (no `associated-domains`/`applinks:`) → shared `https://trekyatra.co.in/trek/...` links open Safari, not the app.
+- Confirm the mobile Bearer-auth backend fix is actually deployed on prod.
+- `PrivacyInfo.xcprivacy` `NSPrivacyCollectedDataTypes` empty despite collecting email/location/purchases/analytics — fill to match privacy labels.
+- Generic Camera/Photo-Library permission strings ("$(PRODUCT_NAME)") — replace with real copy.
+- Sentry disabled in prod (DSN only in `.env.local`) + `@sentry/react-native 7.11` vs Expo SDK 56 alignment.
+- Smoke-test mobile-only Bearer routes on device (`/auth/mobile/*`, `/mobile/sync`, `/mobile/device`).
+
+### 🟢 NICE-TO-HAVE
+- OTA (`expo-updates` + `runtimeVersion`) not configured; branded splash image missing; remove unused iOS keys (`NSLocationAlways*`, `NSMotion`, dev Bonjour); `autoIncrement` build number; FCM creds (Android parity); rate-limit `/auth/mobile/*`; M21 (News + Hindi) still pending (feature, not blocker).
+
+**Highest-leverage decision:** the monetization model (StoreKit-IAP-only on iOS resolves the top 3 blockers but is the largest code effort) — decide before starting M22.

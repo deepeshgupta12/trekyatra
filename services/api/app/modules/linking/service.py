@@ -33,6 +33,11 @@ _EXCLUDED_FROM_LINKING = frozenset({
     "cluster_hub",
     "region_listing",
     "premium_compendium",
+    # News articles are surfaced via their own "Trek News" section (fetchNewsByTrek) and
+    # live at /news/{slug}. They must NOT enter the trek linking graph: _page_type_from_cms
+    # has no news_article case → it would default to "trek_guide", making them appear in the
+    # "In this cluster" sidebar with a /trek/{slug} URL (a duplicate of /news/{slug}).
+    "news_article",
 })
 
 

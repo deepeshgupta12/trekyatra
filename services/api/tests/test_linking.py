@@ -155,3 +155,33 @@ def test_lead_response_includes_status():
     resp = client.post("/api/v1/leads", json=payload)
     assert resp.status_code == 201
     assert resp.json()["status"] == "new"
+
+
+# ---------------------------------------------------------------------------
+# news_article exclusion (Bug fix — news must not enter the trek linking graph)
+# ---------------------------------------------------------------------------
+
+def test_news_article_excluded_from_linking_graph():
+    from datetime import datetime, timezone
+    from app.db.session import SessionLocal
+    from app.modules.cms.models import CMSPage
+    from app.modules.linking.models import Page
+    from app.modules.linking.service import sync_pages_from_cms, _EXCLUDED_FROM_LINKING
+
+    assert "news_article" in _EXCLUDED_FROM_LINKING
+    db = SessionLocal()
+    slug = f"news-excl-{_uid()}"
+    try:
+        now = datetime.now(timezone.utc)
+        db.add(CMSPage(slug=slug, title="News X", page_type="news_article", status="published",
+                       content_html="", language="en", published_at=now, created_at=now, updated_at=now))
+        db.commit()
+        sync_pages_from_cms(db)
+        db.commit()
+        # The published news article must NOT have been synced into the linking Page table.
+        assert db.query(Page).filter(Page.slug == slug).count() == 0
+    finally:
+        db.query(Page).filter(Page.slug == slug).delete(synchronize_session=False)
+        db.query(CMSPage).filter(CMSPage.slug == slug).delete(synchronize_session=False)
+        db.commit()
+        db.close()

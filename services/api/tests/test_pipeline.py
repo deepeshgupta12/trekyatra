@@ -310,3 +310,12 @@ def test_pipeline_tables_in_metadata():
     table_names = {t.name for t in Base.metadata.sorted_tables}
     assert "pipeline_runs" in table_names
     assert "pipeline_stages" in table_names
+
+
+def test_daily_discovery_disabled_by_default():
+    """Auto brief generation is gated OFF by default (ENABLE_DAILY_DISCOVERY=false) so it
+    does not spend LLM tokens unattended."""
+    from app.modules.pipeline.tasks import daily_discovery_task
+
+    result = daily_discovery_task.apply().get()
+    assert result.get("status") == "disabled"

@@ -105,6 +105,26 @@ export default async function TrekDetailPage({ params }: { params: { slug: strin
     if (page.status === "published") cmsPage = page;
   } catch { /* render with static data only */ }
 
+  // Route guard (Bug fix): /trek/[slug] must serve ONLY trek_guide pages. A CMS page of
+  // another type sharing this slug (e.g. a news_article that leaked into the trek linking
+  // graph and surfaced in "In this cluster") must NOT render here as a broken trek page —
+  // 301-redirect it to its canonical URL so Google consolidates the duplicate. If the type
+  // has no public prefix, 404. permanentRedirect()/notFound() are OUTSIDE try/catch so their
+  // internal control-flow signals are never swallowed.
+  if (cmsPage && cmsPage.page_type !== "trek_guide") {
+    const CANONICAL_PREFIX: Record<string, string> = {
+      news_article: "/news",
+      packing_list: "/packing", packing_guide: "/packing",
+      permit_guide: "/permits",
+      beginner_guide: "/guides", beginner_roundup: "/guides", cost_guide: "/guides",
+      gear_guide: "/guides", safety_guide: "/guides", itinerary: "/guides", expert_guide: "/guides",
+      seasonal: "/seasons", trek_types: "/trek-types",
+    };
+    const prefix = CANONICAL_PREFIX[cmsPage.page_type];
+    if (prefix) permanentRedirect(`${prefix}/${cmsPage.slug}`);
+    notFound();
+  }
+
   // Legacy / clean-slug redirect (PT4 / Step 81): the 12 hardcoded stub trek pages
   // were removed, so a bare slug like /trek/kedarkantha no longer resolves on its own.
   // If a real CMS trek exists whose slug starts with this slug (e.g.
@@ -809,11 +829,15 @@ export default async function TrekDetailPage({ params }: { params: { slug: strin
                     <div className="text-xs uppercase tracking-widest text-muted-foreground mb-3">In this cluster</div>
                     <div className="space-y-2">
                       {clusterPages.map((page) => {
-                        const href =
-                          page.page_type === "trek_guide" ? `/trek/${page.slug}` :
-                          page.page_type === "packing_list" ? `/packing/${page.slug}` :
-                          page.page_type === "permit_guide" ? `/permits/${page.slug}` :
-                          `/guides/${page.slug}`;
+                        // Route each related page by its (linking-graph) page_type. news_article
+                        // is excluded from the linking graph, so it never reaches here — but map
+                        // defensively and never default a non-trek page to /trek/ (duplicate-URL bug).
+                        const CLUSTER_PREFIX: Record<string, string> = {
+                          trek_guide: "/trek", packing_list: "/packing", permit_guide: "/permits",
+                          beginner_guide: "/guides", seasonal: "/seasons", comparison: "/compare",
+                          news_article: "/news",
+                        };
+                        const href = `${CLUSTER_PREFIX[page.page_type] ?? "/guides"}/${page.slug}`;
                         return (
                           <Link
                             key={page.id}

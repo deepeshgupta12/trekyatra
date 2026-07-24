@@ -2506,3 +2506,12 @@ Mobile buddy matching UI consuming STEP-79 backend.
 - `apps/web-next/components/home/HomeComparisonsSection.tsx` — reads behavior profile on mount + subscribes to `BEHAVIOR_UPDATED_EVENT` (re-reads when the async cross-device merge lands). Blast radius: LOW (1 caller: home page).
 - Flow (unchanged wiring, now observable): login/session-restore → `auth-context.pullAndMergeBehaviorProfileFromBackend()` → `GET /api/v1/account/behavior-profile` (server `User.behavior_profile`) → merge into localStorage → fire event → compare cards re-rank by cross-device difficulty/region.
 - `PersonalisedFeed` unchanged (already server-driven via `fetchPersonalisedRecommendations`).
+
+### CMS bugfixes — auto-brief gate + news duplicate-URL (2026-07-21) blast radius
+- `services/api/app/core/config.py` — NEW `enable_daily_discovery: bool = False`. Blast radius: LOW (additive setting).
+- `services/api/app/modules/pipeline/tasks.py` — `daily_discovery_task` early-returns when `enable_daily_discovery` is false. Blast radius: LOW (guards a beat task; needs worker restart on prod).
+- `services/api/.env.example` — documented `ENABLE_DAILY_DISCOVERY`.
+- `services/api/app/modules/linking/service.py` — added `news_article` to `_EXCLUDED_FROM_LINKING` → `sync_pages_from_cms` now excludes + purges news from the linking `Page` table. Blast radius: MEDIUM — affects "In this cluster" suggestions (news no longer appears) + `get_related_pages`. Intended.
+- `apps/web-next/app/(public)/trek/[slug]/page.tsx` — (B) route guard: non-`trek_guide` CMS page → `permanentRedirect` to canonical prefix (news→/news, packing→/packing, …) or `notFound()`; (C) "In this cluster" URL builder uses a page_type→prefix map. Blast radius: LOW (leaf; trek_guide pages unaffected — verified prod-mode: trek 200, news slug 308→/news).
+- Root cause was a cross-step integration gap: Step 56 news agent (`agents/news/agent.py`, `page_type="news_article"`) never wired into Step 44/50 linking `_page_type_from_cms` (defaults unknown→trek_guide). Sitemap (`sitemap.ts`) was already correct (`news_article→/news`).
+- Tests: `test_pipeline.py::test_daily_discovery_disabled_by_default`, `test_linking.py::test_news_article_excluded_from_linking_graph`.

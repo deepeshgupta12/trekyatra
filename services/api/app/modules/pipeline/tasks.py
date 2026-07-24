@@ -39,7 +39,17 @@ def resume_pipeline_task(self, run_id: str) -> dict:
 
 @celery_app.task(bind=True, base=BaseTask, name="pipeline.daily_discovery")
 def daily_discovery_task(self) -> dict:
-    """Beat-scheduled task: run daily trend discovery + brief generation (pauses at brief approval)."""
+    """Beat-scheduled task: run daily trend discovery + brief generation (pauses at brief approval).
+
+    Gated by settings.enable_daily_discovery (default False) — auto-brief generation was
+    consuming LLM tokens unattended, so it no-ops unless explicitly enabled via
+    ENABLE_DAILY_DISCOVERY=true. Trigger discovery manually from the admin pipeline UI instead.
+    """
+    from app.core.config import settings
+
+    if not settings.enable_daily_discovery:
+        return {"status": "disabled", "reason": "ENABLE_DAILY_DISCOVERY is false"}
+
     from app.modules.pipeline.service import create_pipeline_run, PipelineOrchestrator
 
     db = SessionLocal()
