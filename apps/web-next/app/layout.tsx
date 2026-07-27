@@ -9,6 +9,9 @@ const fraunces = Fraunces({
   variable: "--font-display",
   display: "swap",
   axes: ["opsz"],
+  // Display font (headings) — not preloaded so its woff2 doesn't compete with the LCP hero
+  // image on slow connections. `display: swap` shows fallback text immediately, then swaps.
+  preload: false,
 });
 
 const inter = Inter({
@@ -22,6 +25,8 @@ const jetbrainsMono = JetBrains_Mono({
   variable: "--font-mono",
   weight: ["400", "500"],
   display: "swap",
+  // Mono font is never above the fold — don't preload it (keeps its woff2 off the critical path).
+  preload: false,
 });
 
 const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? "https://www.trekyatra.co.in";
@@ -79,9 +84,9 @@ const GA4_ID = process.env.NEXT_PUBLIC_GA4_ID;
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en" className={`${fraunces.variable} ${inter.variable} ${jetbrainsMono.variable}`} suppressHydrationWarning>
-      <head>
-        <link rel="preconnect" href="https://trekyatra-media.sgp1.digitaloceanspaces.com" />
-      </head>
+      {/* No manual preconnect: all images are served same-origin via /_next/image (the optimizer
+          fetches from Spaces server-side), so the browser never connects to the Spaces host —
+          a preconnect to it was flagged unused by Lighthouse. Next injects <head> metadata itself. */}
       <body>
         <Providers>{children}</Providers>
       </body>
