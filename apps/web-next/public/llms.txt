@@ -1,0 +1,74 @@
+# TrekYatra
+
+> India's editorial trekking companion — trail-tested trek guides with real permit and cost information, live trail conditions, and side-by-side comparisons, from the Sahyadris to the high Himalayas.
+
+TrekYatra publishes editorially-reviewed guides for treks across India. Each trek guide covers the route, difficulty, best season, permits, costs, packing, itineraries and live conditions. Content is organized into individual trek guides, regional and seasonal hubs, guide types (packing, permits, costs, gear, itineraries), trek comparisons, and weekly trek news. An AI assistant (TrekSage) and a public structured-data API are available for programmatic access. The full list of individual trek, news and comparison URLs lives in the sitemaps linked at the bottom.
+
+## Start here
+
+- [Homepage](https://www.trekyatra.co.in/): trending treks, seasonal picks and regions
+- [Explore all treks](https://www.trekyatra.co.in/explore): full, filterable trek catalog
+- [Search](https://www.trekyatra.co.in/search): fuzzy + semantic trek search
+- [Plan a trek](https://www.trekyatra.co.in/plan): step-by-step recommendation wizard
+- [TrekSage AI assistant](https://www.trekyatra.co.in/treksage): conversational trek planning
+
+## Trek guides
+
+- Individual trek guides live at `https://www.trekyatra.co.in/trek/{slug}` — e.g. [Kedarkantha](https://www.trekyatra.co.in/trek/kedarkantha). Editorially reviewed; each covers route, difficulty, season, permits, costs and live conditions. See the sitemap for the complete list.
+- [Beginner treks](https://www.trekyatra.co.in/beginner): easy, first-timer routes
+- [Moderate treks](https://www.trekyatra.co.in/moderate)
+- [Challenging treks](https://www.trekyatra.co.in/challenging)
+
+## Guides by type
+
+- [Packing hub](https://www.trekyatra.co.in/packing): season-tuned packing lists
+- [Permits hub](https://www.trekyatra.co.in/permits): permit requirements and how to obtain them
+- [Cost guides](https://www.trekyatra.co.in/costs): honest budget breakdowns
+- [Gear guides](https://www.trekyatra.co.in/gear)
+- [Itineraries](https://www.trekyatra.co.in/itineraries)
+- Trek-specific sub-guides: `https://www.trekyatra.co.in/trek/{slug}/packing`, `/trek/{slug}/permits`, `/trek/{slug}/costs`
+
+## Regions & seasons
+
+- Regional hubs at `https://www.trekyatra.co.in/regions/{slug}` — e.g. [Uttarakhand](https://www.trekyatra.co.in/regions/uttarakhand), [Himachal](https://www.trekyatra.co.in/regions/himachal)
+- Seasonal hubs at `https://www.trekyatra.co.in/seasons/{slug}` — e.g. [Winter](https://www.trekyatra.co.in/seasons/winter)
+- Trek-type hubs at `https://www.trekyatra.co.in/trek-types/{slug}`
+
+## Compare treks
+
+- [Comparison tool](https://www.trekyatra.co.in/compare): build a side-by-side comparison
+- Clean comparison pages at `https://www.trekyatra.co.in/compare/{a}-vs-{b}` — e.g. [Kedarkantha vs Brahmatal](https://www.trekyatra.co.in/compare/kedarkantha-vs-brahmatal). See the compare sitemap for the full list.
+
+## Trek news & conditions
+
+- [Trek news hub](https://www.trekyatra.co.in/news): weekly, per-trek updates
+- News articles at `https://www.trekyatra.co.in/news/{slug}`
+
+## Operators
+
+- [Trek operators](https://www.trekyatra.co.in/operators): verified operator listings with reviews
+
+## About & editorial standards
+
+- [About TrekYatra](https://www.trekyatra.co.in/about)
+- [Authors & editorial team](https://www.trekyatra.co.in/about/authors)
+- [Editorial methodology](https://www.trekyatra.co.in/methodology): how guides are researched and reviewed
+- [Contact](https://www.trekyatra.co.in/contact)
+- [Safety](https://www.trekyatra.co.in/safety) and [safety disclaimer](https://www.trekyatra.co.in/safety-disclaimer)
+
+## Programmatic access
+
+- [Datacenter](https://datacenter.trekyatra.co.in/): structured TrekProfile JSON per trek (append `?slug={slug}`)
+- TrekSage MCP server (Streamable HTTP): `https://api.trekyatra.co.in/mcp` — tools include search_treks, get_trek_details, recommend_treks, compare_treks, get_trek_content, ask_trek_question, create_trek_plan_lead, translate_trek_content
+- Public trek profile API: `https://api.trekyatra.co.in/api/v1/treks/{slug}/profile`
+
+## Sitemaps
+
+- [Core sitemap](https://www.trekyatra.co.in/sitemap.xml)
+- [News sitemap](https://www.trekyatra.co.in/news-sitemap.xml)
+- [Compare sitemap](https://www.trekyatra.co.in/compare-sitemap.xml)
+
+## Optional
+
+- Hindi trek guides at `https://www.trekyatra.co.in/hi/trek/{slug}`
+- [Privacy policy](https://www.trekyatra.co.in/privacy), [Terms](https://www.trekyatra.co.in/terms), [Affiliate disclosure](https://www.trekyatra.co.in/affiliate-disclosure)

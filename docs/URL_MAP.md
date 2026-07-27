@@ -4,7 +4,7 @@
 > must be listed here and confirmed by the user. No new URL structures should be introduced
 > without updating this file and getting confirmation.
 
-Last updated: 2026-05-27 (Step 64)
+Last updated: 2026-07-27 (added `/llms.txt`)
 
 ---
 
@@ -160,6 +160,7 @@ Last updated: 2026-05-27 (Step 64)
 |-----|---------|-------|
 | `/sitemap.xml` | Core XML sitemap | Auto-generated, force-dynamic. Hub/editorial/guide pages + **references** child sitemaps (state-trek, hi-trek, `/news-sitemap.xml`, `/compare-sitemap.xml`). News & compare URLs are NOT listed directly here. |
 | `/robots.txt` | Robots rules | Auto-generated from robots.ts |
+| `/llms.txt` | LLM site guide (llmstxt.org) | Static curated `apps/web-next/public/llms.txt` — markdown overview + key **public** URLs (start-here, treks, guides, regions/seasons, compare, news, operators, about, programmatic access, sitemaps) for AI/LLM consumers. Meta-file like robots.txt — **NOT indexed** (excluded from sitemap). Lists only public pages + public API/MCP endpoints (no admin/account/auth). Added 2026-07-27 |
 | `/api/revalidate` | Next.js cache revalidate | POST, internal |
 
 ## TrekSage MCP Server & Datacenter Subdomain (Step 72)
