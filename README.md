@@ -461,6 +461,7 @@ trekyatra/
 | **`sharp` added** — required for `next/image` at scale; the WASM fallback was starving the web dyno (prod incident, `12c6ee0`) | Done |
 | **PSI #4 mount-gate** — `ClientOnly` wraps the two `ssr:false` home sections so their Suspense boundary is created post-hydration → clears benign #418/#423/#425 | Done |
 | **`llms.txt`** — curated `public/llms.txt` (llmstxt.org): public site overview + key URLs for AI/LLM consumers, served at `/llms.txt` | Done |
+| **LCP fix** — `images.minimumCacheTTL=31536000`: local optimized images (hero/logo) now cache 1yr at Cloudflare (were 60s → MISS/re-optimize every load) | Done |
 | **Fix:** auto trek-guide brief generation gated OFF by default (`ENABLE_DAILY_DISCOVERY`, was burning LLM tokens daily) | Done |
 | **Fix:** news articles no longer duplicate at `/trek/{news-slug}` — `/trek/{news-slug}` → 404 (deleted); news served only at `/news/{slug}` (direct 200); `scripts/purge_news_from_linking.py` cleans existing rows | Done |
 | **Fix:** "In this cluster" shows only published trek links + this trek's news (as `/news/{slug}`); `get_related_pages` filters by REAL CMS page_type so mis-typed news can't leak (mobile deferred) | Done |

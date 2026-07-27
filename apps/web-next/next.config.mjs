@@ -31,6 +31,13 @@ const nextConfig = {
   },
   images: {
     formats: ["image/avif", "image/webp"],
+    // Cache optimized images at the CDN for a year. Next's optimizer inherits the upstream
+    // Cache-Control; local /public images (hero, logo, region art) have none, so without this
+    // they fell back to the 60s default → Cloudflare expired them every 60s → REVALIDATE/MISS
+    // → origin re-optimize on nearly every load (slow LCP + needless dyno load). Spaces images
+    // already inherit `immutable` from the backfill. Public assets here are stable brand/hero
+    // art; if one is ever replaced, purge the Cloudflare cache or rename the file.
+    minimumCacheTTL: 31536000,
     remotePatterns: [
       { protocol: "https", hostname: "images.unsplash.com" },
       { protocol: "https", hostname: "pixabay.com" },
