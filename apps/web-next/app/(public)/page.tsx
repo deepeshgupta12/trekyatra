@@ -18,6 +18,7 @@ import { fetchCMSPages, fetchTrendingTreks, fetchTrekCMSOverrides, fetchTrekStat
 import SchemaInjector from "@/components/seo/SchemaInjector";
 import { buildWebSiteSchema } from "@/lib/schema";
 import { formatDate } from "@/lib/date";
+import { ClientOnly } from "@/components/util/ClientOnly";
 import HomeSearchBar from "@/components/home/HomeSearchBar";
 import { SeasonalTreksSection } from "@/components/home/SeasonalTreksSection";
 import { DifficultyTabsSection } from "@/components/home/DifficultyTabsSection";
@@ -415,13 +416,19 @@ export default async function Home() {
       {/* SEASONAL TABS — auto-select based on current month, shows state tags */}
       <SeasonalTreksSection treks={trekList} cmsPages={cmsTrekPages} />
 
-      {/* RECENTLY VIEWED — State D only (repeat logged-out): horizontal scroll of last 5 viewed treks */}
-      <RecentlyViewedSection trekList={trekList} cmsImageMap={cmsImageMap} />
+      {/* RECENTLY VIEWED — State D only (repeat logged-out): horizontal scroll of last 5 viewed treks.
+          ClientOnly mount-gate keeps the ssr:false Suspense boundary out of the hydration path. */}
+      <ClientOnly>
+        <RecentlyViewedSection trekList={trekList} cmsImageMap={cmsImageMap} />
+      </ClientOnly>
 
       {/* PERSONALISED FEED — States A+B+D; hidden for State C (new logged-out, no behavior).
           PersonalisedFeed manages its own section wrapper + heading so the Section title
-          never renders for State C (when PersonalisedFeed returns null). */}
-      <PersonalisedFeed limit={6} />
+          never renders for State C (when PersonalisedFeed returns null). ClientOnly mount-gate
+          keeps the ssr:false Suspense boundary out of the hydration path. */}
+      <ClientOnly>
+        <PersonalisedFeed limit={6} />
+      </ClientOnly>
 
       {/* RECENT NEWS — news articles grouped into per-trek tabs (latest→oldest, ≤5/tab), View all → /news */}
       <RecentNewsSection articles={newsArticles} trekNameMap={trekNameMap} />
