@@ -41,9 +41,19 @@ export function usePremium() {
     retry: 1,
   });
 
-  const isPremium = subStatus?.plan === "premium";
+  // iOS v1 ships WITHOUT paid features (App Store Guideline 3.1.1 — no external/Razorpay
+  // purchases, no non-StoreKit subscription). With no way to buy premium on iOS, premium
+  // content is unlocked for all iOS users so it is never shown locked-with-no-path. The IAP
+  // init + subscribe/restore flows are skipped on iOS entirely.
+  const IOS_PAID_DISABLED = Platform.OS === "ios";
+
+  const isPremium = IOS_PAID_DISABLED ? true : subStatus?.plan === "premium";
 
   useEffect(() => {
+    if (IOS_PAID_DISABLED) {
+      setStatus("ready");
+      return;
+    }
     let purchaseListener: ReturnType<typeof purchaseUpdatedListener> | null = null;
     let errorListener: ReturnType<typeof purchaseErrorListener> | null = null;
 
@@ -104,6 +114,7 @@ export function usePremium() {
 
   const subscribe = useCallback(
     async (productId: IAPProductId = IAP_PRODUCT_IDS.monthly) => {
+      if (Platform.OS === "ios") return; // iOS v1: no purchases (Guideline 3.1.1)
       if (status === "purchasing" || status === "verifying") return;
       setStatus("purchasing");
       setErrorMessage(null);
@@ -144,6 +155,7 @@ export function usePremium() {
   );
 
   const restore = useCallback(async () => {
+    if (Platform.OS === "ios") return; // iOS v1: no purchases (Guideline 3.1.1)
     if (status === "restoring") return;
     setStatus("restoring");
     setErrorMessage(null);

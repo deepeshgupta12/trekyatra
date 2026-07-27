@@ -1,4 +1,4 @@
-import { View, Text, ScrollView, TouchableOpacity, ActivityIndicator, StyleSheet, Alert } from "react-native";
+import { View, Text, ScrollView, TouchableOpacity, ActivityIndicator, StyleSheet, Alert, Platform } from "react-native";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { Image } from "expo-image";
 import { Ionicons } from "@expo/vector-icons";
@@ -163,8 +163,9 @@ export default function ProductDetailScreen() {
             </View>
           ) : null}
 
-          {/* Primary CTA */}
-          {!isProcessing && status !== "done" && (
+          {/* Primary CTA — hidden on iOS v1: digital products aren't purchasable without
+              StoreKit IAP (Guideline 3.1.1). No anti-steering copy either. */}
+          {Platform.OS !== "ios" && !isProcessing && status !== "done" && (
             <TouchableOpacity
               style={[styles.buyBtn, isPurchased && styles.downloadBtn]}
               onPress={handleBuy}

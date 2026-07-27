@@ -38,12 +38,20 @@ const AUTH_MENU: MenuItem[] = [
 
 const COMMON_MENU: MenuItem[] = [
   { icon: "storefront-outline", label: "Browse Operators", route: "/(tabs)/browse/operators" as never },
-  { icon: "bag-outline", label: "Trek Resources", route: "/(tabs)/browse/products" as never },
+  // Trek Resources = paid digital products (Razorpay). Hidden on iOS v1 — no in-app purchase
+  // of digital goods without StoreKit (Guideline 3.1.1).
+  ...((Platform.OS !== "ios"
+    ? [{ icon: "bag-outline", label: "Trek Resources", route: "/(tabs)/browse/products" as never }]
+    : []) as MenuItem[]),
   { icon: "notifications-outline", label: "Notifications", route: "/notifications" as never },
 ];
 
 const INFO_MENU: MenuItem[] = [
-  { icon: "star-outline", label: "Go Premium", route: "/(tabs)/account/premium" as never },
+  // "Go Premium" hidden on iOS v1 — premium is not sold on iOS (Guideline 3.1.1); iOS users
+  // get premium content unlocked (see usePremium).
+  ...((Platform.OS !== "ios"
+    ? [{ icon: "star-outline", label: "Go Premium", route: "/(tabs)/account/premium" as never }]
+    : []) as MenuItem[]),
   { icon: "information-circle-outline", label: "About TrekYatra", route: "/(tabs)/(home)/about" as never },
   { icon: "shield-checkmark-outline", label: "Safety Tips", route: "/(tabs)/(home)/safety" as never },
 ];

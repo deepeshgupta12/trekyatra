@@ -18,6 +18,52 @@ export default ({ config }: ConfigContext): any => ({
     config: {
       usesNonExemptEncryption: false,
     },
+    // Apple privacy manifest (mandatory since May 2024). Declares the "required reason" APIs
+    // that RN/Expo use (UserDefaults via AsyncStorage, file timestamps, boot time, disk space)
+    // with Apple's approved reason codes, plus collected-data types. NSPrivacyCollectedDataTypes
+    // MUST stay consistent with the App Store Connect privacy "nutrition labels".
+    privacyManifests: {
+      NSPrivacyTracking: false,
+      NSPrivacyTrackingDomains: [],
+      NSPrivacyCollectedDataTypes: [
+        {
+          NSPrivacyCollectedDataType: "NSPrivacyCollectedDataTypeEmailAddress",
+          NSPrivacyCollectedDataTypeLinked: true,
+          NSPrivacyCollectedDataTypeTracking: false,
+          NSPrivacyCollectedDataTypePurposes: ["NSPrivacyCollectedDataTypePurposeAppFunctionality"],
+        },
+        {
+          NSPrivacyCollectedDataType: "NSPrivacyCollectedDataTypeCoarseLocation",
+          NSPrivacyCollectedDataTypeLinked: true,
+          NSPrivacyCollectedDataTypeTracking: false,
+          NSPrivacyCollectedDataTypePurposes: ["NSPrivacyCollectedDataTypePurposeAppFunctionality"],
+        },
+        {
+          NSPrivacyCollectedDataType: "NSPrivacyCollectedDataTypeProductInteraction",
+          NSPrivacyCollectedDataTypeLinked: false,
+          NSPrivacyCollectedDataTypeTracking: false,
+          NSPrivacyCollectedDataTypePurposes: ["NSPrivacyCollectedDataTypePurposeAnalytics"],
+        },
+      ],
+      NSPrivacyAccessedAPITypes: [
+        {
+          NSPrivacyAccessedAPIType: "NSPrivacyAccessedAPICategoryUserDefaults",
+          NSPrivacyAccessedAPITypeReasons: ["CA92.1"],
+        },
+        {
+          NSPrivacyAccessedAPIType: "NSPrivacyAccessedAPICategoryFileTimestamp",
+          NSPrivacyAccessedAPITypeReasons: ["C617.1"],
+        },
+        {
+          NSPrivacyAccessedAPIType: "NSPrivacyAccessedAPICategorySystemBootTime",
+          NSPrivacyAccessedAPITypeReasons: ["35F9.1"],
+        },
+        {
+          NSPrivacyAccessedAPIType: "NSPrivacyAccessedAPICategoryDiskSpace",
+          NSPrivacyAccessedAPITypeReasons: ["E174.1"],
+        },
+      ],
+    },
     infoPlist: {
       // Required by expo-speech-recognition — without this the app crashes on first mic tap.
       NSSpeechRecognitionUsageDescription:
@@ -83,7 +129,7 @@ export default ({ config }: ConfigContext): any => ({
   },
   extra: {
     eas: {
-      projectId: process.env.EXPO_PROJECT_ID ?? "",
+      projectId: process.env.EXPO_PROJECT_ID ?? "6f97fbb4-7f04-47a8-8bb7-f6d2629f72e2",
     },
   },
 });
