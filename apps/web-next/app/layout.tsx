@@ -81,7 +81,6 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
     <html lang="en" className={`${fraunces.variable} ${inter.variable} ${jetbrainsMono.variable}`} suppressHydrationWarning>
       <head>
         <link rel="preconnect" href="https://trekyatra-media.sgp1.digitaloceanspaces.com" />
-        <link rel="preconnect" href="https://images.unsplash.com" />
       </head>
       <body>
         <Providers>{children}</Providers>

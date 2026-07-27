@@ -1,4 +1,5 @@
 import Link from "next/link";
+import Image from "next/image";
 
 interface LogoProps {
   variant?: "dark" | "light";
@@ -72,7 +73,7 @@ export const Logo = ({ variant = "dark", className = "", compact = false, size =
       {/* Actual brand logo PNG */}
       <div className="relative flex-shrink-0">
         <div className="absolute inset-0 bg-orange-400/20 blur-lg rounded-full opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
-        <img
+        <Image
           src="/images/Logo_Trekyatra.png"
           alt="TrekYatra logo"
           width={isLarge ? 56 : 48}

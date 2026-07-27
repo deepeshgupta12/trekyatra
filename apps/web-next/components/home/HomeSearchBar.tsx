@@ -56,6 +56,7 @@ export default function HomeSearchBar() {
             <select
               value={region}
               onChange={(e) => setRegion(e.target.value)}
+              aria-label="Filter treks by region"
               className="bg-transparent outline-none w-full text-sm appearance-none"
             >
               <option value="">Any region</option>
@@ -71,6 +72,7 @@ export default function HomeSearchBar() {
             <select
               value={season}
               onChange={(e) => setSeason(e.target.value)}
+              aria-label="Filter treks by season"
               className="bg-transparent outline-none w-full text-sm appearance-none"
             >
               <option value="">Any season</option>

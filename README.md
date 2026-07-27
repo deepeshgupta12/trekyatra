@@ -456,6 +456,8 @@ trekyatra/
 | **PSI #4 (hydration hardening):** TZ/ICU-deterministic `lib/date.ts` (`formatDate`) on home/trek/news (flagged editorial date is a Server Component → not the mismatch source; home tree verified hydration-clean) | Done |
 | **PSI #4 (Footer year):** `© 2023–{new Date().getFullYear()}` → `suppressHydrationWarning` — fixes a New-Year static-vs-client hydration mismatch | Done |
 | **PSI #4 (closed):** live #418/#423/#425 investigated end-to-end — pure React-internal stacks (no app frame), no DOM change, reproduce only in prod build; benign App-Router `ssr:false` Suspense-boundary warning. Temp source maps reverted; latent Footer bug fixed | Done |
+| **PSI #3 backfill:** ran on prod — 83/83 Spaces media objects now `immutable` cached; Cloudflare verified already caching static/image/HTML | Done |
+| **PSI minor quick-wins:** 4 non-card home imgs → Next/Image, logo (308KB) → Next/Image, dropped unused unsplash preconnect, home `<select>` aria-labels | Done |
 | **Fix:** auto trek-guide brief generation gated OFF by default (`ENABLE_DAILY_DISCOVERY`, was burning LLM tokens daily) | Done |
 | **Fix:** news articles no longer duplicate at `/trek/{news-slug}` — `/trek/{news-slug}` → 404 (deleted); news served only at `/news/{slug}` (direct 200); `scripts/purge_news_from_linking.py` cleans existing rows | Done |
 | **Fix:** "In this cluster" shows only published trek links + this trek's news (as `/news/{slug}`); `get_related_pages` filters by REAL CMS page_type so mis-typed news can't leak (mobile deferred) | Done |

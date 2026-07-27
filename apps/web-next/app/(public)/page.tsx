@@ -349,7 +349,7 @@ export default async function Home() {
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
             {regionCards.map((r) => (
               <Link key={r.slug} href={`/regions/${r.slug}`} className="group relative h-72 overflow-hidden rounded-2xl lift">
-                <img src={r.image} alt={`${r.name} treks`} loading="lazy" width={500} height={700} className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110" />
+                <Image src={r.image} alt={`${r.name} treks`} fill sizes="(max-width: 768px) 50vw, (max-width: 1024px) 33vw, 25vw" className="object-cover transition-transform duration-700 group-hover:scale-110" />
                 <div className="absolute inset-0 bg-gradient-to-t from-foreground via-foreground/20 to-transparent" />
                 <div className="absolute bottom-0 inset-x-0 p-5 text-surface">
                   <h3 className="font-display text-xl font-semibold leading-tight">{r.name}</h3>
@@ -369,7 +369,7 @@ export default async function Home() {
         <div className="container-wide">
           <div className="grid lg:grid-cols-2 gap-10 items-center">
             <div className="relative h-[520px] rounded-2xl overflow-hidden stack-shadow">
-              <img src={editorialImage} alt={hasRealEditorial ? `${editorialName} trek` : "Trekker at Himalayan summit"} loading="lazy" width={1200} height={1200} className="w-full h-full object-cover" />
+              <Image src={editorialImage} alt={hasRealEditorial ? `${editorialName} trek` : "Trekker at Himalayan summit"} fill sizes="(max-width: 1024px) 100vw, 50vw" className="object-cover" />
               <div className="absolute top-5 left-5 px-3 py-1 rounded-full bg-accent text-accent-foreground text-xs uppercase tracking-widest font-semibold">Editorial spotlight</div>
             </div>
             <div>
@@ -439,7 +439,7 @@ export default async function Home() {
           ].map((r) => (
             <div key={r.title} className="group bg-card border border-border rounded-2xl lift overflow-hidden">
               <div className="relative h-44 overflow-hidden">
-                <img src={r.image} alt={r.title} className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105" />
+                <Image src={r.image} alt={r.title} fill sizes="(max-width: 768px) 100vw, 400px" className="object-cover transition-transform duration-700 group-hover:scale-105" />
                 <div className="absolute inset-0 bg-gradient-to-t from-foreground/60 to-transparent" />
                 <div className="absolute bottom-3 left-4">
                   <span className="text-[10px] uppercase tracking-widest text-surface/80 font-semibold bg-black/30 backdrop-blur-sm px-2.5 py-1 rounded-full">{r.type}</span>
@@ -471,7 +471,7 @@ export default async function Home() {
         <div className="container-narrow">
           <div className="relative rounded-3xl overflow-hidden p-10 md:p-16 bg-gradient-twilight text-surface text-center">
             <div className="absolute inset-0 opacity-30">
-              <img src="/images/hero-himalaya-dawn.jpg" alt="" className="w-full h-full object-cover" />
+              <Image src="/images/hero-himalaya-dawn.jpg" alt="" fill sizes="100vw" className="object-cover" />
             </div>
             <div className="relative">
               <Mountain className="h-10 w-10 mx-auto mb-6 text-accent" />
