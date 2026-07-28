@@ -1,6 +1,7 @@
 import type { ReactElement } from "react";
-import { FlatList, View, Text, ActivityIndicator, StyleSheet, Dimensions } from "react-native";
+import { FlatList, ScrollView, View, Text, ActivityIndicator, StyleSheet, Dimensions } from "react-native";
 import { TrekCard } from "@/components/trek/TrekCard";
+import { TrekCardSkeleton } from "@/components/ui/SkeletonLoader";
 import { useTheme } from "@/hooks/useTheme";
 import type { TrekListItem } from "@/lib/mobileApi";
 
@@ -30,10 +31,14 @@ export function TrekGrid({
 
   if (isLoading) {
     return (
-      <View style={styles.center}>
+      <ScrollView showsVerticalScrollIndicator={false}>
         {ListHeaderComponent}
-        <ActivityIndicator color={colors.saffron} />
-      </View>
+        <View style={[styles.list, styles.skeletonGrid]}>
+          {Array.from({ length: 6 }).map((_, i) => (
+            <TrekCardSkeleton key={i} width={CARD_WIDTH} height={CARD_WIDTH * 1.4} />
+          ))}
+        </View>
+      </ScrollView>
     );
   }
 
@@ -81,6 +86,11 @@ const styles = StyleSheet.create({
   row: {
     gap: COLUMN_GAP,
     marginBottom: 12,
+  },
+  skeletonGrid: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: COLUMN_GAP,
   },
   center: {
     paddingVertical: 48,
