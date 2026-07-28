@@ -74,7 +74,7 @@ All env vars below must be set in DigitalOcean App Platform → `api` component 
 | D06 | **Splash screen image created** (1284×2778 PNG) and referenced as `splash.image` in `app.config.ts` | `[ ]` | Currently only `splash.backgroundColor` is set — native splash will be blank dark screen |
 | D07 | **`PrivacyInfo.xcprivacy` privacy manifest created** in `apps/mobile/ios/TrekYatra/` | `[ ]` | **Required by Apple since May 2024** for all new submissions. Must declare API reasons for: `NSLocationWhenInUseUsageDescription`, `NSFaceIDUsageDescription`, `NSUserDefaults` (expo-secure-store), file timestamp APIs (expo-local-authentication). Rejection guaranteed without this. |
 | D08 | **Sentry package version aligned to Expo SDK 56** (`@sentry/react-native ~6.x` not `~7.11.0`) | `[ ]` | Current `~7.11.0` is mismatched — may cause build failures and symbolication issues |
-| D09 | **`ascAppId` and `appleTeamId` populated in `eas.json`** | `[ ]` | Currently empty strings — EAS submit will fail |
+| D09 | **`ascAppId` and `appleTeamId` populated in `eas.json`** | `[x]` | ascAppId=6795408094, appleTeamId=CQ3B698U57, appleId=guyshazam12@gmail.com |
 | D10 | **Bundle ID RECONCILED ✅ (2026-07-28)** — all files now use `in.co.trekyatra.app` (app.config.ts iOS+Android, checklist Sections B/E, PRODUCTION_SETUP). Final before ASC registration. | `[x]` | Bundle ID cannot be changed after App Store Connect registration |
 | D11 | `google-services.json` (Android) added as EAS secret (NOT git-committed) | `[ ]` | `eas secret:create --scope project --name GOOGLE_SERVICES_JSON --type file` |
 | D12 | `GoogleServiceInfo.plist` (iOS) added as EAS secret | `[ ]` | Same command, `--name GOOGLE_SERVICE_INFO_PLIST` |
@@ -94,7 +94,7 @@ All env vars below must be set in DigitalOcean App Platform → `api` component 
 ### Apple App Store Connect
 | # | Item | Status |
 |---|------|--------|
-| E01 | App record created: Bundle ID `in.co.trekyatra.app` | `[ ]` |
+| E01 | App record created: Bundle ID `in.co.trekyatra.app` | `[x]` (Apple ID 6795408094, name "TrekYatra") |
 | E02 | App Category: Travel | `[ ]` |
 | E03 | Age Rating: 4+ | `[ ]` |
 | E04 | Privacy Nutrition Labels: Location (when in use), Purchases, User Content (reports) | `[ ]` |
