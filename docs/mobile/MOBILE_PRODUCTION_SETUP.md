@@ -130,7 +130,7 @@ Required in repo Settings → Secrets → Actions:
 |--------|-------------|
 | `EXPO_TOKEN` | expo.dev → Access Tokens |
 | `EAS_PROJECT_ID` | From `eas.json` or `app.config.ts` output |
-| `EXPO_PUBLIC_API_BASE_URL` | `https://api.trekyatra.co.in` |
+| `EXPO_PUBLIC_API_URL` | `https://api.trekyatra.co.in` |
 | `EXPO_PUBLIC_SENTRY_DSN` | Sentry → trekyatra-mobile → DSN |
 | `GOOGLE_IOS_CLIENT_ID` | Firebase Console → Google Sign-In → iOS client ID |
 

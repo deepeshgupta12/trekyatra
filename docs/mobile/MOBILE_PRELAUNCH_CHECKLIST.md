@@ -25,8 +25,8 @@
 | B01 | Apple Developer account created and active ($99/year) | `[ ]` | Required for TestFlight + App Store |
 | B02 | Google Play Console account created ($25 one-time) | `[ ]` | |
 | B03 | Firebase project created (`trekyatra-mobile`) | `[ ]` | Needed for FCM push (M14) |
-| B04 | Firebase Android app registered (package: `co.in.trekyatra.app`) | `[ ]` | Download `google-services.json` |
-| B05 | Firebase iOS app registered (bundle: `co.in.trekyatra.app`) | `[ ]` | Download `GoogleServiceInfo.plist` |
+| B04 | Firebase Android app registered (package: `in.co.trekyatra.app`) | `[ ]` | Download `google-services.json` |
+| B05 | Firebase iOS app registered (bundle: `in.co.trekyatra.app`) | `[ ]` | Download `GoogleServiceInfo.plist` |
 | B06 | Expo account created at expo.dev | `[ ]` | |
 | B07 | EAS CLI installed and logged in (`eas login`) | `[ ]` | `npm install -g eas-cli` |
 | B08 | EAS project created — note `EAS_PROJECT_ID` | `[ ]` | `eas init` in `apps/mobile/` |
@@ -75,13 +75,13 @@ All env vars below must be set in DigitalOcean App Platform → `api` component 
 | D07 | **`PrivacyInfo.xcprivacy` privacy manifest created** in `apps/mobile/ios/TrekYatra/` | `[ ]` | **Required by Apple since May 2024** for all new submissions. Must declare API reasons for: `NSLocationWhenInUseUsageDescription`, `NSFaceIDUsageDescription`, `NSUserDefaults` (expo-secure-store), file timestamp APIs (expo-local-authentication). Rejection guaranteed without this. |
 | D08 | **Sentry package version aligned to Expo SDK 56** (`@sentry/react-native ~6.x` not `~7.11.0`) | `[ ]` | Current `~7.11.0` is mismatched — may cause build failures and symbolication issues |
 | D09 | **`ascAppId` and `appleTeamId` populated in `eas.json`** | `[ ]` | Currently empty strings — EAS submit will fail |
-| D10 | **Bundle ID verified consistent**: `app.config.ts` uses `in.co.trekyatra.app`; checklist and PRODUCTION_SETUP.md reference `co.in.trekyatra.app` — pick one and align all files before first EAS build | `[ ]` | Bundle ID cannot be changed after App Store Connect registration |
+| D10 | **Bundle ID RECONCILED ✅ (2026-07-28)** — all files now use `in.co.trekyatra.app` (app.config.ts iOS+Android, checklist Sections B/E, PRODUCTION_SETUP). Final before ASC registration. | `[x]` | Bundle ID cannot be changed after App Store Connect registration |
 | D11 | `google-services.json` (Android) added as EAS secret (NOT git-committed) | `[ ]` | `eas secret:create --scope project --name GOOGLE_SERVICES_JSON --type file` |
 | D12 | `GoogleServiceInfo.plist` (iOS) added as EAS secret | `[ ]` | Same command, `--name GOOGLE_SERVICE_INFO_PLIST` |
 | D13 | APNs Auth Key (.p8) uploaded via `eas credentials` | `[ ]` | `eas credentials` → iOS → Push Notification Key |
 | D14 | iOS distribution certificate generated via `eas credentials` | `[ ]` | EAS manages this automatically in auto-signing mode |
 | D15 | Android keystore generated (production signing) via EAS | `[ ]` | `eas credentials` → Android → Keystore |
-| D16 | GitHub secrets set: `EXPO_TOKEN`, `EAS_PROJECT_ID`, `EXPO_PUBLIC_API_BASE_URL`, `EXPO_PUBLIC_SENTRY_DSN`, `GOOGLE_IOS_CLIENT_ID` | `[ ]` | M22 |
+| D16 | GitHub secrets set: `EXPO_TOKEN`, `EAS_PROJECT_ID`, `EXPO_PUBLIC_API_URL`, `EXPO_PUBLIC_SENTRY_DSN`, `GOOGLE_IOS_CLIENT_ID` | `[ ]` | M22 |
 | D17 | Development build installs on physical Android device | `[ ]` | `eas build --profile development --platform android` |
 | D18 | Development build installs on iOS simulator or physical device | `[ ]` | `eas build --profile development --platform ios` |
 | D19 | Preview build distributed to internal testers via TestFlight | `[ ]` | `eas build --profile preview --platform ios` + `eas submit` |
@@ -94,7 +94,7 @@ All env vars below must be set in DigitalOcean App Platform → `api` component 
 ### Apple App Store Connect
 | # | Item | Status |
 |---|------|--------|
-| E01 | App record created: Bundle ID `co.in.trekyatra.app` | `[ ]` |
+| E01 | App record created: Bundle ID `in.co.trekyatra.app` | `[ ]` |
 | E02 | App Category: Travel | `[ ]` |
 | E03 | Age Rating: 4+ | `[ ]` |
 | E04 | Privacy Nutrition Labels: Location (when in use), Purchases, User Content (reports) | `[ ]` |
@@ -108,7 +108,7 @@ All env vars below must be set in DigitalOcean App Platform → `api` component 
 ### Google Play Console
 | # | Item | Status |
 |---|------|--------|
-| E11 | App record created: Package `co.in.trekyatra.app` | `[ ]` |
+| E11 | App record created: Package `in.co.trekyatra.app` | `[ ]` |
 | E12 | App Category: Travel & Local | `[ ]` |
 | E13 | Content Rating: Everyone | `[ ]` |
 | E14 | In-App Products configured (product IDs matching M13) | `[ ]` |

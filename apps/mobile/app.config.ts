@@ -73,6 +73,12 @@ export default ({ config }: ConfigContext): any => ({
       // Required by expo-location (foreground only — no background location used)
       NSLocationWhenInUseUsageDescription:
         "TrekYatra uses your location to show treks near you. We never track you in the background.",
+      // Real copy for expo-image-picker (trip-report photos, M17) — Apple rejects generic
+      // "$(PRODUCT_NAME)" permission strings.
+      NSCameraUsageDescription:
+        "TrekYatra needs camera access so you can add your own photos to trip reports.",
+      NSPhotoLibraryUsageDescription:
+        "TrekYatra needs photo-library access so you can attach photos to your trip reports.",
       CFBundleURLTypes: [
         {
           CFBundleURLSchemes: [
