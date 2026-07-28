@@ -1,6 +1,8 @@
 import { useEffect, useState } from "react";
-import { View, Text, ScrollView, TouchableOpacity, Image, StyleSheet, Linking } from "react-native";
+import { View, Text, ScrollView, TouchableOpacity, Image, StyleSheet } from "react-native";
+import { router } from "expo-router";
 import { useTheme } from "@/hooks/useTheme";
+import { resizedImageUrl } from "@/lib/imageUrl";
 import { contentApi, type NewsArticle } from "@/lib/mobileApi";
 
 interface TrekNewsSectionProps {
@@ -44,10 +46,10 @@ export function TrekNewsSection({ slug }: TrekNewsSectionProps) {
               },
             ]}
             activeOpacity={0.85}
-            onPress={() => Linking.openURL(`https://trekyatra.co.in/news/${article.slug}`)}
+            onPress={() => router.push(`/(tabs)/(home)/news/${article.slug}` as never)}
           >
             {article.hero_image_url ? (
-              <Image source={{ uri: article.hero_image_url }} style={styles.image} />
+              <Image source={{ uri: resizedImageUrl(article.hero_image_url, 400) ?? article.hero_image_url }} style={styles.image} />
             ) : (
               <View style={[styles.image, { backgroundColor: isDark ? "rgba(255,255,255,0.06)" : "rgba(29,58,46,0.06)" }]} />
             )}
