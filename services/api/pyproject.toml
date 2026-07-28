@@ -30,6 +30,10 @@ dependencies = [
   "pgvector>=0.3.0,<1.0.0",
   "stripe>=8.0.0,<9.0.0",
   "python-multipart>=0.0.9,<1.0.0",
+  # Sign in with Apple: verifies the Apple identity token (RS256 via PyJWKClient).
+  # [crypto] pulls `cryptography`, required for RS256. Previously only present
+  # transitively via `mcp`/`redis` — declared directly so a clean deploy can't drop it.
+  "PyJWT[crypto]>=2.9.0,<3.0.0",
   "boto3>=1.34.0,<2.0.0",
   "json-repair>=0.30.0,<1.0.0",
   "mcp>=1.2.0,<2.0.0",
