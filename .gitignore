@@ -41,5 +41,12 @@ redis-data/
 # GitNexus
 .gitnexus/
 
+# vexp local daemon (contains a unix socket — breaks EAS build tarball copy)
+.vexp/
+
+# Local runtime artifacts (never shipped)
+services/api/celerybeat-schedule.db
+services/api/data/
+
 # Generated docs
 AGENTS.md
