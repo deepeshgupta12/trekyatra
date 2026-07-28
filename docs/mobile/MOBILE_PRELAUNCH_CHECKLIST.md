@@ -59,6 +59,12 @@ All env vars below must be set in DigitalOcean App Platform → `api` component 
 | C12 | `alembic upgrade head` run after each mobile step migration | All | `[ ]` | Via DO api component Console tab |
 | C13 | `RAZORPAY_WEBHOOK_SECRET` set for mobile payment webhook | M12 | `[ ]` | Razorpay Dashboard → Webhooks |
 | C14 | Health check: `GET /api/v1/health` returns 200 with all services healthy | All | `[ ]` | Confirm before each mobile build |
+| C15 | `APPLE_BUNDLE_ID=in.co.trekyatra.app` set | Apple Sign-In (Step 5) | `[ ]` | Aud claim the Apple identity token must match; config default exists |
+| C16 | `alembic upgrade head` — migration `20260728_0055` (analytics_sessions device_model/os_version) | Analytics session (M15+) | `[ ]` | Without it `/analytics/session/start` 500s |
+| C17 | `python scripts/backfill_image_variants.py` run (resized `_400`/`_800` media variants) | Image perf (#3) | `[ ]` | Additive; new uploads auto-generate. See DO_RELEASE_RUNBOOK.md |
+| C18 | Deploy picked up `PyJWT[crypto]` dep (pyproject) | Apple Sign-In RS256 | `[ ]` | Was transitive-only; declared 2026-07-28 |
+
+> **Full 2026-07-28 DO release runbook:** `docs/mobile/DO_RELEASE_RUNBOOK.md`
 
 ---
 

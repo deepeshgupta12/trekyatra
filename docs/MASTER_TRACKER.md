@@ -18,6 +18,19 @@ Do not modify any code file without first:
 4. Checking impacted files and blast radius
 5. Updating the relevant step file in `docs/steps/`
 
+## 2026-07-28 — iOS launch prep + mobile UI audit + backend deltas
+
+- **iOS launch**: bundle `in.co.trekyatra.app`, Apple Sign-In (Guideline 4.8), privacy
+  manifest + permission strings, paid features gated off, first EAS build `1.0.0 (1)`
+  built + submitted to TestFlight (ASC app `6795408094`).
+- **Mobile UI audit (10 items)**: overlapping pills, compare-name contrast, Explore grid
+  padding (`noMargin`/`Math.floor`), app icon (flattened/no-alpha), image variants (#3),
+  shimmer skeletons (#6), native news screen (#7 / M21), trek route map (#8), editorial
+  content typography (#9).
+- **Backend deltas needing DO action**: migration `20260728_0055` (analytics session device
+  cols), env `APPLE_BUNDLE_ID`, `PyJWT[crypto]` declared, image-variant backfill.
+  → **See `docs/mobile/DO_RELEASE_RUNBOOK.md`** and PRELAUNCH checklist C15–C18.
+
 ## V0 Status — Complete
 All V0 foundations are shipped. The stack is live locally with:
 - FastAPI backend, PostgreSQL, Redis, Celery-ready infra
