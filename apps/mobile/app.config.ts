@@ -6,6 +6,14 @@ export default ({ config }: ConfigContext): any => ({
   name: "TrekYatra",
   slug: "trekyatra",
   version: "1.0.0",
+  // OTA (EAS Update): ship JS/asset fixes without an App Store review. runtimeVersion
+  // is tied to the marketing version — a native rebuild (new version) starts a new
+  // runtime, and only updates built against a matching runtimeVersion are delivered.
+  runtimeVersion: { policy: "appVersion" },
+  updates: {
+    url: "https://u.expo.dev/6f97fbb4-7f04-47a8-8bb7-f6d2629f72e2",
+    fallbackToCacheTimeout: 0,
+  },
   orientation: "portrait",
   icon: "./assets/icon.png",
   userInterfaceStyle: "automatic",

@@ -152,6 +152,7 @@ Last updated: 2026-07-27 (added `/llms.txt`)
 | `/admin/cdp/gsc` | CDP GSC | Google Search Console performance data |
 | `/admin/reports` | Trip Reports moderation queue | Pending/Approved/Rejected filter tabs; approve or reject UGC trail condition reports — STEP-78 |
 | `/admin/logs` | System logs | NOT BUILT — post-launch |
+| `/admin/app-version` | App Version Gate (iOS) | Force/soft update + maintenance kill-switch — edits live, no app release; STEP-M23 |
 | `/admin/settings` | Settings | NOT BUILT — post-launch |
 
 ## System Routes
@@ -180,6 +181,8 @@ Last updated: 2026-07-27 (added `/llms.txt`)
 | `/api/v1/reports` | **Auth POST** — submit a trip report (status=pending); STEP-78 |
 | `/api/v1/reports/media/upload` | **Auth POST** — upload report photo to DO Spaces → CDN URL (max 5MB, JPEG/PNG/WebP); STEP-78 |
 | `/api/v1/reports/{id}` | **Auth DELETE** — delete own pending report; STEP-78 |
+| `/api/v1/app/version-config` | **Public GET** — mobile version gate decision (ok/soft/force/maintenance) for `?platform&current_version`; fail-open; STEP-M23 |
+| `/api/v1/admin/app/version-config` | **Admin GET/PUT** — read/update the version gate + maintenance kill-switch per platform; STEP-M23 |
 | `/api/v1/admin/reports` | **Admin GET** — moderation queue filterable by status; STEP-78 |
 | `/api/v1/admin/reports/{id}/moderate` | **Admin PATCH** — approve or reject a report; STEP-78 |
 | `/trekker/[signalId]` | **Public** — privacy-safe trekker profile page; accessed via signal UUID (not user ID); shows display_name, bio, trek_count, experience, planning context; STEP-79 |

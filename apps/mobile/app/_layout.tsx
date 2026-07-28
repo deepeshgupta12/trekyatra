@@ -29,6 +29,7 @@ import { AppDrawer } from "@/components/layout/AppDrawer";
 import { incrementOpenCount, requestAndRegisterPushToken, saveToInbox } from "@/services/notificationService";
 import * as Notifications from "expo-notifications";
 import { AnalyticsProvider } from "@/providers/AnalyticsProvider";
+import { VersionGateProvider } from "@/providers/VersionGateProvider";
 import { SafeAreaProvider, initialWindowMetrics } from "react-native-safe-area-context";
 
 Sentry.init({
@@ -123,6 +124,7 @@ export default Sentry.wrap(function RootLayout() {
           <OnboardingProvider>
             <AuthProvider>
               <AnalyticsProvider>
+              <VersionGateProvider>
               <AuthGate>
                 <Stack screenOptions={{ headerShown: false }}>
                   <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
@@ -132,6 +134,7 @@ export default Sentry.wrap(function RootLayout() {
                 </Stack>
                 <AppDrawer />
               </AuthGate>
+              </VersionGateProvider>
               </AnalyticsProvider>
             </AuthProvider>
           </OnboardingProvider>

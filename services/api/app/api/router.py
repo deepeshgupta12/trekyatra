@@ -2,6 +2,8 @@ from fastapi import APIRouter
 
 from app.api.routes.admin import router as admin_router
 from app.api.routes.admin_auth import router as admin_auth_router
+from app.api.routes.app_config import public_router as app_config_public_router
+from app.api.routes.app_config import admin_router as app_config_admin_router
 from app.api.routes.users import router as users_router
 from app.api.routes.agent_runs import router as agent_runs_router
 from app.api.routes.agent_triggers import router as agent_triggers_router
@@ -128,6 +130,8 @@ api_router.include_router(admin_push_router)
 api_router.include_router(reports_public_router)
 api_router.include_router(reports_auth_router)
 api_router.include_router(reports_admin_router)
+api_router.include_router(app_config_public_router)
+api_router.include_router(app_config_admin_router)
 api_router.include_router(buddies_public_router)
 api_router.include_router(buddies_auth_router)
 api_router.include_router(conditions_public_router)

@@ -27,8 +27,13 @@ Do not modify any code file without first:
   padding (`noMargin`/`Math.floor`), app icon (flattened/no-alpha), image variants (#3),
   shimmer skeletons (#6), native news screen (#7 / M21), trek route map (#8), editorial
   content typography (#9).
-- **Backend deltas needing DO action**: migration `20260728_0055` (analytics session device
-  cols), env `APPLE_BUNDLE_ID`, `PyJWT[crypto]` declared, image-variant backfill.
+- **Version controller (STEP-M23)**: server-driven version gate — force/soft update +
+  maintenance kill-switch (`app_version_config` table, migration `0056`, public + admin
+  APIs, mobile `VersionGateProvider`, admin page `/admin/app-version`) + **OTA** via
+  `expo-updates` (runtimeVersion `appVersion`, `production`/`preview` channels). iOS
+  `buildNumber` bumped to 2.
+- **Backend deltas needing DO action**: migrations `0055` + `0056`, env `APPLE_BUNDLE_ID`,
+  `PyJWT[crypto]` declared, image-variant backfill.
   → **See `docs/mobile/DO_RELEASE_RUNBOOK.md`** and PRELAUNCH checklist C15–C18.
 
 ## V0 Status — Complete

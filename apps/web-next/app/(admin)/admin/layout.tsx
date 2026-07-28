@@ -6,7 +6,7 @@ import { useState } from "react";
 import { Logo } from "@/components/brand/Logo";
 import {
   LayoutDashboard, Search, Layers, FileText, CheckSquare, Link2,
-  DollarSign, BarChart2, Terminal, Settings, ChevronRight, Menu, X,
+  DollarSign, BarChart2, Terminal, Settings, Smartphone, ChevronRight, Menu, X,
   GitBranch, Bot, GitMerge, Database, LogOut, Users, RefreshCw, Swords, Mail, Building2, Globe, Workflow, TrendingUp,
   Package, ShoppingBag, Activity, Filter, Webhook, Mountain, MessageSquare, CloudSun,
 } from "lucide-react";
@@ -74,6 +74,7 @@ const NAV_GROUPS = [
       { href: "/admin/conditions", label: "Live Conditions", icon: CloudSun },
       { href: "/admin/treksage-logs", label: "TrekSage Logs", icon: MessageSquare },
       { href: "/admin/logs", label: "Agent Logs", icon: Terminal },
+      { href: "/admin/app-version", label: "App Version Gate", icon: Smartphone },
       { href: "/admin/settings", label: "Settings", icon: Settings },
     ],
   },

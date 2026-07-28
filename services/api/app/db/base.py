@@ -33,6 +33,7 @@ from app.modules.trek_intelligence.models import AIInteractionLog, TrekQACache, 
 from app.modules.reports.models import TripReport, TrekMedia
 from app.modules.buddies.models import BuddySignal, BuddyRequest, BuddyChatMessage
 from app.modules.conditions.models import TrekCondition
+from app.modules.app_config.models import AppVersionConfig
 from app.modules.cdp.models import (
     AnalyticsEvent,
     AnalyticsSession,
@@ -115,4 +116,5 @@ __all__ = [
     "TrekMedia",
     "TrekCondition",
     "TrekComparison",
+    "AppVersionConfig",
 ]
