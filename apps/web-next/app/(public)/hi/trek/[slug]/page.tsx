@@ -13,7 +13,7 @@ export const dynamicParams = true;
 export const revalidate = 3600;
 
 export async function generateMetadata({ params }: { params: { slug: string } }): Promise<Metadata> {
-  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? "https://trekyatra.com";
+  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? "https://www.trekyatra.co.in";
   let cmsPage: CMSPage | null = null;
   try {
     const page = await fetchCMSPage(params.slug, "hi");
@@ -60,7 +60,7 @@ export async function generateMetadata({ params }: { params: { slug: string } })
 }
 
 export default async function HiTrekDetailPage({ params }: { params: { slug: string } }) {
-  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? "https://trekyatra.com";
+  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? "https://www.trekyatra.co.in";
   let cmsPage: CMSPage | null = null;
   try {
     const page = await fetchCMSPage(params.slug, "hi");

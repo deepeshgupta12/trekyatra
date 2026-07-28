@@ -8,7 +8,7 @@ export const revalidate = 3600;
 export const metadata: Metadata = {
   title: "Trek Operators — Find Vetted Guides | TrekYatra",
   description: "Browse vetted trekking operators across the Himalayas. Compare regions, specialties, and ratings to find the right guide for your trek.",
-  alternates: { canonical: "https://trekyatra.com/operators" },
+  alternates: { canonical: "https://www.trekyatra.co.in/operators" },
   openGraph: {
     title: "Trek Operators | TrekYatra",
     description: "Vetted Himalayan trekking operators — find your guide.",

@@ -6,7 +6,7 @@
  * re-crawls trek detail pages when live conditions or trail reports are refreshed.
  */
 
-const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? "https://trekyatra.com";
+const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? "https://www.trekyatra.co.in";
 const API_BASE = process.env.NEXT_PUBLIC_API_BASE ?? "http://localhost:8000";
 
 interface TrekSitemapEntry {

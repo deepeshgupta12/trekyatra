@@ -29,7 +29,7 @@ async function fetchComparisonPairs(): Promise<string[]> {
 }
 
 export async function GET() {
-  const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? "https://trekyatra.com";
+  const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? "https://www.trekyatra.co.in";
   const now = new Date().toISOString();
   const pairs = await fetchComparisonPairs();
 

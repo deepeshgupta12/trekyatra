@@ -27,7 +27,7 @@ export async function generateMetadata({ params }: { params: { slug: string } })
     const page = await fetchCMSPage(params.slug);
     if (page.status === "published") cmsPage = page;
   } catch { /* not found */ }
-  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? "https://trekyatra.com";
+  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? "https://www.trekyatra.co.in";
   const title = cmsPage?.seo_title
     ? `${cmsPage.seo_title} | TrekYatra`
     : `Packing List — ${params.slug.replace(/-/g, " ")} | TrekYatra`;

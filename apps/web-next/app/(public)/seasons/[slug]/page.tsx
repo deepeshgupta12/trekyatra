@@ -70,7 +70,7 @@ export function generateStaticParams() {
 }
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
-  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? "https://trekyatra.com";
+  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? "https://www.trekyatra.co.in";
   const fallback = SEASON_STATIC[params.slug] ?? SEASON_STATIC.winter;
   try {
     const page = await fetchCMSPage(`seasons/${params.slug}`);
@@ -92,7 +92,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 export const revalidate = 3600;
 
 export default async function Seasonal({ params }: Props) {
-  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? "https://trekyatra.com";
+  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? "https://www.trekyatra.co.in";
   const s = SEASON_STATIC[params.slug] ?? SEASON_STATIC.winter;
   const Icon = s.icon;
 

@@ -35,7 +35,7 @@ async function findCostPage(trekSlug: string): Promise<CMSPage | null> {
 export async function generateMetadata({ params }: { params: { slug: string } }): Promise<Metadata> {
   const page = await findCostPage(params.slug);
   const trekName = trekDisplayName(params.slug);
-  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? "https://trekyatra.com";
+  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? "https://www.trekyatra.co.in";
   const title = (page?.seo_title?.replace(/\s*\|\s*TrekYatra\s*$/i, "").trim()) || `${trekName} Cost Guide`;
   const description = page?.seo_description ?? `Complete cost breakdown and budget guide for the ${trekName}.`;
   const canonical = `${siteUrl}/trek/${params.slug}/costs`;

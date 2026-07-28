@@ -45,7 +45,7 @@ async function fetchCmsSitemapPages(): Promise<CmsSitemapEntry[]> {
   return [];
 }
 
-const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? "https://trekyatra.com";
+const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? "https://www.trekyatra.co.in";
 
 function url(path: string, priority = 0.7, changefreq: MetadataRoute.Sitemap[0]["changeFrequency"] = "weekly") {
   return {

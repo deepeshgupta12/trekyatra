@@ -34,7 +34,7 @@ async function findPackingPage(trekSlug: string): Promise<CMSPage | null> {
 export async function generateMetadata({ params }: { params: { slug: string } }): Promise<Metadata> {
   const page = await findPackingPage(params.slug);
   const trekName = trekDisplayName(params.slug);
-  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? "https://trekyatra.com";
+  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? "https://www.trekyatra.co.in";
   const title = (page?.seo_title?.replace(/\s*\|\s*TrekYatra\s*$/i, "").trim()) || `${trekName} Packing List`;
   const description = page?.seo_description ?? `Complete packing list and gear guide for the ${trekName}.`;
   const canonical = `${siteUrl}/trek/${params.slug}/packing`;

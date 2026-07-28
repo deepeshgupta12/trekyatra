@@ -14,7 +14,7 @@ import { Calendar, Newspaper, ChevronRight, ExternalLink, MapPin } from "lucide-
 export const dynamic = "force-dynamic";
 export const revalidate = 60;
 
-const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? "https://trekyatra.com";
+const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? "https://www.trekyatra.co.in";
 
 function extractTocItems(html: string): { id: string; label: string }[] {
   const re = /<h2[^>]+id="([^"]+)"[^>]*>([^<]*(?:<(?!\/h2>)[^<]*)*)<\/h2>/gi;

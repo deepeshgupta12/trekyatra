@@ -11,7 +11,7 @@ export const revalidate = 3600;
 export async function generateMetadata({ params }: { params: { slug: string } }): Promise<Metadata> {
   try {
     const op = await fetchPublicOperator(params.slug);
-    const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? "https://trekyatra.com";
+    const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? "https://www.trekyatra.co.in";
     const title = `${op.name} — Trek Operator`;
     const description = op.description_long?.slice(0, 160) ?? `${op.name} is a vetted trekking operator on TrekYatra.`;
     const canonical = `${siteUrl}/operators/${op.slug}`;

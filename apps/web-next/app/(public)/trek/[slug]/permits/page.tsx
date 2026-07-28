@@ -34,7 +34,7 @@ async function findPermitPage(trekSlug: string): Promise<CMSPage | null> {
 export async function generateMetadata({ params }: { params: { slug: string } }): Promise<Metadata> {
   const page = await findPermitPage(params.slug);
   const trekName = trekDisplayName(params.slug);
-  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? "https://trekyatra.com";
+  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? "https://www.trekyatra.co.in";
   const title = (page?.seo_title?.replace(/\s*\|\s*TrekYatra\s*$/i, "").trim()) || `${trekName} Permit Guide`;
   const description = page?.seo_description ?? `Permit requirements, costs, and how to get them for the ${trekName}.`;
   const canonical = `${siteUrl}/trek/${params.slug}/permits`;

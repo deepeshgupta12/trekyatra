@@ -50,7 +50,7 @@ export async function generateMetadata({ params }: { params: { slug: string } })
   } catch { /* not found */ }
 
   const trekRaw = await fetchTrekBySlug(params.slug).catch(() => null);
-  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? "https://trekyatra.com";
+  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? "https://www.trekyatra.co.in";
   // Strip trailing "| TrekYatra" the LLM may have written into seo_title.
   // Do NOT append "| TrekYatra" here — the root layout template: "%s | TrekYatra" adds it.
   const rawSeoTitle = cmsPage?.seo_title?.replace(/\s*\|\s*TrekYatra\s*$/i, "").trim();
@@ -352,7 +352,7 @@ export default async function TrekDetailPage({ params }: { params: { slug: strin
     { label: cmsPage?.trek_name || cmsDisplayName || trek.name },
   ]);
 
-  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? "https://trekyatra.com";
+  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? "https://www.trekyatra.co.in";
   const trekUrl = `${siteUrl}/trek/${params.slug}`;
   // SiteNavigation schema — all interlinking for this trek
   const siteNavSchema = {

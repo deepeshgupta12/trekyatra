@@ -9,7 +9,7 @@ import { formatDate as formatDateUtil } from "@/lib/date";
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
 
-const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? "https://trekyatra.com";
+const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? "https://www.trekyatra.co.in";
 
 export const metadata: Metadata = {
   title: "Trek News — Latest Updates from India's Trails",

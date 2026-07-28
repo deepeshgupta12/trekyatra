@@ -32,7 +32,7 @@ export async function generateStaticParams() {
 
 export async function generateMetadata({ params }: { params: { pair: string } }): Promise<Metadata> {
   const data = await loadPair(params.pair);
-  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? "https://trekyatra.com";
+  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? "https://www.trekyatra.co.in";
   const canonical = `${siteUrl}/compare/${params.pair}`;
   if (!data) return { title: "Trek comparison | TrekYatra", alternates: { canonical } };
   return {

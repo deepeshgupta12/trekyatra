@@ -48,7 +48,7 @@ function escapeXml(str: string): string {
 }
 
 export async function GET() {
-  const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? "https://trekyatra.com";
+  const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? "https://www.trekyatra.co.in";
   const articles = await fetchNewsPages();
 
   // Google News sitemap only indexes articles published within the last 2 days
