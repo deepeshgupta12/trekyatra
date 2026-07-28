@@ -5,6 +5,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useTheme } from "@/hooks/useTheme";
 import { useAuth } from "@/hooks/useAuth";
 import { contentApi } from "@/lib/mobileApi";
+import { trackTrekSaved } from "@/lib/analytics";
 import { useState } from "react";
 import { GlassSurface } from "@/components/ui/GlassSurface";
 
@@ -36,6 +37,7 @@ export function TrekStickyBar({ slug, trekName }: TrekStickyBarProps) {
     setSaving(true);
     try {
       await contentApi.saveTrek(slug);
+      trackTrekSaved(slug);
       setSaved(true);
     } catch {
       Alert.alert("Could not save", "Something went wrong adding this to your shortlist. Please try again.");

@@ -13,6 +13,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useLocalSearchParams, router } from "expo-router";
 import { useEffect, useRef, useState } from "react";
 import { useTrekDetail } from "@/hooks/useTrekDetail";
+import { trackTrekView, trackTrekShared } from "@/lib/analytics";
 import { TrekHero } from "@/components/trek/TrekHero";
 import { TrekTabBar, type TrekTab } from "@/components/trek/TrekTabBar";
 import { TrekStickyBar } from "@/components/trek/TrekStickyBar";
@@ -106,6 +107,7 @@ export default function TrekDetailScreen() {
       },
       !!user
     );
+    trackTrekView(trek.slug, trek.trek_state ?? undefined);
   }, [trek?.slug]);
 
   // Fetch related treks
@@ -161,11 +163,14 @@ export default function TrekDetailScreen() {
   async function handleShare() {
     if (!trek) return;
     try {
-      await Share.share({
+      const result = await Share.share({
         message: `Check out the ${trek.title} trek guide on TrekYatra`,
         url: `https://trekyatra.co.in/trek/${trek.slug}`,
         title: `${trek.title} Trek Guide`,
       });
+      if (result.action === Share.sharedAction) {
+        trackTrekShared(trek.slug, result.activityType ?? "share");
+      }
     } catch {}
   }
 

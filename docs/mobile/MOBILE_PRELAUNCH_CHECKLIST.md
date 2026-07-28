@@ -139,7 +139,7 @@ Each step below must be implemented, tested, and all verification TCs passed bef
 | M12 | Digital products | `[ ]` | Razorpay payment sheet → download delivered |
 | M13 | Premium subscription | `[ ]` | IAP subscription on both platforms |
 | M14 | Push notifications | `[ ]` | Test permit alert push received on device |
-| M15 | Mobile CDP analytics | `[ ]` | Events appear in admin CDP → Event Explorer |
+| M15 | Mobile CDP analytics | `[~]` | Infra done (M15). **Instrumentation completed 2026-07-28:** auto `screen_view` on every route (AnalyticsProvider `usePathname`), `device_model`+`os_version` on every event (expo-device, in `properties`), and wired `trek_view`/`trek_shared`/`trek_saved`/`search`/`operator_inquiry`. Still to wire: `plan_wizard_*`, `trek_downloaded` (news `article_viewed` waits on M21 news screen; `push_opened` deferred; product/premium are iOS-removed). Verify in admin CDP → Event Explorer filtered `platform=ios`. |
 | M16 | Trek check-ins & history | `[ ]` | Check-in recorded + badge awarded |
 | M17 | Trip reports & photos | `[ ]` | Report submitted + photo uploaded + moderation queue |
 | M18 | Trek buddy matching | `[ ]` | Signal posted + buddy match found + request sent |

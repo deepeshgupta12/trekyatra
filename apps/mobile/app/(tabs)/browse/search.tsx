@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import {
   View,
   Text,
@@ -25,6 +25,7 @@ import { contentApi, type SearchSuggestion, type SemanticSearchResult } from "@/
 import { useRecentSearches } from "@/hooks/useRecentSearches";
 import { useTrendingSearches } from "@/hooks/useTrendingSearches";
 import { useSemanticSearch } from "@/hooks/useSemanticSearch";
+import { trackSearch } from "@/lib/analytics";
 
 const VOICE_AVAILABLE =
   Platform.OS !== "web" && ExpoSpeechRecognitionModule.isRecognitionAvailable();
@@ -50,6 +51,16 @@ export default function SearchScreen() {
   const trendingQueries = trending ?? [];
   const resultSlugs = new Set(results.map((r) => r.slug));
   const semanticResults = (semanticData ?? []).filter((r) => !resultSlugs.has(r.slug));
+
+  // Track a search once per distinct settled query (search-as-you-type → one event per query).
+  const lastTrackedQuery = useRef("");
+  useEffect(() => {
+    const q = query.trim();
+    if (q.length >= 2 && data && q !== lastTrackedQuery.current) {
+      lastTrackedQuery.current = q;
+      trackSearch(q, results.length + semanticResults.length);
+    }
+  }, [data, query]);
 
   useSpeechRecognitionEvent("start", () => setIsRecording(true));
   useSpeechRecognitionEvent("end", () => setIsRecording(false));

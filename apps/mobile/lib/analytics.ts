@@ -5,12 +5,17 @@
  */
 import { Platform } from "react-native";
 import Constants from "expo-constants";
+import * as Device from "expo-device";
 import { apiPost } from "@/lib/mobileApi";
 import { getAnonymousId, getUserId } from "@/lib/identity";
 import { enqueueEventSync, flushQueueSync, QueuedEvent } from "@/lib/analyticsQueue";
 
 const APP_VERSION = Constants.expoConfig?.version ?? "1.0.0";
 const PLATFORM = Platform.OS; // 'ios' | 'android'
+// Device metadata (captured once) — attached to every event's `properties` so the CDP can
+// segment by device/OS. `analytics_events` has no device columns, so these ride in the JSON.
+const DEVICE_MODEL = Device.modelName ?? undefined;
+const OS_VERSION = Device.osVersion ?? String(Platform.Version);
 
 let _currentScreen = "";
 let _sessionId: string | null = null;
@@ -35,7 +40,7 @@ export async function trackEvent(
     session_id: _sessionId ?? undefined,
     event_category: category,
     event_name: eventName,
-    properties,
+    properties: { ...properties, device_model: DEVICE_MODEL, os_version: OS_VERSION },
     page_url: _currentScreen,
     platform: PLATFORM,
     app_version: APP_VERSION,

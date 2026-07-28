@@ -1,5 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { operatorsApi, type InquiryPayload } from "@/lib/mobileApi";
+import { trackOperatorInquiry } from "@/lib/analytics";
 
 export function useOperators(region?: string) {
   return useQuery({
@@ -31,8 +32,9 @@ export function useSubmitInquiry() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: (payload: InquiryPayload) => operatorsApi.submitInquiry(payload),
-    onSuccess: () => {
+    onSuccess: (_data, variables) => {
       queryClient.invalidateQueries({ queryKey: ["leads"] });
+      trackOperatorInquiry(variables.operator_slug ?? "");
     },
   });
 }

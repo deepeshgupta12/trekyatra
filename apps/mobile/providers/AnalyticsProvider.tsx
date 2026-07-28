@@ -1,9 +1,11 @@
 import { useEffect, useRef, type ReactNode } from "react";
 import { AppState, type AppStateStatus } from "react-native";
+import { usePathname } from "expo-router";
 import * as Crypto from "expo-crypto";
 import {
   setAnalyticsSessionId,
   trackEvent,
+  trackScreen,
   flushOfflineQueue,
 } from "@/lib/analytics";
 
@@ -16,6 +18,16 @@ function newSessionId(): string {
 export function AnalyticsProvider({ children }: { children: ReactNode }) {
   const appState = useRef<AppStateStatus>(AppState.currentState);
   const backgroundedAt = useRef<number | null>(null);
+  const pathname = usePathname();
+  const lastPath = useRef<string>("");
+
+  // Auto screen_view: fire on every route change (dedup consecutive identical paths).
+  useEffect(() => {
+    if (pathname && pathname !== lastPath.current) {
+      lastPath.current = pathname;
+      trackScreen(pathname).catch(() => {});
+    }
+  }, [pathname]);
 
   useEffect(() => {
     const sid = newSessionId();
