@@ -15,6 +15,10 @@ export default ({ config }: ConfigContext): any => ({
   ios: {
     supportsTablet: false,
     bundleIdentifier: "in.co.trekyatra.app",
+    // Generates the com.apple.developer.applesignin entitlement during EAS prebuild.
+    // Without this the native Apple Sign-In sheet (expo-apple-authentication, lib/appleAuth.ts)
+    // fails at runtime → Guideline 4.8 rejection (we also offer Google sign-in).
+    usesAppleSignIn: true,
     config: {
       usesNonExemptEncryption: false,
     },
