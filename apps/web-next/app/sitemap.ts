@@ -74,20 +74,9 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     url("/products", 0.6, "weekly"),
     url("/premium", 0.6, "monthly"),
     url("/newsletter", 0.4, "monthly"),
-    // State-specific trek sitemaps (child sitemaps referenced from master)
-    url("/uttarakhand-treks-sitemap.xml", 0.9, "daily"),
-    url("/himachal-treks-sitemap.xml",    0.9, "daily"),
-    url("/kashmir-treks-sitemap.xml",     0.9, "daily"),
-    url("/ladakh-treks-sitemap.xml",      0.9, "weekly"),
-    url("/maharashtra-treks-sitemap.xml", 0.8, "weekly"),
-    url("/sikkim-treks-sitemap.xml",      0.8, "weekly"),
-    url("/karnataka-treks-sitemap.xml",   0.8, "weekly"),
-    // Hindi trek pages — separate sitemap with hreflang alternates
-    url("/hi-trek-sitemap.xml",           0.6, "weekly"),
-    // News articles — separate sitemap (all /news/{slug} URLs live here, NOT in core)
-    url("/news-sitemap.xml",              0.8, "daily"),
-    // Comparison pages — separate sitemap (all /compare/{a-vs-b} URLs live here, NOT in core)
-    url("/compare-sitemap.xml",           0.7, "weekly"),
+    // NOTE: the child sitemaps (state-trek, hi-trek, news, compare) are declared in robots.txt
+    // for discovery — they are NOT listed here. A <urlset> should contain content pages, not
+    // .xml sitemap files (listing sitemaps as page URLs trips "non-HTML page" warnings in GSC).
     // News hub page
     url("/news",                          0.8, "daily"),
     // Difficulty category pages
