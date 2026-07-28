@@ -15,6 +15,7 @@ import { useEffect, useRef, useState } from "react";
 import { useTrekDetail } from "@/hooks/useTrekDetail";
 import { trackTrekView, trackTrekShared } from "@/lib/analytics";
 import { TrekHero } from "@/components/trek/TrekHero";
+import { TrekRouteMap } from "@/components/trek/TrekRouteMap";
 import { TrekTabBar, type TrekTab } from "@/components/trek/TrekTabBar";
 import { TrekStickyBar } from "@/components/trek/TrekStickyBar";
 import { TrekRelatedRow } from "@/components/trek/TrekRelatedRow";
@@ -370,6 +371,8 @@ export default function TrekDetailScreen() {
           )}
           {activeTab === "guide" && (
             <>
+              <TrekRouteMap routeImageUrl={trek.route_image_url} heroImageUrl={trek.hero_image_url} />
+
               <TrekAskAI slug={trek.slug} trekName={trek.title} />
 
               {/* Live Conditions Widget */}
