@@ -17,6 +17,7 @@ import { useState, useEffect } from "react";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useAuth } from "@/hooks/useAuth";
 import { useAccountMe, useNewsletter } from "@/hooks/useAccount";
+import { getAnalyticsConsent, setAnalyticsConsent } from "@/lib/consent";
 
 const APP_LANGUAGE_KEY = "app_language";
 const BIOMETRIC_KEY = "biometric_enabled";
@@ -41,6 +42,7 @@ export default function SettingsScreen() {
   const [nameEditActive, setNameEditActive] = useState(false);
   const [language, setLanguage] = useState<"en" | "hi">("en");
   const [biometric, setBiometric] = useState(false);
+  const [analyticsOn, setAnalyticsOn] = useState(getAnalyticsConsent());
   const [newsletterEmail, setNewsletterEmail] = useState("");
 
   useEffect(() => {
@@ -259,6 +261,24 @@ export default function SettingsScreen() {
               onValueChange={handleBiometricToggle}
               trackColor={{ false: colors.border, true: colors.accent + "88" }}
               thumbColor={biometric ? colors.accent : colors.textMuted}
+            />
+          </View>
+
+          {/* Usage analytics (opt-out) */}
+          <View style={{ flexDirection: "row", alignItems: "center", paddingHorizontal: 16, paddingVertical: 14, borderTopWidth: 1, borderTopColor: colors.border }}>
+            <View style={{ flex: 1 }}>
+              <Text style={{ fontFamily: "Inter_500Medium", fontSize: 15, color: colors.textPrimary }}>
+                Usage analytics
+              </Text>
+              <Text style={{ fontFamily: "Inter_400Regular", fontSize: 12, color: colors.textSecondary, marginTop: 2 }}>
+                Help improve TrekYatra with anonymous usage data
+              </Text>
+            </View>
+            <Switch
+              value={analyticsOn}
+              onValueChange={(v) => { setAnalyticsOn(v); setAnalyticsConsent(v); }}
+              trackColor={{ false: colors.border, true: colors.accent + "88" }}
+              thumbColor={analyticsOn ? colors.accent : colors.textMuted}
             />
           </View>
         </SectionCard>

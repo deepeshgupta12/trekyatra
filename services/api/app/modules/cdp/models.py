@@ -62,6 +62,8 @@ class AnalyticsSession(Base):
     extra = Column(JSONB, nullable=False, default=dict)
     platform = Column(String(16), nullable=True, server_default="web")
     app_version = Column(String(16), nullable=True)
+    device_model = Column(String(64), nullable=True)
+    os_version = Column(String(32), nullable=True)
     created_at = Column(DateTime(timezone=True), server_default=func.now(), nullable=False)
 
 

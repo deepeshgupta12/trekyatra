@@ -8,6 +8,7 @@ import Constants from "expo-constants";
 import * as Device from "expo-device";
 import { apiPost } from "@/lib/mobileApi";
 import { getAnonymousId, getUserId } from "@/lib/identity";
+import { getAnalyticsConsent } from "@/lib/consent";
 import { enqueueEventSync, flushQueueSync, QueuedEvent } from "@/lib/analyticsQueue";
 
 const APP_VERSION = Constants.expoConfig?.version ?? "1.0.0";
@@ -33,6 +34,7 @@ export async function trackEvent(
   eventName: string,
   properties: Record<string, unknown> = {}
 ): Promise<void> {
+  if (!getAnalyticsConsent()) return; // user opted out of analytics
   const anonId = await getAnonymousId();
   const payload: QueuedEvent = {
     anonymous_id: anonId,
@@ -54,15 +56,49 @@ export async function trackEvent(
   }
 }
 
-export async function trackScreen(screenName: string): Promise<void> {
+export async function trackScreen(screenName: string, path?: string): Promise<void> {
   setCurrentScreen(screenName);
-  await trackEvent("navigation", "screen_view", { screen: screenName });
+  await trackEvent("navigation", "screen_view", { screen: screenName, path });
 }
 
 export function flushOfflineQueue(): void {
   flushQueueSync(async (events) => {
     await apiPost<unknown>("/api/v1/analytics/events/batch", { events });
   });
+}
+
+// ── Session lifecycle ───────────────────────────────────────────────────────
+// Create a server-side AnalyticsSession (so mobile sessions appear in the CDP with device
+// metadata + power cohort/retention reports). On success the server `s_…` id becomes the
+// session_id used by subsequent events; on failure we keep the client fallback id.
+
+export async function startAnalyticsSession(landingPage?: string): Promise<void> {
+  if (!getAnalyticsConsent()) return; // user opted out of analytics
+  const anonId = await getAnonymousId();
+  try {
+    const res = await apiPost<{ id: string }>("/api/v1/analytics/session/start", {
+      anonymous_id: anonId,
+      platform: PLATFORM,
+      app_version: APP_VERSION,
+      device_model: DEVICE_MODEL,
+      os_version: OS_VERSION,
+      landing_page: landingPage,
+    });
+    if (res?.id) _sessionId = res.id;
+  } catch {
+    // Offline / server unreachable — keep the client-generated fallback session id.
+  }
+}
+
+export async function endAnalyticsSession(exitPage?: string): Promise<void> {
+  const id = _sessionId;
+  if (!id) return;
+  try {
+    await apiPost<unknown>("/api/v1/analytics/session/end", {
+      session_id: id,
+      exit_page: exitPage ?? _currentScreen,
+    });
+  } catch {}
 }
 
 // ── Convenience helpers ────────────────────────────────────────────────────

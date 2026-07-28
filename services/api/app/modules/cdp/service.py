@@ -154,6 +154,10 @@ def start_session(db: Session, session_in: SessionStartIn) -> AnalyticsSession:
         device_type=session_in.device_type,
         browser=session_in.browser,
         country=session_in.country,
+        platform=session_in.platform or "web",
+        app_version=session_in.app_version,
+        device_model=session_in.device_model,
+        os_version=session_in.os_version,
     )
     db.add(session)
     # Record first-touch attribution

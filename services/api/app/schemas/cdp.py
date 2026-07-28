@@ -59,6 +59,11 @@ class SessionStartIn(BaseModel):
     device_type: Optional[str] = None
     browser: Optional[str] = None
     country: Optional[str] = None
+    # Mobile session metadata
+    platform: Optional[str] = None       # 'ios' | 'android' | 'web'
+    app_version: Optional[str] = None
+    device_model: Optional[str] = None
+    os_version: Optional[str] = None
 
 
 class SessionEndIn(BaseModel):

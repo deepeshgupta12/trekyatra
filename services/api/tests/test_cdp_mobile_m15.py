@@ -81,3 +81,28 @@ def test_batch_rejects_over_50_events():
     }
     resp = client.post("/api/v1/analytics/events/batch", json=payload)
     assert resp.status_code == 422
+
+
+def test_mobile_session_start_persists_device_metadata(db: Session):
+    """POST /analytics/session/start with mobile fields → session row carries platform + device."""
+    resp = client.post(
+        "/api/v1/analytics/session/start",
+        json={
+            "anonymous_id": "anon-m15-ios-session",
+            "platform": "ios",
+            "app_version": "1.0.0",
+            "device_model": "iPhone15,2",
+            "os_version": "17.4",
+            "landing_page": "/(tabs)/(home)",
+        },
+    )
+    assert resp.status_code == 201, resp.text
+    sid = resp.json()["id"]
+    from app.modules.cdp.models import AnalyticsSession
+    row = db.query(AnalyticsSession).filter(AnalyticsSession.id == sid).first()
+    assert row is not None
+    assert row.platform == "ios"
+    assert row.device_model == "iPhone15,2"
+    assert row.os_version == "17.4"
+    db.query(AnalyticsSession).filter(AnalyticsSession.id == sid).delete()
+    db.commit()
