@@ -79,12 +79,12 @@ All env vars below must be set in DigitalOcean App Platform → `api` component 
 | D11 | `google-services.json` (Android) added as EAS secret (NOT git-committed) | `[ ]` | `eas secret:create --scope project --name GOOGLE_SERVICES_JSON --type file` |
 | D12 | `GoogleServiceInfo.plist` (iOS) added as EAS secret | `[ ]` | Same command, `--name GOOGLE_SERVICE_INFO_PLIST` |
 | D13 | APNs Auth Key (.p8) uploaded via `eas credentials` | `[ ]` | `eas credentials` → iOS → Push Notification Key |
-| D14 | iOS distribution certificate generated via `eas credentials` | `[ ]` | EAS manages this automatically in auto-signing mode |
+| D14 | iOS distribution certificate generated via `eas credentials` | `[x]` | 2026-07-28 — cert serial 5D09C0BC7AB8B417C1BDD0C40A9459F9, provisioning profile GQKKXBS28J (EAS-managed, exp 2027-07-28) |
 | D15 | Android keystore generated (production signing) via EAS | `[ ]` | `eas credentials` → Android → Keystore |
 | D16 | GitHub secrets set: `EXPO_TOKEN`, `EAS_PROJECT_ID`, `EXPO_PUBLIC_API_URL`, `EXPO_PUBLIC_SENTRY_DSN`, `GOOGLE_IOS_CLIENT_ID` | `[ ]` | M22 |
 | D17 | Development build installs on physical Android device | `[ ]` | `eas build --profile development --platform android` |
 | D18 | Development build installs on iOS simulator or physical device | `[ ]` | `eas build --profile development --platform ios` |
-| D19 | Preview build distributed to internal testers via TestFlight | `[ ]` | `eas build --profile preview --platform ios` + `eas submit` |
+| D19 | Preview build distributed to internal testers via TestFlight | `[x]` | 2026-07-28 — **production**-profile build 1.0.0 (build 1, EAS id 63e74c2a) submitted to ASC (app 6795408094) via `eas submit`; ASC API key LR3772ZFCB stored on EAS. Processing → TestFlight |
 | D20 | Preview build distributed to internal testers via Play Internal Testing | `[ ]` | `eas build --profile preview --platform android` + `eas submit` |
 
 ---
