@@ -126,6 +126,8 @@ class Settings(BaseSettings):
     apns_team_id: str | None = None                    # Apple Developer Team ID
     apns_key_p8: str | None = None                     # APNs Auth Key content (.p8 file, newlines as \n)
     apns_bundle_id: str = "co.trekyatra.app"           # iOS bundle identifier
+    # Sign in with Apple: the bundle ID the Apple identity token's `aud` claim must match.
+    apple_bundle_id: str = "in.co.trekyatra.app"
 
     model_config = SettingsConfigDict(
         env_file=".env",

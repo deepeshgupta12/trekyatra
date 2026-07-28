@@ -17,7 +17,7 @@ export default function SignInScreen() {
   const [password, setPassword] = useState("");
   const [emailLoading, setEmailLoading] = useState(false);
   const [socialLoading, setSocialLoading] = useState(false);
-  const { signIn, signInWithGoogle } = useAuth();
+  const { signIn, signInWithGoogle, signInWithApple } = useAuth();
   const { markDone } = useOnboarding();
   const { isDark, colors } = useTheme();
 
@@ -66,11 +66,19 @@ export default function SignInScreen() {
     router.replace("/(tabs)/(home)");
   }
 
-  function handleAppleComingSoon() {
-    Alert.alert(
-      "Coming soon",
-      "Apple Sign-In will be available in a future update. Please use email or Google sign-in."
-    );
+  async function handleApple() {
+    setSocialLoading(true);
+    try {
+      await signInWithApple();
+    } catch (err: unknown) {
+      // User dismissed the Apple sheet — not an error to surface.
+      const code = (err as { code?: string })?.code;
+      if (code === "ERR_REQUEST_CANCELED" || code === "ERR_CANCELED") return;
+      const msg = err instanceof Error ? err.message : "Apple sign-in failed";
+      Alert.alert("Error", msg);
+    } finally {
+      setSocialLoading(false);
+    }
   }
 
   const busy = emailLoading || socialLoading;
@@ -213,7 +221,7 @@ export default function SignInScreen() {
 
           <SocialSignInButtons
             onGoogle={() => promptGoogle()}
-            onApple={handleAppleComingSoon}
+            onApple={handleApple}
             loading={socialLoading}
           />
 

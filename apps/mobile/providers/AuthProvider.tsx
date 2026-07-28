@@ -114,9 +114,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }
 
   async function signInWithApple(): Promise<void> {
-    // Apple backend endpoint coming in M04
-    await nativeAppleSignIn();
-    throw new Error("Apple Sign In is not yet available. Please use email or Google sign-in.");
+    const { identityToken, fullName } = await nativeAppleSignIn();
+    const result = await authApiLib.signInWithApple(identityToken, fullName);
+    const user = await resolveUser(result);
+    await setAuth(result.access_token, result.refresh_token, user);
+    setAnalyticsUserId(user.id);
+    trackUserSignedIn("apple").catch(() => {});
   }
 
   return (

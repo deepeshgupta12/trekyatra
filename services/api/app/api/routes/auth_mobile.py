@@ -7,10 +7,15 @@ from sqlalchemy.orm import Session
 from app.db.session import get_db
 from app.modules.auth.dependencies import get_current_user
 from app.modules.auth.models import User
-from app.modules.auth.service import login_or_register_google_user
+from app.modules.auth.service import (
+    login_or_register_apple_user,
+    login_or_register_google_user,
+    verify_apple_identity_token,
+)
 from app.modules.mobile.service import issue_mobile_token, mobile_login, mobile_signup, refresh_mobile_token
 from app.schemas.mobile import (
     MobileAccessOut,
+    MobileAppleIn,
     MobileAuthOut,
     MobileGoogleIn,
     MobileRefreshIn,
@@ -119,6 +124,52 @@ def mobile_google_auth(
             email=google_info.get("email"),
             full_name=google_info.get("name"),
             is_verified_email=bool(google_info.get("email_verified", False)),
+        )
+    except ValueError as exc:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(exc)) from exc
+
+    tokens = issue_mobile_token(
+        db=db,
+        user_id=user.id,
+        device_id=body.device_id,
+        platform=body.platform,
+    )
+    return MobileAuthOut(
+        **tokens,
+        user_id=str(user.id),
+        email=user.email,
+        full_name=user.full_name,
+    )
+
+
+@router.post("/apple", response_model=MobileAuthOut)
+def mobile_apple_auth(
+    body: MobileAppleIn,
+    db: Session = Depends(get_db),
+) -> MobileAuthOut:
+    """Exchange an Apple identity token for mobile Bearer tokens (Sign in with Apple)."""
+    try:
+        claims = verify_apple_identity_token(body.identity_token)
+    except ValueError as exc:
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail=str(exc)) from exc
+
+    apple_sub = claims.get("sub")
+    if not apple_sub:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Could not retrieve Apple user identity.",
+        )
+
+    # Apple's `email_verified` claim may be a bool or the string "true"/"false".
+    email_verified = str(claims.get("email_verified", "false")).lower() == "true"
+
+    try:
+        user = login_or_register_apple_user(
+            db,
+            apple_sub=apple_sub,
+            email=claims.get("email"),
+            full_name=body.full_name,
+            is_verified_email=email_verified,
         )
     except ValueError as exc:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(exc)) from exc

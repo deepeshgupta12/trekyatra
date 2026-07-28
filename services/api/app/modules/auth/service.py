@@ -4,6 +4,7 @@ import uuid
 from datetime import datetime, timezone
 from typing import Final
 
+import jwt
 from sqlalchemy import select
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
@@ -17,9 +18,15 @@ from app.core.security import (
     verify_password,
 )
 from app.modules.auth.models import AuthIdentity, User, UserSession
+from app.core.config import settings
 
 EMAIL_PROVIDER: Final[str] = "email"
 GOOGLE_PROVIDER: Final[str] = "google"
+APPLE_PROVIDER: Final[str] = "apple"
+
+# Sign in with Apple: verify identity tokens against Apple's public keys.
+_APPLE_ISSUER: Final[str] = "https://appleid.apple.com"
+_apple_jwks_client = jwt.PyJWKClient("https://appleid.apple.com/auth/keys")
 
 
 def normalize_email(email: str) -> str:
@@ -214,4 +221,95 @@ def login_or_register_google_user(
     except IntegrityError as exc:
         db.rollback()
         raise ValueError("Unable to create account with this Google identity.") from exc
+    return user
+
+
+def verify_apple_identity_token(identity_token: str) -> dict:
+    """Verify a Sign-in-with-Apple identity token (JWT) against Apple's public keys.
+
+    Checks the RS256 signature, issuer (appleid.apple.com), audience (our bundle ID) and
+    expiry. Returns the decoded claims (sub, email, email_verified). Raises ValueError on
+    any failure so the route can return 401.
+    """
+    try:
+        signing_key = _apple_jwks_client.get_signing_key_from_jwt(identity_token)
+        return jwt.decode(
+            identity_token,
+            signing_key.key,
+            algorithms=["RS256"],
+            audience=settings.apple_bundle_id,
+            issuer=_APPLE_ISSUER,
+        )
+    except Exception as exc:  # PyJWKClientError / InvalidTokenError / network
+        raise ValueError("Invalid or expired Apple identity token.") from exc
+
+
+def login_or_register_apple_user(
+    db: Session,
+    *,
+    apple_sub: str,
+    email: str | None,
+    full_name: str | None,
+    is_verified_email: bool,
+) -> User:
+    # 1. Existing Apple identity → return linked user
+    existing_identity = db.scalar(
+        select(AuthIdentity).where(
+            AuthIdentity.provider == APPLE_PROVIDER,
+            AuthIdentity.provider_user_id == apple_sub,
+        )
+    )
+    if existing_identity:
+        existing_identity.last_used_at = datetime.now(timezone.utc)
+        db.flush()
+        user = db.scalar(select(User).where(User.id == existing_identity.user_id))
+        if not user or not user.is_active:
+            raise ValueError("Account linked to this Apple identity is inactive.")
+        return user
+
+    # 2. Email matches an existing user → link Apple identity
+    if email:
+        existing_user = get_user_by_email(db, email)
+        if existing_user:
+            db.add(AuthIdentity(
+                user_id=existing_user.id,
+                provider=APPLE_PROVIDER,
+                provider_user_id=apple_sub,
+                email=email,
+                is_primary=False,
+                is_verified=is_verified_email,
+                last_used_at=datetime.now(timezone.utc),
+            ))
+            if is_verified_email:
+                existing_user.is_verified_email = True
+            db.flush()
+            return existing_user
+
+    # 3. Brand new user via Apple
+    normalized_email = normalize_email(email) if email else None
+    user = User(
+        email=normalized_email,
+        password_hash=None,
+        full_name=full_name,
+        display_name=full_name.split()[0] if full_name else None,
+        primary_auth_method=APPLE_PROVIDER,
+        is_active=True,
+        is_verified_email=is_verified_email,
+        is_verified_mobile=False,
+    )
+    db.add(user)
+    db.add(AuthIdentity(
+        user=user,
+        provider=APPLE_PROVIDER,
+        provider_user_id=apple_sub,
+        email=normalized_email,
+        is_primary=True,
+        is_verified=is_verified_email,
+        last_used_at=datetime.now(timezone.utc),
+    ))
+    try:
+        db.flush()
+    except IntegrityError as exc:
+        db.rollback()
+        raise ValueError("Unable to create account with this Apple identity.") from exc
     return user

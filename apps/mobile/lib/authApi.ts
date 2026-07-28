@@ -128,3 +128,16 @@ export async function signInWithGoogle(googleAccessToken: string): Promise<Mobil
     platform: Platform.OS,
   });
 }
+
+export async function signInWithApple(
+  identityToken: string,
+  fullName: string | null,
+): Promise<MobileAuthResult> {
+  const deviceId = await getOrCreateDeviceId();
+  return apiPost<MobileAuthResult>("/api/v1/auth/mobile/apple", {
+    identity_token: identityToken,
+    full_name: fullName,
+    device_id: deviceId,
+    platform: Platform.OS,
+  });
+}
