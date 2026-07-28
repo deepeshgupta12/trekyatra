@@ -218,7 +218,7 @@ export default function CompareScreen() {
                 ) : (
                   <View style={[styles.pillImage, { backgroundColor: "rgba(232,112,42,0.15)" }]} />
                 )}
-                <Text style={styles.pillName} numberOfLines={1}>{selectedNames[slug] ?? slug}</Text>
+                <Text style={[styles.pillName, { color: colors.textPrimary }]} numberOfLines={1}>{selectedNames[slug] ?? slug}</Text>
                 <Text style={styles.pillRemove}>✕</Text>
               </TouchableOpacity>
             ))}
@@ -386,7 +386,7 @@ const styles = StyleSheet.create({
   selectedRowContent: { gap: 8, paddingVertical: 2 },
   selectedPill: { flexDirection: "row", alignItems: "center", gap: 6, backgroundColor: "rgba(232,112,42,0.12)", borderRadius: 20, borderWidth: 1, borderColor: "rgba(232,112,42,0.35)", paddingRight: 10, overflow: "hidden", maxWidth: 160 },
   pillImage: { width: 32, height: 32, borderRadius: 20 },
-  pillName: { flex: 1, fontSize: 12, fontWeight: "600", color: "#E8702A" },
+  pillName: { flex: 1, fontSize: 12, fontWeight: "600" },
   pillRemove: { fontSize: 11, color: "rgba(232,112,42,0.6)" },
   selectedPillEmpty: { borderRadius: 20, borderWidth: 1, borderStyle: "dashed", borderColor: "rgba(255,255,255,0.2)", paddingHorizontal: 14, paddingVertical: 8, justifyContent: "center" },
   pillEmptyText: { fontSize: 12, color: "rgba(255,255,255,0.3)" },

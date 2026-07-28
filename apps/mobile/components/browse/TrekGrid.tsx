@@ -15,7 +15,8 @@ interface TrekGridProps {
 
 const SCREEN_WIDTH = Dimensions.get("window").width;
 const COLUMN_GAP = 12;
-const CARD_WIDTH = (SCREEN_WIDTH - 16 * 2 - COLUMN_GAP) / 2;
+// Math.floor per the hard-won grid rule — sub-pixel width silently wraps a 2-col row to 1.
+const CARD_WIDTH = Math.floor((SCREEN_WIDTH - 16 * 2 - COLUMN_GAP) / 2);
 
 export function TrekGrid({
   treks,
@@ -56,7 +57,7 @@ export function TrekGrid({
       numColumns={2}
       columnWrapperStyle={styles.row}
       contentContainerStyle={styles.list}
-      renderItem={({ item }) => <TrekCard trek={item} width={CARD_WIDTH} />}
+      renderItem={({ item }) => <TrekCard trek={item} width={CARD_WIDTH} noMargin />}
       onEndReached={onEndReached}
       onEndReachedThreshold={0.5}
       showsVerticalScrollIndicator={false}

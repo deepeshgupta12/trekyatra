@@ -5,6 +5,13 @@ import { useNearbyTreks } from "@/hooks/useNearbyTreks";
 import { useTheme } from "@/hooks/useTheme";
 import type { TrekListItem } from "@/lib/mobileApi";
 
+function nearbyDiffColor(d: string | null | undefined): string {
+  const k = d?.toLowerCase() ?? "";
+  if (k === "easy") return "#22c55e";
+  if (k === "challenging" || k === "difficult" || k === "hard") return "#ef4444";
+  return "#f59e0b"; // moderate / mixed — always visible amber
+}
+
 function toTrekListItem(nearby: ReturnType<typeof useNearbyTreks>["treks"][number]): TrekListItem {
   return {
     slug: nearby.slug,
@@ -67,9 +74,20 @@ export function NearbyTreksStrip() {
       >
         {treks.map((trek) => (
           <View key={trek.slug} style={styles.cardWrapper}>
-            <TrekCard trek={toTrekListItem(trek)} width={180} />
-            <View style={[styles.distanceBadge, { backgroundColor: colors.accent }]}>
-              <Text style={styles.distanceText}>{trek.distance_km} km</Text>
+            {/* showMeta={false} drops TrekCard's top-right difficulty badge so it can't
+                collide with the distance chip on this narrow (180px) card. Both facts are
+                instead stacked vertically at top-left below. */}
+            <TrekCard trek={toTrekListItem(trek)} width={180} showMeta={false} />
+            <View style={styles.badgeStack}>
+              <View style={[styles.distanceBadge, { backgroundColor: colors.accent }]}>
+                <Text style={styles.distanceText}>{trek.distance_km} km</Text>
+              </View>
+              {trek.difficulty ? (
+                <View style={styles.diffBadge}>
+                  <View style={[styles.diffDot, { backgroundColor: nearbyDiffColor(trek.difficulty) }]} />
+                  <Text style={styles.diffBadgeText} numberOfLines={1}>{trek.difficulty}</Text>
+                </View>
+              ) : null}
             </View>
           </View>
         ))}
@@ -124,10 +142,14 @@ const styles = StyleSheet.create({
   cardWrapper: {
     position: "relative",
   },
-  distanceBadge: {
+  badgeStack: {
     position: "absolute",
     top: 8,
     left: 8,
+    gap: 5,
+    alignItems: "flex-start",
+  },
+  distanceBadge: {
     paddingHorizontal: 8,
     paddingVertical: 3,
     borderRadius: 8,
@@ -136,6 +158,27 @@ const styles = StyleSheet.create({
     color: "#fff",
     fontSize: 11,
     fontWeight: "700",
+  },
+  diffBadge: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 4,
+    maxWidth: 164,
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: 8,
+    backgroundColor: "rgba(0,0,0,0.62)",
+  },
+  diffDot: {
+    width: 5,
+    height: 5,
+    borderRadius: 2.5,
+  },
+  diffBadgeText: {
+    color: "#fff",
+    fontSize: 10,
+    fontWeight: "700",
+    letterSpacing: 0.3,
   },
   permissionBanner: {
     marginHorizontal: 16,
