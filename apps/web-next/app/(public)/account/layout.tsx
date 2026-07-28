@@ -19,7 +19,7 @@ export default function AccountLayout({ children }: { children: React.ReactNode 
 
   return (
     <div className="container-wide py-10 lg:py-16">
-      <div className="flex gap-8 lg:gap-12 items-start">
+      <div className="flex flex-col lg:flex-row gap-8 lg:gap-12 items-stretch lg:items-start">
         {/* Sidebar */}
         <aside className="hidden lg:block w-56 flex-shrink-0 sticky top-24">
           <nav className="space-y-1">

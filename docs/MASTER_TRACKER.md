@@ -18,6 +18,14 @@ Do not modify any code file without first:
 4. Checking impacted files and blast radius
 5. Updating the relevant step file in `docs/steps/`
 
+## 2026-07-28 — Hotfix: web /account mobile layout
+
+`app/(public)/account/layout.tsx` wrapper was `flex` (always row) with no `flex-col`
+for mobile → the `w-full` mobile tab bar and `flex-1` main sat side-by-side, shoving
+the profile content off-screen after sign-in (reported prod bug). Fixed with
+`flex flex-col lg:flex-row … items-stretch lg:items-start`. Impact: LOW (leaf layout,
+0 symbols/processes; CSS-only). `next build` pass.
+
 ## 2026-07-28 — iOS launch prep + mobile UI audit + backend deltas
 
 - **iOS launch**: bundle `in.co.trekyatra.app`, Apple Sign-In (Guideline 4.8), privacy
