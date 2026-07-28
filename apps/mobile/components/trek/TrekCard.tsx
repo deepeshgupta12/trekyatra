@@ -1,9 +1,11 @@
+import { useState } from "react";
 import { TouchableOpacity, Text, StyleSheet, View } from "react-native";
 import { Image } from "expo-image";
 import { LinearGradient } from "expo-linear-gradient";
 import { router } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import type { TrekListItem } from "@/lib/mobileApi";
+import { resizedImageUrl } from "@/lib/imageUrl";
 
 interface TrekCardProps {
   trek: TrekListItem;
@@ -28,8 +30,12 @@ function difficultyColor(d: string | null | undefined): string {
 }
 
 export function TrekCard({ trek, width = 196, height = 260, showMeta = true, noMargin = false }: TrekCardProps) {
+  // Request the 400px variant (card-sized) instead of the full-res original. If that
+  // variant 404s (uploaded before the backfill ran) expo-image's onError flips us back
+  // to the original, so a card never breaks.
+  const [useOriginal, setUseOriginal] = useState(false);
   const imgSrc = trek.hero_image_url
-    ? { uri: trek.hero_image_url }
+    ? { uri: useOriginal ? trek.hero_image_url : resizedImageUrl(trek.hero_image_url, 400) }
     : FALLBACK_IMG;
 
   const diffColor = difficultyColor(trek.trek_difficulty);
@@ -49,6 +55,8 @@ export function TrekCard({ trek, width = 196, height = 260, showMeta = true, noM
         contentFit="cover"
         placeholder={FALLBACK_BLUR}
         transition={280}
+        cachePolicy="memory-disk"
+        onError={() => { if (!useOriginal) setUseOriginal(true); }}
       />
 
       {/* Cinematic gradient — light top, dark bottom */}

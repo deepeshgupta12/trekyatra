@@ -17,6 +17,7 @@ from pathlib import Path
 from fastapi import APIRouter, Depends, File, HTTPException, UploadFile, status
 
 from app.core.config import settings
+from app.core.image_variants import generate_variants, variant_key
 from app.modules.auth.dependencies import get_current_admin
 
 router = APIRouter(prefix="/admin/media", tags=["admin-media"])
@@ -53,6 +54,21 @@ def _upload_to_spaces(file_content: bytes, filename: str, content_type: str) -> 
             # for a year instead of re-downloading on every visit (PSI #3).
             CacheControl="public, max-age=31536000, immutable",
         )
+        # Downscaled JPEG variants (media/<uuid>_400.jpg, _800.jpg) so mobile lists
+        # fetch card-sized images instead of the multi-MB original. Best-effort: a
+        # variant failure must not fail the upload (the client falls back to the original).
+        try:
+            for width, jpeg_bytes in generate_variants(file_content).items():
+                s3.put_object(
+                    Bucket=settings.do_spaces_bucket,
+                    Key=variant_key(key, width),
+                    Body=jpeg_bytes,
+                    ContentType="image/jpeg",
+                    ACL="public-read",
+                    CacheControl="public, max-age=31536000, immutable",
+                )
+        except Exception:  # noqa: BLE001 — variants are an optimization, never a hard failure
+            pass
     except (BotoCoreError, ClientError) as exc:
         raise HTTPException(status_code=500, detail=f"DO Spaces upload failed: {exc}") from exc
 
