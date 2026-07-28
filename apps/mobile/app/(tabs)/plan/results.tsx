@@ -7,6 +7,7 @@ import { usePlanWizardStore } from "@/stores/planWizardStore";
 import { useAuth } from "@/hooks/useAuth";
 import { useTheme } from "@/hooks/useTheme";
 import { planApi, type TrekRecommendation } from "@/lib/mobileApi";
+import { trackPlanWizardCompleted } from "@/lib/analytics";
 
 export default function PlanResultsScreen() {
   const router = useRouter();
@@ -43,6 +44,16 @@ export default function PlanResultsScreen() {
       setResults(res.recommendations);
       setNoMatchMsg(res.no_match ? res.no_match_message : null);
       setStatus("done");
+      trackPlanWizardCompleted({
+        intent: answers.intent,
+        months: answers.months,
+        duration_min: answers.durationMin,
+        duration_max: answers.durationMax,
+        experience_level: answers.experienceLevel,
+        fitness_level: answers.fitnessLevel,
+        region: answers.region ?? undefined,
+        result_count: res.recommendations.length,
+      });
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : null;
       // Expired/invalid token despite isAuthenticated — show re-login prompt

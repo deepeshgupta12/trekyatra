@@ -1,7 +1,9 @@
+import { useEffect } from "react";
 import { View, Text, TouchableOpacity, ScrollView, StyleSheet } from "react-native";
 import { SafeArea } from "@/components/ui/SafeArea";
 import { WizardProgress } from "./WizardProgress";
 import { useTheme } from "@/hooks/useTheme";
+import { trackPlanWizardStep } from "@/lib/analytics";
 
 interface Props {
   children: React.ReactNode;
@@ -31,6 +33,11 @@ export function WizardStepLayout({
   onSkip,
 }: Props) {
   const { colors, isDark } = useTheme();
+
+  // Plan-wizard funnel: fire a step event each time a step is shown (covers all 6 steps).
+  useEffect(() => {
+    trackPlanWizardStep(step);
+  }, [step]);
 
   return (
     <SafeArea edges={["top", "bottom"]}>

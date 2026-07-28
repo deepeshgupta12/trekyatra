@@ -1,5 +1,6 @@
 import { create } from "zustand";
 import { downloadTrekPages, removeTrekDownload, getDownloadedPages } from "../services/syncService";
+import { trackTrekDownloaded } from "../lib/analytics";
 
 interface OfflineState {
   downloadedSlugs: string[];
@@ -26,6 +27,7 @@ export const useOfflineStore = create<OfflineState>((set, get) => ({
     set({ isLoading: true });
     try {
       await downloadTrekPages(slug, accessToken);
+      trackTrekDownloaded(slug);
       const current = get().downloadedSlugs;
       if (!current.includes(slug)) {
         set({ downloadedSlugs: [...current, slug] });
