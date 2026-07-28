@@ -45,7 +45,7 @@ export default function PrivacyScreen() {
                 [{ text: "OK" }]
               );
             } catch {
-              Alert.alert("Error", "Could not delete data. Please contact support@trekyatra.co.in.");
+              Alert.alert("Error", "Could not delete data. Please contact explore@trekyatra.co.in.");
             } finally {
               setIsDeleting(false);
             }

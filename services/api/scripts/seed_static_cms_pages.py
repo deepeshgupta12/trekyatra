@@ -136,7 +136,7 @@ PAGES: list[dict] = [
 <h2>Affiliate and content partnerships</h2>
 <p>For gear brand collaborations, affiliate programme enquiries, or sponsored content discussions, write to <strong>partnerships@trekyatra.co.in</strong>. Note: we do not accept paid placement in editorial rankings or reviews.</p>
 <h2>Technical support and account issues</h2>
-<p>For issues with your account, digital product downloads, or subscription billing, write to <strong>support@trekyatra.co.in</strong>. Include your registered email address and a description of the issue. Response time: 1 business day.</p>
+<p>For issues with your account, digital product downloads, or subscription billing, write to <strong>explore@trekyatra.co.in</strong>. Include your registered email address and a description of the issue. Response time: 1 business day.</p>
 <h2>General enquiries</h2>
 <p>For anything else: <strong>explore@trekyatra.co.in</strong></p>
 <h2>Our office</h2>

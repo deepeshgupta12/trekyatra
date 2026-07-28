@@ -181,8 +181,8 @@ export default function AccountSettings() {
           <Trash2 className="h-4 w-4 text-destructive" />
           <h2 className="font-semibold text-destructive">Danger zone</h2>
         </div>
-        <p className="text-sm text-muted-foreground mb-4">To delete your account, contact us at support@trekyatra.com. This cannot be undone.</p>
-        <a href="mailto:support@trekyatra.com">
+        <p className="text-sm text-muted-foreground mb-4">To delete your account, contact us at explore@trekyatra.co.in. This cannot be undone.</p>
+        <a href="mailto:explore@trekyatra.co.in">
           <Button variant="outline" size="sm" className="border-destructive/30 text-destructive hover:bg-destructive/5">Contact support</Button>
         </a>
       </div>

@@ -18,6 +18,26 @@ Do not modify any code file without first:
 4. Checking impacted files and blast radius
 5. Updating the relevant step file in `docs/steps/`
 
+## 2026-07-28 — Hotfix: web Google sign-in (in-app browser) + domain consistency
+
+- **Google sign-in `origin_mismatch`** (users from Instagram links): root cause is the
+  production origins not being in the **Web OAuth client's Authorized JavaScript origins**
+  (Google Cloud Console). **ACTION (owner):** add `https://www.trekyatra.co.in`,
+  `https://trekyatra.co.in`, `http://localhost:3000` to the Web client; verify it's a
+  "Web application" client, not the iOS one.
+- **In-app webview handling (code):** `lib/browser.ts` `isInAppBrowser()` + `GoogleAuthButton`
+  now shows an "open in Safari/Chrome or use email" notice + copy-link when an embedded
+  webview (Instagram/FB) is detected — Google blocks OAuth in webviews (`disallowed_useragent`)
+  and that can't be overridden; email sign-in remains the in-webview fallback.
+- **Domain consistency:** 21 `NEXT_PUBLIC_SITE_URL ?? "https://trekyatra.com"` fallbacks +
+  the hardcoded `operators` canonical → `https://www.trekyatra.co.in`. Impact LOW; `next build` pass.
+- **Contact email:** generic support/contact addresses → `explore@trekyatra.co.in`
+  (web account/settings ×2, mobile privacy screen, seed_static_cms_pages support@).
+  FLAGGED (not changed — need owner decision): departmental `editorial@/privacy@/legal@/
+  partners@/partnerships@` (already `.co.in`), `newsletter@trekyatra.com` (wrong `.com`
+  sender), and **live CMS pages already published from the seed** need a re-seed / CMS edit
+  to reflect the new email (editing the script only fixes future seeds).
+
 ## 2026-07-28 — Hotfix: web /account mobile layout
 
 `app/(public)/account/layout.tsx` wrapper was `flex` (always row) with no `flex-col`
