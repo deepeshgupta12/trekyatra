@@ -16,7 +16,8 @@
     "preview": {
       "distribution": "internal",
       "env": {
-        "EXPO_PUBLIC_API_URL": "https://api.trekyatra.co.in"
+        "EXPO_PUBLIC_API_URL": "https://api.trekyatra.co.in",
+        "EXPO_PUBLIC_GOOGLE_CLIENT_ID": "445487374089-1qgsnnn3428nuf6qvtiff6bobmvfgvjr.apps.googleusercontent.com"
       },
       "ios": {
         "simulator": false
@@ -28,7 +29,8 @@
     "production": {
       "distribution": "store",
       "env": {
-        "EXPO_PUBLIC_API_URL": "https://api.trekyatra.co.in"
+        "EXPO_PUBLIC_API_URL": "https://api.trekyatra.co.in",
+        "EXPO_PUBLIC_GOOGLE_CLIENT_ID": "445487374089-1qgsnnn3428nuf6qvtiff6bobmvfgvjr.apps.googleusercontent.com"
       },
       "ios": {
         "simulator": false

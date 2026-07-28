@@ -31,7 +31,7 @@
 | B07 | EAS CLI installed and logged in (`eas login`) | `[ ]` | `npm install -g eas-cli` |
 | B08 | EAS project created — note `EAS_PROJECT_ID` | `[ ]` | `eas init` in `apps/mobile/` |
 | B09 | APNs Auth Key (.p8) generated in Apple Developer portal | `[ ]` | Upload via `eas credentials` |
-| B10 | Google Sign-In client IDs created (OAuth 2.0) for iOS + Android | `[ ]` | Firebase Console → Authentication |
+| B10 | Google Sign-In client IDs created (OAuth 2.0) for iOS + Android | `[x]` | iOS client `445487374089-1qgsnnn3428nuf6qvtiff6bobmvfgvjr` (bundle `in.co.trekyatra.app`) wired into `eas.json` env as `EXPO_PUBLIC_GOOGLE_CLIENT_ID`; reversed scheme in app.config.ts |
 | B11 | Razorpay production keys activated (not test mode) | `[ ]` | dashboard.razorpay.com |
 | B12 | Apple IAP products created in App Store Connect (monthly + annual) | `[ ]` | Required before M13 implementation |
 | B13 | Google Play IAP products created in Play Console | `[ ]` | Required before M13 implementation |
