@@ -24,10 +24,13 @@ Brand-locked redesign (saffron/pine + Glass UI; reference layouts). Ships as App
 `1.1.0` AFTER all phases — no interim `1.0.0 (2)` submission (owner decision).
 Phasing: M24 foundation → M25 Home → M26 Explore/Search → M27 Trek detail → M28
 onboarding + personalization.
-- **M24 (Phase 1) — foundation (in progress):** new `TrailCard` (heart + route-map thumbnail,
+- **M24 (Phase 1) — foundation (done, 7bd3e3d):** new `TrailCard` (heart + route-map thumbnail,
   presentational, additive — not a TrekCard change), `AISearchBar` (glass + voice), `QuickFilterChips`;
-  `route_image_url` added optional to `TrekListItem`/`CMSPageResponseLike` + CMS mapper. Impact LOW;
-  tsc 0. Glass tab bar deferred to M25. See `docs/mobile/steps/STEP-M24-redesign-foundation.md`.
+  `route_image_url` added optional to `TrekListItem`/`CMSPageResponseLike` + CMS mapper. Impact LOW; tsc 0.
+- **M25 (Phase 2) — Home (in progress):** `HomeHeroV2` (personalized greeting + AI/voice search + filter
+  chips) + `PopularTrailsSection` (TrailCards w/ auth-gated save) replace the image hero + welcome banners +
+  trending row; existing sections preserved below. 3 new analytics events. Impact LOW; tsc 0. **Floating
+  glass tab-bar restyle deferred** (cross-cutting). See `docs/mobile/steps/STEP-M25-redesign-home.md`.
 
 ## 2026-07-28 — Hotfix: web Google sign-in (in-app browser) + domain consistency
 

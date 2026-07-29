@@ -6,14 +6,16 @@ import {
   StatusBar,
 } from "react-native";
 import { useState, useCallback } from "react";
+import { router } from "expo-router";
 import { SafeArea } from "@/components/ui/SafeArea";
-import { HomeHero } from "@/components/home/HomeHero";
+import { HomeHeroV2 } from "@/components/home/HomeHeroV2";
+import type { QuickFilterChip } from "@/components/home/QuickFilterChips";
+import { trackAiSearchOpened, trackVoiceSearchUsed, trackFilterChipTapped } from "@/lib/analytics";
 import { useAuth } from "@/hooks/useAuth";
 import { useBehaviorProfile } from "@/hooks/useBehaviorProfile";
 import { useHomeData } from "@/hooks/useHomeData";
 import { useTheme } from "@/hooks/useTheme";
-import { HomeWelcomeBannerA, HomeWelcomeBannerB } from "@/components/home/HomeWelcomeBanner";
-import { HomeTrendingSection } from "@/components/home/HomeTrendingSection";
+import { PopularTrailsSection } from "@/components/home/PopularTrailsSection";
 import { CategoryHubRow } from "@/components/home/CategoryHubRow";
 import { RegionsRow } from "@/components/home/RegionsRow";
 import { DifficultyTabsSection } from "@/components/home/DifficultyTabsSection";
@@ -26,6 +28,12 @@ import { ResourcesRow } from "@/components/home/ResourcesRow";
 import { OperatorsCTACard } from "@/components/home/OperatorsCTACard";
 import { HomeSkeleton } from "@/components/home/HomeSkeleton";
 import { NearbyTreksStrip } from "@/components/home/NearbyTreksStrip";
+
+const FILTER_CHIPS: QuickFilterChip[] = [
+  { key: "difficulty", label: "Difficulty", icon: "options-outline" },
+  { key: "length", label: "Length", icon: "resize-outline" },
+  { key: "elevation", label: "Elevation gain", icon: "trending-up-outline" },
+];
 
 type HomeState = "A" | "B" | "C" | "D";
 
@@ -62,15 +70,27 @@ export default function HomeScreen() {
   }, [refetch]);
 
   const firstName = user?.fullName?.split(" ")[0] ?? "there";
-  const viewCount = profile?.views.length ?? 0;
   const topRegion = topRegions[0] ?? null;
+
+  const hero = (
+    <HomeHeroV2
+      firstName={firstName}
+      locationLabel={topRegion}
+      onSearchPress={() => { trackAiSearchOpened("home"); router.push("/(tabs)/browse/search" as never); }}
+      onVoicePress={() => { trackVoiceSearchUsed("home"); router.push("/(tabs)/browse/search?voice=1" as never); }}
+      onNotificationsPress={() => router.push("/notifications" as never)}
+      onMapPress={() => router.push("/(tabs)/browse" as never)}
+      filterChips={FILTER_CHIPS}
+      onFilterPress={(key) => { trackFilterChipTapped(key); router.push("/(tabs)/browse" as never); }}
+    />
+  );
 
   // Show skeleton on first load
   if (!homeState || (isLoading && trending.length === 0)) {
     return (
       <SafeArea>
         <StatusBar barStyle={isDark ? "light-content" : "dark-content"} />
-        <HomeHero />
+        {hero}
         <HomeSkeleton />
       </SafeArea>
     );
@@ -91,24 +111,13 @@ export default function HomeScreen() {
           />
         }
       >
-        <HomeHero />
+        {hero}
 
-        {/* Welcome Banner — States A + B */}
-        {homeState === "A" && <HomeWelcomeBannerA firstName={firstName} />}
-        {homeState === "B" && (
-          <HomeWelcomeBannerB
-            firstName={firstName}
-            viewCount={viewCount}
-            topRegion={topRegion}
-            recentViews={recentViews}
-          />
-        )}
-
-        {/* Trending row — all states */}
-        <HomeTrendingSection
+        {/* Popular with trekkers — prominent TrailCards (all states) */}
+        <PopularTrailsSection
           treks={trending}
-          state={homeState as "A" | "B" | "C" | "D"}
           loading={isLoading && trending.length === 0}
+          onSeeAll={() => router.push("/(tabs)/browse" as never)}
         />
 
         {/* Nearby Treks (GPS) — shown when location is granted or prompt shown when denied */}

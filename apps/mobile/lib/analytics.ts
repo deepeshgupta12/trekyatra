@@ -147,3 +147,13 @@ export const trackTrekShared = (slug: string, method: string) =>
 
 export const trackNewsArticleViewed = (slug: string, title?: string) =>
   trackEvent("engagement", "news_article_viewed", { slug, title });
+
+// v1.1 redesign surfaces
+export const trackAiSearchOpened = (source: string) =>
+  trackEvent("engagement", "ai_search_opened", { source });
+
+export const trackVoiceSearchUsed = (source: string) =>
+  trackEvent("engagement", "voice_search_used", { source });
+
+export const trackFilterChipTapped = (filter: string) =>
+  trackEvent("engagement", "filter_chip_tapped", { filter });
