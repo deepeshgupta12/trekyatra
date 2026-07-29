@@ -18,6 +18,17 @@ Do not modify any code file without first:
 4. Checking impacted files and blast radius
 5. Updating the relevant step file in `docs/steps/`
 
+## 2026-07-29 — v1.1 mobile redesign (STEP-M24…M28), approved mockups
+
+Brand-locked redesign (saffron/pine + Glass UI; reference layouts). Ships as App Store
+`1.1.0` AFTER all phases — no interim `1.0.0 (2)` submission (owner decision).
+Phasing: M24 foundation → M25 Home → M26 Explore/Search → M27 Trek detail → M28
+onboarding + personalization.
+- **M24 (Phase 1) — foundation (in progress):** new `TrailCard` (heart + route-map thumbnail,
+  presentational, additive — not a TrekCard change), `AISearchBar` (glass + voice), `QuickFilterChips`;
+  `route_image_url` added optional to `TrekListItem`/`CMSPageResponseLike` + CMS mapper. Impact LOW;
+  tsc 0. Glass tab bar deferred to M25. See `docs/mobile/steps/STEP-M24-redesign-foundation.md`.
+
 ## 2026-07-28 — Hotfix: web Google sign-in (in-app browser) + domain consistency
 
 - **Google sign-in `origin_mismatch`** (users from Instagram links): root cause is the

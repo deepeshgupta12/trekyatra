@@ -49,6 +49,7 @@ export interface TrekListItem {
   trek_difficulty: string | null;
   trek_duration: string | null;
   hero_image_url: string | null;
+  route_image_url?: string | null;
   trek_season: string | null;
 }
 
@@ -99,6 +100,7 @@ interface CMSPageResponseLike {
   slug: string;
   title: string;
   hero_image_url: string | null;
+  route_image_url?: string | null;
   trek_state: string | null;
   trek_difficulty: string | null;
   trek_duration: string | null;
@@ -211,6 +213,7 @@ function mapCmsPageToTrekListItem(page: CMSPageResponseLike): TrekListItem {
     trek_difficulty: page.trek_difficulty,
     trek_duration: page.trek_duration,
     hero_image_url: page.hero_image_url,
+    route_image_url: page.route_image_url ?? null,
     trek_season: page.trek_season,
   };
 }
