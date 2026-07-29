@@ -32,6 +32,7 @@ interface TabBarProps {
 const SAFFRON = "#E8702A";
 const FAB_SIZE = 54;
 const TAB_HEIGHT = Platform.OS === "ios" ? 56 : 50;
+const FLOAT_RADIUS = 26;
 
 export function CustomTabBar({ state, descriptors, navigation }: TabBarProps) {
   const { isDark } = useTheme();
@@ -42,31 +43,41 @@ export function CustomTabBar({ state, descriptors, navigation }: TabBarProps) {
   const paddingBottom = Platform.OS === "ios" ? 20 : 8;
 
   return (
+    // Outer reserves the SAME height as before (content padding on every screen is
+    // unchanged); only the inner bar floats — inset margins, rounded corners, full glass.
     <View
-      style={{
-        height: TAB_HEIGHT + (Platform.OS === "ios" ? 20 : 0),
-        shadowColor: "#000",
-        shadowOffset: { width: 0, height: -2 },
-        shadowOpacity: isDark ? 0.3 : 0.08,
-        shadowRadius: 8,
-        elevation: 8,
-      }}
+      style={{ height: TAB_HEIGHT + (Platform.OS === "ios" ? 20 : 0) }}
       accessibilityRole="tablist"
     >
-      <GlassSurface
-        rounded="none"
-        bordered={false}
-        style={[StyleSheet.absoluteFill, { borderTopWidth: 1, borderTopColor: borderColor }]}
-      />
       <View
         style={{
-          flexDirection: "row",
-          paddingBottom,
-          paddingTop: 8,
-          alignItems: "flex-end",
-          flex: 1,
+          position: "absolute",
+          left: 10,
+          right: 10,
+          top: 0,
+          bottom: 4,
+          borderRadius: FLOAT_RADIUS,
+          shadowColor: "#000",
+          shadowOffset: { width: 0, height: 6 },
+          shadowOpacity: isDark ? 0.42 : 0.15,
+          shadowRadius: 16,
+          elevation: 12,
         }}
       >
+        <GlassSurface
+          rounded="none"
+          bordered
+          style={[StyleSheet.absoluteFill, { borderRadius: FLOAT_RADIUS, borderWidth: 1, borderColor }]}
+        />
+        <View
+          style={{
+            flexDirection: "row",
+            paddingBottom,
+            paddingTop: 8,
+            alignItems: "flex-end",
+            flex: 1,
+          }}
+        >
       {state.routes.map((route, index) => {
         const { options } = descriptors[route.key];
         if (options.href === null) return null;
@@ -194,6 +205,7 @@ export function CustomTabBar({ state, descriptors, navigation }: TabBarProps) {
         >
           <Ionicons name="menu" size={24} color={inactiveColor} />
         </TouchableOpacity>
+        </View>
       </View>
     </View>
   );
