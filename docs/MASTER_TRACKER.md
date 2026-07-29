@@ -27,10 +27,16 @@ onboarding + personalization.
 - **M24 (Phase 1) — foundation (done, 7bd3e3d):** new `TrailCard` (heart + route-map thumbnail,
   presentational, additive — not a TrekCard change), `AISearchBar` (glass + voice), `QuickFilterChips`;
   `route_image_url` added optional to `TrekListItem`/`CMSPageResponseLike` + CMS mapper. Impact LOW; tsc 0.
-- **M25 (Phase 2) — Home (in progress):** `HomeHeroV2` (personalized greeting + AI/voice search + filter
-  chips) + `PopularTrailsSection` (TrailCards w/ auth-gated save) replace the image hero + welcome banners +
-  trending row; existing sections preserved below. 3 new analytics events. Impact LOW; tsc 0. **Floating
-  glass tab-bar restyle deferred** (cross-cutting). See `docs/mobile/steps/STEP-M25-redesign-home.md`.
+- **M25 (Phase 2) — Home (done, 1b64ec3 + floating tab bar 9f589bd):** `HomeHeroV2` (personalized greeting +
+  AI/voice search + filter chips) + `PopularTrailsSection` (TrailCards w/ auth-gated save) replace the image
+  hero + welcome banners + trending row; existing sections preserved. 3 analytics events. Floating glass tab
+  bar (reserved height unchanged). Impact LOW; tsc 0.
+- **M26 (Phase 3) — Explore + Search (in progress):** `CategoryRow` (illustrated categories → real region/
+  season/difficulty filters) added to Explore; category_tapped analytics. **Search visual restyle deferred**
+  (screen already fully functional: voice/recent/trending/semantic; avoid risky rewrite). Impact LOW; tsc 0.
+  See `docs/mobile/steps/STEP-M26-redesign-explore-search.md`.
+- **M28 (Phase 5) — SPEC LOCKED** (not built): personalization matrix + storage/sync in
+  `docs/mobile/steps/STEP-M28-onboarding-personalization.md`.
 
 ## 2026-07-28 — Hotfix: web Google sign-in (in-app browser) + domain consistency
 

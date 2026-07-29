@@ -157,3 +157,6 @@ export const trackVoiceSearchUsed = (source: string) =>
 
 export const trackFilterChipTapped = (filter: string) =>
   trackEvent("engagement", "filter_chip_tapped", { filter });
+
+export const trackCategoryTapped = (category: string) =>
+  trackEvent("engagement", "category_tapped", { category });

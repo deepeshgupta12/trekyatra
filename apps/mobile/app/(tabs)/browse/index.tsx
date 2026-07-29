@@ -6,11 +6,23 @@ import { SearchBar, SearchBarWrapper } from "@/components/browse/SearchBar";
 import { FilterChips } from "@/components/browse/FilterChips";
 import { TrekGrid } from "@/components/browse/TrekGrid";
 import { NearbyTreksStrip } from "@/components/home/NearbyTreksStrip";
+import { CategoryRow, type TrekCategory } from "@/components/browse/CategoryRow";
 import { useTheme } from "@/hooks/useTheme";
 import { useExplore } from "@/hooks/useExplore";
 import { useExploreStore } from "@/stores/exploreStore";
+import { trackCategoryTapped } from "@/lib/analytics";
 
 import { REGIONS } from "@/constants/regions";
+
+// Illustrated Explore categories → real navigable filters (region/season/difficulty).
+const CATEGORIES: TrekCategory[] = [
+  { key: "himalayan", label: "Himalayan", icon: "triangle-outline", tint: "#33506b" },
+  { key: "sahyadri", label: "Sahyadri", icon: "trail-sign-outline", tint: "#4a7a52" },
+  { key: "desert", label: "Desert", icon: "sunny-outline", tint: "#b07d4b" },
+  { key: "snow", label: "Snow Treks", icon: "snow-outline", tint: "#5298C9" },
+  { key: "beginner", label: "Beginner", icon: "leaf-outline", tint: "#22c55e" },
+  { key: "summit", label: "High Altitude", icon: "flag-outline", tint: "#E8702A" },
+];
 
 const SEASONS = [
   { slug: "winter", label: "Winter" },
@@ -23,7 +35,19 @@ const SEASONS = [
 export default function BrowseScreen() {
   const { colors, isDark } = useTheme();
   const params = useLocalSearchParams<{ region?: string }>();
-  const { trekState, trekDifficulty, trekSeason, durationBucket, setTrekState } = useExploreStore();
+  const { trekState, trekDifficulty, trekSeason, durationBucket, setTrekState, setTrekDifficulty } = useExploreStore();
+
+  function handleCategory(key: string) {
+    trackCategoryTapped(key);
+    switch (key) {
+      case "himalayan": router.push(`/(tabs)/browse/regions/${encodeURIComponent("Himachal Pradesh")}` as never); break;
+      case "sahyadri": router.push(`/(tabs)/browse/regions/${encodeURIComponent("Maharashtra")}` as never); break;
+      case "desert": router.push(`/(tabs)/browse/regions/${encodeURIComponent("Rajasthan")}` as never); break;
+      case "snow": router.push("/(tabs)/browse/seasons/winter" as never); break;
+      case "beginner": setTrekDifficulty("Easy"); break;      // grid below re-filters in place
+      case "summit": setTrekDifficulty("Challenging"); break;
+    }
+  }
 
   useEffect(() => {
     if (params.region) setTrekState(params.region);
@@ -47,6 +71,11 @@ export default function BrowseScreen() {
 
       <View style={styles.filtersWrapper}>
         <FilterChips />
+      </View>
+
+      <View style={styles.hubSection}>
+        <Text style={[styles.hubHeading, { color: colors.textPrimary }]}>Categories</Text>
+        <CategoryRow categories={CATEGORIES} onPress={handleCategory} />
       </View>
 
       <View style={styles.hubSection}>
