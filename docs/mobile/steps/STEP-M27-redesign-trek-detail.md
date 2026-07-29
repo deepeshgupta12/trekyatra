@@ -23,8 +23,13 @@ Real model has Duration/Max-altitude/Difficulty/state/route_image_url — NOT ra
 "Elev-gain", structured start→end route, or video. The card maps to real fields; difficulty
 pill/subtitle stand in for the mockup's ★rating/route.
 
-## Remaining (optional, lower priority)
-- **Pinned Download + Map bar** restyle — TrekStickyBar visual pass (currently save/plan; functional).
+## Done — pinned bar floated (UI-only, actions unchanged)
+- `TrekStickyBar` — same actions (Plan / Save / Compare) per owner note; **only the UI enhanced**:
+  the bar now FLOATS (inset margins, rounded 22, GlassSurface, shadow) instead of edge-attached.
+  In-flow (reserves height — nothing hides behind it). Props unchanged (slug/trekName). Impact
+  LOW (0); tsc 0. Bottom tab navigation keeps its 5 elements (floated in M25) — no Download added.
+
+## Preserved
 - ⚠️ The inline+overlay **pinned section TrekTabBar** (touch-desync-safe), offline badge, and
   premium `GatedContentOverlay` remain intact — untouched by this redesign.
 
