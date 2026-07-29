@@ -5,7 +5,7 @@ export default ({ config }: ConfigContext): any => ({
   ...config,
   name: "TrekYatra",
   slug: "trekyatra",
-  version: "1.0.0",
+  version: "1.1.0",
   // OTA (EAS Update): ship JS/asset fixes without an App Store review. runtimeVersion
   // is tied to the marketing version — a native rebuild (new version) starts a new
   // runtime, and only updates built against a matching runtimeVersion are delivered.
@@ -23,11 +23,10 @@ export default ({ config }: ConfigContext): any => ({
   ios: {
     supportsTablet: false,
     bundleIdentifier: "in.co.trekyatra.app",
-    // App Store requires a UNIQUE build number per version. 1.0.0 (1) is already in
-    // TestFlight, so this second binary (all the UI-audit fixes) must be (2). Bump this
-    // on every new build for the same marketing version, or switch to EAS remote
-    // autoIncrement later.
-    buildNumber: "2",
+    // Build number is unique PER marketing version. New version 1.1.0 (redesign) → resets
+    // to "1" (1.1.0 (1) can't collide with 1.0.0 (2)). Bump on each rebuild of the SAME
+    // version, or switch to EAS remote autoIncrement later.
+    buildNumber: "1",
     // Generates the com.apple.developer.applesignin entitlement during EAS prebuild.
     // Without this the native Apple Sign-In sheet (expo-apple-authentication, lib/appleAuth.ts)
     // fails at runtime → Guideline 4.8 rejection (we also offer Google sign-in).
