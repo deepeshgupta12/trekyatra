@@ -94,7 +94,7 @@ export default function Authors() {
         </p>
         <p className="text-sm text-foreground/80">
           If you have done a significant Indian trek recently and want to contribute, write to{" "}
-          <a href="mailto:editorial@trekyatra.co.in" className="text-accent hover:underline font-medium">editorial@trekyatra.co.in</a>{" "}
+          <a href="mailto:explore@trekyatra.co.in" className="text-accent hover:underline font-medium">explore@trekyatra.co.in</a>{" "}
           with your most recent trek date, the trail you want to cover, and a short sample.
         </p>
       </div>
@@ -104,7 +104,7 @@ export default function Authors() {
         <h2 className="font-display text-xl font-semibold text-foreground mb-2">Submit a correction</h2>
         <p className="text-sm text-foreground/80">
           Found an outdated permit fee, wrong altitude, or incorrect route description? Write to{" "}
-          <a href="mailto:editorial@trekyatra.co.in" className="text-accent hover:underline font-medium">editorial@trekyatra.co.in</a>.
+          <a href="mailto:explore@trekyatra.co.in" className="text-accent hover:underline font-medium">explore@trekyatra.co.in</a>.
           We respond within 24 hours and update the guide within 3 business days.
         </p>
       </div>

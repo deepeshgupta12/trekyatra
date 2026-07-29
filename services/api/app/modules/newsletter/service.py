@@ -110,7 +110,7 @@ def _send_mailchimp(campaign: NewsletterCampaign) -> None:
             "preview_text": campaign.preview_text or "",
             "title": campaign.week_label,
             "from_name": "TrekYatra",
-            "reply_to": "newsletter@trekyatra.com",
+            "reply_to": "explore@trekyatra.co.in",
         },
     }
     resp = httpx.post(
@@ -145,7 +145,7 @@ def _send_brevo(campaign: NewsletterCampaign) -> None:
     payload = {
         "name": campaign.week_label,
         "subject": campaign.subject,
-        "sender": {"name": "TrekYatra", "email": "newsletter@trekyatra.com"},
+        "sender": {"name": "TrekYatra", "email": "explore@trekyatra.co.in"},
         "type": "classic",
         "htmlContent": campaign.body_html,
         "recipients": {"listIds": [int(settings.newsletter_list_id)]},

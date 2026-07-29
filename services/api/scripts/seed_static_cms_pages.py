@@ -85,11 +85,11 @@ PAGES: list[dict] = [
 <h2>5. Data retention</h2>
 <p>Account data is retained while your account is active and for 90 days after deletion. Enquiry data is retained for 24 months. Payment records are retained as required by Indian tax law (7 years).</p>
 <h2>6. Your rights</h2>
-<p>Under the DPDP Act 2023, you have the right to: access your personal data, correct inaccurate data, erase your data, and withdraw consent for processing. Write to <strong>privacy@trekyatra.co.in</strong>. We respond within 30 days.</p>
+<p>Under the DPDP Act 2023, you have the right to: access your personal data, correct inaccurate data, erase your data, and withdraw consent for processing. Write to <strong>explore@trekyatra.co.in</strong>. We respond within 30 days.</p>
 <h2>7. Data security</h2>
 <p>Passwords are hashed using PBKDF2-SHA256. All data in transit uses TLS 1.2+. Production database access is restricted to authenticated application instances only.</p>
 <h2>8. Contact</h2>
-<p><strong>privacy@trekyatra.co.in</strong> | TrekYatra, Gurgaon, Haryana, India</p>""",
+<p><strong>explore@trekyatra.co.in</strong> | TrekYatra, Gurgaon, Haryana, India</p>""",
     },
     {
         "slug": "terms",
@@ -118,7 +118,7 @@ PAGES: list[dict] = [
 <h2>9. Governing law</h2>
 <p>These terms are governed by the laws of India. Any disputes shall be subject to the exclusive jurisdiction of courts in Gurgaon, Haryana.</p>
 <h2>10. Contact</h2>
-<p><strong>legal@trekyatra.co.in</strong></p>""",
+<p><strong>explore@trekyatra.co.in</strong></p>""",
     },
     {
         "slug": "contact",
@@ -130,11 +130,11 @@ PAGES: list[dict] = [
         "content_html": """<h2>How to reach us</h2>
 <p>TrekYatra is a small editorial team based in Gurgaon, India. We are reachable by email — we do not maintain a phone support line.</p>
 <h2>Editorial corrections</h2>
-<p>Found an error in a permit fee, altitude, or trail distance? Write to <strong>editorial@trekyatra.co.in</strong> with the URL and the correction. We will investigate and update the guide within 3 business days.</p>
+<p>Found an error in a permit fee, altitude, or trail distance? Write to <strong>explore@trekyatra.co.in</strong> with the URL and the correction. We will investigate and update the guide within 3 business days.</p>
 <h2>Partner and operator enquiries</h2>
-<p>If you are a trek operator interested in being listed on TrekYatra's operator marketplace, write to <strong>partners@trekyatra.co.in</strong>. Include your company name, trek specialisation, regions covered, and GST number. We respond within 5 business days.</p>
+<p>If you are a trek operator interested in being listed on TrekYatra's operator marketplace, write to <strong>explore@trekyatra.co.in</strong>. Include your company name, trek specialisation, regions covered, and GST number. We respond within 5 business days.</p>
 <h2>Affiliate and content partnerships</h2>
-<p>For gear brand collaborations, affiliate programme enquiries, or sponsored content discussions, write to <strong>partnerships@trekyatra.co.in</strong>. Note: we do not accept paid placement in editorial rankings or reviews.</p>
+<p>For gear brand collaborations, affiliate programme enquiries, or sponsored content discussions, write to <strong>explore@trekyatra.co.in</strong>. Note: we do not accept paid placement in editorial rankings or reviews.</p>
 <h2>Technical support and account issues</h2>
 <p>For issues with your account, digital product downloads, or subscription billing, write to <strong>explore@trekyatra.co.in</strong>. Include your registered email address and a description of the issue. Response time: 1 business day.</p>
 <h2>General enquiries</h2>
@@ -169,7 +169,7 @@ PAGES: list[dict] = [
 <h2>How to identify affiliate links</h2>
 <p>Links to Amazon and other affiliate programmes include tracking parameters (e.g., <code>?tag=trekyatra21-21</code>). If you prefer not to use affiliate links, you can search for the same product directly on the retailer's website.</p>
 <h2>Questions</h2>
-<p>Write to <strong>editorial@trekyatra.co.in</strong>.</p>""",
+<p>Write to <strong>explore@trekyatra.co.in</strong>.</p>""",
     },
     {
         "slug": "methodology",
@@ -206,7 +206,7 @@ PAGES: list[dict] = [
 <li>Seasonal closures and weather windows</li>
 </ul>
 <h2>Corrections policy</h2>
-<p>We correct factual errors promptly. Write to <strong>editorial@trekyatra.co.in</strong>. We acknowledge within 24 hours and publish a correction within 3 business days.</p>""",
+<p>We correct factual errors promptly. Write to <strong>explore@trekyatra.co.in</strong>. We acknowledge within 24 hours and publish a correction within 3 business days.</p>""",
     },
 ]
 

@@ -31,12 +31,17 @@ Do not modify any code file without first:
   and that can't be overridden; email sign-in remains the in-webview fallback.
 - **Domain consistency:** 21 `NEXT_PUBLIC_SITE_URL ?? "https://trekyatra.com"` fallbacks +
   the hardcoded `operators` canonical → `https://www.trekyatra.co.in`. Impact LOW; `next build` pass.
-- **Contact email:** generic support/contact addresses → `explore@trekyatra.co.in`
-  (web account/settings ×2, mobile privacy screen, seed_static_cms_pages support@).
-  FLAGGED (not changed — need owner decision): departmental `editorial@/privacy@/legal@/
-  partners@/partnerships@` (already `.co.in`), `newsletter@trekyatra.com` (wrong `.com`
-  sender), and **live CMS pages already published from the seed** need a re-seed / CMS edit
-  to reflect the new email (editing the script only fixes future seeds).
+- **Contact email → single canonical `explore@trekyatra.co.in`** (owner decision: consolidate
+  ALL). Source fixed: web account/settings + about/authors, mobile privacy, treksage_agent,
+  newsletter service (Mailchimp reply_to + Brevo sender), seed_static_cms_pages
+  (support/editorial/privacy/legal/partners/partnerships@). Backend 786 pass; next build pass.
+  - **Live CMS (prod DB) still shows old emails** — verified via prod API: `/contact`
+    (editorial/hello/partners/partnerships/support@), `/privacy` (privacy@), `/terms` (legal@),
+    `/methodology` + `/affiliate-disclosure` (editorial@), `/about` (hello@). **ACTION (DO console):**
+    `python scripts/backfill_cms_emails.py` rewrites every trekyatra email in CMS content →
+    explore@ (idempotent; safer than re-seeding, preserves other edits). See DO_RELEASE_RUNBOOK.
+  - ⚠️ Deliverability: newsletter now sends FROM explore@ — verify `explore@trekyatra.co.in`
+    is a verified sender in the email provider (Mailchimp/Brevo) or campaigns may bounce.
 
 ## 2026-07-28 — Hotfix: web /account mobile layout
 

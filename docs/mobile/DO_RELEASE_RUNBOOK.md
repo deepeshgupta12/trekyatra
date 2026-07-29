@@ -60,6 +60,20 @@ Idempotent and **additive only** — creates `media/<uuid>_400.jpg` / `_800.jpg`
 never modifies or deletes originals. New uploads already generate variants
 automatically. Uses the existing `DO_SPACES_*` credentials.
 
+### 3b. Normalize CMS contact emails (one-off, prod DB)
+Live static pages (contact/privacy/terms/methodology/affiliate-disclosure/about) still
+show old role emails (support@/editorial@/privacy@/legal@/partners@/partnerships@/hello@).
+DO console → **`api` component → Console** tab:
+```bash
+cd services/api
+python scripts/backfill_cms_emails.py --dry-run   # preview affected pages
+python scripts/backfill_cms_emails.py             # execute
+```
+Rewrites every `*@trekyatra.(com|co.in)` in CMS content → `explore@trekyatra.co.in`
+(idempotent; preserves all other content — safer than re-seeding). **Deliverability:**
+the newsletter now sends FROM `explore@trekyatra.co.in` — confirm it's a verified sender
+in Mailchimp/Brevo first.
+
 ### 4. Verify
 ```bash
 curl -s https://api.trekyatra.co.in/api/v1/health          # → 200, services healthy

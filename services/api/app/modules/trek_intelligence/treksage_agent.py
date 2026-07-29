@@ -450,7 +450,7 @@ _AUTHORS_INFO = (
     "TrekYatra must be verifiable, up-to-date, and honest — even when honesty means saying "
     "'we are not sure, verify this at the trailhead.' "
     "Skills: Content strategy, Platform editorial, Permit research, Trek planning. "
-    "Contributions or corrections: editorial@trekyatra.co.in "
+    "Contributions or corrections: explore@trekyatra.co.in "
     "Full authors page: https://www.trekyatra.co.in/about/authors"
 )
 
