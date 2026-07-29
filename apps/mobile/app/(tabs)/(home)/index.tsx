@@ -13,6 +13,7 @@ import type { QuickFilterChip } from "@/components/home/QuickFilterChips";
 import { trackAiSearchOpened, trackVoiceSearchUsed, trackFilterChipTapped } from "@/lib/analytics";
 import { useAuth } from "@/hooks/useAuth";
 import { useBehaviorProfile } from "@/hooks/useBehaviorProfile";
+import { usePreferences } from "@/hooks/usePreferences";
 import { useHomeData } from "@/hooks/useHomeData";
 import { useTheme } from "@/hooks/useTheme";
 import { PopularTrailsSection } from "@/components/home/PopularTrailsSection";
@@ -52,14 +53,19 @@ export default function HomeScreen() {
   const { isDark } = useTheme();
   const { profile, loaded: profileLoaded, hasBehavior, recentViews, topRegions, topDifficulties } =
     useBehaviorProfile();
+  const { prefs } = usePreferences();
   const [isRefreshing, setIsRefreshing] = useState(false);
 
   const isLoggedIn = !!user;
   const homeState = resolveState(isLoggedIn, hasBehavior, profileLoaded);
 
+  // Personalization blend: explicit onboarding prefs ANCHOR the order; behavior reweights.
+  const blendedRegions = Array.from(new Set([...(prefs?.regions ?? []), ...topRegions]));
+  const blendedDifficulties = Array.from(new Set([...(prefs?.difficulties ?? []), ...topDifficulties]));
+
   const { trending, seasonal, recommendations, isLoading, refetch } = useHomeData({
-    topRegions,
-    topDifficulties,
+    topRegions: blendedRegions,
+    topDifficulties: blendedDifficulties,
     isLoggedIn,
   });
 
@@ -70,7 +76,7 @@ export default function HomeScreen() {
   }, [refetch]);
 
   const firstName = user?.fullName?.split(" ")[0] ?? "there";
-  const topRegion = topRegions[0] ?? null;
+  const topRegion = prefs?.regions?.[0] ?? topRegions[0] ?? null; // onboarding region anchors the greeting
 
   const hero = (
     <HomeHeroV2

@@ -70,8 +70,8 @@ export default function WelcomeScreen() {
   }
 
   async function handleGetStarted() {
-    await markDone();
-    router.replace("/(auth)/sign-up");
+    // → personalization onboarding (it marks onboarding done + saves prefs at the end).
+    router.push("/(auth)/onboarding" as never);
   }
 
   async function handleSignIn() {

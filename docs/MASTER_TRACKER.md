@@ -41,8 +41,14 @@ onboarding + personalization.
   Difficulty grid, Photo-tour → reports) matches the owner's reference layout. Real fields only.
   Pinned section bar/offline/premium untouched. Impact LOW; tsc 0. TrekStickyBar restyle optional.
   See `docs/mobile/steps/STEP-M27-redesign-trek-detail.md`.
-- **M28 (Phase 5) — SPEC LOCKED** (not built): personalization matrix + storage/sync in
-  `docs/mobile/steps/STEP-M28-onboarding-personalization.md`.
+- **M28 (Phase 5) — Onboarding + personalization (BUILT):** `user_preferences` table (migration
+  **0057**, keyed by user_id OR anonymous_id + device_id — survives uninstall, cross-web), service
+  (get/upsert/merge_anon_into_user), authed + public routes, 6 tests. Mobile: `lib/preferences.ts`
+  (local + anon + user sync), `app/(auth)/onboarding.tsx` (4-step skippable), `usePreferences` +
+  Home blend, analytics. Owner cases handled: repeat-email skip, uninstall-survival, cross-web.
+  Backend 6/6 prefs pass (2 unrelated pre-existing `test_refresh` flaky failures in full-suite
+  ordering — refresh module untouched). tsc 0. **DO: `alembic upgrade head` applies 0057.**
+  See `docs/mobile/steps/STEP-M28-onboarding-personalization.md`.
 
 ## 2026-07-28 — Hotfix: web Google sign-in (in-app browser) + domain consistency
 

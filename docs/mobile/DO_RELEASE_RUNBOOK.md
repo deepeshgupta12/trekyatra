@@ -40,13 +40,15 @@ After the deploy is live: DO console → **`api` component → Console** tab:
 cd services/api        # if the shell isn't already there
 alembic upgrade head
 ```
-Applies both pending migrations:
+Applies all pending migrations:
 - `20260728_0055_analytics_session_device` — `device_model`/`os_version` on
   `analytics_sessions`. Without it, `POST /api/v1/analytics/session/start` 500s.
 - `20260728_0056_app_version_config` — the **version-gate** table (force/soft
   update + maintenance kill-switch). Auto-seeds the `ios` row (permissive default:
-  `min == latest == 1.0.0`, nothing gated). Without it, `GET /api/v1/app/version-config`
-  fail-opens (never blocks), but the admin gate page can't save.
+  `min == latest == 1.0.0`, nothing gated).
+- `20260729_0057_user_preferences` — onboarding **personalization** prefs, keyed by
+  user_id OR anonymous_id (+ device_id; survives uninstall, cross-web). Without it,
+  `/account/preferences` + `/app/preferences` 500 → onboarding can't persist.
 
 ### 3. Backfill resized image variants
 After the deploy is live (the script imports the new `app.core.image_variants`):

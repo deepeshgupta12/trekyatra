@@ -8,9 +8,10 @@ from sqlalchemy import select
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
-from app.modules.account.models import AccountComparison, TrekAlert, UserBookmark, UserDownload, UserProfile
+from app.modules.account.models import AccountComparison, TrekAlert, UserBookmark, UserDownload, UserPreferences, UserProfile
 from app.modules.auth.models import User
 from app.modules.cms.models import CMSPage
+from app.schemas.account import UserPreferencesUpdate
 
 logger = logging.getLogger(__name__)
 
@@ -312,6 +313,78 @@ def delete_comparison(db: Session, user_id: UUID, comparison_id: UUID) -> bool:
 
 
 # --- Behavior Profile (cross-platform personalization sync) ---
+
+def get_preferences(
+    db: Session, *, user_id: UUID | None = None, anonymous_id: str | None = None
+) -> UserPreferences | None:
+    """Prefer the user row (logged-in / cross-web); fall back to the anon row (persists
+    across uninstall)."""
+    if user_id is not None:
+        row = db.scalar(select(UserPreferences).where(UserPreferences.user_id == user_id))
+        if row is not None:
+            return row
+    if anonymous_id:
+        return db.scalar(select(UserPreferences).where(UserPreferences.anonymous_id == anonymous_id))
+    return None
+
+
+def upsert_preferences(
+    db: Session,
+    patch: UserPreferencesUpdate,
+    *,
+    user_id: UUID | None = None,
+    anonymous_id: str | None = None,
+    device_id: str | None = None,
+) -> UserPreferences:
+    """Create/update the prefs row for a user_id or anonymous_id key.
+
+    A logged-in write also adopts a matching anon row (links user_id) so the pre-login
+    onboarding carries over. Used by onboarding sync + merge-on-login.
+    """
+    row: UserPreferences | None = None
+    if user_id is not None:
+        row = db.scalar(select(UserPreferences).where(UserPreferences.user_id == user_id))
+    if row is None and anonymous_id:
+        row = db.scalar(select(UserPreferences).where(UserPreferences.anonymous_id == anonymous_id))
+
+    if row is None:
+        row = UserPreferences(user_id=user_id, anonymous_id=anonymous_id, device_id=device_id)
+        db.add(row)
+    else:
+        if user_id is not None and row.user_id is None:
+            row.user_id = user_id  # adopt the anon row on login
+        if anonymous_id and not row.anonymous_id:
+            row.anonymous_id = anonymous_id
+        if device_id:
+            row.device_id = device_id
+
+    for field, value in patch.model_dump(exclude_unset=True).items():
+        setattr(row, field, value)
+    db.commit()
+    db.refresh(row)
+    return row
+
+
+def merge_anon_into_user(db: Session, user_id: UUID, anonymous_id: str | None) -> UserPreferences | None:
+    """On login: if the user has no prefs yet but an anon row exists for this device, adopt
+    it (link user_id). If the user already has prefs, keep them (leave the anon row for
+    device continuity)."""
+    if not anonymous_id:
+        return db.scalar(select(UserPreferences).where(UserPreferences.user_id == user_id))
+    existing_user = db.scalar(select(UserPreferences).where(UserPreferences.user_id == user_id))
+    if existing_user is not None:
+        return existing_user
+    anon = db.scalar(
+        select(UserPreferences).where(
+            UserPreferences.anonymous_id == anonymous_id, UserPreferences.user_id.is_(None)
+        )
+    )
+    if anon is not None:
+        anon.user_id = user_id
+        db.commit()
+        db.refresh(anon)
+    return anon
+
 
 def get_behavior_profile(db: Session, user_id: UUID) -> dict:
     user = db.get(User, user_id)

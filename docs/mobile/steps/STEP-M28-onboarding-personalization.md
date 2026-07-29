@@ -1,6 +1,36 @@
-# STEP-M28 — v1.1 Redesign, Phase 5: Onboarding + Personalization (SPEC — not yet built)
+# STEP-M28 — v1.1 Redesign, Phase 5: Onboarding + Personalization
 
-**Status:** Planned (spec locked 2026-07-29). Build after M26 (Explore/Search) + M27 (Trek detail).
+**Status:** Built (2026-07-29). Decisions used: new `user_preferences` table; onboarding anchors,
+behavior reweights.
+
+## Built
+Backend:
+- `user_preferences` table (migration 0057) keyed by **user_id OR anonymous_id** (nullable both;
+  Postgres NULL-distinct uniques) + `device_id`. Model in account/models.py, registered db/base.py.
+- Service: `get_preferences` / `upsert_preferences` (adopts anon row on login) / `merge_anon_into_user`.
+- Routes: authed GET/PUT `/account/preferences` (+ `?anonymous_id` triggers merge); **public**
+  GET/PUT `/app/preferences` (anon, no auth). Schemas + 6 tests (incl. anon persistence + merge).
+
+Mobile:
+- `lib/preferences.ts` — local (AsyncStorage) + backend anon row (persists uninstall via SecureStore
+  anon id) + user row; `savePreferences` / `restorePreferences` / `mergePreferencesOnLogin`.
+- `app/(auth)/onboarding.tsx` — 4-step skippable wizard (Experience → Difficulty → Regions → Vibe),
+  registered in (auth)/_layout; welcome "Get started" routes to it.
+- `usePreferences` hook; Home blends prefs (regions/difficulties) into useHomeData + greeting region.
+- Analytics: onboarding_step / onboarding_completed / onboarding_skipped.
+
+## Owner requirements handled
+- **Repeat user (email) with prior prefs → onboarding skipped:** logged-in restore pulls the user row;
+  if `onboarding_completed`, local is marked done → wizard never shows.
+- **Survive uninstall:** anon id lives in SecureStore/Keychain (survives uninstall) → backend anon row
+  restored on reinstall → personalized Home + skip onboarding. device_id captured.
+- **Cross-web:** prefs keyed by user_id → web + app share the record; anon row merges into user on login.
+
+**Original spec (retained below).**
+
+---
+
+# Original spec (locked 2026-07-29)
 
 ## Goal
 Post-splash, skippable 4-step onboarding (Experience → Difficulty → Regions → Vibe) that

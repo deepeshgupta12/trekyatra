@@ -37,6 +37,7 @@ from app.api.routes.email_sequences import admin_router as email_sequences_admin
 from app.api.routes.email_sequences import public_router as email_sequences_public_router
 from app.api.routes.revenue import router as revenue_router
 from app.api.routes.account import router as account_router
+from app.api.routes.account import public_router as account_public_router
 from app.api.routes.treks import router as treks_router
 from app.api.routes.admin_treks import router as admin_treks_router
 from app.api.routes.admin_push import router as admin_push_router
@@ -109,6 +110,7 @@ api_router.include_router(email_sequences_admin_router)
 api_router.include_router(email_sequences_public_router)
 api_router.include_router(revenue_router)
 api_router.include_router(account_router)
+api_router.include_router(account_public_router)
 api_router.include_router(products_public_router)
 api_router.include_router(products_admin_router)
 api_router.include_router(checkout_router)

@@ -1,7 +1,37 @@
 from __future__ import annotations
 from datetime import datetime
 from uuid import UUID
-from pydantic import BaseModel
+from pydantic import BaseModel, ConfigDict
+
+
+class UserPreferencesResponse(BaseModel):
+    """Explicit onboarding preferences (v1.1)."""
+
+    model_config = ConfigDict(from_attributes=True)
+
+    experience: str | None = None
+    difficulties: list[str] | None = None
+    regions: list[str] | None = None
+    vibes: list[str] | None = None
+    onboarding_completed: bool = False
+    updated_at: datetime | None = None
+
+
+class UserPreferencesUpdate(BaseModel):
+    """PATCH — all fields optional; only provided keys are written."""
+
+    experience: str | None = None
+    difficulties: list[str] | None = None
+    regions: list[str] | None = None
+    vibes: list[str] | None = None
+    onboarding_completed: bool | None = None
+
+
+class AnonPreferencesUpdate(UserPreferencesUpdate):
+    """Public anon write — carries the device identity keys."""
+
+    anonymous_id: str
+    device_id: str | None = None
 
 
 class BookmarkResponse(BaseModel):

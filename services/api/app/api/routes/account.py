@@ -13,6 +13,7 @@ from app.modules.products.service import build_download_url
 from app.modules.products.models import UserOrder
 from sqlalchemy import select as sa_select
 from app.schemas.account import (
+    AnonPreferencesUpdate,
     BehaviorProfilePayload,
     BehaviorProfileResponse,
     BookmarkBySlugCreate,
@@ -24,6 +25,8 @@ from app.schemas.account import (
     DownloadResponse,
     TrekAlertCreate,
     TrekAlertResponse,
+    UserPreferencesResponse,
+    UserPreferencesUpdate,
     UserProfileResponse,
     UserProfileUpdate,
 )
@@ -220,3 +223,55 @@ def put_behavior_profile(
 ):
     data = account_service.update_behavior_profile(db, current_user.id, body.model_dump())
     return BehaviorProfileResponse(**data) if data else BehaviorProfileResponse()
+
+
+# --- Onboarding preferences (v1.1 personalization) ---
+@router.get("/preferences", response_model=UserPreferencesResponse)
+def get_preferences(
+    anonymous_id: str | None = None,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+) -> UserPreferencesResponse:
+    # On first authed fetch, adopt any anon row for this device (merge-on-login).
+    if anonymous_id:
+        account_service.merge_anon_into_user(db, current_user.id, anonymous_id)
+    prefs = account_service.get_preferences(db, user_id=current_user.id, anonymous_id=anonymous_id)
+    if prefs is None:
+        return UserPreferencesResponse()  # not onboarded yet → empty defaults
+    return UserPreferencesResponse.model_validate(prefs)
+
+
+@router.put("/preferences", response_model=UserPreferencesResponse)
+def update_preferences(
+    body: UserPreferencesUpdate,
+    anonymous_id: str | None = None,
+    device_id: str | None = None,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+) -> UserPreferencesResponse:
+    """Write prefs for the logged-in user; adopts a matching anon row (merge-on-login)."""
+    prefs = account_service.upsert_preferences(
+        db, body, user_id=current_user.id, anonymous_id=anonymous_id, device_id=device_id
+    )
+    return UserPreferencesResponse.model_validate(prefs)
+
+
+# --- Public anon preferences (logged-out; persists across uninstall via anon id) ---
+public_router = APIRouter(prefix="/app", tags=["app-preferences"])
+
+
+@public_router.get("/preferences", response_model=UserPreferencesResponse)
+def get_anon_preferences(anonymous_id: str, db: Session = Depends(get_db)) -> UserPreferencesResponse:
+    prefs = account_service.get_preferences(db, anonymous_id=anonymous_id)
+    if prefs is None:
+        return UserPreferencesResponse()
+    return UserPreferencesResponse.model_validate(prefs)
+
+
+@public_router.put("/preferences", response_model=UserPreferencesResponse)
+def put_anon_preferences(body: AnonPreferencesUpdate, db: Session = Depends(get_db)) -> UserPreferencesResponse:
+    patch = UserPreferencesUpdate(**body.model_dump(exclude={"anonymous_id", "device_id"}, exclude_unset=True))
+    prefs = account_service.upsert_preferences(
+        db, patch, anonymous_id=body.anonymous_id, device_id=body.device_id
+    )
+    return UserPreferencesResponse.model_validate(prefs)

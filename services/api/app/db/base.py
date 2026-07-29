@@ -21,7 +21,7 @@ from app.modules.email_sequences.models import (
     SubscriberTag,
 )
 from app.modules.revenue.models import RevenueAttribution, RevenueConfig, ExecutiveSummary
-from app.modules.account.models import UserBookmark, UserDownload, TrekAlert, UserProfile, AccountComparison
+from app.modules.account.models import UserBookmark, UserDownload, TrekAlert, UserProfile, AccountComparison, UserPreferences
 from app.modules.products.models import DigitalProduct, UserOrder
 from app.modules.monetization.models import AffiliateProduct, PageIntentSession
 from app.modules.plan.models import TripPlan
@@ -86,6 +86,7 @@ __all__ = [
     "ExecutiveSummary",
     "UserBookmark",
     "UserDownload",
+    "UserPreferences",
     "TrekAlert",
     "UserProfile",
     "DigitalProduct",
