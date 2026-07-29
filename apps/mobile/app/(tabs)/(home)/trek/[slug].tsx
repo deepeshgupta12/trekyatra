@@ -16,6 +16,7 @@ import { useTrekDetail } from "@/hooks/useTrekDetail";
 import { trackTrekView, trackTrekShared } from "@/lib/analytics";
 import { TrekHero } from "@/components/trek/TrekHero";
 import { TrekRouteMap } from "@/components/trek/TrekRouteMap";
+import { TrekSummaryCard } from "@/components/trek/TrekSummaryCard";
 import { TrekTabBar, type TrekTab } from "@/components/trek/TrekTabBar";
 import { TrekStickyBar } from "@/components/trek/TrekStickyBar";
 import { TrekRelatedRow } from "@/components/trek/TrekRelatedRow";
@@ -209,7 +210,7 @@ export default function TrekDetailScreen() {
         onScroll={handleScroll}
         scrollEventThrottle={16}
       >
-        {/* Hero — back button, share + at-a-glance stats embedded inside */}
+        {/* Hero — glass buttons + title/route (stats moved to the summary card) */}
         <TrekHero
           imageUrl={trek.hero_image_url ?? trek.route_image_url ?? null}
           title={trek.title}
@@ -221,7 +222,20 @@ export default function TrekDetailScreen() {
           season={trek.trek_season}
         />
 
-        {/* Trust + safety + check-in block (key stats now live in the hero) */}
+        {/* v1.1 summary card — route map thumbnail + Duration/Altitude/Difficulty + photo tour */}
+        <TrekSummaryCard
+          routeTitle={trek.title}
+          routeSubtitle={trek.trek_state}
+          duration={trek.trek_duration}
+          altitude={trek.trek_altitude}
+          difficulty={trek.trek_difficulty}
+          routeImageUrl={trek.route_image_url}
+          heroImageUrl={trek.hero_image_url}
+          onOpenMap={() => setActiveTab("guide")}
+          onOpenPhotos={() => setActiveTab("reports")}
+        />
+
+        {/* Trust + safety + check-in block */}
         <View style={{ backgroundColor: colors.background, paddingTop: 14, gap: 10 }}>
           {fromCache && <OfflineBadge visible={true} />}
           <TrustSignals publishedAt={trek.published_at} updatedAt={trek.updated_at} />

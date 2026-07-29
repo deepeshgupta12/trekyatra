@@ -35,6 +35,12 @@ onboarding + personalization.
   season/difficulty filters) added to Explore; category_tapped analytics. **Search visual restyle deferred**
   (screen already fully functional: voice/recent/trending/semantic; avoid risky rewrite). Impact LOW; tsc 0.
   See `docs/mobile/steps/STEP-M26-redesign-explore-search.md`.
+- **M26 Search restyle (done, da74ba8):** sparkle glyph, result cards, "Ask TrekSage" no-results CTA.
+- **M27 (Phase 4) — Trek detail (in progress):** `TrekHero` frosted glass buttons + stats removed
+  (→ card) + state subtitle; new `TrekSummaryCard` (route-map thumbnail → guide, Duration/Altitude/
+  Difficulty grid, Photo-tour → reports) matches the owner's reference layout. Real fields only.
+  Pinned section bar/offline/premium untouched. Impact LOW; tsc 0. TrekStickyBar restyle optional.
+  See `docs/mobile/steps/STEP-M27-redesign-trek-detail.md`.
 - **M28 (Phase 5) — SPEC LOCKED** (not built): personalization matrix + storage/sync in
   `docs/mobile/steps/STEP-M28-onboarding-personalization.md`.
 

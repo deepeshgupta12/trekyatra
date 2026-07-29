@@ -4,6 +4,9 @@ import { LinearGradient } from "expo-linear-gradient";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
 import { router } from "expo-router";
+import { GlassSurface } from "@/components/ui/GlassSurface";
+
+const GLASS_ICON = "#1D3A2E"; // pine — reads on the frosted-light button over the hero
 
 type IconName = React.ComponentProps<typeof Ionicons>["name"];
 
@@ -51,15 +54,6 @@ export function TrekHero({
   const insets = useSafeAreaInsets();
   const topInset = insets.top ?? 0; // guard: NaN height collapses the hero
 
-  const stats: Stat[] = [
-    duration ? { icon: "time-outline", value: duration, label: "Duration" } : null,
-    altitude ? { icon: "trending-up-outline", value: altitude, label: "Max altitude" } : null,
-    difficulty
-      ? { icon: "fitness-outline", value: difficulty, label: "Difficulty", color: difficultyAccent(difficulty) }
-      : null,
-    season ? { icon: "calendar-outline", value: season, label: "Best season" } : null,
-  ].filter(Boolean).slice(0, 3) as Stat[];
-
   return (
     <View style={[styles.container, { height: height + topInset }]}>
       <Image
@@ -76,25 +70,29 @@ export function TrekHero({
         style={StyleSheet.absoluteFill}
       />
 
-      {/* Back button */}
+      {/* Back button (frosted glass) */}
       <TouchableOpacity
         style={[styles.circleBtn, styles.backBtn, { top: topInset + 10 }]}
         onPress={() => router.back()}
         hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
         accessibilityLabel="Go back"
+        testID="trek-back"
       >
-        <Ionicons name="chevron-back" size={22} color="#fff" />
+        <GlassSurface rounded="none" style={[StyleSheet.absoluteFill, styles.btnGlass]} />
+        <Ionicons name="chevron-back" size={22} color={GLASS_ICON} />
       </TouchableOpacity>
 
-      {/* Share button */}
+      {/* Share button (frosted glass) */}
       {onShare && (
         <TouchableOpacity
           style={[styles.circleBtn, styles.shareBtn, { top: topInset + 10 }]}
           onPress={onShare}
           hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
           accessibilityLabel="Share trek"
+          testID="trek-share"
         >
-          <Ionicons name="share-outline" size={19} color="#fff" />
+          <GlassSurface rounded="none" style={[StyleSheet.absoluteFill, styles.btnGlass]} />
+          <Ionicons name="share-outline" size={19} color={GLASS_ICON} />
         </TouchableOpacity>
       )}
 
@@ -107,25 +105,8 @@ export function TrekHero({
           </View>
         )}
         <Text style={styles.title} numberOfLines={3}>{title}</Text>
-
-        {stats.length > 0 && (
-          <View style={styles.statsRow}>
-            {stats.map((s, i) => (
-              <View key={s.label} style={styles.statItem}>
-                {i > 0 && <View style={styles.statDivider} />}
-                <View style={styles.statInner}>
-                  <Ionicons name={s.icon} size={15} color={s.color ?? "#E8702A"} />
-                  <View style={styles.statText}>
-                    <Text style={[styles.statValue, s.color ? { color: s.color } : null]} numberOfLines={1}>
-                      {s.value}
-                    </Text>
-                    <Text style={styles.statLabel}>{s.label}</Text>
-                  </View>
-                </View>
-              </View>
-            ))}
-          </View>
-        )}
+        {/* Route/state subtitle — stats moved to the summary card below (v1.1). */}
+        {state ? <Text style={styles.subtitle}>{state}</Text> : null}
       </View>
     </View>
   );
@@ -141,13 +122,12 @@ const styles = StyleSheet.create({
     width: 38,
     height: 38,
     borderRadius: 19,
-    backgroundColor: "rgba(0,0,0,0.4)",
+    overflow: "hidden",
     alignItems: "center",
     justifyContent: "center",
     zIndex: 10,
-    borderWidth: StyleSheet.hairlineWidth,
-    borderColor: "rgba(255,255,255,0.18)",
   },
+  btnGlass: { borderRadius: 19 },
   backBtn: { left: 16 },
   shareBtn: { right: 16 },
   footer: {
@@ -180,6 +160,12 @@ const styles = StyleSheet.create({
     textShadowColor: "rgba(0,0,0,0.45)",
     textShadowOffset: { width: 0, height: 1 },
     textShadowRadius: 6,
+  },
+  subtitle: {
+    fontSize: 13,
+    color: "rgba(255,255,255,0.82)",
+    fontFamily: "Inter_400Regular",
+    marginTop: -2,
   },
   statsRow: {
     flexDirection: "row",
