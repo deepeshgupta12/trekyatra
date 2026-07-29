@@ -120,8 +120,8 @@ export default function SearchScreen() {
 
   const renderResultRow = (item: SearchSuggestion | SemanticSearchResult, smartMatch: boolean) => (
     <TouchableOpacity
-      style={[styles.resultRow, { borderColor: colors.border }]}
-      activeOpacity={0.7}
+      style={[styles.resultRow, { borderColor: colors.border, backgroundColor: colors.surface }]}
+      activeOpacity={0.8}
       onPress={() => handleSelect(item)}
     >
       {item.hero_image_url ? (
@@ -165,7 +165,7 @@ export default function SearchScreen() {
             { backgroundColor: colors.surface, borderColor: colors.border },
           ]}
         >
-          <Ionicons name="search" size={18} color={colors.saffron} />
+          <Ionicons name="sparkles" size={18} color={colors.saffron} />
           <TextInput
             autoFocus
             value={query}
@@ -284,8 +284,18 @@ export default function SearchScreen() {
       ) : results.length === 0 && semanticResults.length === 0 ? (
         <View style={styles.center}>
           <Text style={[styles.placeholderText, { color: colors.textMuted }]}>
-            No results for "{query}"
+            No matches for "{query}"
           </Text>
+          <TouchableOpacity
+            style={[styles.askSage, { backgroundColor: colors.pine }]}
+            onPress={() => router.push("/(tabs)/treksage" as never)}
+            accessibilityRole="button"
+            accessibilityLabel="Ask TrekSage AI to find this trek"
+            testID="search-ask-treksage"
+          >
+            <Ionicons name="sparkles" size={16} color="#ffffff" />
+            <Text style={styles.askSageText}>Ask TrekSage to find it</Text>
+          </TouchableOpacity>
         </View>
       ) : (
         <FlatList
@@ -393,9 +403,21 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     gap: 12,
-    paddingVertical: 12,
-    borderBottomWidth: 1,
+    padding: 10,
+    borderRadius: 16,
+    borderWidth: 1,
+    marginBottom: 10,
   },
+  askSage: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+    marginTop: 16,
+    paddingHorizontal: 18,
+    paddingVertical: 13,
+    borderRadius: 16,
+  },
+  askSageText: { color: "#fff", fontSize: 14, fontWeight: "700", fontFamily: "Inter_600SemiBold" },
   thumb: {
     width: 48,
     height: 48,
