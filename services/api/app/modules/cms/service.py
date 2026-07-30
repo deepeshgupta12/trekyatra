@@ -83,6 +83,7 @@ def list_pages(
     trek_state: str | None = None,
     trek_difficulty: str | None = None,
     trek_season: str | None = None,
+    trek_suitability: str | None = None,
     trek_duration_min: int | None = None,
     trek_duration_max: int | None = None,
     limit: int = 50,
@@ -99,6 +100,9 @@ def list_pages(
         q = q.where(CMSPage.trek_difficulty == trek_difficulty)
     if trek_season:
         q = q.where(CMSPage.trek_season.ilike(f"%{trek_season}%"))
+    if trek_suitability:
+        # Substring match to mirror the web Explore filter (t.suitability.includes(sel)).
+        q = q.where(CMSPage.trek_suitability.ilike(f"%{trek_suitability}%"))
     if trek_duration_min is not None or trek_duration_max is not None:
         # trek_duration is free text (e.g. "6 Days") — extract the leading
         # integer day count and compare against the requested range.

@@ -165,6 +165,30 @@ Each group = its own commit (gitnexus impact + tsc + regression re-check + MD up
   (was rendering a bare heading) so the top-of-Home never shows an empty "For {name}".
 - tsc clean.
 
+### Group 3 — Explore filters (landed)
+- ✅ **D12** — Scroll no longer breaks with filters. `TrekGrid` returned a **static `<View>`** for the
+  empty state (`treks.length === 0`), so whenever a filter narrowed results to nothing the whole
+  Explore screen became unscrollable. Now the `FlatList` always renders (empty message moved to
+  `ListEmptyComponent`); `numColumns` drops to 1 + `key` remount when empty so the message spans
+  full width. (components/browse/TrekGrid.tsx)
+- ✅ **D11** — Filter set aligned to the **Web Explore** field set (the reference) unioned with
+  Compare's trek data. Web Explore filters on **State · Difficulty · Duration · Season ·
+  Suitability** (5); mobile had only the first 4 → **added Suitability**. Compare's fields
+  (state/difficulty/duration) were already covered. Wiring, backend→frontend:
+  - Backend (additive, backward-compatible — web doesn't pass it, so no live-web change): optional
+    `trek_suitability` query param on `GET /api/v1/cms/pages` → `cms_service.list_pages` filters
+    `trek_suitability ILIKE %value%` (mirrors web's `.includes()` and the existing `trek_season`
+    filter). New pytest `test_list_pages_filters_by_trek_suitability`.
+  - Mobile: `exploreStore.trekSuitability` + setter (+ `clearAll`); `ExploreFilters.trekSuitability`
+    + `exploreTreks` sets `trek_suitability`; `FilterSheet` renders a **Suitability** chip section
+    from `facets.suitabilities` (backend `FilterFacets` already returned it — it was previously
+    unused); `FilterChips` active-chip + clear; `BrowseScreen` passes `trekSuitability` to `useExplore`.
+  - **Scoping note:** kept the existing **single-select-per-category** model (web supports
+    multi-select OR-within-group). Multi-select is an enhancement beyond the defect and a larger
+    store/endpoint change; deferred deliberately. The filter *fields* now match web + Compare, which
+    is the core of D11.
+- tsc clean; CMS backend tests 55/55 (incl. new suitability test).
+
 ### D27 — navigation (root cause found; fix folded into Group 5 / trek-detail pass)
 - **Diagnosis:** all **11** trek-detail navigations (from Explore search, TrekSage, Plan results,
   operators, notifications, and Home) hard-push `/(tabs)/(home)/trek/${slug}` — a route that lives

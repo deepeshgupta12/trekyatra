@@ -145,6 +145,28 @@ def test_list_pages_filters_by_trek_duration_range():
     assert "filter-trek-short" not in {p.slug for p in long_range}
 
 
+def test_list_pages_filters_by_trek_suitability():
+    with SessionLocal() as db:
+        db.add(CMSPage(
+            slug="suit-trek-family", page_type="trek_guide", title="Family Trek", status="published",
+            trek_suitability="Families, Beginners",
+        ))
+        db.add(CMSPage(
+            slug="suit-trek-experts", page_type="trek_guide", title="Expert Trek", status="published",
+            trek_suitability="Experienced trekkers",
+        ))
+        db.commit()
+
+        # Substring match (mirrors the web Explore .includes filter)
+        families = list_pages(db, trek_suitability="Families", limit=10000)
+        experts = list_pages(db, trek_suitability="Experienced", limit=10000)
+
+    assert "suit-trek-family" in {p.slug for p in families}
+    assert "suit-trek-experts" not in {p.slug for p in families}
+    assert "suit-trek-experts" in {p.slug for p in experts}
+    assert "suit-trek-family" not in {p.slug for p in experts}
+
+
 def test_list_pages_no_filters_unchanged():
     with SessionLocal() as db:
         before = len(list_pages(db, limit=10000))

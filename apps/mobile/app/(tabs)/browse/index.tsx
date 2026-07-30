@@ -35,7 +35,7 @@ const SEASONS = [
 export default function BrowseScreen() {
   const { colors, isDark } = useTheme();
   const params = useLocalSearchParams<{ region?: string; difficulty?: string; season?: string; openFilters?: string }>();
-  const { trekState, trekDifficulty, trekSeason, durationBucket, setTrekState, setTrekDifficulty, setTrekSeason, requestSheetOpen } = useExploreStore();
+  const { trekState, trekDifficulty, trekSeason, trekSuitability, durationBucket, setTrekState, setTrekDifficulty, setTrekSeason, requestSheetOpen } = useExploreStore();
 
   function handleCategory(key: string) {
     trackCategoryTapped(key);
@@ -62,6 +62,7 @@ export default function BrowseScreen() {
     trekState,
     trekDifficulty,
     trekSeason,
+    trekSuitability,
     trekDurationMin: durationBucket?.min ?? null,
     trekDurationMax: durationBucket?.max ?? null,
   });

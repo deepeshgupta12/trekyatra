@@ -9,7 +9,7 @@ import { GlassSurface } from "@/components/ui/GlassSurface";
 export function FilterChips() {
   const { colors } = useTheme();
   const [sheetVisible, setSheetVisible] = useState(false);
-  const { trekState, trekDifficulty, trekSeason, durationBucket, setTrekState, setTrekDifficulty, setTrekSeason, setDurationBucket, clearAll, sheetOpenNonce } =
+  const { trekState, trekDifficulty, trekSeason, trekSuitability, durationBucket, setTrekState, setTrekDifficulty, setTrekSeason, setTrekSuitability, setDurationBucket, clearAll, sheetOpenNonce } =
     useExploreStore();
 
   // Open the sheet when a Home quick-filter chip requests it (nonce bump).
@@ -21,6 +21,7 @@ export function FilterChips() {
   if (trekState) activeChips.push({ key: "state", label: trekState, onClear: () => setTrekState(null) });
   if (trekDifficulty) activeChips.push({ key: "difficulty", label: trekDifficulty, onClear: () => setTrekDifficulty(null) });
   if (trekSeason) activeChips.push({ key: "season", label: trekSeason, onClear: () => setTrekSeason(null) });
+  if (trekSuitability) activeChips.push({ key: "suitability", label: trekSuitability, onClear: () => setTrekSuitability(null) });
   if (durationBucket) activeChips.push({ key: "duration", label: durationBucket.label, onClear: () => setDurationBucket(null) });
 
   const hasActive = activeChips.length > 0;

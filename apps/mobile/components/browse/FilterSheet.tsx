@@ -49,6 +49,7 @@ export function FilterSheet({ visible, onClose }: FilterSheetProps) {
   const [draftState, setDraftState] = useState(store.trekState);
   const [draftDifficulty, setDraftDifficulty] = useState(store.trekDifficulty);
   const [draftSeason, setDraftSeason] = useState(store.trekSeason);
+  const [draftSuitability, setDraftSuitability] = useState(store.trekSuitability);
   const [draftDuration, setDraftDuration] = useState<DurationBucket | null>(store.durationBucket);
 
   useEffect(() => {
@@ -56,14 +57,16 @@ export function FilterSheet({ visible, onClose }: FilterSheetProps) {
       setDraftState(store.trekState);
       setDraftDifficulty(store.trekDifficulty);
       setDraftSeason(store.trekSeason);
+      setDraftSuitability(store.trekSuitability);
       setDraftDuration(store.durationBucket);
     }
-  }, [visible, store.trekState, store.trekDifficulty, store.trekSeason, store.durationBucket]);
+  }, [visible, store.trekState, store.trekDifficulty, store.trekSeason, store.trekSuitability, store.durationBucket]);
 
   const handleApply = () => {
     store.setTrekState(draftState);
     store.setTrekDifficulty(draftDifficulty);
     store.setTrekSeason(draftSeason);
+    store.setTrekSuitability(draftSuitability);
     store.setDurationBucket(draftDuration);
     onClose();
   };
@@ -72,6 +75,7 @@ export function FilterSheet({ visible, onClose }: FilterSheetProps) {
     setDraftState(null);
     setDraftDifficulty(null);
     setDraftSeason(null);
+    setDraftSuitability(null);
     setDraftDuration(null);
   };
 
@@ -117,6 +121,22 @@ export function FilterSheet({ visible, onClose }: FilterSheetProps) {
               />
             ))}
           </View>
+
+          {facets.suitabilities.length > 0 && (
+            <>
+              <Text style={[styles.section, { color: colors.textMuted }]}>Suitability</Text>
+              <View style={styles.row}>
+                {facets.suitabilities.map((suitability) => (
+                  <Chip
+                    key={suitability}
+                    label={suitability}
+                    selected={draftSuitability === suitability}
+                    onPress={() => setDraftSuitability(draftSuitability === suitability ? null : suitability)}
+                  />
+                ))}
+              </View>
+            </>
+          )}
 
           <Text style={[styles.section, { color: colors.textMuted }]}>Duration</Text>
           <View style={styles.row}>

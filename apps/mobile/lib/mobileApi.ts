@@ -91,6 +91,7 @@ export interface ExploreFilters {
   trekState?: string | null;
   trekDifficulty?: string | null;
   trekSeason?: string | null;
+  trekSuitability?: string | null;
   trekDurationMin?: number | null;
   trekDurationMax?: number | null;
 }
@@ -389,6 +390,7 @@ export const contentApi = {
     if (filters.trekState) params.set("trek_state", filters.trekState);
     if (filters.trekDifficulty) params.set("trek_difficulty", filters.trekDifficulty);
     if (filters.trekSeason) params.set("trek_season", filters.trekSeason);
+    if (filters.trekSuitability) params.set("trek_suitability", filters.trekSuitability);
     if (filters.trekDurationMin != null) params.set("trek_duration_min", String(filters.trekDurationMin));
     if (filters.trekDurationMax != null) params.set("trek_duration_max", String(filters.trekDurationMax));
 

@@ -18,11 +18,13 @@ interface ExploreState {
   trekState: string | null;
   trekDifficulty: string | null;
   trekSeason: string | null;
+  trekSuitability: string | null;
   durationBucket: DurationBucket | null;
 
   setTrekState: (value: string | null) => void;
   setTrekDifficulty: (value: string | null) => void;
   setTrekSeason: (value: string | null) => void;
+  setTrekSuitability: (value: string | null) => void;
   setDurationBucket: (value: DurationBucket | null) => void;
   clearAll: () => void;
 
@@ -35,14 +37,16 @@ export const useExploreStore = create<ExploreState>((set) => ({
   trekState: null,
   trekDifficulty: null,
   trekSeason: null,
+  trekSuitability: null,
   durationBucket: null,
 
   setTrekState: (value) => set({ trekState: value }),
   setTrekDifficulty: (value) => set({ trekDifficulty: value }),
   setTrekSeason: (value) => set({ trekSeason: value }),
+  setTrekSuitability: (value) => set({ trekSuitability: value }),
   setDurationBucket: (value) => set({ durationBucket: value }),
   clearAll: () =>
-    set({ trekState: null, trekDifficulty: null, trekSeason: null, durationBucket: null }),
+    set({ trekState: null, trekDifficulty: null, trekSeason: null, trekSuitability: null, durationBucket: null }),
 
   sheetOpenNonce: 0,
   requestSheetOpen: () => set((s) => ({ sheetOpenNonce: s.sheetOpenNonce + 1 })),

@@ -42,31 +42,31 @@ export function TrekGrid({
     );
   }
 
-  if (treks.length === 0) {
-    return (
-      <View>
-        {ListHeaderComponent}
-        <View style={styles.center}>
-          <Text style={[styles.emptyText, { color: colors.textMuted }]}>
-            {emptyMessage ?? "No treks match your filters"}
-          </Text>
-        </View>
-      </View>
-    );
-  }
-
+  // NOTE: always render the FlatList — even with zero results. A previous version returned a plain
+  // <View> for the empty state, which made the whole Explore screen unscrollable whenever a filter
+  // narrowed results to nothing (D12). numColumns is dropped when empty so ListEmptyComponent can
+  // span full width without the column wrapper.
+  const isEmpty = treks.length === 0;
   return (
     <FlatList
       data={treks}
       keyExtractor={(item) => item.slug}
-      numColumns={2}
-      columnWrapperStyle={styles.row}
+      numColumns={isEmpty ? 1 : 2}
+      key={isEmpty ? "empty" : "grid"}
+      columnWrapperStyle={isEmpty ? undefined : styles.row}
       contentContainerStyle={styles.list}
       renderItem={({ item }) => <TrekCard trek={item} width={CARD_WIDTH} noMargin />}
       onEndReached={onEndReached}
       onEndReachedThreshold={0.5}
       showsVerticalScrollIndicator={false}
       ListHeaderComponent={ListHeaderComponent}
+      ListEmptyComponent={
+        <View style={styles.center}>
+          <Text style={[styles.emptyText, { color: colors.textMuted }]}>
+            {emptyMessage ?? "No treks match your filters"}
+          </Text>
+        </View>
+      }
       ListFooterComponent={
         isFetchingMore ? (
           <View style={styles.footer}>
