@@ -218,6 +218,13 @@ function mapCmsPageToTrekListItem(page: CMSPageResponseLike): TrekListItem {
   };
 }
 
+// The Home personalised feed is a trek-card grid. Recommendations can also include news_article /
+// comparison / gear_review pages — keep only actual trek pages so news never renders as a trek (D06)
+// and the feed stays a real trek feed (D08). Trek CMS pages use page_type "trek_guide".
+function isTrekRecommendation(item: RecommendationItem): boolean {
+  return item.page_type === "trek_guide";
+}
+
 function mapRecommendationToTrekListItem(item: RecommendationItem): TrekListItem {
   return {
     slug: item.slug,
@@ -356,12 +363,12 @@ export const contentApi = {
 
   getAnonymousRecommendations: async () => {
     const res = await apiGet<RecommendationsResponse>("/api/v1/recommendations");
-    return res.items.map(mapRecommendationToTrekListItem);
+    return res.items.filter(isTrekRecommendation).map(mapRecommendationToTrekListItem);
   },
 
   getPersonalisedRecommendations: async () => {
     const res = await apiGet<RecommendationsResponse>("/api/v1/account/recommendations");
-    return res.items.map(mapRecommendationToTrekListItem);
+    return res.items.filter(isTrekRecommendation).map(mapRecommendationToTrekListItem);
   },
 
   saveTrek: (slug: string) =>

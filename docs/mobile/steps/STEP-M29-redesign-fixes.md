@@ -148,6 +148,23 @@ Each group = its own commit (gitnexus impact + tsc + regression re-check + MD up
   they now filter the destination correctly.
 - tsc clean; gitnexus detect_changes = additive, confined to Home/Browse/Explore render flows.
 
+### Group 2 — Home personalization (landed)
+- ✅ **D06** — News no longer appears in the personalised feed. Recommendations from
+  `/api/v1/recommendations` + `/account/recommendations` can include `news_article` /
+  `comparison` / `gear_review` pages; the feed is a **trek-card grid**, so `mobileApi` now filters
+  recommendations to `page_type === "trek_guide"` (`isTrekRecommendation`) before mapping. Fixed
+  **client-side** — the recommendation endpoints are shared with the live website, so the shared
+  backend query was intentionally left untouched (no live-web risk).
+- ✅ **D07** — `PersonalisedFeedSection` moved to the **top** of Home (immediately after the hero,
+  above "Popular with trekkers"). Still gated to states A/B/D (hidden for logged-out-new "C").
+- ✅ **D08** — Re-verified state machine + blend: `resolveState` (A=logged-in/no-behavior→"Popular
+  treks", B=logged-in+behavior→"For {name}", C=logged-out/new→feed hidden, D=logged-out+behavior→
+  "Continue exploring"); `blendedRegions/blendedDifficulties` anchor on onboarding prefs then append
+  behavior; greeting region = `prefs.regions[0] ?? topRegions[0]`. Logic is correct — the only
+  defects were D06/D07. Hardening: `PersonalisedFeedSection` now returns `null` entirely when empty
+  (was rendering a bare heading) so the top-of-Home never shows an empty "For {name}".
+- tsc clean.
+
 ### D27 — navigation (root cause found; fix folded into Group 5 / trek-detail pass)
 - **Diagnosis:** all **11** trek-detail navigations (from Explore search, TrekSage, Plan results,
   operators, notifications, and Home) hard-push `/(tabs)/(home)/trek/${slug}` — a route that lives

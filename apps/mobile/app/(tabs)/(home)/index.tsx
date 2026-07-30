@@ -121,6 +121,17 @@ export default function HomeScreen() {
       >
         {hero}
 
+        {/* Personalised feed — moved to TOP of Home (D07). It is the core personalised
+            section, so it sits above "Popular with trekkers". States A + B + D. */}
+        {homeState !== "C" && (
+          <PersonalisedFeedSection
+            treks={recommendations}
+            state={homeState as "A" | "B" | "D"}
+            firstName={isLoggedIn ? firstName : undefined}
+            loading={isLoading && recommendations.length === 0}
+          />
+        )}
+
         {/* Popular with trekkers — prominent TrailCards (all states) */}
         <PopularTrailsSection
           treks={trending}
@@ -151,16 +162,6 @@ export default function HomeScreen() {
 
         {/* Recently viewed — State D only */}
         {homeState === "D" && <RecentlyViewedRow views={recentViews} />}
-
-        {/* Personalised feed — States A + B + D */}
-        {homeState !== "C" && (
-          <PersonalisedFeedSection
-            treks={recommendations}
-            state={homeState as "A" | "B" | "D"}
-            firstName={isLoggedIn ? firstName : undefined}
-            loading={isLoading && recommendations.length === 0}
-          />
-        )}
 
         {/* Comparison CTA — all states */}
         <ComparisonCTACard />

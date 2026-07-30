@@ -88,6 +88,10 @@ export function PersonalisedFeedSection({ treks, state, firstName, loading = fal
   const { colors } = useTheme();
   const list = treks.slice(0, 7);
 
+  // Hide the whole section (heading included) when there's nothing to show — otherwise a bare
+  // "For {name}" heading would sit at the top of Home with no cards (D06 filtering / D07 move).
+  if (!loading && list.length === 0) return null;
+
   return (
     <View style={styles.container}>
       <Text style={[styles.heading, { color: colors.textPrimary }]}>
