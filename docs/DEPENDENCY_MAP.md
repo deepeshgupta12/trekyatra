@@ -2550,3 +2550,25 @@ Mobile buddy matching UI consuming STEP-79 backend.
 - `apps/web-next/app/sitemap.ts` — `PAGE_PREFIX.news_article` → `undefined` (news URLs no longer emitted in core; live only in `/news-sitemap.xml`); removed the direct compare-pairs loop + `fetchComparisonPairsForSitemap` helper; added `url("/compare-sitemap.xml")` reference. Blast radius: LOW code (leaf, no importers) but SEO-critical → verified: core has 0 direct `/news/` + 0 direct `/compare/` `<loc>` entries, references both child sitemaps.
 - `app/news-sitemap.xml/route.ts` — UNCHANGED (already lists all `/news/{slug}` via `GET /public/news?limit=200`).
 - Impact analysis: gitnexus MCP disconnected → manual (leaf routes; no backend/shared-symbol change).
+
+### STEP-M29 — v1.1 post-build fixes (D01–D27, 2026-07-30) blast radius
+- **D27 route move (structural):** `apps/mobile/app/(tabs)/(home)/trek/[slug].tsx` →
+  **`apps/mobile/app/trek/[slug].tsx`** (root route; registered in `app/_layout.tsx`, removed from
+  `app/(tabs)/(home)/_layout.tsx`). URL path `/trek/:slug` is UNCHANGED (route groups don't appear in
+  URLs), so deep links + `RelatedPagesSection` (`/trek/…`) keep working. All 11 push sites repointed
+  `/(tabs)/(home)/trek/${slug}` → `/trek/${slug}` (TrekCard, TrailCard, PersonalisedFeedSection,
+  RecentlyViewedRow, HomeTrendingSection, HomeWelcomeBanner, browse/search, browse/operators/[slug],
+  plan/results, treksage, notifications). Blast radius: MEDIUM (navigation entry points across tabs);
+  behavior change = trek detail now opens over the tabs without switching the active tab (no bottom
+  tab bar under detail).
+- **D11 backend (additive):** `GET /api/v1/cms/pages` + `cms_service.list_pages` gain an optional
+  `trek_suitability` param (ILIKE substring). Backward-compatible — web Explore doesn't pass it, so
+  no live-web change. Test: `test_list_pages_filters_by_trek_suitability`. Blast radius: LOW.
+- **D06 client filter:** `mobileApi` recommendations filtered to `page_type === "trek_guide"`
+  (isTrekRecommendation) — client-side only, shared recommendation endpoint untouched. LOW.
+- **D12 / D22 layout fixes:** `TrekGrid` always renders FlatList (empty via ListEmptyComponent);
+  compare `pillName` no longer `flex:1` in a horizontal scroller. LOW (leaf components).
+- **D23:** `app/(tabs)/saved/index.tsx` rebuilt to list bookmarks (was comparisons-link only);
+  `TrekStickyBar` invalidates `["account","bookmarks"]` on save. LOW.
+- Shared trek-detail components touched (TrekHero/TrekSummaryCard/TrekTabBar) render only inside the
+  trek detail screen → blast radius LOW. Home/Explore edits confined to those screens' render flows.
