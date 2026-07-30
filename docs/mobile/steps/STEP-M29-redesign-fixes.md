@@ -189,6 +189,24 @@ Each group = its own commit (gitnexus impact + tsc + regression re-check + MD up
     is the core of D11.
 - tsc clean; CMS backend tests 55/55 (incl. new suitability test).
 
+### Group 4 — Data reflection (landed)
+- ✅ **D22** — Compare selection pills were blank. Root cause: `pillName` had `flex: 1` inside a
+  **horizontal ScrollView** (auto/unbounded width) — with no flex basis the label collapses to
+  width 0, so the trek name rendered but was invisible. Changed to content-sized
+  (`maxWidth: 104, flexShrink: 1`, `numberOfLines={1}`). Not a contrast bug (the earlier attempt).
+  (app/(tabs)/(home)/compare.tsx)
+- ✅ **D23** — Saved treks + comparisons now reflected. Root cause: the drawer's "Saved Treks" →
+  `/(tabs)/saved` hub **only showed a "Saved Comparisons" link and never listed bookmarked treks**.
+  Rebuilt `saved/index.tsx` to list real bookmarks (`useSavedTreks` + `SavedTrekCard`) with
+  loading/empty states, keeping the comparisons link. Also `TrekStickyBar.handleSave` now
+  invalidates the `["account","bookmarks"]` query so a just-saved trek appears immediately.
+  (Comparisons screen already loaded real data via `useComparisons`.)
+  (app/(tabs)/saved/index.tsx, components/trek/TrekStickyBar.tsx)
+- ✅ **D24** — App version is dynamic. `settings.tsx` and `about.tsx` now read
+  `Constants.expoConfig?.version` (app.config.ts `version` → shows 1.1.0, auto-updates per release)
+  instead of the hardcoded "1.0.0".
+- tsc clean.
+
 ### D27 — navigation (root cause found; fix folded into Group 5 / trek-detail pass)
 - **Diagnosis:** all **11** trek-detail navigations (from Explore search, TrekSage, Plan results,
   operators, notifications, and Home) hard-push `/(tabs)/(home)/trek/${slug}` — a route that lives

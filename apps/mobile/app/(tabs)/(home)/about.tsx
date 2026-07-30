@@ -1,4 +1,5 @@
 import { ScrollView, View, Text, TouchableOpacity, Linking, StyleSheet, Image } from "react-native";
+import Constants from "expo-constants";
 import { SafeArea } from "@/components/ui/SafeArea";
 import { useTheme } from "@/hooks/useTheme";
 
@@ -23,7 +24,7 @@ export default function AboutScreen() {
           />
           <Text style={[styles.appName, { color: colors.textPrimary }]}>TrekYatra</Text>
           <Text style={[styles.tagline, { color: colors.textSecondary }]}>India's trekking guide</Text>
-          <Text style={[styles.version, { color: colors.textMuted }]}>Version 1.0.0</Text>
+          <Text style={[styles.version, { color: colors.textMuted }]}>Version {Constants.expoConfig?.version ?? "1.1.0"}</Text>
         </View>
 
         <Text style={[styles.body, { color: colors.textSecondary }]}>

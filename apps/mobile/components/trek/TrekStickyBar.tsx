@@ -7,6 +7,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { contentApi } from "@/lib/mobileApi";
 import { trackTrekSaved } from "@/lib/analytics";
 import { useState } from "react";
+import { useQueryClient } from "@tanstack/react-query";
 import { GlassSurface } from "@/components/ui/GlassSurface";
 
 interface TrekStickyBarProps {
@@ -23,6 +24,7 @@ export function TrekStickyBar({ slug, trekName }: TrekStickyBarProps) {
   const insets = useSafeAreaInsets();
   const { colors, isDark } = useTheme();
   const { user } = useAuth();
+  const queryClient = useQueryClient();
   const [saved, setSaved] = useState(false);
   const [saving, setSaving] = useState(false);
 
@@ -44,6 +46,8 @@ export function TrekStickyBar({ slug, trekName }: TrekStickyBarProps) {
       await contentApi.saveTrek(slug);
       trackTrekSaved(slug);
       setSaved(true);
+      // Refresh the Saved screens so the newly-saved trek shows up immediately (D23).
+      queryClient.invalidateQueries({ queryKey: ["account", "bookmarks"] });
     } catch {
       Alert.alert("Could not save", "Something went wrong adding this to your shortlist. Please try again.");
     } finally {

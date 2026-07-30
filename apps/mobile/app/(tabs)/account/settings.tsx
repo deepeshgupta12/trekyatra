@@ -18,11 +18,13 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useAuth } from "@/hooks/useAuth";
 import { useAccountMe, useNewsletter } from "@/hooks/useAccount";
 import { getAnalyticsConsent, setAnalyticsConsent } from "@/lib/consent";
+import Constants from "expo-constants";
 
 const APP_LANGUAGE_KEY = "app_language";
 const BIOMETRIC_KEY = "biometric_enabled";
 
-const APP_VERSION = "1.0.0";
+// Read the real marketing version from app config (app.config.ts `version`) — stays in sync per release (D24).
+const APP_VERSION = Constants.expoConfig?.version ?? "1.1.0";
 
 const LEGAL_LINKS = [
   { label: "Terms of Service", url: "https://www.trekyatra.co.in/terms" },
