@@ -9,7 +9,8 @@ const TABS: { key: TrekTab; label: string }[] = [
   { key: "packing", label: "Packing" },
   { key: "permits", label: "Permits" },
   { key: "costs", label: "Costs" },
-  { key: "reports", label: "Trail Conditions" },
+  // D19: shortened from "Trail Conditions" — it wrapped to 2 lines and broke the row's alignment.
+  { key: "reports", label: "Conditions" },
 ];
 
 interface TrekTabBarProps {
@@ -40,7 +41,7 @@ export function TrekTabBar({ activeTab, onTabChange, topInset = 0 }: TrekTabBarP
             activeOpacity={0.7}
           >
             <Text
-              numberOfLines={2}
+              numberOfLines={1}
               style={[
                 styles.label,
                 {
@@ -66,21 +67,22 @@ const styles = StyleSheet.create({
   tab: {
     flex: 1,
     alignItems: "center",
-    paddingVertical: 12,
+    justifyContent: "center",
+    paddingVertical: 13,
     paddingHorizontal: 2,
     position: "relative",
   },
   label: {
-    fontSize: 12,
+    fontSize: 13,
     textAlign: "center",
-    lineHeight: 15,
+    lineHeight: 16,
   },
   indicator: {
     position: "absolute",
     bottom: 0,
-    left: "15%",
-    right: "15%",
-    height: 2,
+    left: "18%",
+    right: "18%",
+    height: 2.5,
     backgroundColor: "#E8702A",
     borderRadius: 2,
   },

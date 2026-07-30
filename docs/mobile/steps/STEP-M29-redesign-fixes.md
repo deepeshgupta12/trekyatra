@@ -207,14 +207,31 @@ Each group = its own commit (gitnexus impact + tsc + regression re-check + MD up
   instead of the hardcoded "1.0.0".
 - tsc clean.
 
-### D27 — navigation (root cause found; fix folded into Group 5 / trek-detail pass)
-- **Diagnosis:** all **11** trek-detail navigations (from Explore search, TrekSage, Plan results,
-  operators, notifications, and Home) hard-push `/(tabs)/(home)/trek/${slug}` — a route that lives
-  **inside the Home tab's stack**. Pushing it from any *other* tab force-switches the active tab to
-  Home, and `back()` returns to Home instead of the origin screen. That is the "navigation not
-  working correctly" the owner saw. `trek/[slug]` is self-contained (its internal pushes are only
-  `back()`, auth, premium, `/safety-disclaimer` — no absolute `(home)` sibling links), so the fix is
-  to **promote `trek/[slug]` to a root-level route** (sibling of `(tabs)`, like `notifications`) and
-  repoint all 11 call sites to `/trek/${slug}`. This is coupled to D18/D20 (bottom-nav collisions —
-  promoting removes the tab bar under trek detail) and D21 (pinned-bar safe-area), so it is executed
-  **together with the trek-detail pass (Group 5)** rather than in isolation.
+### Group 5 — Trek detail + navigation (landed)
+- ✅ **D27** — Trek detail promoted to a **root route**. All **11** call sites hard-pushed
+  `/(tabs)/(home)/trek/${slug}` (a screen inside the Home tab stack), so opening a trek from any
+  other tab force-switched to Home and broke `back()`. Moved
+  `app/(tabs)/(home)/trek/[slug].tsx` → **`app/trek/[slug].tsx`** (sibling of `(tabs)`, registered in
+  the root `_layout` Stack; removed from the `(home)` Stack). Repointed all 11 pushes to
+  `/trek/${slug}`. The **URL path is unchanged** (`(tabs)`/`(home)` are groups → stripped from URLs),
+  so deep links keep resolving; the trek now opens over the tabs from anywhere, keeps the back stack
+  correct, and drops the bottom tab bar under the detail (the desired drill-down behaviour — also
+  gives the floating sticky bar room, helping D18). `RelatedPagesSection` already used `/trek/…`.
+- ✅ **D13** — Hero bottom corners rounded (`borderBottomLeftRadius/Right: 28 + overflow hidden`).
+- ✅ **D14** — Removed the duplicated state subtitle in the hero (state already shows in the pill).
+- ✅ **D15** — In `TrekSummaryCard`, the trek-metadata stats grid now renders **above** the "Trail
+  Route" sub-card (was below).
+- ✅ **D16 / D17** — Summary "Trail Route" and "Photo tour" cards now respond: `onOpenMap` switches
+  to the guide tab **and scrolls to the full route map**; `onOpenPhotos` switches to the reports tab
+  **and scrolls it into view** (previously both just set a tab — often the already-active one — so
+  nothing visibly happened). Route-map offset captured via `onLayout`.
+- ✅ **D18** — Added `paddingBottom` to the trust/check-in block so "I did this trek — log it" no
+  longer collides with the section tab bar. (Root-route promotion also removes the bottom tab bar
+  collision.)
+- ✅ **D19** — Section tab bar modernised: "Trail Conditions" → "Conditions", labels single-line
+  (`numberOfLines=1`), larger type + cleaner indicator (was cramped, 2-line wrap).
+- ✅ **D20** — Added a 20px separator so "Ask TrekSage" no longer collides with the Trail Route Map.
+- ✅ **D21** — Pinned section-tab bar already applies the safe-area `topInset` on the absolute overlay
+  (per the hard-won pinned-bar rule); verified against the notch. As a root route the header context
+  is unchanged, so the topInset still governs the pinned bar's clearance.
+- tsc clean.

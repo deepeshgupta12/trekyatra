@@ -25,7 +25,7 @@ export default function NotificationsScreen() {
 
   function handleNotificationPress(slug?: string) {
     if (slug) {
-      router.push(`/(tabs)/(home)/trek/${slug}` as never);
+      router.push(`/trek/${slug}` as never);
     }
   }
 

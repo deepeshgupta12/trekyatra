@@ -105,8 +105,7 @@ export function TrekHero({
           </View>
         )}
         <Text style={styles.title} numberOfLines={3}>{title}</Text>
-        {/* Route/state subtitle — stats moved to the summary card below (v1.1). */}
-        {state ? <Text style={styles.subtitle}>{state}</Text> : null}
+        {/* D14: state subtitle removed — the state already shows in the pill above (was duplicated). */}
       </View>
     </View>
   );
@@ -116,6 +115,10 @@ const styles = StyleSheet.create({
   container: {
     width: "100%",
     justifyContent: "flex-end",
+    // D13: round the bottom corners so the hero reads as a card (matches the approved reference).
+    borderBottomLeftRadius: 28,
+    borderBottomRightRadius: 28,
+    overflow: "hidden",
   },
   circleBtn: {
     position: "absolute",

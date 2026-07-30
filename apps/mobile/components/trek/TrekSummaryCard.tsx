@@ -64,6 +64,22 @@ export function TrekSummaryCard({
 
   return (
     <View style={[styles.card, { backgroundColor: colors.background }]}>
+      {/* Stats grid — trek metadata sits ABOVE the Trail Route card (D15: was below). */}
+      {stats.length > 0 ? (
+        <View style={[styles.statsGrid, { borderColor: colors.border }]}>
+          {stats.map((s, i) => (
+            <View
+              key={s.label}
+              style={[styles.statCell, i < stats.length - 1 && { borderRightWidth: 1, borderRightColor: colors.border }]}
+            >
+              <Ionicons name={s.icon} size={16} color={s.color ?? colors.accent} />
+              <Text style={[styles.statValue, { color: s.color ?? colors.textPrimary }]} numberOfLines={1}>{s.value}</Text>
+              <Text style={[styles.statLabel, { color: colors.textMuted }]}>{s.label}</Text>
+            </View>
+          ))}
+        </View>
+      ) : null}
+
       {/* Route sub-card */}
       {hasMap ? (
         <TouchableOpacity
@@ -97,22 +113,6 @@ export function TrekSummaryCard({
             />
           </View>
         </TouchableOpacity>
-      ) : null}
-
-      {/* Stats grid */}
-      {stats.length > 0 ? (
-        <View style={[styles.statsGrid, { borderColor: colors.border }]}>
-          {stats.map((s, i) => (
-            <View
-              key={s.label}
-              style={[styles.statCell, i < stats.length - 1 && { borderRightWidth: 1, borderRightColor: colors.border }]}
-            >
-              <Ionicons name={s.icon} size={16} color={s.color ?? colors.accent} />
-              <Text style={[styles.statValue, { color: s.color ?? colors.textPrimary }]} numberOfLines={1}>{s.value}</Text>
-              <Text style={[styles.statLabel, { color: colors.textMuted }]}>{s.label}</Text>
-            </View>
-          ))}
-        </View>
       ) : null}
 
       {/* Photo tour */}

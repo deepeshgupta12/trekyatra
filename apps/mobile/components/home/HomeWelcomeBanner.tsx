@@ -56,7 +56,7 @@ export function HomeWelcomeBannerB({ firstName, viewCount, topRegion, recentView
             <TouchableOpacity
               key={v.slug}
               style={styles.chip}
-              onPress={() => router.push(`/(tabs)/(home)/trek/${v.slug}` as never)}
+              onPress={() => router.push(`/trek/${v.slug}` as never)}
               activeOpacity={0.8}
             >
               <Text style={styles.chipText} numberOfLines={1}>

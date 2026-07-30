@@ -74,6 +74,7 @@ export default function TrekDetailScreen() {
   const scrollViewRef = useRef<ScrollView>(null);
   const headingOffsets = useRef<Record<string, number>>({});
   const tabBodyOffset = useRef(0);
+  const routeMapLocalY = useRef(0); // TrekRouteMap y within the tab body — for the summary "Trail Route" tap (D16)
   const insets = useSafeAreaInsets();
   // The Guide/Packing/… tab bar becomes a sticky header (stickyHeaderIndices) and
   // pins to the very top of the screen. Because the screen is headerless (full-bleed
@@ -162,6 +163,22 @@ export default function TrekDetailScreen() {
     }
   }
 
+  // Summary-card "Trail Route" tap → guide tab + scroll to the full route map (D16).
+  function handleOpenMap() {
+    setActiveTab("guide");
+    setTimeout(() => {
+      scrollViewRef.current?.scrollTo({ y: tabBodyOffset.current + routeMapLocalY.current - 20, animated: true });
+    }, 220);
+  }
+
+  // Summary-card "Photo tour" tap → reports tab (trip-report photos) + scroll into view (D17).
+  function handleOpenPhotos() {
+    setActiveTab("reports");
+    setTimeout(() => {
+      scrollViewRef.current?.scrollTo({ y: Math.max(tabBodyOffset.current - 20, 0), animated: true });
+    }, 220);
+  }
+
   async function handleShare() {
     if (!trek) return;
     try {
@@ -231,12 +248,13 @@ export default function TrekDetailScreen() {
           difficulty={trek.trek_difficulty}
           routeImageUrl={trek.route_image_url}
           heroImageUrl={trek.hero_image_url}
-          onOpenMap={() => setActiveTab("guide")}
-          onOpenPhotos={() => setActiveTab("reports")}
+          onOpenMap={handleOpenMap}
+          onOpenPhotos={handleOpenPhotos}
         />
 
-        {/* Trust + safety + check-in block */}
-        <View style={{ backgroundColor: colors.background, paddingTop: 14, gap: 10 }}>
+        {/* Trust + safety + check-in block. paddingBottom keeps the "I did this trek — log it"
+            CTA clear of the section tab bar below it (D18). */}
+        <View style={{ backgroundColor: colors.background, paddingTop: 14, paddingBottom: 16, gap: 10 }}>
           {fromCache && <OfflineBadge visible={true} />}
           <TrustSignals publishedAt={trek.published_at} updatedAt={trek.updated_at} />
           {isDifficultTrek && (
@@ -385,8 +403,12 @@ export default function TrekDetailScreen() {
           )}
           {activeTab === "guide" && (
             <>
-              <TrekRouteMap routeImageUrl={trek.route_image_url} heroImageUrl={trek.hero_image_url} />
+              <View onLayout={(e) => { routeMapLocalY.current = e.nativeEvent.layout.y; }}>
+                <TrekRouteMap routeImageUrl={trek.route_image_url} heroImageUrl={trek.hero_image_url} />
+              </View>
 
+              {/* D20: clear separation so "Ask TrekSage" doesn't collide with the Trail Route Map. */}
+              <View style={{ height: 20 }} />
               <TrekAskAI slug={trek.slug} trekName={trek.title} />
 
               {/* Live Conditions Widget */}

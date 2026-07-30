@@ -62,7 +62,7 @@ export function TrailCard({
     <TouchableOpacity
       style={[styles.card, { width, height }, noMargin && { marginRight: 0 }]}
       activeOpacity={0.9}
-      onPress={() => router.push(`/(tabs)/(home)/trek/${trek.slug}` as never)}
+      onPress={() => router.push(`/trek/${trek.slug}` as never)}
       accessibilityRole="button"
       accessibilityLabel={`${trek.title}${trek.trek_state ? `, ${trek.trek_state}` : ""}`}
       testID={testID ?? `trail-card-${trek.slug}`}

@@ -26,7 +26,7 @@ export function RecentlyViewedRow({ views }: Props) {
             key={v.slug}
             style={styles.cardTouchable}
             activeOpacity={0.8}
-            onPress={() => router.push(`/(tabs)/(home)/trek/${v.slug}` as never)}
+            onPress={() => router.push(`/trek/${v.slug}` as never)}
           >
             <GlassSurface rounded="md" style={styles.card}>
               <Text style={[styles.name, { color: colors.textPrimary }]} numberOfLines={2}>

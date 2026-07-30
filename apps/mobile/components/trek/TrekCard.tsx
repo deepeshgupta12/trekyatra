@@ -44,7 +44,7 @@ export function TrekCard({ trek, width = 196, height = 260, showMeta = true, noM
     <TouchableOpacity
       style={[styles.card, { width, height }, noMargin && { marginRight: 0 }]}
       activeOpacity={0.88}
-      onPress={() => router.push(`/(tabs)/(home)/trek/${trek.slug}` as never)}
+      onPress={() => router.push(`/trek/${trek.slug}` as never)}
       accessibilityLabel={`${trek.title} — ${trek.trek_state ?? ""}`}
       accessibilityRole="button"
     >

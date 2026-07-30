@@ -32,7 +32,7 @@ function FeaturedCard({ trek }: { trek: TrekListItem }) {
     <TouchableOpacity
       style={styles.featured}
       activeOpacity={0.88}
-      onPress={() => router.push(`/(tabs)/(home)/trek/${trek.slug}` as never)}
+      onPress={() => router.push(`/trek/${trek.slug}` as never)}
       accessibilityLabel={`Featured: ${trek.title}`}
       accessibilityRole="button"
     >

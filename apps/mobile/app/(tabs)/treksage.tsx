@@ -423,7 +423,7 @@ export default function TrekSageScreen() {
                             key={card.slug}
                             card={card}
                             isSelected={compareSet.has(card.slug)}
-                            onView={(slug) => router.push(`/(tabs)/(home)/trek/${slug}` as never)}
+                            onView={(slug) => router.push(`/trek/${slug}` as never)}
                             onToggleCompare={toggleCompare}
                           />
                         ))}

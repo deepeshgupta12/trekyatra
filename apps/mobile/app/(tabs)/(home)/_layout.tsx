@@ -15,12 +15,8 @@ export default function HomeStackLayout() {
       }}
     >
       <Stack.Screen name="index" options={{ headerShown: false }} />
-      <Stack.Screen
-        name="trek/[slug]"
-        options={{
-          headerShown: false,
-        }}
-      />
+      {/* trek/[slug] promoted to a ROOT route (app/trek/[slug].tsx) so opening a trek from any
+          tab no longer force-switches to the Home tab / breaks the back stack (D27). */}
       <Stack.Screen name="guide/[slug]" options={{ title: "" }} />
       <Stack.Screen name="packing" options={{ title: "Packing Guide" }} />
       <Stack.Screen name="permits" options={{ title: "Permits" }} />

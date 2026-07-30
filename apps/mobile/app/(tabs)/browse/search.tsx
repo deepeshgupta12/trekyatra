@@ -106,7 +106,7 @@ export default function SearchScreen() {
 
   const navigateToResult = (slug: string, pageType: string) => {
     if (pageType === "trek_guide") {
-      router.push(`/(tabs)/(home)/trek/${slug}` as never);
+      router.push(`/trek/${slug}` as never);
     } else {
       router.push(`/(tabs)/(home)/guide/${slug}` as never);
     }

@@ -48,7 +48,7 @@ function FeedImageCard({
     <TouchableOpacity
       style={[styles.imgCard, { height }]}
       activeOpacity={0.87}
-      onPress={() => router.push(`/(tabs)/(home)/trek/${trek.slug}` as never)}
+      onPress={() => router.push(`/trek/${trek.slug}` as never)}
       accessibilityLabel={trek.title}
       accessibilityRole="button"
     >

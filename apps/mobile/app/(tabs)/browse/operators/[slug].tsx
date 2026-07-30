@@ -242,7 +242,7 @@ export default function OperatorDetailScreen() {
               {operator.specializations.map((s) => (
                 <TouchableOpacity
                   key={s.id}
-                  onPress={() => router.push(`/(tabs)/(home)/trek/${s.trek_slug}` as never)}
+                  onPress={() => router.push(`/trek/${s.trek_slug}` as never)}
                   style={{
                     backgroundColor: colors.surface,
                     borderRadius: 20,
