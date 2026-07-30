@@ -263,5 +263,6 @@ Each group = its own commit (gitnexus impact + tsc + regression re-check + MD up
 - Group 5 (a237869): D13 D14 D15 D16 D17 D18 D19 D20 D21 D27
 - Group 6: D09 D10 D25 D26
 
-**Status:** code-complete + tsc clean + backend suite green. Next: re-index (gitnexus/vexp),
-rebuild **1.1.0 (2)** (bump `ios.buildNumber` → "2"), device-test all 27, then submit for review.
+**Status:** code-complete + tsc clean + backend suite green. `ios.buildNumber` → "2".
+GitNexus re-indexed post-move: **518,299 nodes · 777,179 edges · 4273 clusters · 300 flows** (522s).
+Next: rebuild **1.1.0 (2)**, device-test all 27, then submit for review.
