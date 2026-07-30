@@ -1,6 +1,7 @@
 import { View, TouchableOpacity, Platform, StyleSheet, Text } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { router } from "expo-router";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useTheme } from "@/hooks/useTheme";
 import { GlassSurface } from "@/components/ui/GlassSurface";
 import { useDrawerStore } from "@/stores/drawerStore";
@@ -37,16 +38,18 @@ const FLOAT_RADIUS = 26;
 export function CustomTabBar({ state, descriptors, navigation }: TabBarProps) {
   const { isDark } = useTheme();
   const openDrawer = useDrawerStore((s) => s.open);
+  const insets = useSafeAreaInsets();
 
   const borderColor = isDark ? "rgba(255,255,255,0.10)" : "rgba(0,0,0,0.08)";
   const inactiveColor = isDark ? "rgba(255,255,255,0.40)" : "rgba(29,58,46,0.45)";
-  const paddingBottom = Platform.OS === "ios" ? 20 : 8;
+  // Float the pill ABOVE the home indicator using the real inset (was a fixed 20px pad that
+  // left a big empty gap inside the pill — D10). Falls to a small margin on non-notch devices.
+  const bottomGap = Math.max(insets.bottom ?? 0, 8);
 
   return (
-    // Outer reserves the SAME height as before (content padding on every screen is
-    // unchanged); only the inner bar floats — inset margins, rounded corners, full glass.
+    // Outer reserves pill height + the safe-area gap so screen content never hides behind it.
     <View
-      style={{ height: TAB_HEIGHT + (Platform.OS === "ios" ? 20 : 0) }}
+      style={{ height: TAB_HEIGHT + bottomGap }}
       accessibilityRole="tablist"
     >
       <View
@@ -55,7 +58,7 @@ export function CustomTabBar({ state, descriptors, navigation }: TabBarProps) {
           left: 10,
           right: 10,
           top: 0,
-          bottom: 4,
+          bottom: bottomGap,
           borderRadius: FLOAT_RADIUS,
           shadowColor: "#000",
           shadowOffset: { width: 0, height: 6 },
@@ -72,9 +75,8 @@ export function CustomTabBar({ state, descriptors, navigation }: TabBarProps) {
         <View
           style={{
             flexDirection: "row",
-            paddingBottom,
-            paddingTop: 8,
-            alignItems: "flex-end",
+            paddingVertical: 8,
+            alignItems: "center",
             flex: 1,
           }}
         >
@@ -110,7 +112,7 @@ export function CustomTabBar({ state, descriptors, navigation }: TabBarProps) {
           return (
             <View
               key={route.key}
-              style={{ flex: 1, alignItems: "center", justifyContent: "flex-end", paddingBottom: Platform.OS === "ios" ? 10 : 6, gap: 3 }}
+              style={{ flex: 1, alignItems: "center", justifyContent: "center", gap: 3 }}
             >
               <TouchableOpacity
                 onPress={onPress}
@@ -168,8 +170,7 @@ export function CustomTabBar({ state, descriptors, navigation }: TabBarProps) {
             style={{
               flex: 1,
               alignItems: "center",
-              justifyContent: "flex-end",
-              paddingBottom: Platform.OS === "ios" ? 10 : 6,
+              justifyContent: "center",
               gap: 3,
             }}
           >
@@ -200,7 +201,7 @@ export function CustomTabBar({ state, descriptors, navigation }: TabBarProps) {
             flex: 1,
             alignItems: "center",
             justifyContent: "center",
-            paddingBottom: Platform.OS === "ios" ? 14 : 6,
+            gap: 3,
           }}
         >
           <Ionicons name="menu" size={24} color={inactiveColor} />

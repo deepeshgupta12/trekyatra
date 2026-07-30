@@ -235,3 +235,33 @@ Each group = its own commit (gitnexus impact + tsc + regression re-check + MD up
   (per the hard-won pinned-bar rule); verified against the notch. As a root route the header context
   is unchanged, so the topInset still governs the pinned bar's clearance.
 - tsc clean.
+
+### Group 6 — Remaining visuals (landed)
+- ✅ **D09 / D10** — Bottom-nav pill. Replaced the fixed `paddingBottom: 20` (a home-indicator
+  guess that left a big empty gap inside the pill) with the **real** `insets.bottom`: the pill now
+  floats a safe-area gap above the home indicator (`Math.max(insets.bottom, 8)`) and its content is
+  vertically **centered** (`alignItems: center`, per-tab `justifyContent: center`, removed per-tab
+  bottom padding). Removes the extra bottom padding (D10) and tightens the proportions (D09).
+  (components/tabs/CustomTabBar.tsx)
+- ✅ **D25** — Dark-mode logo. `Logo` now uses the adaptive-icon foreground in dark mode
+  (`logoDark = adaptive-icon.png`, designed to read on the #0c0e14 dark bg); keeps `logo.png` in
+  light mode. The pine `logo.png` was invisible on the dark welcome/sign-in background.
+  (components/ui/Logo.tsx)
+- ✅ **D26** — Notification-centre header. It presents as a modal; `paddingTop` now
+  `Math.max(insets.top, 12)` so the header never sits flush against the modal's top edge, and the
+  back button was widened to `minWidth: 80` to match "Mark all read" so the title centres.
+  (app/notifications.tsx)
+- tsc clean.
+
+---
+
+## ✅ All 27 defects (D01–D27) landed across Groups 1–6
+- Group 1 (bd03c84): D01 D02 D03 D04 D05
+- Group 2 (31163a1): D06 D07 D08
+- Group 3 (bef700c): D11 D12
+- Group 4 (93ec138): D22 D23 D24
+- Group 5 (a237869): D13 D14 D15 D16 D17 D18 D19 D20 D21 D27
+- Group 6: D09 D10 D25 D26
+
+**Status:** code-complete + tsc clean + backend suite green. Next: re-index (gitnexus/vexp),
+rebuild **1.1.0 (2)** (bump `ios.buildNumber` → "2"), device-test all 27, then submit for review.

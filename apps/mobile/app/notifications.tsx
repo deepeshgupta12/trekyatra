@@ -30,7 +30,7 @@ export default function NotificationsScreen() {
   }
 
   return (
-    <View style={[styles.container, { backgroundColor: colors.background, paddingTop: insets.top }]}>
+    <View style={[styles.container, { backgroundColor: colors.background, paddingTop: Math.max(insets.top ?? 0, 12) }]}>
       {/* Header */}
       <View
         style={[
@@ -91,9 +91,9 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
   },
   backBtn: {
-    width: 32,
+    minWidth: 80,
     height: 32,
-    alignItems: "center",
+    alignItems: "flex-start",
     justifyContent: "center",
   },
   headerTitle: {
