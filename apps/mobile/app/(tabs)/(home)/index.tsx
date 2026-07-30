@@ -30,10 +30,12 @@ import { OperatorsCTACard } from "@/components/home/OperatorsCTACard";
 import { HomeSkeleton } from "@/components/home/HomeSkeleton";
 import { NearbyTreksStrip } from "@/components/home/NearbyTreksStrip";
 
+// Quick entry chips → open Explore with the filter sheet. "Length"/"Elevation gain" removed
+// (no such data): use Duration (real bucket filter) + Season (D03).
 const FILTER_CHIPS: QuickFilterChip[] = [
   { key: "difficulty", label: "Difficulty", icon: "options-outline" },
-  { key: "length", label: "Length", icon: "resize-outline" },
-  { key: "elevation", label: "Elevation gain", icon: "trending-up-outline" },
+  { key: "duration", label: "Duration", icon: "time-outline" },
+  { key: "season", label: "Season", icon: "partly-sunny-outline" },
 ];
 
 type HomeState = "A" | "B" | "C" | "D";
@@ -87,7 +89,7 @@ export default function HomeScreen() {
       onNotificationsPress={() => router.push("/notifications" as never)}
       onMapPress={() => router.push("/(tabs)/browse" as never)}
       filterChips={FILTER_CHIPS}
-      onFilterPress={(key) => { trackFilterChipTapped(key); router.push("/(tabs)/browse" as never); }}
+      onFilterPress={(key) => { trackFilterChipTapped(key); router.push("/(tabs)/browse?openFilters=1" as never); }}
     />
   );
 

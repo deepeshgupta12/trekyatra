@@ -25,6 +25,10 @@ interface ExploreState {
   setTrekSeason: (value: string | null) => void;
   setDurationBucket: (value: DurationBucket | null) => void;
   clearAll: () => void;
+
+  // Incremented to ask the Explore FilterSheet to open (e.g. from a Home quick-filter chip).
+  sheetOpenNonce: number;
+  requestSheetOpen: () => void;
 }
 
 export const useExploreStore = create<ExploreState>((set) => ({
@@ -39,4 +43,7 @@ export const useExploreStore = create<ExploreState>((set) => ({
   setDurationBucket: (value) => set({ durationBucket: value }),
   clearAll: () =>
     set({ trekState: null, trekDifficulty: null, trekSeason: null, durationBucket: null }),
+
+  sheetOpenNonce: 0,
+  requestSheetOpen: () => set((s) => ({ sheetOpenNonce: s.sheetOpenNonce + 1 })),
 }));

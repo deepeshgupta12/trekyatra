@@ -1,6 +1,5 @@
 import { View, Text, TouchableOpacity, StyleSheet } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
-import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useTheme } from "@/hooks/useTheme";
 import { AISearchBar } from "@/components/home/AISearchBar";
 import { QuickFilterChips, type QuickFilterChip } from "@/components/home/QuickFilterChips";
@@ -33,11 +32,11 @@ export function HomeHeroV2({
   onFilterPress,
 }: HomeHeroV2Props) {
   const { colors } = useTheme();
-  const insets = useSafeAreaInsets();
   const initial = firstName?.trim()?.[0]?.toUpperCase() ?? "T";
 
+  // SafeArea (SafeAreaView) already applies the top inset — don't add it again here (was D01: double padding).
   return (
-    <View style={[styles.container, { paddingTop: (insets.top ?? 0) + 8 }]}>
+    <View style={styles.container}>
       <View style={styles.row}>
         <View style={[styles.avatar, { backgroundColor: colors.accent }]}>
           <Text style={styles.avatarText}>{initial}</Text>
@@ -85,7 +84,7 @@ export function HomeHeroV2({
 }
 
 const styles = StyleSheet.create({
-  container: { paddingHorizontal: 16, paddingBottom: 8, gap: 12 },
+  container: { paddingHorizontal: 16, paddingTop: 8, paddingBottom: 8, gap: 12 },
   row: { flexDirection: "row", alignItems: "center", gap: 11 },
   avatar: { width: 40, height: 40, borderRadius: 20, alignItems: "center", justifyContent: "center" },
   avatarText: { color: "#fff", fontWeight: "700", fontSize: 16, fontFamily: "Inter_600SemiBold" },

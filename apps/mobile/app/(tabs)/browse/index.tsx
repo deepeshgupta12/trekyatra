@@ -34,8 +34,8 @@ const SEASONS = [
 
 export default function BrowseScreen() {
   const { colors, isDark } = useTheme();
-  const params = useLocalSearchParams<{ region?: string }>();
-  const { trekState, trekDifficulty, trekSeason, durationBucket, setTrekState, setTrekDifficulty } = useExploreStore();
+  const params = useLocalSearchParams<{ region?: string; difficulty?: string; season?: string; openFilters?: string }>();
+  const { trekState, trekDifficulty, trekSeason, durationBucket, setTrekState, setTrekDifficulty, setTrekSeason, requestSheetOpen } = useExploreStore();
 
   function handleCategory(key: string) {
     trackCategoryTapped(key);
@@ -49,9 +49,14 @@ export default function BrowseScreen() {
     }
   }
 
+  // Apply filters passed via navigation (Home "View all" / quick chips) + open the sheet on request.
   useEffect(() => {
     if (params.region) setTrekState(params.region);
-  }, [params.region, setTrekState]);
+    if (params.difficulty) setTrekDifficulty(params.difficulty);
+    if (params.season) setTrekSeason(params.season);
+    if (params.openFilters === "1") requestSheetOpen();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [params.region, params.difficulty, params.season, params.openFilters]);
 
   const { pages, isLoading, isFetchingMore, loadMore } = useExplore({
     trekState,

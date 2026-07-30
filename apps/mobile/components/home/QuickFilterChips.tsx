@@ -63,7 +63,8 @@ export function QuickFilterChips({ chips, onPress, testID }: QuickFilterChipsPro
 }
 
 const styles = StyleSheet.create({
-  row: { gap: 8, paddingRight: 16 },
+  // flexGrow + center → chips sit centred when they fit; still scroll from the start if they overflow (D02).
+  row: { gap: 8, paddingHorizontal: 16, flexGrow: 1, justifyContent: "center" },
   chip: {
     flexDirection: "row",
     alignItems: "center",

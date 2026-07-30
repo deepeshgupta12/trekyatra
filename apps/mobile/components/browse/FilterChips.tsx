@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { View, Text, TouchableOpacity, ScrollView, StyleSheet } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { useTheme } from "@/hooks/useTheme";
@@ -9,8 +9,13 @@ import { GlassSurface } from "@/components/ui/GlassSurface";
 export function FilterChips() {
   const { colors } = useTheme();
   const [sheetVisible, setSheetVisible] = useState(false);
-  const { trekState, trekDifficulty, trekSeason, durationBucket, setTrekState, setTrekDifficulty, setTrekSeason, setDurationBucket, clearAll } =
+  const { trekState, trekDifficulty, trekSeason, durationBucket, setTrekState, setTrekDifficulty, setTrekSeason, setDurationBucket, clearAll, sheetOpenNonce } =
     useExploreStore();
+
+  // Open the sheet when a Home quick-filter chip requests it (nonce bump).
+  useEffect(() => {
+    if (sheetOpenNonce > 0) setSheetVisible(true);
+  }, [sheetOpenNonce]);
 
   const activeChips: { key: string; label: string; onClear: () => void }[] = [];
   if (trekState) activeChips.push({ key: "state", label: trekState, onClear: () => setTrekState(null) });

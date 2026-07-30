@@ -96,8 +96,8 @@
     "docs/steps/STEP-80-live-trek-conditions-backend-web.md": "2a6c80c923f22871511c7f92f22774bd991c2ab76eb2a2838a97d2636554f607",
     "docs/versions/V5-MOBILE-APP.md": "3bda0d0f32a1f5501e39b4b7c9a0bdde68bcda6ed670d800e93e875a1347c829"
   },
-  "indexed_at_commit": "ae93d0c247a509dc3c154df4a283ed5158230c4e",
-  "indexed_at_timestamp": "2026-07-30T04:01:36.766978+00:00",
+  "indexed_at_commit": "9602f921738d8b0f9a0159e14961db01f68bdf1c",
+  "indexed_at_timestamp": "2026-07-30T04:43:39.102301+00:00",
   "schema_version": 3,
   "stats": {
     "total_edges": 1917,

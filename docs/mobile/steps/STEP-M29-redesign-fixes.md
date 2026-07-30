@@ -129,4 +129,33 @@ Notifications (1).
 Each group = its own commit (gitnexus impact + tsc + regression re-check + MD update). Then rebuild `1.1.0 (2)`.
 
 ## Progress (checked off as landed)
-_(none yet)_
+
+### Group 1 — Home functional + top (landed)
+- ✅ **D01** — Removed double top-inset. `SafeArea` (SafeAreaView) already applies `insets.top`;
+  `HomeHeroV2` was adding `insets.top` again → doubled padding above the greeting. HomeHeroV2 now
+  uses a fixed `paddingTop: 8` (dropped `useSafeAreaInsets`).
+- ✅ **D02** — `QuickFilterChips` row now `flexGrow:1 + justifyContent:center` (symmetric
+  `paddingHorizontal:16`) → chips sit centred when they fit, still scroll if they overflow.
+- ✅ **D03** — Home quick chips: **"Length" → "Duration"** (real bucket filter) and
+  **"Elevation gain" → "Season"** (no elevation data exists). Icons updated (time / partly-sunny).
+- ✅ **D04** — Quick chip `onFilterPress` now routes `/(tabs)/browse?openFilters=1`. New
+  `exploreStore.sheetOpenNonce` + `requestSheetOpen()`; `FilterChips` watches the nonce and opens
+  the `FilterSheet`. So a chip tap lands on Explore **with the filter sheet open**.
+- ✅ **D05** — Root cause: Explore only read `?region`, ignoring `?difficulty`/`?season`. `BrowseScreen`
+  useEffect now applies **region + difficulty + season** from params (and honours `openFilters=1`).
+  Home "View all" links already pass the right param (RegionsRow→`?region`,
+  DifficultyTabsSection→`?difficulty=Easy|Moderate|Challenging` which matches the store's values), so
+  they now filter the destination correctly.
+- tsc clean; gitnexus detect_changes = additive, confined to Home/Browse/Explore render flows.
+
+### D27 — navigation (root cause found; fix folded into Group 5 / trek-detail pass)
+- **Diagnosis:** all **11** trek-detail navigations (from Explore search, TrekSage, Plan results,
+  operators, notifications, and Home) hard-push `/(tabs)/(home)/trek/${slug}` — a route that lives
+  **inside the Home tab's stack**. Pushing it from any *other* tab force-switches the active tab to
+  Home, and `back()` returns to Home instead of the origin screen. That is the "navigation not
+  working correctly" the owner saw. `trek/[slug]` is self-contained (its internal pushes are only
+  `back()`, auth, premium, `/safety-disclaimer` — no absolute `(home)` sibling links), so the fix is
+  to **promote `trek/[slug]` to a root-level route** (sibling of `(tabs)`, like `notifications`) and
+  repoint all 11 call sites to `/trek/${slug}`. This is coupled to D18/D20 (bottom-nav collisions —
+  promoting removes the tab bar under trek detail) and D21 (pinned-bar safe-area), so it is executed
+  **together with the trek-detail pass (Group 5)** rather than in isolation.
