@@ -18,6 +18,13 @@ Do not modify any code file without first:
 4. Checking impacted files and blast radius
 5. Updating the relevant step file in `docs/steps/`
 
+## 2026-07-30 — v1.1 post-build fixes (STEP-M29) — BLOCKS App Store submission
+Owner device-test of 1.1.0 (1) surfaced 15 issues + navigation → 27 tracked defects (D01–D27):
+Home/Explore functional (view-all, filters, personalization order, scroll), trek-detail layout
+(rounding, state dup, metadata order, clickable map/photo, collisions, safe-area), compare names,
+saved-not-reflected, dynamic version, dark-mode logo, notifications UI, and broken navigation.
+Master list + regression-safety principle: docs/mobile/steps/STEP-M29-redesign-fixes.md.
+
 ## 2026-07-29 — v1.1 mobile redesign (STEP-M24…M28), approved mockups
 
 Brand-locked redesign (saffron/pine + Glass UI; reference layouts). Ships as App Store
