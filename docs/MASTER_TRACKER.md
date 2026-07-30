@@ -25,6 +25,15 @@ Home/Explore functional (view-all, filters, personalization order, scroll), trek
 saved-not-reflected, dynamic version, dark-mode logo, notifications UI, and broken navigation.
 Master list + regression-safety principle: docs/mobile/steps/STEP-M29-redesign-fixes.md.
 
+**RESOLVED (code-complete):** all 27 defects (D01–D27) fixed across 6 grouped commits —
+bd03c84 (D01-05), 31163a1 (D06-08), bef700c (D11-12), 93ec138 (D22-24), a237869 (D13-21 + D27),
+75d84d2 (D09/10, D25, D26). tsc clean; backend CMS suite 55/55 (new suitability filter test).
+Key structural change (D27): trek detail promoted from `app/(tabs)/(home)/trek/[slug].tsx` to a
+**root route** `app/trek/[slug].tsx` (URL path `/trek/:slug` unchanged) so opening a trek from any
+tab no longer switches tabs / breaks back. Backend (additive, no live-web impact): optional
+`trek_suitability` query param on `GET /api/v1/cms/pages`. iOS `buildNumber` bumped → "2".
+Pending: gitnexus/vexp re-index, owner rebuild **1.1.0 (2)** + device-test all 27 + submit for review.
+
 ## 2026-07-29 — v1.1 mobile redesign (STEP-M24…M28), approved mockups
 
 Brand-locked redesign (saffron/pine + Glass UI; reference layouts). Ships as App Store
