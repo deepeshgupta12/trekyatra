@@ -1,7 +1,13 @@
 # STEP-M30 — v1.1 Post-Build Fixes #2 (1.1.0 (2) device test)
 
-**Status:** Issues recorded 2026-07-31, **awaiting owner confirmation that capture is complete**
-before any code changes. This is the MASTER tracker for the second round of redesign fixes.
+**Status:** Issues recorded + **owner-confirmed 2026-07-31**. Implementing in priority order.
+This is the MASTER tracker for the second round of redesign fixes.
+
+### Owner decisions (2026-07-31)
+- **N08/N09 gallery source:** hero image + route-map image + user trip-report photos (NO new CMS
+  field — build from images we already have).
+- **N12 news detail:** fix the header + **port the mobile-web `/news/[slug]` layout** (full parity).
+- **Go-ahead:** implement N01–N13 now, in the recorded priority order.
 **Blocking:** App Store review submission is BLOCKED until every item below is resolved.
 **Source:** Owner device-test of `1.1.0 (2)` — 5 screenshots + a **design-inspiration** reference
 (Ama Dablam first-fold). Follows the process (read dependent MD files, gitnexus impact per symbol
@@ -131,4 +137,25 @@ Each group = its own commit (gitnexus impact + tsc + regression re-check + MD up
 `1.1.0 (3)`.
 
 ## Progress (checked off as landed)
-_(none yet — awaiting owner confirmation that all issues are captured correctly)_
+
+### Trek detail group (landed)
+- ✅ **N10** — `TrekNewsSection` is now **text-only** (eyebrow + title + date) — removed the
+  `hero_image_url` thumbnail/placeholder (news images unavailable → empty grey boxes).
+- ✅ **N07** — Full Master-CMS trek metadata.
+  - Backend (additive/optional, web ignores extra fields): added `trek_region`,
+    `trek_max_altitude_ft`, `trek_duration_days_min/max`, `trek_best_months`, `trek_open_months`,
+    `trek_avoid_months`, `trek_permit_notes`, `trek_budget_min/max`, `trek_themes`,
+    `trek_crowd_level`, `trek_beginner/solo/family_friendly`, `trek_operator_available` to
+    `CMSPageResponse` (schemas/cms.py). Test `test_get_page_returns_master_cms_trek_metadata`.
+  - Mobile: extended `CMSPage` type; new `TrekFactsTable` component renders **every populated**
+    field (nulls hidden), formatting months/budget(₹)/booleans. Shown in the guide tab.
+- ✅ **N08** — New `TrekGallery` full-screen viewer (paging + pinch-zoom). Images = hero +
+  route-map + trip-report photos (`reports.items[].media[].url`). The Photo-tour tile opens it.
+- ✅ **N09** — The summary "Trail Route" thumbnail AND the lower `TrekRouteMap` image now open the
+  gallery at the route image (expand affordance added).
+- ✅ **N06** — `TrekSummaryCard` reworked to the **Ama Dablam reference** first fold: route
+  thumbnail on the left beside a compact metadata list (Duration / Max altitude / Difficulty /
+  Best season) on the right, then a full-width Photo-tour tile with a play affordance. Uses OUR
+  real fields (incl. `trek_max_altitude_ft`, previously the altitude stat was blank because the
+  API never returned it). Sticky Plan/Save/Compare bar unchanged.
+- tsc clean; backend cms+treks+unification 85/85.

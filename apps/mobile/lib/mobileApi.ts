@@ -23,6 +23,26 @@ export interface CMSPage {
   is_premium?: boolean;
   published_at: string | null;
   updated_at: string | null;
+  // Master CMS trek metadata (STEP-M30 N07) — all optional, only populated for trek_guide pages.
+  trek_name?: string | null;
+  trek_suitability?: string | null;
+  trek_region?: string | null;
+  trek_max_altitude_ft?: number | null;
+  trek_duration_days_min?: number | null;
+  trek_duration_days_max?: number | null;
+  trek_best_months?: number[] | null;
+  trek_open_months?: number[] | null;
+  trek_avoid_months?: number[] | null;
+  trek_permit_required?: boolean | null;
+  trek_permit_notes?: string | null;
+  trek_budget_min?: number | null;
+  trek_budget_max?: number | null;
+  trek_themes?: string[] | null;
+  trek_crowd_level?: string | null;
+  trek_beginner_friendly?: boolean | null;
+  trek_solo_friendly?: boolean | null;
+  trek_family_friendly?: boolean | null;
+  trek_operator_available?: boolean | null;
 }
 
 // Shape returned by /api/v1/public/news/by-trek/{trek_slug}

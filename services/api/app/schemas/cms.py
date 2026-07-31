@@ -81,6 +81,24 @@ class CMSPageResponse(BaseModel):
     trek_season: str | None = None
     trek_suitability: str | None = None
     trek_permit_required: bool | None = None
+    # Master CMS trek metadata (admin/trek-data backfill + intelligence) — mobile trek-detail facts
+    # table (STEP-M30 N07). Additive/optional; web clients ignore unknown fields.
+    trek_region: str | None = None
+    trek_max_altitude_ft: int | None = None
+    trek_duration_days_min: int | None = None
+    trek_duration_days_max: int | None = None
+    trek_best_months: list[int] | None = None
+    trek_open_months: list[int] | None = None
+    trek_avoid_months: list[int] | None = None
+    trek_permit_notes: str | None = None
+    trek_budget_min: int | None = None
+    trek_budget_max: int | None = None
+    trek_themes: list[str] | None = None
+    trek_crowd_level: str | None = None
+    trek_beginner_friendly: bool | None = None
+    trek_solo_friendly: bool | None = None
+    trek_family_friendly: bool | None = None
+    trek_operator_available: bool | None = None
 
     model_config = {"from_attributes": True}
 

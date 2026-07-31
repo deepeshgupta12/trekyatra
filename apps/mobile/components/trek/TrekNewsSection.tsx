@@ -1,8 +1,8 @@
 import { useEffect, useState } from "react";
-import { View, Text, ScrollView, TouchableOpacity, Image, StyleSheet } from "react-native";
+import { View, Text, ScrollView, TouchableOpacity, StyleSheet } from "react-native";
 import { router } from "expo-router";
+import { Ionicons } from "@expo/vector-icons";
 import { useTheme } from "@/hooks/useTheme";
-import { resizedImageUrl } from "@/lib/imageUrl";
 import { contentApi, type NewsArticle } from "@/lib/mobileApi";
 
 interface TrekNewsSectionProps {
@@ -35,6 +35,8 @@ export function TrekNewsSection({ slug }: TrekNewsSectionProps) {
         showsHorizontalScrollIndicator={false}
         contentContainerStyle={styles.row}
       >
+        {/* N10: text-only cards — news images are not available, so no thumbnail (was showing
+            empty grey placeholders). A small eyebrow + title + date reads cleaner. */}
         {articles.map((article) => (
           <TouchableOpacity
             key={article.slug}
@@ -46,19 +48,18 @@ export function TrekNewsSection({ slug }: TrekNewsSectionProps) {
               },
             ]}
             activeOpacity={0.85}
-            onPress={() => router.push(`/(tabs)/(home)/news/${article.slug}` as never)}
+            onPress={() => router.push(`/news/${article.slug}` as never)}
           >
-            {article.hero_image_url ? (
-              <Image source={{ uri: resizedImageUrl(article.hero_image_url, 400) ?? article.hero_image_url }} style={styles.image} />
-            ) : (
-              <View style={[styles.image, { backgroundColor: isDark ? "rgba(255,255,255,0.06)" : "rgba(29,58,46,0.06)" }]} />
-            )}
-            <Text style={[styles.title, { color: colors.textPrimary }]} numberOfLines={2}>
+            <View style={styles.eyebrowRow}>
+              <Ionicons name="newspaper-outline" size={12} color={colors.accent} />
+              <Text style={[styles.eyebrow, { color: colors.accent }]}>TREK NEWS</Text>
+            </View>
+            <Text style={[styles.title, { color: colors.textPrimary }]} numberOfLines={4}>
               {article.title}
             </Text>
-            {article.published_at && (
+            {article.published_at ? (
               <Text style={[styles.date, { color: colors.textMuted }]}>{formatDate(article.published_at)}</Text>
-            )}
+            ) : null}
           </TouchableOpacity>
         ))}
       </ScrollView>
@@ -84,25 +85,31 @@ const styles = StyleSheet.create({
     gap: 12,
   },
   card: {
-    width: 180,
-    borderRadius: 12,
+    width: 220,
+    borderRadius: 14,
     borderWidth: 1,
-    overflow: "hidden",
-    padding: 10,
+    padding: 14,
+    justifyContent: "space-between",
   },
-  image: {
-    width: "100%",
-    height: 90,
-    borderRadius: 8,
+  eyebrowRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 5,
     marginBottom: 8,
   },
+  eyebrow: {
+    fontSize: 10,
+    fontWeight: "700",
+    letterSpacing: 0.8,
+  },
   title: {
-    fontSize: 13,
+    fontSize: 14,
     fontWeight: "600",
-    lineHeight: 18,
+    lineHeight: 19,
+    fontFamily: "PlayfairDisplay_600SemiBold",
   },
   date: {
     fontSize: 11,
-    marginTop: 6,
+    marginTop: 10,
   },
 });

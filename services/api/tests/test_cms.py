@@ -145,6 +145,31 @@ def test_list_pages_filters_by_trek_duration_range():
     assert "filter-trek-short" not in {p.slug for p in long_range}
 
 
+def test_get_page_returns_master_cms_trek_metadata():
+    """STEP-M30 N07: trek-detail response must expose the full Master CMS trek metadata."""
+    with SessionLocal() as db:
+        db.add(CMSPage(
+            slug="meta-trek", page_type="trek_guide", title="Meta Trek", status="published",
+            content_html="<p>x</p>",
+            trek_region="Garhwal Himalaya", trek_max_altitude_ft=15000,
+            trek_duration_days_min=5, trek_duration_days_max=7,
+            trek_best_months=[5, 6, 9], trek_permit_required=True,
+            trek_budget_min=12000, trek_budget_max=18000, trek_crowd_level="moderate",
+            trek_beginner_friendly=False, trek_solo_friendly=True, trek_family_friendly=False,
+        ))
+        db.commit()
+
+    r = client.get("/api/v1/cms/pages/meta-trek")
+    assert r.status_code == 200
+    body = r.json()
+    assert body["trek_region"] == "Garhwal Himalaya"
+    assert body["trek_max_altitude_ft"] == 15000
+    assert body["trek_best_months"] == [5, 6, 9]
+    assert body["trek_budget_min"] == 12000 and body["trek_budget_max"] == 18000
+    assert body["trek_crowd_level"] == "moderate"
+    assert body["trek_solo_friendly"] is True and body["trek_beginner_friendly"] is False
+
+
 def test_list_pages_filters_by_trek_suitability():
     with SessionLocal() as db:
         db.add(CMSPage(

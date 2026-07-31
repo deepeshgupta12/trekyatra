@@ -11,12 +11,14 @@ import {
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useLocalSearchParams, router } from "expo-router";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useTrekDetail } from "@/hooks/useTrekDetail";
 import { trackTrekView, trackTrekShared } from "@/lib/analytics";
 import { TrekHero } from "@/components/trek/TrekHero";
 import { TrekRouteMap } from "@/components/trek/TrekRouteMap";
 import { TrekSummaryCard } from "@/components/trek/TrekSummaryCard";
+import { TrekFactsTable } from "@/components/trek/TrekFactsTable";
+import { TrekGallery } from "@/components/trek/TrekGallery";
 import { TrekTabBar, type TrekTab } from "@/components/trek/TrekTabBar";
 import { TrekStickyBar } from "@/components/trek/TrekStickyBar";
 import { TrekRelatedRow } from "@/components/trek/TrekRelatedRow";
@@ -68,13 +70,14 @@ export default function TrekDetailScreen() {
   const [profileSignalId, setProfileSignalId] = useState<string | null>(null);
   const [chatReq, setChatReq] = useState<BuddyRequestOut | null>(null);
   const [conditionsDetailVisible, setConditionsDetailVisible] = useState(false);
+  const [galleryVisible, setGalleryVisible] = useState(false);
+  const [galleryIndex, setGalleryIndex] = useState(0);
   const reports = useReports(slug ?? "");
   const buddies = useTrekBuddies(slug ?? "");
   const { isDone } = useCheckin();
   const scrollViewRef = useRef<ScrollView>(null);
   const headingOffsets = useRef<Record<string, number>>({});
   const tabBodyOffset = useRef(0);
-  const routeMapLocalY = useRef(0); // TrekRouteMap y within the tab body — for the summary "Trail Route" tap (D16)
   const insets = useSafeAreaInsets();
   // The Guide/Packing/… tab bar becomes a sticky header (stickyHeaderIndices) and
   // pins to the very top of the screen. Because the screen is headerless (full-bleed
@@ -163,20 +166,31 @@ export default function TrekDetailScreen() {
     }
   }
 
-  // Summary-card "Trail Route" tap → guide tab + scroll to the full route map (D16).
-  function handleOpenMap() {
-    setActiveTab("guide");
-    setTimeout(() => {
-      scrollViewRef.current?.scrollTo({ y: tabBodyOffset.current + routeMapLocalY.current - 20, animated: true });
-    }, 220);
+  // Gallery images (M30 N08/N09): hero + route-map + trip-report photos (owner decision).
+  const galleryImages = useMemo(() => {
+    const imgs: string[] = [];
+    if (trek?.hero_image_url) imgs.push(trek.hero_image_url);
+    if (trek?.route_image_url && trek.route_image_url !== trek.hero_image_url) imgs.push(trek.route_image_url);
+    const reportPhotos = reports.data?.items.flatMap((r) => r.media.map((m) => m.url)) ?? [];
+    imgs.push(...reportPhotos);
+    return imgs;
+  }, [trek?.hero_image_url, trek?.route_image_url, reports.data]);
+
+  function openGalleryAt(uri: string | null | undefined) {
+    if (galleryImages.length === 0) return;
+    const start = uri ? Math.max(galleryImages.indexOf(uri), 0) : 0;
+    setGalleryIndex(start);
+    setGalleryVisible(true);
   }
 
-  // Summary-card "Photo tour" tap → reports tab (trip-report photos) + scroll into view (D17).
+  // Summary-card "Trail Route" tap → open the route image in the gallery (N09).
+  function handleOpenMap() {
+    openGalleryAt(trek?.route_image_url);
+  }
+
+  // Summary-card "Photo tour" tap → open the photo gallery at the hero (N08).
   function handleOpenPhotos() {
-    setActiveTab("reports");
-    setTimeout(() => {
-      scrollViewRef.current?.scrollTo({ y: Math.max(tabBodyOffset.current - 20, 0), animated: true });
-    }, 220);
+    openGalleryAt(trek?.hero_image_url);
   }
 
   async function handleShare() {
@@ -239,13 +253,15 @@ export default function TrekDetailScreen() {
           season={trek.trek_season}
         />
 
-        {/* v1.1 summary card — route map thumbnail + Duration/Altitude/Difficulty + photo tour */}
+        {/* M30 N06 — first-fold summary card (Ama Dablam reference): route thumbnail + metadata
+            list + photo-tour tile. Route/photo taps open the gallery (N08/N09). */}
         <TrekSummaryCard
           routeTitle={trek.title}
           routeSubtitle={trek.trek_state}
           duration={trek.trek_duration}
-          altitude={trek.trek_altitude}
+          maxAltitudeFt={trek.trek_max_altitude_ft}
           difficulty={trek.trek_difficulty}
+          season={trek.trek_season}
           routeImageUrl={trek.route_image_url}
           heroImageUrl={trek.hero_image_url}
           onOpenMap={handleOpenMap}
@@ -403,9 +419,14 @@ export default function TrekDetailScreen() {
           )}
           {activeTab === "guide" && (
             <>
-              <View onLayout={(e) => { routeMapLocalY.current = e.nativeEvent.layout.y; }}>
-                <TrekRouteMap routeImageUrl={trek.route_image_url} heroImageUrl={trek.hero_image_url} />
-              </View>
+              {/* N07: full Master-CMS trek metadata table (renders only populated fields). */}
+              <TrekFactsTable trek={trek} />
+
+              <TrekRouteMap
+                routeImageUrl={trek.route_image_url}
+                heroImageUrl={trek.hero_image_url}
+                onPressImage={() => openGalleryAt(trek.route_image_url)}
+              />
 
               {/* D20: clear separation so "Ask TrekSage" doesn't collide with the Trail Route Map. */}
               <View style={{ height: 20 }} />
@@ -492,6 +513,14 @@ export default function TrekDetailScreen() {
 
       {/* Sticky CTA */}
       <TrekStickyBar slug={trek.slug} trekName={trek.title} />
+
+      {/* Photo gallery (hero + route + trip-report photos) — N08/N09 */}
+      <TrekGallery
+        visible={galleryVisible}
+        images={galleryImages}
+        initialIndex={galleryIndex}
+        onClose={() => setGalleryVisible(false)}
+      />
 
       {/* Table of contents bottom sheet */}
       <TrekContentsSheet
