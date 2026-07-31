@@ -219,3 +219,8 @@ Each group = its own commit (gitnexus impact + tsc + regression re-check + MD up
 (N07) — additive, no live-web impact. Structural: `news/[slug]` promoted to a root route (like
 `trek/[slug]` in M29). Next: full backend suite, gitnexus re-index, bump `ios.buildNumber` → "3",
 rebuild **1.1.0 (3)**, device-test all 13, submit.
+
+**Test status:** tsc clean. Full backend suite = 792 passed, 1 skipped; the 2 `test_refresh.py`
+failures in the full run are the known pre-existing order-dependent shared-DB flakiness (both pass
+13/13 in isolation — not a regression; the M30 schema fields default to `None` and don't change the
+stale-page response shape assertions).
