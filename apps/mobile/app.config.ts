@@ -26,8 +26,9 @@ export default ({ config }: ConfigContext): any => ({
     // Build number is unique PER marketing version. New version 1.1.0 (redesign) → resets
     // to "1" (1.1.0 (1) can't collide with 1.0.0 (2)). Bump on each rebuild of the SAME
     // version, or switch to EAS remote autoIncrement later.
-    // "2" → 1.1.0 (2): STEP-M29 fixes (D01–D27). "3" → 1.1.0 (3): STEP-M30 fixes (N01–N13).
-    buildNumber: "3",
+    // "2" → 1.1.0 (2): STEP-M29 (D01–D27). "3" → 1.1.0 (3): STEP-M30 (N01–N13).
+    // "4" → 1.1.0 (4): STEP-M30 post-(3) fixes (hero/card padding, Trek-details position, drawer logo).
+    buildNumber: "4",
     // Generates the com.apple.developer.applesignin entitlement during EAS prebuild.
     // Without this the native Apple Sign-In sheet (expo-apple-authentication, lib/appleAuth.ts)
     // fails at runtime → Guideline 4.8 rejection (we also offer Google sign-in).

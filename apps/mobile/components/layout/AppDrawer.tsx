@@ -14,6 +14,7 @@ import { useRouter } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import Constants from "expo-constants";
+import { Logo } from "@/components/ui/Logo";
 import { useDrawerStore } from "@/stores/drawerStore";
 import { useAuth } from "@/providers/AuthProvider";
 import { useTheme } from "@/hooks/useTheme";
@@ -188,9 +189,8 @@ export function AppDrawer() {
         {/* Branded header */}
         <View style={[styles.brandHeader, { borderBottomColor: divider }]}>
           <View style={styles.brandLeft}>
-            <View style={styles.brandLogo}>
-              <Ionicons name="triangle" size={16} color="#fff" />
-            </View>
+            {/* M30 issue 3: real TrekYatra logo (dark/light-adaptive) instead of a placeholder icon. */}
+            <Logo size="md" showText={false} />
             <View>
               <Text style={[styles.brandName, { color: colors.textPrimary }]}>TrekYatra</Text>
               <Text style={[styles.brandTag, { color: colors.textMuted }]}>Discover India&apos;s treks</Text>
@@ -303,14 +303,6 @@ const styles = StyleSheet.create({
     marginBottom: 8,
   },
   brandLeft: { flexDirection: "row", alignItems: "center", gap: 11 },
-  brandLogo: {
-    width: 36,
-    height: 36,
-    borderRadius: 11,
-    backgroundColor: SAFFRON,
-    alignItems: "center",
-    justifyContent: "center",
-  },
   brandName: { fontSize: 17, fontWeight: "700", fontFamily: "PlayfairDisplay_700Bold", letterSpacing: -0.2 },
   brandTag: { fontSize: 11, marginTop: 1, fontWeight: "500" },
   closeBtn: { width: 34, height: 34, borderRadius: 17, alignItems: "center", justifyContent: "center" },

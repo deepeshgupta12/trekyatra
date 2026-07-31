@@ -36,6 +36,11 @@ N13). Backend (additive, no live-web impact): 16 optional trek_* fields on CMSPa
 test. Structural: news/[slug] promoted to a root route. iOS buildNumber → "3".
 Pending: full backend suite, gitnexus re-index, owner rebuild **1.1.0 (3)** + device-test + submit.
 
+**Post-1.1.0 (3) fixes (2026-07-31):** 3 presentational trek-detail/drawer fixes — straight hero
+bottom + more footer padding so the summary card doesn't collide with the trek name; "Trek details"
+facts table moved to the FIRST section (after the nav, before the Guide); real TrekYatra logo in the
+hamburger header (was a triangle icon). gitnexus impact LOW on all 3 leaf files. iOS buildNumber → "4".
+
 ## 2026-07-30 — v1.1 post-build fixes (STEP-M29) — BLOCKS App Store submission
 Owner device-test of 1.1.0 (1) surfaced 15 issues + navigation → 27 tracked defects (D01–D27):
 Home/Explore functional (view-all, filters, personalization order, scroll), trek-detail layout

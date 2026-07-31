@@ -322,6 +322,9 @@ export default function TrekDetailScreen() {
           style={{ minHeight: 400, paddingBottom: 32 }}
           onLayout={(e) => { tabBodyOffset.current = e.nativeEvent.layout.y; }}
         >
+          {/* M30 issue 2: "Trek details" is the FIRST section under the nav, before the Guide. */}
+          {activeTab === "guide" && <TrekFactsTable trek={trek} />}
+
           {activeTab === "guide" && getContentsHeadings().length >= 2 && (
             <TouchableOpacity
               style={[
@@ -419,9 +422,7 @@ export default function TrekDetailScreen() {
           )}
           {activeTab === "guide" && (
             <>
-              {/* N07: full Master-CMS trek metadata table (renders only populated fields). */}
-              <TrekFactsTable trek={trek} />
-
+              {/* Trek details (TrekFactsTable) moved to the top of the tab body (M30 issue 2). */}
               <TrekRouteMap
                 routeImageUrl={trek.route_image_url}
                 heroImageUrl={trek.hero_image_url}

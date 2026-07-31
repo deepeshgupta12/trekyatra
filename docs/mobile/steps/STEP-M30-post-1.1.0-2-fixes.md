@@ -224,3 +224,22 @@ rebuild **1.1.0 (3)**, device-test all 13, submit.
 failures in the full run are the known pre-existing order-dependent shared-DB flakiness (both pass
 13/13 in isolation — not a regression; the M30 schema fields default to `None` and don't change the
 stale-page response shape assertions).
+
+---
+
+## Post-1.1.0 (3) device-test — 3 more fixes (2026-07-31)
+Owner device-tested `1.1.0 (3)`. Purely presentational; gitnexus impact on TrekHero /
+TrekDetailScreen / AppDrawer all LOW (leaf, 0 upstream) — no other implementation affected.
+- ✅ **Issue 1 (hero/card alignment + padding)** — the summary card overlaps the hero (marginTop
+  -22, Ama Dablam look), but the hero had **rounded bottom corners** (D13) that clashed with the
+  card's rounded top, and the trek name sat too low so the card collided with it. Fix: hero bottom
+  is now **straight** (removed the rounding) and the hero footer `paddingBottom` 18 → **42** so the
+  name clears the card with ~20px padding. (components/trek/TrekHero.tsx)
+- ✅ **Issue 2 ("Trek details" position)** — the `TrekFactsTable` was rendering at the **bottom** of
+  the guide tab. Moved it to the **first position** in the tab body — right after the section-tab
+  navigation, **before the Guide** article. (app/trek/[slug].tsx)
+- ✅ **Issue 3 (hamburger logo)** — the drawer header showed a placeholder **triangle icon** instead
+  of the brand logo. Now renders the real `Logo` (dark/light-adaptive asset) left of the "TrekYatra"
+  name. (components/layout/AppDrawer.tsx)
+- tsc clean; detect_changes confined to the 3 leaf files (TrekDetailScreen "high" is only because
+  it's a screen entry point — changes are presentational). iOS `buildNumber` → "4".

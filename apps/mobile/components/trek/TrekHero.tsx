@@ -115,10 +115,8 @@ const styles = StyleSheet.create({
   container: {
     width: "100%",
     justifyContent: "flex-end",
-    // D13: round the bottom corners so the hero reads as a card (matches the approved reference).
-    borderBottomLeftRadius: 28,
-    borderBottomRightRadius: 28,
-    overflow: "hidden",
+    // Straight bottom edge: the summary card slides up and overlaps the hero (Ama Dablam
+    // reference), so rounded hero corners would clash with the card's rounded top (M30 issue 1).
   },
   circleBtn: {
     position: "absolute",
@@ -135,7 +133,9 @@ const styles = StyleSheet.create({
   shareBtn: { right: 16 },
   footer: {
     paddingHorizontal: 20,
-    paddingBottom: 18,
+    // Extra bottom space so the trek name clears the summary card that overlaps the hero
+    // (marginTop -22) — gives real padding between the name and the card (M30 issue 1).
+    paddingBottom: 42,
     gap: 10,
   },
   statePill: {
