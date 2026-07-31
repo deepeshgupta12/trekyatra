@@ -26,7 +26,15 @@ first-fold to match the **Ama Dablam reference (screenshot 5)** + full CMS metad
 gallery (Photo-tour must NOT open Conditions) + Trail-Route image → gallery + drop Trek-News
 thumbnails; News-detail header/layout ("news/[slug]" literal title) + web parity; hamburger redesign.
 Master list + design-inspiration contract: docs/mobile/steps/STEP-M30-post-1.1.0-2-fixes.md.
-Status: recorded, awaiting owner confirmation of capture before coding.
+
+**RESOLVED (code-complete):** all 13 items (N01–N13) fixed across 6 grouped commits — 0ee63a5
+(trek-detail N06-N10: Ama Dablam first-fold, full CMS metadata + facts table, photo gallery,
+map→gallery, news thumbnails off), c098114 (Explore N04-N05: filters consolidated into the sheet +
+no-results/similar-treks), 29456f5 (Home N01-N03: quick chips removed, recently-viewed TrekCard
+parity + ordering), edd2e60 (News N11-N12: root route + web-parity dark header), 9c0570c (drawer
+N13). Backend (additive, no live-web impact): 16 optional trek_* fields on CMSPageResponse (N07) +
+test. Structural: news/[slug] promoted to a root route. iOS buildNumber → "3".
+Pending: full backend suite, gitnexus re-index, owner rebuild **1.1.0 (3)** + device-test + submit.
 
 ## 2026-07-30 — v1.1 post-build fixes (STEP-M29) — BLOCKS App Store submission
 Owner device-test of 1.1.0 (1) surfaced 15 issues + navigation → 27 tracked defects (D01–D27):
