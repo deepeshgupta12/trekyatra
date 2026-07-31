@@ -2572,3 +2572,20 @@ Mobile buddy matching UI consuming STEP-79 backend.
   `TrekStickyBar` invalidates `["account","bookmarks"]` on save. LOW.
 - Shared trek-detail components touched (TrekHero/TrekSummaryCard/TrekTabBar) render only inside the
   trek detail screen → blast radius LOW. Home/Explore edits confined to those screens' render flows.
+
+### CMS list payload slim-down (content_html) — 2026-07-31 blast radius
+- `services/api/app/schemas/cms.py::cms_page_card()` — NEW list/card projection of a CMS page:
+  same shape as `CMSPageResponse` but with `content_html` blanked (`""`). `content_json` kept.
+- Applied to the three **list** endpoints only: `GET /cms/pages` (`list_cms_pages`),
+  `GET /cms/pages/trending` (`trending_trek_pages`), `GET /treks/seasonal` (`get_seasonal_treks`).
+  The single-page `GET /cms/pages/{slug}` (`get_cms_page`) and admin create/patch responses are
+  UNCHANGED (full `content_html`). Reason: card consumers never render the body; shipping it for
+  N=50 pages timed out the website home. Blast radius: LOW.
+- Consumer audit (verified safe): every `.content_html` reader in `apps/web-next` — trek detail +
+  packing/permits/costs sub-pages, `regions/[slug]`, `seasons/[slug]`, `trek-types/[slug]`,
+  `news/[slug]`, `hi/*`, and static pages (about/contact/terms/privacy/methodology/…) — obtains its
+  page via the **single** `fetchCMSPage(slug)` or `fetchNewsArticle(slug)` (`/public/news/{slug}`),
+  never a list. Mobile list mappers (`exploreTreks`/trending/seasonal) don't read `content_html`.
+  `content_json.trek_facts` (altitude, read by web `fetchAllCMSTreks`/`fetchTrendingTreks`) is kept.
+- Test: `test_list_pages_excludes_content_html_but_detail_keeps_it`. FastAPI note: route-level
+  `response_model_exclude` does NOT apply per-item on `list[Model]`, hence the projection helper.

@@ -18,6 +18,7 @@ from app.schemas.cms import (
     CMSPageCreate,
     CMSPagePatch,
     CMSPageResponse,
+    cms_page_card,
 )
 
 # Public read endpoints — no auth (called server-side by Next.js without cookies)
@@ -80,14 +81,14 @@ def trending_trek_pages(
     slugs = [r[1] for r in rows]
     if not slugs:
         pages = cms_service.list_pages(db, status="published", page_type="trek_guide", limit=limit)
-        return [CMSPageResponse.model_validate(p) for p in pages]
+        return [cms_page_card(p) for p in pages]
 
     pages_map = {
         p.slug: p
         for p in db.scalars(select(CMSPage).where(CMSPage.slug.in_(slugs))).all()
     }
     ordered = [pages_map[s] for s in slugs if s in pages_map]
-    return [CMSPageResponse.model_validate(p) for p in ordered]
+    return [cms_page_card(p) for p in ordered]
 
 
 @router.get("/pages", response_model=list[CMSPageResponse])
@@ -117,7 +118,7 @@ def list_cms_pages(
         limit=limit,
         offset=offset,
     )
-    return [CMSPageResponse.model_validate(p) for p in pages]
+    return [cms_page_card(p) for p in pages]
 
 
 @router.post("/pages", response_model=CMSPageResponse, status_code=status.HTTP_201_CREATED, dependencies=[_admin])

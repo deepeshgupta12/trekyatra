@@ -170,6 +170,29 @@ def test_get_page_returns_master_cms_trek_metadata():
     assert body["trek_solo_friendly"] is True and body["trek_beginner_friendly"] is False
 
 
+def test_list_pages_excludes_content_html_but_detail_keeps_it():
+    """Vitals fix: LIST endpoints drop the heavy content_html (cards never render the body); the
+    single-page endpoint keeps it. content_json is retained (web reads trek_facts.altitude)."""
+    with SessionLocal() as db:
+        db.add(CMSPage(
+            slug="light-list-trek", page_type="trek_guide", title="Light List Trek",
+            status="published", content_html="<h1>BIG BODY</h1>",
+            content_json={"trek_facts": {"altitude": "4500m"}},
+        ))
+        db.commit()
+
+    r_list = client.get("/api/v1/cms/pages?page_type=trek_guide&status=published&limit=200")
+    assert r_list.status_code == 200
+    item = next(p for p in r_list.json() if p["slug"] == "light-list-trek")
+    assert item["content_html"] == ""                      # heavy body blanked in the list
+    assert item["content_json"]["trek_facts"]["altitude"] == "4500m"  # content_json kept
+    assert item["title"] == "Light List Trek"
+
+    r_detail = client.get("/api/v1/cms/pages/light-list-trek")
+    assert r_detail.status_code == 200
+    assert r_detail.json()["content_html"] == "<h1>BIG BODY</h1>"      # detail keeps the body
+
+
 def test_list_pages_filters_by_trek_suitability():
     with SessionLocal() as db:
         db.add(CMSPage(

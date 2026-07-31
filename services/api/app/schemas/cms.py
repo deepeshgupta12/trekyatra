@@ -103,6 +103,18 @@ class CMSPageResponse(BaseModel):
     model_config = {"from_attributes": True}
 
 
+def cms_page_card(page: Any) -> CMSPageResponse:
+    """List/card projection of a CMS page: same shape as CMSPageResponse but with the heavy
+    `content_html` body blanked. List/card consumers never render the body, and shipping it for N
+    pages (the home fetches 50) is what slowed the site home to 4s+ and timed it out. `content_json`
+    is kept (the web reads trek_facts). LIST endpoints use this; the single-page endpoint keeps the
+    full body. FastAPI `response_model_exclude` does NOT work per-item on `list[Model]`, hence this.
+    """
+    resp = CMSPageResponse.model_validate(page)
+    resp.content_html = ""
+    return resp
+
+
 class CMSCacheInvalidateRequest(BaseModel):
     slug: str | None = None
     slugs: list[str] | None = None

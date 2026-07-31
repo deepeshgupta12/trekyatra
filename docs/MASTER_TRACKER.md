@@ -27,8 +27,14 @@ Do not modify any code file without first:
   `CMSPageResponse`; the larger response pushed the web home's `cms/pages?limit=50` fetch (measured
   1.4–4.7s) over `apiFetch`'s 3s `AbortSignal` timeout → `.catch(() => [])` blanked the
   Trending/By-difficulty/By-season sections. Fix: raised the web timeout to 8s
-  (`apps/web-next/lib/api.ts`, commit `8dd153d`); site confirmed recovered. Follow-up: stop the home
-  over-fetching `content_html` for 50 pages.
+  (`apps/web-next/lib/api.ts`, commit `8dd153d`); site confirmed recovered.
+- **Vitals follow-up (backend-only):** the LIST endpoints `GET /cms/pages`, `/cms/pages/trending`,
+  `/treks/seasonal` now blank `content_html` via a new `cms_page_card()` projection
+  (`schemas/cms.py`) — card consumers never render the body, so this cuts those payloads ~10×
+  (home `limit=50` was 4s+). The single-page endpoint `/cms/pages/{slug}` is unchanged (full body).
+  Verified safe: every web `.content_html` reader (trek/news/guide/region/season/type/static pages)
+  uses the single `fetchCMSPage`/`fetchNewsArticle` fetch, never a list; `content_json` (trek_facts)
+  is kept. Backend tests green + new `test_list_pages_excludes_content_html_but_detail_keeps_it`.
 
 ## 2026-07-31 — v1.1 post-build fixes #2 (STEP-M30) — BLOCKS App Store submission
 Owner device-test of 1.1.0 (2) surfaced 6 issues → 13 tracked items (N01–N13): remove Home

@@ -10,7 +10,7 @@ from sqlalchemy.orm import Session
 from app.db.session import get_db
 from app.modules.trek_intelligence import service as trek_intel_service
 from app.modules.treks.service import get_trek_by_slug, list_treks
-from app.schemas.cms import CMSPageResponse
+from app.schemas.cms import CMSPageResponse, cms_page_card
 from app.schemas.treks import TrekDetailResponse, TrekListResponse, TrekSummary
 from app.schemas.trek_intelligence import (
     AskTrekQuestionRequest,
@@ -104,7 +104,7 @@ def get_seasonal_treks(
 
     target_month = month or datetime.now().month
     pages = cms_service.get_seasonal_pages(db, month=target_month, limit=limit)
-    return [CMSPageResponse.model_validate(p) for p in pages]
+    return [cms_page_card(p) for p in pages]
 
 
 @router.get("", response_model=TrekListResponse)
