@@ -1,6 +1,7 @@
 {
   "cli": {
-    "version": ">= 16.0.0"
+    "version": ">= 16.0.0",
+    "appVersionSource": "remote"
   },
   "build": {
     "development": {
@@ -30,6 +31,7 @@
     "production": {
       "distribution": "store",
       "channel": "production",
+      "autoIncrement": true,
       "env": {
         "EXPO_PUBLIC_API_URL": "https://api.trekyatra.co.in",
         "EXPO_PUBLIC_GOOGLE_CLIENT_ID": "445487374089-1qgsnnn3428nuf6qvtiff6bobmvfgvjr.apps.googleusercontent.com"

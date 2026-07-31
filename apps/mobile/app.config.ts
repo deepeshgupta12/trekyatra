@@ -26,9 +26,10 @@ export default ({ config }: ConfigContext): any => ({
     // Build number is unique PER marketing version. New version 1.1.0 (redesign) → resets
     // to "1" (1.1.0 (1) can't collide with 1.0.0 (2)). Bump on each rebuild of the SAME
     // version, or switch to EAS remote autoIncrement later.
-    // "2" → 1.1.0 (2): STEP-M29 (D01–D27). "3" → 1.1.0 (3): STEP-M30 (N01–N13).
-    // "4" → 1.1.0 (4): STEP-M30 post-(3) fixes. "5" → 1.1.0 (5): resubmit (4's build number was
-    // already consumed on ASC by a prior upload); identical app code to (4).
+    // NOTE: as of 1.1.0 (5) eas.json uses appVersionSource:"remote" + autoIncrement, so EAS now
+    // manages the iOS build number REMOTELY and this local value is IGNORED for production builds
+    // (kept only as a record of the last local build). History: (1)=STEP-M29 D01–D27, (2)/(3)=
+    // STEP-M30 N01–N13, (4)=post-(3) fixes, (5)=resubmit of (4) after build 4 was consumed on ASC.
     buildNumber: "5",
     // Generates the com.apple.developer.applesignin entitlement during EAS prebuild.
     // Without this the native Apple Sign-In sheet (expo-apple-authentication, lib/appleAuth.ts)
