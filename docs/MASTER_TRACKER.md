@@ -18,6 +18,16 @@ Do not modify any code file without first:
 4. Checking impacted files and blast radius
 5. Updating the relevant step file in `docs/steps/`
 
+## 2026-07-31 — v1.1 post-build fixes #2 (STEP-M30) — BLOCKS App Store submission
+Owner device-test of 1.1.0 (2) surfaced 6 issues → 13 tracked items (N01–N13): remove Home
+quick-filter chips; Recently-viewed card parity + ordering above Continue-exploring; move Explore
+Categories/Region/Season into the Filters sheet + no-results "similar treks" UX; trek-detail
+first-fold to match the **Ama Dablam reference (screenshot 5)** + full CMS metadata table + photo
+gallery (Photo-tour must NOT open Conditions) + Trail-Route image → gallery + drop Trek-News
+thumbnails; News-detail header/layout ("news/[slug]" literal title) + web parity; hamburger redesign.
+Master list + design-inspiration contract: docs/mobile/steps/STEP-M30-post-1.1.0-2-fixes.md.
+Status: recorded, awaiting owner confirmation of capture before coding.
+
 ## 2026-07-30 — v1.1 post-build fixes (STEP-M29) — BLOCKS App Store submission
 Owner device-test of 1.1.0 (1) surfaced 15 issues + navigation → 27 tracked defects (D01–D27):
 Home/Explore functional (view-all, filters, personalization order, scroll), trek-detail layout
