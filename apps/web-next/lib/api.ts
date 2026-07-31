@@ -3,8 +3,12 @@
 const apiBase = process.env.NEXT_PUBLIC_API_BASE ?? "http://localhost:8000";
 
 export async function apiFetch<T>(path: string): Promise<T> {
+  // 8s (was 3s): the home catalog fetch (cms/pages?limit=50 with full content_html) runs ~2.4s
+  // and sat right under the old 3s ceiling. Any added latency (larger response, backend load,
+  // cold start) tipped it over, the fetch aborted, and the home sections' `.catch(() => [])`
+  // rendered empty. These are ISR/server-side fetches, so a longer ceiling has no user-facing cost.
   const res = await fetch(`${apiBase}/api/v1${path}`, {
-    signal: AbortSignal.timeout(3000),
+    signal: AbortSignal.timeout(8000),
   });
   if (!res.ok) throw new Error(`API ${res.status}: ${path}`);
   return res.json() as Promise<T>;
