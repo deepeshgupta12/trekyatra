@@ -187,3 +187,14 @@ Each group = its own commit (gitnexus impact + tsc + regression re-check + MD up
   repeat users (states B + D), per the personalization state machine; removed the old state-D-only
   placement lower down.
 - tsc clean.
+
+### News detail group (landed)
+- ✅ **N11** — Fixed the literal **`news/[slug]`** header and the empty top gap. Root cause: the
+  screen sat in the `(home)` stack (default header = route name) and rendered a **220px empty grey
+  hero** when `hero_image_url` was null. Promoted `news/[slug]` to a **root route**
+  (`app/news/[slug].tsx`, registered `headerShown:false`), removed the empty-hero placeholder.
+- ✅ **N12** — Rebuilt the mobile news detail to mirror the **web `/news/[slug]`** layout: a dark
+  header block (`#0c0e14`, rounded bottom) with the "TREK NEWS" eyebrow + serif title + dek
+  (`seo_description`) + date/"TrekYatra Editorial" meta — **no image** (news images unavailable) —
+  then the prose body. Own safe-area back button.
+- tsc clean; only push site (`TrekNewsSection` → `/news/${slug}`) unchanged (URL path preserved).

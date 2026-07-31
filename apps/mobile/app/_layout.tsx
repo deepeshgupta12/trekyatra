@@ -132,6 +132,9 @@ export default Sentry.wrap(function RootLayout() {
                   {/* Trek detail lives at the root (not inside a tab) so it opens over the tabs from
                       anywhere without switching the active tab or breaking back navigation (D27). */}
                   <Stack.Screen name="trek/[slug]" options={{ headerShown: false }} />
+                  {/* News detail — root route (M30 N11) so it opens over the tabs and drops the
+                      default "news/[slug]" stack header (screen has its own header). */}
+                  <Stack.Screen name="news/[slug]" options={{ headerShown: false }} />
                   <Stack.Screen name="notifications" options={{ headerShown: false, presentation: "modal" }} />
                   <Stack.Screen name="+not-found" />
                 </Stack>
