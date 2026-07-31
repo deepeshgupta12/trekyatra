@@ -175,3 +175,15 @@ Each group = its own commit (gitnexus impact + tsc + regression re-check + MD up
   (region→difficulty→season→suitability), or broaden to all treks when a single filter yielded
   nothing. Added `useExplore(filters, { enabled })` + `TrekGrid renderEmpty` override.
 - tsc clean.
+
+### Home group (landed)
+- ✅ **N01** — Removed the Difficulty/Duration/Season **quick-filter chips** from the Home header
+  (`HomeHeroV2` no longer renders `QuickFilterChips`; `FILTER_CHIPS` + imports removed).
+- ✅ **N02** — "Recently viewed" now uses the **same `TrekCard`** as other Home sections, with a
+  caption **Viewed <date> · Updated <date>**. New `useRecentlyViewed` hook hydrates the viewed slugs
+  into full trek cards (fetches each trek's CMS page for title/image/`updated_at`, cached per slug)
+  and carries the local viewed-at `ts`.
+- ✅ **N03** — "Recently viewed" now renders **above** the personalised "Continue exploring" feed for
+  repeat users (states B + D), per the personalization state machine; removed the old state-D-only
+  placement lower down.
+- tsc clean.

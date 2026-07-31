@@ -9,8 +9,7 @@ import { useState, useCallback } from "react";
 import { router } from "expo-router";
 import { SafeArea } from "@/components/ui/SafeArea";
 import { HomeHeroV2 } from "@/components/home/HomeHeroV2";
-import type { QuickFilterChip } from "@/components/home/QuickFilterChips";
-import { trackAiSearchOpened, trackVoiceSearchUsed, trackFilterChipTapped } from "@/lib/analytics";
+import { trackAiSearchOpened, trackVoiceSearchUsed } from "@/lib/analytics";
 import { useAuth } from "@/hooks/useAuth";
 import { useBehaviorProfile } from "@/hooks/useBehaviorProfile";
 import { usePreferences } from "@/hooks/usePreferences";
@@ -29,14 +28,6 @@ import { ResourcesRow } from "@/components/home/ResourcesRow";
 import { OperatorsCTACard } from "@/components/home/OperatorsCTACard";
 import { HomeSkeleton } from "@/components/home/HomeSkeleton";
 import { NearbyTreksStrip } from "@/components/home/NearbyTreksStrip";
-
-// Quick entry chips → open Explore with the filter sheet. "Length"/"Elevation gain" removed
-// (no such data): use Duration (real bucket filter) + Season (D03).
-const FILTER_CHIPS: QuickFilterChip[] = [
-  { key: "difficulty", label: "Difficulty", icon: "options-outline" },
-  { key: "duration", label: "Duration", icon: "time-outline" },
-  { key: "season", label: "Season", icon: "partly-sunny-outline" },
-];
 
 type HomeState = "A" | "B" | "C" | "D";
 
@@ -88,8 +79,6 @@ export default function HomeScreen() {
       onVoicePress={() => { trackVoiceSearchUsed("home"); router.push("/(tabs)/browse/search?voice=1" as never); }}
       onNotificationsPress={() => router.push("/notifications" as never)}
       onMapPress={() => router.push("/(tabs)/browse" as never)}
-      filterChips={FILTER_CHIPS}
-      onFilterPress={(key) => { trackFilterChipTapped(key); router.push("/(tabs)/browse?openFilters=1" as never); }}
     />
   );
 
@@ -120,6 +109,10 @@ export default function HomeScreen() {
         }
       >
         {hero}
+
+        {/* Recently viewed — repeat users (states B + D, i.e. have browsing behaviour). Sits ABOVE
+            the personalised "Continue exploring" feed (N03). Uses the same TrekCard + dates (N02). */}
+        {(homeState === "B" || homeState === "D") && <RecentlyViewedRow views={recentViews} />}
 
         {/* Personalised feed — moved to TOP of Home (D07). It is the core personalised
             section, so it sits above "Popular with trekkers". States A + B + D. */}
@@ -159,9 +152,6 @@ export default function HomeScreen() {
           treks={seasonal}
           loading={isLoading && seasonal.length === 0}
         />
-
-        {/* Recently viewed — State D only */}
-        {homeState === "D" && <RecentlyViewedRow views={recentViews} />}
 
         {/* Comparison CTA — all states */}
         <ComparisonCTACard />

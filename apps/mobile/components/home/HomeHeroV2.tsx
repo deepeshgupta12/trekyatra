@@ -2,7 +2,6 @@ import { View, Text, TouchableOpacity, StyleSheet } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { useTheme } from "@/hooks/useTheme";
 import { AISearchBar } from "@/components/home/AISearchBar";
-import { QuickFilterChips, type QuickFilterChip } from "@/components/home/QuickFilterChips";
 
 interface HomeHeroV2Props {
   firstName: string;
@@ -12,14 +11,12 @@ interface HomeHeroV2Props {
   onVoicePress?: () => void;
   onNotificationsPress: () => void;
   onMapPress: () => void;
-  filterChips: QuickFilterChip[];
-  onFilterPress: (key: string) => void;
 }
 
 /**
  * Redesign (v1.1) Home header — a light personalized greeting (replaces the image-carousel
- * hero): avatar + location + "Hi, {name} 👋", the AI-first search bar with voice, and quick
- * filter chips. Imagery now lives in the trail cards below. Brand-locked (saffron/pine).
+ * hero): avatar + location + "Hi, {name} 👋" and the AI-first search bar with voice. Imagery
+ * lives in the trail cards below. (Quick-filter chips removed — STEP-M30 N01.) Brand-locked.
  */
 export function HomeHeroV2({
   firstName,
@@ -28,8 +25,6 @@ export function HomeHeroV2({
   onVoicePress,
   onNotificationsPress,
   onMapPress,
-  filterChips,
-  onFilterPress,
 }: HomeHeroV2Props) {
   const { colors } = useTheme();
   const initial = firstName?.trim()?.[0]?.toUpperCase() ?? "T";
@@ -77,8 +72,6 @@ export function HomeHeroV2({
       <View style={styles.searchWrap}>
         <AISearchBar onPress={onSearchPress} onVoicePress={onVoicePress} />
       </View>
-
-      <QuickFilterChips chips={filterChips} onPress={onFilterPress} />
     </View>
   );
 }
