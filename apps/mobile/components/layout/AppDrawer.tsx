@@ -13,6 +13,7 @@ import {
 import { useRouter } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
+import Constants from "expo-constants";
 import { useDrawerStore } from "@/stores/drawerStore";
 import { useAuth } from "@/providers/AuthProvider";
 import { useTheme } from "@/hooks/useTheme";
@@ -184,15 +185,23 @@ export function AppDrawer() {
           },
         ]}
       >
-        {/* Header row */}
-        <View style={[styles.panelHeader, { borderBottomColor: divider }]}>
-          <Text style={[styles.panelTitle, { color: colors.textPrimary }]}>Menu</Text>
-          <TouchableOpacity onPress={close} style={styles.closeBtn} hitSlop={10}>
-            <Ionicons name="close" size={22} color={colors.textMuted} />
+        {/* Branded header */}
+        <View style={[styles.brandHeader, { borderBottomColor: divider }]}>
+          <View style={styles.brandLeft}>
+            <View style={styles.brandLogo}>
+              <Ionicons name="triangle" size={16} color="#fff" />
+            </View>
+            <View>
+              <Text style={[styles.brandName, { color: colors.textPrimary }]}>TrekYatra</Text>
+              <Text style={[styles.brandTag, { color: colors.textMuted }]}>Discover India&apos;s treks</Text>
+            </View>
+          </View>
+          <TouchableOpacity onPress={close} style={[styles.closeBtn, { backgroundColor: rowBg }]} hitSlop={10}>
+            <Ionicons name="close" size={20} color={colors.textSecondary} />
           </TouchableOpacity>
         </View>
 
-        <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ gap: 4 }}>
+        <ScrollView style={styles.flex} showsVerticalScrollIndicator={false} contentContainerStyle={{ gap: 4, paddingBottom: 12 }}>
           {/* Auth section */}
           {isAuthenticated && user ? (
             <>
@@ -260,6 +269,13 @@ export function AppDrawer() {
             )}
           </View>
         </ScrollView>
+
+        {/* Footer — brand mark + version (fills the panel, adds polish) */}
+        <View style={[styles.footer, { borderTopColor: divider }]}>
+          <Text style={[styles.footerText, { color: colors.textMuted }]}>
+            TrekYatra · v{Constants.expoConfig?.version ?? "1.1.0"}
+          </Text>
+        </View>
       </Animated.View>
     </View>
   );
@@ -276,17 +292,35 @@ const styles = StyleSheet.create({
     shadowRadius: 16,
     elevation: 20,
   },
-  panelHeader: {
+  flex: { flex: 1 },
+  brandHeader: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    paddingHorizontal: 20,
-    paddingVertical: 14,
+    paddingHorizontal: 18,
+    paddingVertical: 16,
     borderBottomWidth: 1,
     marginBottom: 8,
   },
-  panelTitle: { fontSize: 17, fontWeight: "700", fontFamily: "PlayfairDisplay_700Bold" },
-  closeBtn: { width: 32, height: 32, alignItems: "center", justifyContent: "center" },
+  brandLeft: { flexDirection: "row", alignItems: "center", gap: 11 },
+  brandLogo: {
+    width: 36,
+    height: 36,
+    borderRadius: 11,
+    backgroundColor: SAFFRON,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  brandName: { fontSize: 17, fontWeight: "700", fontFamily: "PlayfairDisplay_700Bold", letterSpacing: -0.2 },
+  brandTag: { fontSize: 11, marginTop: 1, fontWeight: "500" },
+  closeBtn: { width: 34, height: 34, borderRadius: 17, alignItems: "center", justifyContent: "center" },
+  footer: {
+    borderTopWidth: 1,
+    paddingHorizontal: 20,
+    paddingTop: 12,
+    alignItems: "center",
+  },
+  footerText: { fontSize: 11, fontWeight: "600", letterSpacing: 0.3 },
   profileSection: {
     flexDirection: "row",
     alignItems: "center",

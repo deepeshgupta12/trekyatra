@@ -198,3 +198,24 @@ Each group = its own commit (gitnexus impact + tsc + regression re-check + MD up
   (`seo_description`) + date/"TrekYatra Editorial" meta — **no image** (news images unavailable) —
   then the prose body. Own safe-area back button.
 - tsc clean; only push site (`TrekNewsSection` → `/news/${slug}`) unchanged (URL path preserved).
+
+### Hamburger group (landed)
+- ✅ **N13** — Redesigned `AppDrawer`: a **branded header** (saffron logo chip + "TrekYatra"
+  wordmark + "Discover India's treks" tagline, rounded close button) replaces the plain "Menu"
+  title; the menu list now `flex:1` and a **footer** ("TrekYatra · v1.1.0", dynamic) pins to the
+  bottom so the panel no longer trails off into empty white space. Row/section logic unchanged.
+- tsc clean.
+
+---
+
+## ✅ All 13 items (N01–N13) landed
+- Trek detail (0ee63a5): N06 N07 N08 N09 N10
+- Explore (c098114): N04 N05
+- Home (29456f5): N01 N02 N03
+- News detail (edd2e60): N11 N12
+- Hamburger: N13
+
+**Status:** code-complete + tsc clean. Backend: `CMSPageResponse` gained 16 optional trek fields
+(N07) — additive, no live-web impact. Structural: `news/[slug]` promoted to a root route (like
+`trek/[slug]` in M29). Next: full backend suite, gitnexus re-index, bump `ios.buildNumber` → "3",
+rebuild **1.1.0 (3)**, device-test all 13, submit.
