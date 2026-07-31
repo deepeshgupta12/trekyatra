@@ -159,3 +159,19 @@ Each group = its own commit (gitnexus impact + tsc + regression re-check + MD up
   real fields (incl. `trek_max_altitude_ft`, previously the altitude stat was blank because the
   API never returned it). Sticky Plan/Save/Compare bar unchanged.
 - tsc clean; backend cms+treks+unification 85/85.
+
+### Explore group (landed)
+- ✅ **N04** — Removed the **Categories**, **Explore-by-Region**, and **Best-by-Season** sections
+  from the Explore body. Those dimensions (region/season/difficulty + suitability/duration) already
+  exist as sections inside the **Filters sheet**, which is now the single filtering surface — so the
+  confusing "outside" chips (which navigated to separate region/season screens instead of filtering
+  the grid in place — the "filters not working" complaint) are gone. Explore body is now:
+  title → search → Filters → Nearby → All Treks grid. `CategoryRow` is now unused (left in place).
+  **Judgment call flagged:** the curated category labels (Himalayan/Sahyadri/…) were lossy shortcuts
+  (e.g. "Himalayan" spans many states) — not re-added as sheet chips; the underlying facets cover them.
+- ✅ **N05** — No-results UX + similar treks. When applied filters return nothing, Explore shows a
+  designed empty state (icon + "No treks match your filters" + "Clear all filters") **then** a
+  **"Similar treks"** grid. Similarity = relax the filters: keep only the primary facet
+  (region→difficulty→season→suitability), or broaden to all treks when a single filter yielded
+  nothing. Added `useExplore(filters, { enabled })` + `TrekGrid renderEmpty` override.
+- tsc clean.

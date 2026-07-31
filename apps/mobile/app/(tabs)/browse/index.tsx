@@ -1,53 +1,27 @@
 import { useEffect } from "react";
-import { View, Text, ScrollView, TouchableOpacity, StyleSheet, StatusBar } from "react-native";
-import { router, useLocalSearchParams } from "expo-router";
+import { View, Text, TouchableOpacity, StyleSheet, StatusBar, Dimensions } from "react-native";
+import { useLocalSearchParams } from "expo-router";
+import { Ionicons } from "@expo/vector-icons";
 import { SafeArea } from "@/components/ui/SafeArea";
 import { SearchBar, SearchBarWrapper } from "@/components/browse/SearchBar";
 import { FilterChips } from "@/components/browse/FilterChips";
 import { TrekGrid } from "@/components/browse/TrekGrid";
+import { TrekCard } from "@/components/trek/TrekCard";
 import { NearbyTreksStrip } from "@/components/home/NearbyTreksStrip";
-import { CategoryRow, type TrekCategory } from "@/components/browse/CategoryRow";
 import { useTheme } from "@/hooks/useTheme";
 import { useExplore } from "@/hooks/useExplore";
 import { useExploreStore } from "@/stores/exploreStore";
-import { trackCategoryTapped } from "@/lib/analytics";
+import type { ExploreFilters } from "@/lib/mobileApi";
 
-import { REGIONS } from "@/constants/regions";
-
-// Illustrated Explore categories → real navigable filters (region/season/difficulty).
-const CATEGORIES: TrekCategory[] = [
-  { key: "himalayan", label: "Himalayan", icon: "triangle-outline", tint: "#33506b" },
-  { key: "sahyadri", label: "Sahyadri", icon: "trail-sign-outline", tint: "#4a7a52" },
-  { key: "desert", label: "Desert", icon: "sunny-outline", tint: "#b07d4b" },
-  { key: "snow", label: "Snow Treks", icon: "snow-outline", tint: "#5298C9" },
-  { key: "beginner", label: "Beginner", icon: "leaf-outline", tint: "#22c55e" },
-  { key: "summit", label: "High Altitude", icon: "flag-outline", tint: "#E8702A" },
-];
-
-const SEASONS = [
-  { slug: "winter", label: "Winter" },
-  { slug: "spring", label: "Spring" },
-  { slug: "summer", label: "Summer" },
-  { slug: "monsoon", label: "Monsoon" },
-  { slug: "autumn", label: "Autumn" },
-];
+const SIMILAR_CARD_W = Math.floor((Dimensions.get("window").width - 16 * 2 - 12) / 2);
 
 export default function BrowseScreen() {
   const { colors, isDark } = useTheme();
   const params = useLocalSearchParams<{ region?: string; difficulty?: string; season?: string; openFilters?: string }>();
-  const { trekState, trekDifficulty, trekSeason, trekSuitability, durationBucket, setTrekState, setTrekDifficulty, setTrekSeason, requestSheetOpen } = useExploreStore();
-
-  function handleCategory(key: string) {
-    trackCategoryTapped(key);
-    switch (key) {
-      case "himalayan": router.push(`/(tabs)/browse/regions/${encodeURIComponent("Himachal Pradesh")}` as never); break;
-      case "sahyadri": router.push(`/(tabs)/browse/regions/${encodeURIComponent("Maharashtra")}` as never); break;
-      case "desert": router.push(`/(tabs)/browse/regions/${encodeURIComponent("Rajasthan")}` as never); break;
-      case "snow": router.push("/(tabs)/browse/seasons/winter" as never); break;
-      case "beginner": setTrekDifficulty("Easy"); break;      // grid below re-filters in place
-      case "summit": setTrekDifficulty("Challenging"); break;
-    }
-  }
+  const {
+    trekState, trekDifficulty, trekSeason, trekSuitability, durationBucket,
+    setTrekState, setTrekDifficulty, setTrekSeason, requestSheetOpen, clearAll,
+  } = useExploreStore();
 
   // Apply filters passed via navigation (Home "View all" / quick chips) + open the sheet on request.
   useEffect(() => {
@@ -67,6 +41,24 @@ export default function BrowseScreen() {
     trekDurationMax: durationBucket?.max ?? null,
   });
 
+  // N05 — no-results + similar treks. When the applied filters return nothing, suggest treks by
+  // relaxing the filters: keep only the primary facet, or (if a single filter yielded nothing)
+  // broaden to all treks.
+  const activeCount = [trekState, trekDifficulty, trekSeason, trekSuitability, durationBucket].filter(Boolean).length;
+  const hasActiveFilters = activeCount > 0;
+  const showSimilar = !isLoading && pages.length === 0 && hasActiveFilters;
+
+  const relaxedFilters: ExploreFilters =
+    activeCount <= 1 ? {}
+    : trekState ? { trekState }
+    : trekDifficulty ? { trekDifficulty }
+    : trekSeason ? { trekSeason }
+    : trekSuitability ? { trekSuitability }
+    : {};
+
+  const similar = useExplore(relaxedFilters, { enabled: showSimilar });
+  const similarTreks = (similar.pages ?? []).slice(0, 6);
+
   const header = (
     <View>
       <Text style={[styles.pageTitle, { color: colors.textPrimary }]}>Explore Treks</Text>
@@ -75,63 +67,45 @@ export default function BrowseScreen() {
         <SearchBar />
       </SearchBarWrapper>
 
+      {/* N04: Categories / Explore-by-Region / Best-by-Season removed from the body — those
+          dimensions (region / season / difficulty / suitability / duration) live inside the
+          Filters sheet, which is now the single filtering surface. */}
       <View style={styles.filtersWrapper}>
         <FilterChips />
-      </View>
-
-      <View style={styles.hubSection}>
-        <Text style={[styles.hubHeading, { color: colors.textPrimary }]}>Categories</Text>
-        <CategoryRow categories={CATEGORIES} onPress={handleCategory} />
-      </View>
-
-      <View style={styles.hubSection}>
-        <Text style={[styles.hubHeading, { color: colors.textPrimary }]}>Explore by Region</Text>
-        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.hubRow}>
-          {REGIONS.map((region) => (
-            <TouchableOpacity
-              key={region}
-              style={[
-                styles.hubChip,
-                {
-                  backgroundColor: isDark ? "rgba(255,255,255,0.06)" : "rgba(29,58,46,0.07)",
-                  borderColor: isDark ? "rgba(255,255,255,0.12)" : "rgba(29,58,46,0.15)",
-                },
-              ]}
-              activeOpacity={0.7}
-              onPress={() => router.push(`/(tabs)/browse/regions/${encodeURIComponent(region)}` as never)}
-            >
-              <Text style={[styles.hubChipText, { color: colors.textSecondary }]}>{region}</Text>
-            </TouchableOpacity>
-          ))}
-        </ScrollView>
-      </View>
-
-      <View style={styles.hubSection}>
-        <Text style={[styles.hubHeading, { color: colors.textPrimary }]}>Best by Season</Text>
-        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.hubRow}>
-          {SEASONS.map((season) => (
-            <TouchableOpacity
-              key={season.slug}
-              style={[
-                styles.hubChip,
-                {
-                  backgroundColor: isDark ? "rgba(255,255,255,0.06)" : "rgba(29,58,46,0.07)",
-                  borderColor: isDark ? "rgba(255,255,255,0.12)" : "rgba(29,58,46,0.15)",
-                },
-              ]}
-              activeOpacity={0.7}
-              onPress={() => router.push(`/(tabs)/browse/seasons/${season.slug}` as never)}
-            >
-              <Text style={[styles.hubChipText, { color: colors.textSecondary }]}>{season.label}</Text>
-            </TouchableOpacity>
-          ))}
-        </ScrollView>
       </View>
 
       {/* Nearby Treks — GPS strip */}
       <NearbyTreksStrip />
 
       <Text style={[styles.hubHeading, styles.gridHeading, { color: colors.textPrimary }]}>All Treks</Text>
+    </View>
+  );
+
+  const emptyWithSimilar = (
+    <View style={styles.emptyWrap}>
+      <View style={[styles.emptyIcon, { backgroundColor: isDark ? "rgba(255,255,255,0.05)" : "rgba(29,58,46,0.05)" }]}>
+        <Ionicons name="search-outline" size={26} color={colors.textMuted} />
+      </View>
+      <Text style={[styles.emptyTitle, { color: colors.textPrimary }]}>No treks match your filters</Text>
+      <Text style={[styles.emptySub, { color: colors.textMuted }]}>
+        Try removing a filter — or explore these similar treks.
+      </Text>
+      <TouchableOpacity style={[styles.clearBtn, { borderColor: colors.accent }]} onPress={clearAll} activeOpacity={0.8}>
+        <Text style={[styles.clearBtnText, { color: colors.accent }]}>Clear all filters</Text>
+      </TouchableOpacity>
+
+      {similarTreks.length > 0 && (
+        <View style={styles.similarWrap}>
+          <Text style={[styles.similarHeading, { color: colors.textPrimary }]}>Similar treks</Text>
+          <View style={styles.similarGrid}>
+            {similarTreks.map((t) => (
+              <View key={t.slug} style={styles.similarCell}>
+                <TrekCard trek={t} width={SIMILAR_CARD_W} noMargin />
+              </View>
+            ))}
+          </View>
+        </View>
+      )}
     </View>
   );
 
@@ -144,6 +118,7 @@ export default function BrowseScreen() {
         isFetchingMore={isFetchingMore}
         onEndReached={loadMore}
         ListHeaderComponent={header}
+        renderEmpty={showSimilar ? emptyWithSimilar : undefined}
       />
     </SafeArea>
   );
@@ -162,33 +137,67 @@ const styles = StyleSheet.create({
     marginTop: 12,
     marginBottom: 4,
   },
-  hubSection: {
-    marginTop: 28,
-    gap: 12,
-  },
   hubHeading: {
     fontSize: 18,
     fontWeight: "700",
     fontFamily: "PlayfairDisplay_700Bold",
     paddingHorizontal: 16,
   },
-  hubRow: {
-    paddingHorizontal: 16,
-    gap: 8,
-    paddingBottom: 4,
-  },
-  hubChip: {
-    paddingHorizontal: 14,
-    paddingVertical: 8,
-    borderRadius: 24,
-    borderWidth: 1,
-  },
-  hubChipText: {
-    fontSize: 13,
-    fontWeight: "500",
-  },
   gridHeading: {
     marginTop: 28,
     marginBottom: 12,
+  },
+  emptyWrap: {
+    paddingHorizontal: 16,
+    paddingTop: 20,
+    alignItems: "center",
+  },
+  emptyIcon: {
+    width: 56,
+    height: 56,
+    borderRadius: 28,
+    alignItems: "center",
+    justifyContent: "center",
+    marginBottom: 14,
+  },
+  emptyTitle: {
+    fontSize: 17,
+    fontFamily: "PlayfairDisplay_700Bold",
+    textAlign: "center",
+  },
+  emptySub: {
+    fontSize: 13,
+    textAlign: "center",
+    marginTop: 6,
+    lineHeight: 19,
+    paddingHorizontal: 24,
+  },
+  clearBtn: {
+    marginTop: 16,
+    borderWidth: 1,
+    borderRadius: 999,
+    paddingHorizontal: 20,
+    paddingVertical: 10,
+  },
+  clearBtnText: {
+    fontSize: 13,
+    fontWeight: "700",
+  },
+  similarWrap: {
+    marginTop: 32,
+    width: "100%",
+  },
+  similarHeading: {
+    fontSize: 18,
+    fontFamily: "PlayfairDisplay_700Bold",
+    marginBottom: 14,
+  },
+  similarGrid: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: 12,
+  },
+  similarCell: {
+    width: SIMILAR_CARD_W,
   },
 });

@@ -3,7 +3,7 @@ import { contentApi, type ExploreFilters, type TrekListItem } from "@/lib/mobile
 
 const PAGE_SIZE = 24;
 
-export function useExplore(filters: ExploreFilters) {
+export function useExplore(filters: ExploreFilters, options?: { enabled?: boolean }) {
   const query = useInfiniteQuery({
     queryKey: ["explore", filters],
     queryFn: ({ pageParam }) => contentApi.exploreTreks(filters, PAGE_SIZE, pageParam),
@@ -11,6 +11,7 @@ export function useExplore(filters: ExploreFilters) {
     getNextPageParam: (lastPage, allPages) =>
       lastPage.length < PAGE_SIZE ? undefined : allPages.length * PAGE_SIZE,
     staleTime: 5 * 60 * 1000,
+    enabled: options?.enabled ?? true,
   });
 
   const pages: TrekListItem[] = query.data?.pages.flat() ?? [];

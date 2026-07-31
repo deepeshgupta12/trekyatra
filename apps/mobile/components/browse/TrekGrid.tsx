@@ -12,6 +12,8 @@ interface TrekGridProps {
   onEndReached: () => void;
   emptyMessage?: string;
   ListHeaderComponent?: ReactElement;
+  /** Overrides the default empty state (e.g. no-results + similar treks — STEP-M30 N05). */
+  renderEmpty?: ReactElement;
 }
 
 const SCREEN_WIDTH = Dimensions.get("window").width;
@@ -26,6 +28,7 @@ export function TrekGrid({
   onEndReached,
   emptyMessage,
   ListHeaderComponent,
+  renderEmpty,
 }: TrekGridProps) {
   const { colors } = useTheme();
 
@@ -61,11 +64,13 @@ export function TrekGrid({
       showsVerticalScrollIndicator={false}
       ListHeaderComponent={ListHeaderComponent}
       ListEmptyComponent={
-        <View style={styles.center}>
-          <Text style={[styles.emptyText, { color: colors.textMuted }]}>
-            {emptyMessage ?? "No treks match your filters"}
-          </Text>
-        </View>
+        renderEmpty ?? (
+          <View style={styles.center}>
+            <Text style={[styles.emptyText, { color: colors.textMuted }]}>
+              {emptyMessage ?? "No treks match your filters"}
+            </Text>
+          </View>
+        )
       }
       ListFooterComponent={
         isFetchingMore ? (
