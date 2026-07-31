@@ -18,6 +18,18 @@ Do not modify any code file without first:
 4. Checking impacted files and blast radius
 5. Updating the relevant step file in `docs/steps/`
 
+## 2026-07-31 — App Store: 1.1.0 (5) submitted + live-site incident resolved
+- **iOS 1.1.0 (5)** (EAS build `1c4a8825`) **submitted to App Store review** — Waiting for Review
+  (Submission `2b4bc63b-a781-4085-a82f-7e1eba501a26`). Full build/submit history now tracked in
+  **`docs/mobile/APP_STORE_RELEASES.md`** (mandatory log, see root CLAUDE.md §18). EAS now
+  auto-increments build numbers remotely (`eas.json`).
+- **Live-site incident (resolved):** the STEP-M30 N07 backend change added ~16 fields to the shared
+  `CMSPageResponse`; the larger response pushed the web home's `cms/pages?limit=50` fetch (measured
+  1.4–4.7s) over `apiFetch`'s 3s `AbortSignal` timeout → `.catch(() => [])` blanked the
+  Trending/By-difficulty/By-season sections. Fix: raised the web timeout to 8s
+  (`apps/web-next/lib/api.ts`, commit `8dd153d`); site confirmed recovered. Follow-up: stop the home
+  over-fetching `content_html` for 50 pages.
+
 ## 2026-07-31 — v1.1 post-build fixes #2 (STEP-M30) — BLOCKS App Store submission
 Owner device-test of 1.1.0 (2) surfaced 6 issues → 13 tracked items (N01–N13): remove Home
 quick-filter chips; Recently-viewed card parity + ordering above Continue-exploring; move Explore

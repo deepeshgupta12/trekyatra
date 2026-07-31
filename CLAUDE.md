@@ -1,7 +1,7 @@
 <!-- gitnexus:start -->
 # GitNexus — Code Intelligence
 
-This project is indexed by GitNexus as **trekyatra** (517479 symbols, 772863 relationships, 300 execution flows). Use the GitNexus MCP tools to understand code, assess impact, and navigate safely.
+This project is indexed by GitNexus as **trekyatra** (494845 symbols, 752009 relationships, 300 execution flows). Use the GitNexus MCP tools to understand code, assess impact, and navigate safely.
 
 > If any GitNexus tool warns the index is stale, run `npx gitnexus analyze` in terminal first.
 
@@ -370,6 +370,7 @@ Cover at minimum: happy path, one error/edge case, mobile layout check, and any 
 | Frontend source | `apps/web-next/` |
 | Mobile source | `apps/mobile/` |
 | Backend source | `services/api/` |
+| **App Store / EAS release log** | **`docs/mobile/APP_STORE_RELEASES.md`** |
 
 ---
 
@@ -638,3 +639,33 @@ When the user reports a test case failure, runtime error, or unexpected behaviou
 | Schema field returns `null` unexpectedly | Field added to ORM but missing from Pydantic Response schema |
 | Agent `errors: ["not found"]` on valid ID | Prior step's data not committed, or wrong UUID passed |
 | Test passes but UI broken | Frontend still using mocked data; `loadBriefs` not wired to real API |
+
+---
+
+## 18. App Store / EAS Release Tracking (MANDATORY)
+
+Every iOS build and App Store submission **must** be recorded in **`docs/mobile/APP_STORE_RELEASES.md`**
+(the release log). This is non-negotiable — it is the single source of truth for what has been built,
+what build numbers are consumed on App Store Connect, and what is live vs in review.
+
+- **After every `eas build --profile production --platform ios`:** append a row with Version (build),
+  buildNumber (from the EAS build page), and the EAS Build ID; set "Submitted to ASC" = ❌ No.
+- **After every `eas submit --profile production --platform ios --id <BUILD_ID>`:** update that build's
+  row with the Submission ID, ASC status (Waiting for Review / In Review / …), and date.
+- **When an ASC status changes** (In Review → Ready for Sale, or Rejected), update the row.
+- **Build numbers are unique per version train and can never be reused.** Since 1.1.0 (5), build
+  numbers are managed **remotely** by EAS (`eas.json` `cli.appVersionSource: "remote"` + production
+  `autoIncrement: true`) — the local `ios.buildNumber` in `app.config.ts` is ignored. Do not
+  hand-bump build numbers; if ASC reports a duplicate, the consumed number is dead — rebuild (EAS
+  auto-increments) and resubmit.
+
+### Shared-API safety (learned from a live-site incident)
+The backend API (`services/api`) is **shared by both the mobile app and the website** (`apps/web-next`).
+A change that looks mobile-only (e.g. adding fields to a shared Pydantic `*Response` schema) can
+still affect the web:
+- **Adding fields to a shared response schema increases payload size.** The web has tight
+  server-side fetch timeouts (`apps/web-next/lib/api.ts` `apiFetch` uses `AbortSignal.timeout(...)`),
+  and each home section falls back to `.catch(() => [])` → **empty sections** if a fetch aborts.
+- Before shipping a backend schema/response change, consider the **web consumers** of that endpoint
+  (grep `apps/web-next/lib` for the fetch) and whether the larger/slower response can exceed a
+  timeout. Prefer not returning heavy fields (`content_html`) in list endpoints.
