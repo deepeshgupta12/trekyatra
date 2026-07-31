@@ -1,0 +1,30 @@
+# TrekYatra — App Store screenshots (SIGNED-IN screens)
+# Sign in on the simulator FIRST, then run:
+#   maestro test .maestro/account.yaml
+appId: in.co.trekyatra.app
+---
+- launchApp
+
+# 20 — Profile / account dashboard (saved & downloads counts)
+- openLink: "trekyatra:///account"
+- takeScreenshot: 20-account
+
+# 21 — Saved treks
+- openLink: "trekyatra:///saved"
+- takeScreenshot: 21-saved
+
+# 22 — Saved comparisons
+- openLink: "trekyatra:///saved/comparisons"
+- takeScreenshot: 22-comparisons
+
+# 23 — Trek history
+- openLink: "trekyatra:///account/history"
+- takeScreenshot: 23-history
+
+# 24 — Notification centre
+- openLink: "trekyatra:///notifications"
+- takeScreenshot: 24-notifications
+
+# 25 — Settings (dark-mode toggle, dynamic version)
+- openLink: "trekyatra:///account/settings"
+- takeScreenshot: 25-settings

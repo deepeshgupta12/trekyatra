@@ -1,0 +1,90 @@
+# TrekYatra — App Store screenshots (public/guest-visible screens)
+# Run (app already installed + Metro running):
+#   xcrun simctl status_bar booted override --time "9:41" --batteryState charged --batteryLevel 100 --wifiBars 3 --cellularBars 4
+#   maestro test .maestro/appstore.yaml -e TREK_SLUG=<real-slug> -e NEWS_SLUG=<real-slug>
+# Screenshots are written as <name>.png in the current directory.
+# TIP: `maestro studio` opens an interactive inspector to fix any selector that doesn't match.
+appId: in.co.trekyatra.app
+env:
+  TREK_SLUG: churdhar-trek-complete-guide-to-himachals-highest-peak
+  NEWS_SLUG: hemis-national-park-how-to-reach
+---
+- launchApp
+
+# 01 — Home (personalized: search, popular, sections)
+- takeScreenshot: 01-home
+
+# 02 — Explore grid
+- tapOn: "Explore"
+- takeScreenshot: 02-explore
+
+# 03 — Filters sheet (Region / Difficulty / Season / Suitability / Duration)
+- tapOn: "Filter Treks"
+- takeScreenshot: 03-filters
+- tapOn:
+    text: "Apply"
+    optional: true          # closes the sheet; if labelled differently, Studio will show it
+
+# 04 — AI search
+- tapOn: "Ask TrekSage or search treks…"
+- takeScreenshot: 04-search
+- back
+
+# 05 — Trek detail: hero + summary card (route + metadata + photo tour)
+- openLink: "trekyatra:///trek/${TREK_SLUG}"
+- takeScreenshot: 05-trek-hero
+
+# 06 — Photo gallery
+- tapOn: "Photo tour"
+- takeScreenshot: 06-gallery
+- tapOn:
+    text: "Close gallery"
+    optional: true
+
+# 07 — Trek details table (all CMS metadata) — first section under the nav
+- takeScreenshot: 07-trek-details
+
+# 08–11 — structured guide tabs
+- scrollUntilVisible:
+    element: "Packing"
+    direction: DOWN
+    optional: true
+- tapOn: "Packing"
+- takeScreenshot: 08-packing
+- tapOn: "Permits"
+- takeScreenshot: 09-permits
+- tapOn: "Costs"
+- takeScreenshot: 10-costs
+- tapOn: "Conditions"
+- takeScreenshot: 11-conditions
+- tapOn: "Guide"
+
+# 12 — TrekSage AI assistant
+- openLink: "trekyatra:///treksage"
+- takeScreenshot: 12-treksage
+
+# 13 — Plan-my-trek wizard
+- openLink: "trekyatra:///plan"
+- takeScreenshot: 13-plan
+
+# 14 — AI trek comparison
+- openLink: "trekyatra:///compare"
+- takeScreenshot: 14-compare
+
+# 15 — Verified operators
+- openLink: "trekyatra:///browse/operators"
+- takeScreenshot: 15-operators
+
+# 16 — Beginner guide
+- openLink: "trekyatra:///beginner"
+- takeScreenshot: 16-beginner
+
+# 17 — News article (web-parity layout)
+- openLink: "trekyatra:///news/${NEWS_SLUG}"
+- takeScreenshot: 17-news
+
+# 18 — Branded hamburger drawer
+- openLink: "trekyatra:///"
+- tapOn:
+    id: "tab-menu"
+- takeScreenshot: 18-drawer
