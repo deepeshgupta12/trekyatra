@@ -124,6 +124,28 @@ def test_list_pages_filters_by_trek_state_and_difficulty():
     assert "filter-trek-a" not in {p.slug for p in by_mismatch}
 
 
+def test_list_pages_trek_state_substring_matches_composite_region():
+    """International regions: a 'Nepal'/'Tibet' filter matches composite trek_state values; exact
+    single-state filters are unaffected (nothing else contains 'Himachal Pradesh')."""
+    with SessionLocal() as db:
+        db.add(CMSPage(
+            slug="everest-bc-x", page_type="trek_guide", title="Everest BC", status="published",
+            trek_state="Koshi Province, Nepal / Tibet, China",
+        ))
+        db.add(CMSPage(
+            slug="triund-region-x", page_type="trek_guide", title="Triund", status="published",
+            trek_state="Himachal Pradesh",
+        ))
+        db.commit()
+        nepal = {p.slug for p in list_pages(db, trek_state="Nepal", limit=10000)}
+        tibet = {p.slug for p in list_pages(db, trek_state="Tibet", limit=10000)}
+        himachal = {p.slug for p in list_pages(db, trek_state="Himachal Pradesh", limit=10000)}
+
+    assert "everest-bc-x" in nepal and "triund-region-x" not in nepal
+    assert "everest-bc-x" in tibet
+    assert "triund-region-x" in himachal and "everest-bc-x" not in himachal
+
+
 def test_list_pages_filters_by_trek_duration_range():
     with SessionLocal() as db:
         db.add(CMSPage(

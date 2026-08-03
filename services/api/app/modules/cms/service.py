@@ -95,7 +95,11 @@ def list_pages(
     if page_type:
         q = q.where(CMSPage.page_type == page_type)
     if trek_state:
-        q = q.where(CMSPage.trek_state == trek_state)
+        # Substring match (consistent with trek_season/trek_suitability below) so a region chip like
+        # "Nepal" matches composite trek_state values ("Koshi Province, Nepal / Tibet, China") — the
+        # international-peak regions. Exact single-state filters still match (nothing else contains
+        # "Uttarakhand" etc.). Only consumer of this param is the mobile Explore filter.
+        q = q.where(CMSPage.trek_state.ilike(f"%{trek_state}%"))
     if trek_difficulty:
         q = q.where(CMSPage.trek_difficulty == trek_difficulty)
     if trek_season:

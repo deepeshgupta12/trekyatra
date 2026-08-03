@@ -17,6 +17,13 @@ const regionData: Record<string, { name: string; tagline: string; image: string;
   maharashtra: { name: "Maharashtra (Sahyadris)", tagline: "Monsoon trekking capital of India", image: "/images/region-sahyadri.jpg", blurb: "70+ documented treks from Mumbai and Pune. Best between June and February." },
   sikkim: { name: "Sikkim & North East", tagline: "Quiet, lush, photogenic", image: "/images/region-kashmir.jpg", blurb: "Goecha La, Sandakphu, Dzongri — North East treks pair stunning Kanchenjunga views with rich biodiversity." },
   karnataka: { name: "Karnataka", tagline: "Western Ghats from Bangalore", image: "/images/region-sahyadri.jpg", blurb: "Kudremukh, Kumara Parvatha, Tadiyandamol — beginner to challenging treks reachable in a weekend from Bangalore." },
+  // International Himalaya (8000m peaks). Filtering is substring-based (fetchCMSTreksByState matches
+  // the first word of `name` inside trek_state), so these match composite trek_state values like
+  // "Koshi Province, Nepal / Tibet, China". Images are placeholders (hero-himalaya-dawn) — swap for
+  // region-specific photos when available.
+  nepal: { name: "Nepal Himalaya", tagline: "The roof of the world", image: "/images/hero-himalaya-dawn.webp", blurb: "Everest, Annapurna, Kanchenjunga, Makalu, Lhotse — the Nepal Himalaya holds the greatest concentration of 8000m giants and the world's most storied high-altitude treks and base-camp routes." },
+  pakistan: { name: "Pakistan Karakoram", tagline: "Where the great peaks tower", image: "/images/hero-himalaya-dawn.webp", blurb: "K2, Nanga Parbat, the Gasherbrums, Broad Peak — Pakistan's Gilgit-Baltistan holds the most concentrated cluster of extreme high peaks on Earth. Serious, remote, and permit-heavy." },
+  tibet: { name: "Tibet", tagline: "The high, remote north side", image: "/images/hero-himalaya-dawn.webp", blurb: "The Tibetan side of the Himalaya — Everest's north approach, Cho Oyu, Shishapangma. High-altitude desert, big logistics, and strict permits." },
 };
 
 interface Props {

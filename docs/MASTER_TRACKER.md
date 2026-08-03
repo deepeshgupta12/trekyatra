@@ -18,6 +18,16 @@ Do not modify any code file without first:
 4. Checking impacted files and blast radius
 5. Updating the relevant step file in `docs/steps/`
 
+## 2026-07-31 — International region hubs + substring trek_state filter
+- Backend: `list_pages` `trek_state` filter `==` → `ILIKE %value%` (consistent w/ season/suitability);
+  a region like "Nepal" now matches composite trek_state values. **App = backend-only, NO new
+  release** (mobile filter Region is dynamic from `/treks/filter-facets`; substring makes it filter).
+  Test added; full suite 795 pass (the 1 test_refresh failure is the known pre-existing flake — passes
+  isolated). gitnexus impact LOW.
+- Web: `/regions/{nepal,pakistan,tibet}` hubs added to `regionData` (render via fallback + substring
+  match now; create `regional_hub` CMS pages for content/images/sitemap). Home region chips stay
+  India-focused. Placeholder images flagged. next build passes. URL_MAP updated.
+
 ## 2026-07-31 — CMS: international trek regions in the admin State dropdown
 Extended `CMSPageForm.tsx` `trek_state` dropdown with an "International Himalaya" optgroup (6
 composite values from the owner's list) so trek-detail pages can be created for the 8000m peaks

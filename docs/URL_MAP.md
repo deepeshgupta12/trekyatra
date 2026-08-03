@@ -34,7 +34,7 @@ Last updated: 2026-07-27 (added `/llms.txt`)
 | `/itineraries` | Itineraries hub | — | CMSPageHub(itinerary) |
 | `/beginner` | Beginner hub | — | CMSPageHub(beginner_guide/beginner_roundup) + trek cards |
 | `/compare` | Comparison tool | — | |
-| `/regions/[slug]` | Regional hub | `regional_hub` | CMS-powered |
+| `/regions/[slug]` | Regional hub | `regional_hub` | CMS-powered. India slugs: uttarakhand, himachal, kashmir, ladakh, maharashtra, sikkim, karnataka. **International Himalaya (2026-07-31):** `nepal`, `pakistan`, `tibet` — render via `regionData` fallback + substring trek_state match; create a `regional_hub` CMS page (slug `regions/nepal` etc.) for full content + sitemap indexing; region images are placeholders pending real photos. |
 | `/seasons/[slug]` | Seasonal hub | `seasonal_hub` | CMS-powered |
 | `/trek-types/[slug]` | Cluster hub | `cluster_hub` | CMS-powered |
 | `/safety` | Safety hub | — | Static |

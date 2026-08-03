@@ -2619,3 +2619,24 @@ Mobile buddy matching UI consuming STEP-79 backend.
   EXACTLY → mobile needs different handling. Region hubs also need images (none exist for
   Nepal/Pakistan/Tibet) + a `regional_hub` CMS page each (admin content). Pending owner sign-off on
   taxonomy + images before building.
+
+### International region hubs + substring trek_state filter (2026-07-31) blast radius
+- `services/api/app/modules/cms/service.py` `list_pages` — `trek_state` filter changed
+  `== value` → `ILIKE %value%` (now consistent with the adjacent `trek_season`/`trek_suitability`
+  ILIKE filters). Lets a region like "Nepal" match composite trek_state values
+  ("Koshi Province, Nepal / Tibet, China"). ONLY consumer of the `trek_state` query param is the
+  mobile Explore filter (mobileApi `exploreTreks`); the web filters client-side. Exact single-state
+  filters still match (nothing else contains "Uttarakhand"). Test:
+  `test_list_pages_trek_state_substring_matches_composite_region`. gitnexus impact = LOW/0.
+  **App impact: BACKEND-ONLY — no mobile code change, no new app release.** The app's filter Region
+  list is dynamic (`/treks/filter-facets` → distinct trek_state), so international regions appear
+  automatically once trek pages exist; the substring filter makes them filter correctly.
+- `apps/web-next/app/(public)/regions/[slug]/page.tsx` — `regionData` gains `nepal`, `pakistan`,
+  `tibet` (International Himalaya). `generateStaticParams` auto-includes them (Object.keys). Hub
+  filters via `fetchCMSTreksByState(r.name)` which substring-matches the first word of the name
+  (nepal/pakistan/tibet). Images are placeholders (`hero-himalaya-dawn.webp`). Blast radius: LOW
+  (leaf route). URLs `/regions/{nepal,pakistan,tibet}` render via the regionData fallback now; create
+  a `regional_hub` CMS page (slug `regions/nepal` …) for full content + real images + sitemap
+  indexing (sitemap region URLs are CMS-driven, so not hardcoded — avoids duplicates).
+- Home "Explore by Region" chips are India-focused + count-sorted top-8 → international peaks won't
+  crowd in; discovery is via hub URLs + filters. No mobile change.
