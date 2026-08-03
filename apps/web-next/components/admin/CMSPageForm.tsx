@@ -408,9 +408,16 @@ export default function CMSPageForm({ mode, existing }: Props) {
               <select className={inputCls} value={trekMeta.trek_state}
                 onChange={(e) => setTrekMeta(p => ({ ...p, trek_state: e.target.value }))}>
                 <option value="">— select state —</option>
-                {["Uttarakhand","Himachal Pradesh","Jammu & Kashmir","Ladakh","Maharashtra","Sikkim","West Bengal","Karnataka","Rajasthan","Tamil Nadu","Arunachal Pradesh","Manipur"].map(s => (
-                  <option key={s} value={s}>{s}</option>
-                ))}
+                <optgroup label="India">
+                  {["Uttarakhand","Himachal Pradesh","Jammu & Kashmir","Ladakh","Maharashtra","Sikkim","West Bengal","Karnataka","Rajasthan","Tamil Nadu","Arunachal Pradesh","Manipur"].map(s => (
+                    <option key={s} value={s}>{s}</option>
+                  ))}
+                </optgroup>
+                <optgroup label="International Himalaya">
+                  {["Koshi Province, Nepal / Tibet, China","Gandaki Province, Nepal","Gilgit-Baltistan, Pakistan","Gilgit-Baltistan, Pakistan / Xinjiang, China","Sikkim, India / Koshi Province, Nepal","Tibet, China"].map(s => (
+                    <option key={s} value={s}>{s}</option>
+                  ))}
+                </optgroup>
               </select>
             </div>
             {/* Difficulty — dropdown */}

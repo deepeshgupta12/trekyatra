@@ -18,6 +18,13 @@ Do not modify any code file without first:
 4. Checking impacted files and blast radius
 5. Updating the relevant step file in `docs/steps/`
 
+## 2026-07-31 — CMS: international trek regions in the admin State dropdown
+Extended `CMSPageForm.tsx` `trek_state` dropdown with an "International Himalaya" optgroup (6
+composite values from the owner's list) so trek-detail pages can be created for the 8000m peaks
+(Everest/K2/Annapurna/…). Impact LOW (admin-only). trek_state is free-text in the DB so filters
+auto-pick-up the new regions. Region HUBS + web/mobile region chips = follow-up pending taxonomy +
+images sign-off (web filter substring-matches; mobile matches exactly — noted in DEPENDENCY_MAP).
+
 ## 2026-07-31 — Web: iOS "coming soon" waitlist banner on the home page
 Added `components/home/IOSAppBanner.tsx` as the last home section (above the footer, desktop+mobile).
 "Notify me" email capture reuses the existing newsletter subscribe API with

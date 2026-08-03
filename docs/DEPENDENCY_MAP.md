@@ -2603,3 +2603,19 @@ Mobile buddy matching UI consuming STEP-79 backend.
   Blast radius: LOW (additive; home page is a leaf route, 0 upstream).
 - **When the app is approved:** swap the "Coming to the App Store" pill + Notify-me form for a
   "Download on the App Store" badge/link — a single-component edit.
+
+### International trek regions — admin CMS dropdown (2026-07-31) blast radius
+- `apps/web-next/components/admin/CMSPageForm.tsx` — the `trek_state` `<select>` (intentionally a
+  controlled dropdown "to prevent LLM misspellings") now has two `<optgroup>`s: **India** (unchanged
+  12 states) + **International Himalaya** (6 composite values: "Koshi Province, Nepal / Tibet, China",
+  "Gandaki Province, Nepal", "Gilgit-Baltistan, Pakistan", "Gilgit-Baltistan, Pakistan / Xinjiang,
+  China", "Sikkim, India / Koshi Province, Nepal", "Tibet, China"). Enables creating trek-detail pages
+  for the 8000m peaks (Everest, K2, Annapurna, …). Blast radius: LOW (admin-only leaf; gitnexus impact
+  on CMSPageForm = 0 upstream). `trek_state` is free-text `String(100)` in the DB; web/mobile filter
+  facets derive from distinct published values, so these regions auto-appear in filters once used.
+- **Region hubs/chips (follow-up, NOT yet built):** web region filter (`fetchCMSTreksByState`) matches
+  `trek_state === region OR trek_state.includes(firstWord(region))` → clean country hubs (Nepal/
+  Pakistan/Tibet) work on WEB via substring. BUT mobile backend `list_pages` matches `trek_state ==`
+  EXACTLY → mobile needs different handling. Region hubs also need images (none exist for
+  Nepal/Pakistan/Tibet) + a `regional_hub` CMS page each (admin content). Pending owner sign-off on
+  taxonomy + images before building.

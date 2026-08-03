@@ -27,7 +27,7 @@
     "apps/mobile/hooks/useOperators.ts": "17a1f6d1cbc7081989ce6d00a6cfae3b15af014dc0b4ab1eba676c59119de1eb",
     "apps/mobile/hooks/usePremium.ts": "c65fe74c49f42529dc1e8c33f144a61594f0498f3bc4905ea201ef2428bd3f2c",
     "apps/mobile/lib/analytics.ts": "5cf82f4f5af47593496552f674d8e7de391f4c434050bdf50b57b87a786efa08",
-    "docs/DEPENDENCY_MAP.md": "334385f166f3cf21610153b9c701084bca85d169d4a56ba150a6e3d0e7c96a1e",
+    "docs/DEPENDENCY_MAP.md": "0eb285ba65fad81777c1a4c1f2d34e982250d292b77fb4271da85ee8b983543d",
     "docs/FRONTEND_WIRING_BLUEPRINT.md": "aa772bfeab56f3fbd8c0df81cd0712cd1e996b3100a69efef79af376ecec6b4e",
     "docs/PROCESS_GUARDRAILS.md": "df30f67909947063278f6034a3cd1c8247e82aa78817e19db10379c9b9572ca1",
     "docs/PRODUCTION_SETUP.md": "0b97cc0720f3f41c6f05e55c0c4b9da3453fde5d30c4e985f408189dd03de378",
@@ -96,13 +96,13 @@
     "docs/steps/STEP-80-live-trek-conditions-backend-web.md": "2a6c80c923f22871511c7f92f22774bd991c2ab76eb2a2838a97d2636554f607",
     "docs/versions/V5-MOBILE-APP.md": "3bda0d0f32a1f5501e39b4b7c9a0bdde68bcda6ed670d800e93e875a1347c829"
   },
-  "indexed_at_commit": "1cd3908c98de95553e1df840a0118752f29d0b66",
-  "indexed_at_timestamp": "2026-08-03T04:00:26.044032+00:00",
+  "indexed_at_commit": "177972ea76656aca4531507fe8e8884e516e749e",
+  "indexed_at_timestamp": "2026-08-03T04:46:27.328660+00:00",
   "schema_version": 3,
   "stats": {
-    "total_edges": 1924,
+    "total_edges": 1925,
     "total_files": 95,
-    "total_nodes": 2013
+    "total_nodes": 2014
   },
   "vexp_version": "2.4.0"
 }
