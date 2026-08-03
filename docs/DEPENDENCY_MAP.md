@@ -2640,3 +2640,19 @@ Mobile buddy matching UI consuming STEP-79 backend.
   indexing (sitemap region URLs are CMS-driven, so not hardcoded — avoids duplicates).
 - Home "Explore by Region" chips are India-focused + count-sorted top-8 → international peaks won't
   crowd in; discovery is via hub URLs + filters. No mobile change.
+
+### International trek sitemaps — mount-everest was missing (2026-08-03) blast radius
+- **Root cause:** trek detail pages are indexed via **per-Indian-state** sitemaps
+  (`app/<state>-treks-sitemap.xml/route.ts` → `generateStateTrekSitemap` → `GET /public/sitemap-treks?state=X`
+  with EXACT match). A published international trek (`mount-everest`, trek_state
+  "Koshi Province, Nepal / Tibet, China") had no matching state route and wouldn't exact-match "Nepal",
+  so it was in **no sitemap** (not crawlable).
+- **Fix:** (1) `services/api/app/api/routes/sitemap_data.py` `sitemap_treks` state filter `==` →
+  `ILIKE %state%` (consistent with list_pages / trek_season / trek_suitability). Only the web sitemap
+  routes call this endpoint. Test `test_sitemap_treks_state_substring_matches_composite_region`.
+  gitnexus impact LOW/0. (2) New route files `app/{nepal,pakistan,tibet}-treks-sitemap.xml/route.ts`
+  → `generateStateTrekSitemap("Nepal"|"Pakistan"|"Tibet")`. (3) `app/robots.ts` declares the 3 new
+  sitemaps. Border peaks (Everest → nepal+tibet; Kanchenjunga → sikkim+nepal) may appear in two
+  sitemaps — Google dedupes by URL; harmless.
+- **Future regions:** adding a new international region requires a new `<region>-treks-sitemap.xml`
+  route + a robots.ts entry (same as Indian states). Documented in URL_MAP.

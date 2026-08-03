@@ -23,6 +23,10 @@ export default function robots(): MetadataRoute.Robots {
       `${SITE_URL}/maharashtra-treks-sitemap.xml`,
       `${SITE_URL}/sikkim-treks-sitemap.xml`,
       `${SITE_URL}/karnataka-treks-sitemap.xml`,
+      // International Himalaya (8000m peaks) — substring-matched trek_state
+      `${SITE_URL}/nepal-treks-sitemap.xml`,
+      `${SITE_URL}/pakistan-treks-sitemap.xml`,
+      `${SITE_URL}/tibet-treks-sitemap.xml`,
       // Hindi trek pages (hreflang alternates)
       `${SITE_URL}/hi-trek-sitemap.xml`,
       // Google News + comparison sitemaps

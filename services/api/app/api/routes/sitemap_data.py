@@ -107,7 +107,11 @@ def sitemap_treks(
         .limit(limit)
     )
     if state:
-        stmt = stmt.where(func.lower(CMSPage.trek_state) == state.lower())
+        # Substring match (consistent with list_pages / trek_season / trek_suitability) so a region
+        # like "Nepal" catches composite trek_state values such as "Koshi Province, Nepal / Tibet,
+        # China" (the 8000m peaks). Without this, international treks land in no sitemap at all.
+        # Exact single-state filters are unaffected (nothing else contains "Uttarakhand" etc.).
+        stmt = stmt.where(CMSPage.trek_state.ilike(f"%{state}%"))
 
     rows = db.execute(stmt).all()
     return [
