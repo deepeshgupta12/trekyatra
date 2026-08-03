@@ -25,6 +25,7 @@ import { HomeWelcomeBanner } from "@/components/home/HomeWelcomeBanner";
 import { HomeTrendingHeader } from "@/components/home/HomeTrendingHeader";
 import HomeComparisonsSection, { type HomeComparisonCard } from "@/components/home/HomeComparisonsSection";
 import RecentNewsSection from "@/components/home/RecentNewsSection";
+import { IOSAppBanner } from "@/components/home/IOSAppBanner";
 import makeDynamic from "next/dynamic";
 import { unstable_cache } from "next/cache";
 
@@ -484,6 +485,9 @@ export default async function Home() {
           </div>
         </div>
       </section>
+
+      {/* iOS app — coming-soon waitlist banner (last section, above the fat footer) */}
+      <IOSAppBanner />
     </>
   );
 }

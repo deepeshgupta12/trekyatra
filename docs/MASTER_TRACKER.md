@@ -18,6 +18,13 @@ Do not modify any code file without first:
 4. Checking impacted files and blast radius
 5. Updating the relevant step file in `docs/steps/`
 
+## 2026-07-31 — Web: iOS "coming soon" waitlist banner on the home page
+Added `components/home/IOSAppBanner.tsx` as the last home section (above the footer, desktop+mobile).
+"Notify me" email capture reuses the existing newsletter subscribe API with
+`source_page="ios_waitlist"` (no backend/route/table change; segmentable). Analytics wired
+(ios_banner_view / ios_waitlist_submit). "Coming to the App Store" pill (app under review) — flip to
+an App Store badge on approval. Impact LOW. See docs/DEPENDENCY_MAP.md.
+
 ## 2026-07-31 — App Store: 1.1.0 (5) submitted + live-site incident resolved
 - **iOS 1.1.0 (5)** (EAS build `1c4a8825`) **submitted to App Store review** — Waiting for Review
   (Submission `2b4bc63b-a781-4085-a82f-7e1eba501a26`). Full build/submit history now tracked in

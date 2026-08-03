@@ -2589,3 +2589,17 @@ Mobile buddy matching UI consuming STEP-79 backend.
   `content_json.trek_facts` (altitude, read by web `fetchAllCMSTreks`/`fetchTrendingTreks`) is kept.
 - Test: `test_list_pages_excludes_content_html_but_detail_keeps_it`. FastAPI note: route-level
   `response_model_exclude` does NOT apply per-item on `list[Model]`, hence the projection helper.
+
+### iOS "coming soon" waitlist banner (home page, 2026-07-31) blast radius
+- **NEW** `apps/web-next/components/home/IOSAppBanner.tsx` — client component; last section of the
+  home page (above the fat footer), desktop + mobile responsive. Email capture **reuses** the
+  existing `subscribeNewsletter()` (`POST /api/v1/newsletter/subscribe`) with
+  `source_page: "ios_waitlist"` — NO backend change, NO new route, NO new table (signups land in the
+  newsletter list, segmentable by source_page). Analytics via existing `trackNewsletterSubscribed()`
+  + `trackEvent()` (`ios_banner_view`, `ios_waitlist_submit`). Reuses `Logo` (variant="light") +
+  `Button` (variant="hero"). Blast radius: LOW (leaf marketing section; gitnexus impact on `Home` = 0
+  upstream). "See full app preview" CTA intentionally omitted (app under review; no /app page yet).
+- `apps/web-next/app/(public)/page.tsx` — imports + renders `<IOSAppBanner />` as the final section.
+  Blast radius: LOW (additive; home page is a leaf route, 0 upstream).
+- **When the app is approved:** swap the "Coming to the App Store" pill + Notify-me form for a
+  "Download on the App Store" badge/link — a single-component edit.
