@@ -15,11 +15,22 @@ const nextConfig = {
     // The per-state/region trek sitemaps were consolidated into a single /treks-sitemap.xml.
     // 301 the old URLs so search engines (which discovered them via robots.txt) don't hit 404s.
     const oldRegions = ["uttarakhand", "himachal", "kashmir", "ladakh", "maharashtra", "sikkim", "karnataka", "nepal", "pakistan", "tibet"];
-    return oldRegions.map((r) => ({
+    const sitemapRedirects = oldRegions.map((r) => ({
       source: `/${r}-treks-sitemap.xml`,
       destination: "/treks-sitemap.xml",
       permanent: true,
     }));
+    // Region hubs used to be linked by their full slugified composite trek_state (the home
+    // chips generated e.g. /regions/gilgit-baltistan-pakistan). Those are now consolidated to
+    // canonical short hub slugs — 301 the crawled aliases so there's no duplicate content.
+    const regionAliasRedirects = [
+      { source: "/regions/gilgit-baltistan-pakistan", destination: "/regions/pakistan", permanent: true },
+      { source: "/regions/gilgit-baltistan-pakistan-xinjiang-china", destination: "/regions/pakistan", permanent: true },
+      { source: "/regions/koshi-province-nepal-tibet-china", destination: "/regions/nepal", permanent: true },
+      { source: "/regions/gandaki-province-nepal", destination: "/regions/nepal", permanent: true },
+      { source: "/regions/tibet-china", destination: "/regions/tibet", permanent: true },
+    ];
+    return [...sitemapRedirects, ...regionAliasRedirects];
   },
   async rewrites() {
     // Read the public API base. DO App Platform encrypted vars (EV[...]) are not

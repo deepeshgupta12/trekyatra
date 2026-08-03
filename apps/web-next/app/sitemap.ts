@@ -1,4 +1,5 @@
 import type { MetadataRoute } from "next";
+import { groupStateCounts } from "@/lib/regions";
 // fetchTreks removed — static trek pages are covered by state-specific sitemaps
 
 // Always fetch fresh CMS pages so newly published pages appear immediately
@@ -37,6 +38,25 @@ async function fetchCmsSitemapPages(): Promise<CmsSitemapEntry[]> {
       });
       if (res.ok) {
         return (await res.json()) as CmsSitemapEntry[];
+      }
+    } catch {
+      // try next base
+    }
+  }
+  return [];
+}
+
+/** Live region hub slugs (/regions/{slug}) derived from published trek-state counts. */
+async function fetchRegionSlugs(): Promise<string[]> {
+  const primaryBase = process.env.NEXT_PUBLIC_API_BASE ?? "http://localhost:8000";
+  const fallbackBase = "https://api.trekyatra.co.in";
+  const path = "/api/v1/public/trek-state-counts";
+  for (const base of [primaryBase, fallbackBase]) {
+    try {
+      const res = await fetch(`${base}${path}`, { signal: AbortSignal.timeout(20_000), cache: "no-store" });
+      if (res.ok) {
+        const counts = (await res.json()) as { state: string; count: number }[];
+        return groupStateCounts(counts).map((r) => r.slug);
       }
     } catch {
       // try next base
@@ -97,6 +117,15 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   // NOTE: Static trek detail pages (/trek/{slug}) are intentionally excluded from the
   // root sitemap. They are all covered by the single catch-all /treks-sitemap.xml.
   // This prevents duplicate indexing and keeps the root sitemap focused on hub pages.
+
+  // Region hubs (/regions/{slug}) — one canonical URL per region with published treks,
+  // derived live from trek-state counts (composite international states folded into their
+  // hub). These are code-rendered hubs (not CMS pages), so they must be emitted here to be
+  // indexed. Any CMS regional_hub page at the same slug is de-duplicated below.
+  const regionSlugs = await fetchRegionSlugs();
+  for (const slug of regionSlugs) {
+    entries.push(url(`/regions/${slug}`, 0.8, "weekly"));
+  }
 
   // Published CMS pages — trek_guide pages are excluded from the root sitemap;
   // they are all listed in the single /treks-sitemap.xml (any region, auto-included).

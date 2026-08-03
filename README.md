@@ -442,6 +442,7 @@ trekyatra/
 | Feature / Fix | Status |
 |---------|--------|
 | Home "trekking regions" — dynamic states + live counts (`/public/trek-state-counts`), real images | Done |
+| Region hubs `/regions/[slug]` — fully dynamic (canonical slugs via `lib/regions.ts`, incl. international 8000m ranges nepal/pakistan/tibet); live stats, generated FAQs, `TouristDestination`+`FAQPage`+`Breadcrumb` schema, sitemap-indexed, composite-slug 301s; nav + home chips grouped per hub | Done |
 | Home editorial spotlight backed by a real published guide (name/excerpt/chips/link) | Done |
 | Clean comparison URLs `/compare/{a-vs-b}` — rendered LIVE from trek data (no CMS pages); pairs in `trek_comparisons`, publish-triggered agent, SEO+AEO JSON-LD, in sitemap; `/compare?slugs=` tool intact | Done |
 | Home comparisons section — personalized (trending + viewer difficulty) linking to clean pairs; server-synced cross-device profile via `BEHAVIOR_UPDATED_EVENT` | Done |

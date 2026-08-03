@@ -4,7 +4,7 @@
 > must be listed here and confirmed by the user. No new URL structures should be introduced
 > without updating this file and getting confirmation.
 
-Last updated: 2026-07-27 (added `/llms.txt`)
+Last updated: 2026-08-03 (region hubs made fully dynamic + SEO/AEO schema + sitemap-indexed)
 
 ---
 
@@ -34,7 +34,7 @@ Last updated: 2026-07-27 (added `/llms.txt`)
 | `/itineraries` | Itineraries hub | — | CMSPageHub(itinerary) |
 | `/beginner` | Beginner hub | — | CMSPageHub(beginner_guide/beginner_roundup) + trek cards |
 | `/compare` | Comparison tool | — | |
-| `/regions/[slug]` | Regional hub | `regional_hub` | CMS-powered. India slugs: uttarakhand, himachal, kashmir, ladakh, maharashtra, sikkim, karnataka. **International Himalaya (2026-07-31):** `nepal`, `pakistan`, `tibet` — render via `regionData` fallback + substring trek_state match; create a `regional_hub` CMS page (slug `regions/nepal` etc.) for full content + sitemap indexing; region images are placeholders pending real photos. |
+| `/regions/[slug]` | Regional hub | `regional_hub` (optional) | **Dynamic, code-rendered hub (2026-08-03 rewrite).** Single source of truth = `lib/regions.ts` (`REGIONS` + `resolveRegion`/`regionSlugForState`/`groupStateCounts`). Canonical slugs: uttarakhand, himachal, kashmir, ladakh, maharashtra, sikkim, karnataka (India) + `nepal`, `pakistan`, `tibet` (International Himalaya). A trek's `trek_state` (incl. composite international values like "Koshi Province, Nepal / Tibet, China") resolves to the right hub by exact/`matchWord` substring match — **no per-region code**. Stats (trek count, beginner routes, peak season, permits), FAQs, and schema (`TouristDestination` + `FAQPage` + `BreadcrumbList`) are all generated live from published trek data. An optional `regional_hub` CMS page at slug `regions/{slug}` enriches with editor content + custom FAQs (not required). **Canonical dedupe:** the region page emits `<link rel=canonical>` to the short hub slug; the old auto-slugified composite URLs (`/regions/gilgit-baltistan-pakistan`, `/regions/koshi-province-nepal-tibet-china`, etc.) **301-redirect** to their canonical hub (`next.config.mjs`). Indexed via the root `sitemap.xml` (one `/regions/{slug}` per region with published treks, derived from `trek-state-counts`). Region hero images are real per-region photos in `/public/images/region-*.webp`. |
 | `/seasons/[slug]` | Seasonal hub | `seasonal_hub` | CMS-powered |
 | `/trek-types/[slug]` | Cluster hub | `cluster_hub` | CMS-powered |
 | `/safety` | Safety hub | — | Static |
@@ -159,7 +159,7 @@ Last updated: 2026-07-27 (added `/llms.txt`)
 
 | URL | Purpose | Notes |
 |-----|---------|-------|
-| `/sitemap.xml` | Core XML sitemap | Auto-generated, force-dynamic. Hub/editorial/guide pages + **references** child sitemaps (state-trek, hi-trek, `/news-sitemap.xml`, `/compare-sitemap.xml`). News & compare URLs are NOT listed directly here. |
+| `/sitemap.xml` | Core XML sitemap | Auto-generated, force-dynamic. Hub/editorial/guide pages + **region hubs** (`/regions/{slug}`, one per region with published treks, derived from `trek-state-counts`) + **references** child sitemaps (treks, hi-trek, `/news-sitemap.xml`, `/compare-sitemap.xml`). News & compare URLs are NOT listed directly here. |
 | `/robots.txt` | Robots rules | Auto-generated from robots.ts. Lists **5 sitemaps** explicitly (core `sitemap.xml` + `/treks-sitemap.xml` + hi-trek + news + compare) — the core `sitemap.xml` is a urlset (not a sitemap index), so children must be declared here for discovery. Fallback `SITE_URL` = `https://www.trekyatra.co.in` (2026-07-28) |
 | `/treks-sitemap.xml` | **Single catch-all trek sitemap** | Dynamic XML listing **ALL** published `/trek/{slug}` pages, **any region (India or international), auto-included with ZERO per-region code** → `generateTrekSitemap()` → `GET /public/sitemap-treks` (no state; limit 50000). Replaced the old 10 per-state/region sitemaps (`/{region}-treks-sitemap.xml`), which now **301-redirect** here (next.config.mjs). This is the future-proof design: publish a trek in any new region and it appears automatically. (2026-08-03) |
 | `/llms.txt` | LLM site guide (llmstxt.org) | Static curated `apps/web-next/public/llms.txt` — markdown overview + key **public** URLs (start-here, treks, guides, regions/seasons, compare, news, operators, about, programmatic access, sitemaps) for AI/LLM consumers. Meta-file like robots.txt — **NOT indexed** (excluded from sitemap). Lists only public pages + public API/MCP endpoints (no admin/account/auth). Added 2026-07-27 |

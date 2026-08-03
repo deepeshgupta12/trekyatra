@@ -15,6 +15,7 @@ import { Button } from "@/components/ui/button";
 import { TrekCard } from "@/components/trek/TrekCard";
 import { fetchTreks } from "@/lib/trekApi";
 import { fetchCMSPages, fetchTrendingTreks, fetchTrekCMSOverrides, fetchTrekStateCounts, fetchComparisonPairs, fetchNewsArticles, type CMSTrekCard, type CMSTrekOverride, type NewsArticle } from "@/lib/api";
+import { groupStateCounts } from "@/lib/regions";
 import SchemaInjector from "@/components/seo/SchemaInjector";
 import { buildWebSiteSchema } from "@/lib/schema";
 import { formatDate } from "@/lib/date";
@@ -39,24 +40,10 @@ const PersonalisedFeed = makeDynamic(
   { ssr: false }
 );
 
-// Per-state metadata for the dynamic regions section. Counts come live from the API
-// (fetchTrekStateCounts); this only maps a state → its real image + /regions/ slug.
-// A state not listed here still appears (slugified, default image) so newly-introduced
-// states show up automatically — redirections stay on the /regions/{slug} pattern.
-const STATE_META: Record<string, { slug: string; image: string }> = {
-  "Uttarakhand": { slug: "uttarakhand", image: "/images/region-uttarakhand-snow.webp" },
-  "Himachal Pradesh": { slug: "himachal", image: "/images/region-himachal-camp.webp" },
-  "Ladakh": { slug: "ladakh", image: "/images/region-ladakh.webp" },
-  "Jammu & Kashmir": { slug: "kashmir", image: "/images/region-kashmir.webp" },
-  "Kashmir": { slug: "kashmir", image: "/images/region-kashmir.webp" },
-  "Maharashtra": { slug: "maharashtra", image: "/images/region-sahyadri.webp" },
-  "Sikkim": { slug: "sikkim", image: "/images/region-ladakh.webp" },
-  "West Bengal": { slug: "west-bengal", image: "/images/region-ladakh.webp" },
-};
-const DEFAULT_REGION_IMAGE = "/images/region-himachal-camp.webp";
-function slugifyState(s: string): string {
-  return s.toLowerCase().replace(/&/g, "and").replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
-}
+// The dynamic regions section is derived entirely from live per-state trek counts
+// (fetchTrekStateCounts) grouped into canonical region hubs by lib/regions.ts —
+// one card per region, curated name/image, composite states (e.g. the international
+// 8000m peaks) summed under the right hub. New states appear automatically.
 
 const trustStats = [
   { value: "250+", label: "Trek guides" },
@@ -114,20 +101,16 @@ export default async function Home() {
     { a: "Kashmir Lakes", b: "Sandakphu", slugs: "kashmir-great-lakes,sandakphu" },
   ];
 
-  // #1 Dynamic regions — real states + live counts + real images, sorted by count.
-  // New states appear automatically as treks publish; redirects stay /regions/{slug}.
-  const regionCards = stateCounts
-    .filter((s) => s.count > 0)
+  // #1 Dynamic regions — live per-state counts grouped into canonical region hubs
+  // (composite international states summed under Nepal/Pakistan/Tibet), sorted by count.
+  const regionCards = groupStateCounts(stateCounts)
     .slice(0, 8)
-    .map((s) => {
-      const meta = STATE_META[s.state];
-      return {
-        name: s.state,
-        count: `${s.count} trek${s.count !== 1 ? "s" : ""}`,
-        image: meta?.image ?? DEFAULT_REGION_IMAGE,
-        slug: meta?.slug ?? slugifyState(s.state),
-      };
-    });
+    .map((r) => ({
+      name: r.name,
+      count: `${r.count} trek${r.count !== 1 ? "s" : ""}`,
+      image: r.image,
+      slug: r.slug,
+    }));
   const regionsAllHref = `/regions/${regionCards[0]?.slug ?? "uttarakhand"}`;
 
   // #2 Editorial spotlight — feature a REAL published trek guide end-to-end:
@@ -346,7 +329,7 @@ export default async function Home() {
 
       {/* REGIONS — dynamic: real states + live counts + real images (#1) */}
       {regionCards.length > 0 && (
-        <Section eyebrow="Explore by geography" title="India's great trekking regions" cta={{ label: "All regions", to: regionsAllHref }}>
+        <Section eyebrow="Explore by geography" title="Great Himalayan trekking regions" cta={{ label: "All regions", to: regionsAllHref }}>
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
             {regionCards.map((r) => (
               <Link key={r.slug} href={`/regions/${r.slug}`} className="group relative h-72 overflow-hidden rounded-2xl lift">

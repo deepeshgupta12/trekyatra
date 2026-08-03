@@ -2674,3 +2674,42 @@ Mobile buddy matching UI consuming STEP-79 backend.
 - Test `test_sitemap_treks_state_substring_matches_composite_region` (delete-first for idempotency).
 - **Scale note:** one flat sitemap holds up to 50k URLs (spec limit); beyond that, re-shard via a
   sitemap index. Current volume ~250 treks.
+
+## 2026-08-03 — Region hubs made fully dynamic (bugfix + SEO/AEO)
+
+**Bug:** `/regions/gilgit-baltistan-pakistan` and `/regions/koshi-province-nepal-tibet-china`
+rendered **Himachal** content — the region page looked up a hardcoded `regionData` map keyed by
+short slugs, and the home chips auto-slugified composite `trek_state` values into slugs the map
+didn't contain → `?? regionData.himachal` fallback. Also: nav mega-menu "Top Regions" was static
+(new international hubs never appeared); region pages had hardcoded stub stats (48/12/Apr–Oct) and no
+region schema/FAQs; region hubs weren't in the sitemap.
+
+- `apps/web-next/lib/regions.ts` **(NEW — single source of truth)** -> `REGIONS: RegionMeta[]`
+  (India + nepal/pakistan/tibet, each with `matchWord`/`matchStates`/`image`/`logistics`/`country`);
+  `slugifyState`, `regionForState`, `regionSlugForState`, `regionBySlug`, `resolveRegion` (always
+  returns a usable region — synthesises un-curated states), `groupStateCounts` (live per-state counts
+  → one card per canonical hub, composite international states summed). blast radius: LOW (new file).
+  Consumers: home `page.tsx`, `Header.tsx`, `regions/[slug]/page.tsx`, `trek/[slug]/page.tsx`, `sitemap.ts`.
+- `apps/web-next/app/(public)/regions/[slug]/page.tsx` -> **rewritten**: `resolveRegion(slug)` (no
+  more himachal fallback); dynamic stat strip (live count from `trek-state-counts`, beginner count,
+  peak season mode, permit label per country); generated FAQs (from live data) or CMS `content_json.faqs`;
+  schema = `buildRegionSchema` (TouristDestination) + `buildFAQSchema` + `buildBreadcrumbSchema`;
+  region-aware logistics; `<link rel=canonical>` → canonical hub slug; `generateStaticParams` = curated +
+  live region slugs. blast radius: LOW (leaf page; process `Region → ApiFetch`).
+- `apps/web-next/app/(public)/page.tsx` -> region cards now from `groupStateCounts(stateCounts)`
+  (removed local `STATE_META`/`slugifyState`); section title "Great Himalayan trekking regions".
+- `apps/web-next/components/layout/Header.tsx` -> "Top Regions" mega column now dynamic (client fetch
+  `fetchTrekStateCounts` → `groupStateCounts`, top 8) with `FALLBACK_REGIONS` until loaded/on error.
+- `apps/web-next/app/(public)/trek/[slug]/page.tsx` -> breadcrumb region link uses `regionSlugForState`
+  (replaces local `STATE_TO_REGION_SLUG` map; now handles composite international states).
+- `apps/web-next/lib/schema.ts` -> **NEW** `buildRegionSchema` (schema.org/TouristDestination +
+  includesAttraction ItemList of treks). blast radius: LOW (additive).
+- `apps/web-next/app/sitemap.ts` -> emits one `/regions/{slug}` per region with published treks
+  (`fetchRegionSlugs` → `groupStateCounts`). Region hubs are now indexed.
+- `apps/web-next/next.config.mjs` -> `redirects()` 301s the crawled composite-slug region aliases
+  (gilgit-baltistan-pakistan, koshi-province-nepal-tibet-china, gandaki-province-nepal, tibet-china,
+  gilgit-baltistan-pakistan-xinjiang-china) → canonical hub slugs.
+- `apps/web-next/public/images/region-{nepal,pakistan,tibet,himachal,jammu-kashmir,ladakh-hd,uttarakhand}.webp`
+  -> real per-region hero photos (converted from user-supplied PNGs via cwebp @ q80/1920w, 236–376 KB).
+- **Backend: NONE.** `trek-state-counts` + `sitemap-treks` already existed and are dynamic → the mobile
+  app (dynamic filter-facets) needs **no release**. next build ✓ (region route ● SSG, 10 hubs), tsc ✓.

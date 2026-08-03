@@ -8,21 +8,25 @@ import { useAuth } from "@/lib/auth-context";
 import { useRouter } from "next/navigation";
 import { Logo } from "@/components/brand/Logo";
 import { Button } from "@/components/ui/button";
+import { fetchTrekStateCounts } from "@/lib/api";
+import { groupStateCounts } from "@/lib/regions";
 
+interface RegionNavItem { label: string; to: string }
+
+// Fallback region list (used until the live counts load, or if the fetch fails).
+const FALLBACK_REGIONS: RegionNavItem[] = [
+  { label: "Himachal Pradesh", to: "/regions/himachal" },
+  { label: "Uttarakhand", to: "/regions/uttarakhand" },
+  { label: "Kashmir", to: "/regions/kashmir" },
+  { label: "Ladakh", to: "/regions/ladakh" },
+  { label: "Maharashtra (Sahyadris)", to: "/regions/maharashtra" },
+  { label: "Karnataka", to: "/regions/karnataka" },
+  { label: "Sikkim & North East", to: "/regions/sikkim" },
+];
+
+// The "Top Regions" column is rendered dynamically (live trek-state counts grouped into
+// region hubs) — see `regionItems` in the component. The other columns are static.
 const megaSections = [
-  {
-    title: "Top Regions",
-    icon: MapPin,
-    items: [
-      { label: "Himachal Pradesh", to: "/regions/himachal" },
-      { label: "Uttarakhand", to: "/regions/uttarakhand" },
-      { label: "Kashmir", to: "/regions/kashmir" },
-      { label: "Ladakh", to: "/regions/ladakh" },
-      { label: "Maharashtra (Sahyadris)", to: "/regions/maharashtra" },
-      { label: "Karnataka", to: "/regions/karnataka" },
-      { label: "Sikkim & North East", to: "/regions/sikkim" },
-    ],
-  },
   {
     title: "By City",
     icon: Compass,
@@ -84,6 +88,24 @@ export const Header = () => {
   const pathname = usePathname();
   const { user, logout } = useAuth();
   const router = useRouter();
+  // Live "Top Regions" — grouped from published trek-state counts (composite international
+  // states fold into their hub). Falls back to the static list until loaded / on error.
+  const [regionItems, setRegionItems] = useState<RegionNavItem[]>(FALLBACK_REGIONS);
+  useEffect(() => {
+    let active = true;
+    fetchTrekStateCounts()
+      .then((counts) => {
+        if (!active) return;
+        const items = groupStateCounts(counts)
+          .slice(0, 8)
+          .map((r) => ({ label: r.name, to: `/regions/${r.slug}` }));
+        if (items.length) setRegionItems(items);
+      })
+      .catch(() => {});
+    return () => {
+      active = false;
+    };
+  }, []);
 
   // ⌘K / Ctrl+K → navigate to /search
   useEffect(() => {
@@ -215,6 +237,21 @@ export const Header = () => {
               className="absolute left-0 right-0 top-16 bg-surface border-b border-border shadow-elevated animate-fade-up"
             >
               <div className="container-wide py-8 grid grid-cols-4 gap-8">
+                <div>
+                  <div className="flex items-center gap-2 mb-4 text-xs uppercase tracking-widest text-muted-foreground">
+                    <MapPin className="h-3.5 w-3.5 text-accent" />
+                    Top Regions
+                  </div>
+                  <ul className="space-y-2.5">
+                    {regionItems.map((item) => (
+                      <li key={item.to}>
+                        <Link href={item.to} className="text-sm text-foreground/80 hover:text-accent transition-colors">
+                          {item.label}
+                        </Link>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
                 {megaSections.map((section) => (
                   <div key={section.title}>
                     <div className="flex items-center gap-2 mb-4 text-xs uppercase tracking-widest text-muted-foreground">

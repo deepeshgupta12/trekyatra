@@ -117,6 +117,40 @@ export function buildItemListSchema(items: string[], url: string) {
 }
 
 // ---------------------------------------------------------------------------
+// TouristDestination schema for region hub pages (/regions/[slug])
+// Surfaces the region as a place with its documented treks as attractions.
+// ---------------------------------------------------------------------------
+export interface RegionSchemaProps {
+  name: string;
+  description: string;
+  url: string;
+  imageUrl?: string | null;
+  country: string;
+  treks: { name: string; slug: string }[];
+}
+
+export function buildRegionSchema({ name, description, url, imageUrl, country, treks }: RegionSchemaProps) {
+  return {
+    "@context": "https://schema.org",
+    "@type": "TouristDestination",
+    name,
+    description,
+    url: `${SITE_URL}${url}`,
+    ...(imageUrl ? { image: imageUrl.startsWith("http") ? imageUrl : `${SITE_URL}${imageUrl}` } : {}),
+    address: { "@type": "PostalAddress", addressRegion: name, addressCountry: country },
+    ...(treks.length
+      ? {
+          includesAttraction: treks.map((t) => ({
+            "@type": "TouristAttraction",
+            name: t.name,
+            url: `${SITE_URL}/trek/${t.slug}`,
+          })),
+        }
+      : {}),
+  };
+}
+
+// ---------------------------------------------------------------------------
 // TouristTrip schema for trek guide pages
 // Follows Schema.org/TouristTrip and Google's structured data guidelines.
 // Surfaces duration, altitude, difficulty, season, permits, base in rich results.

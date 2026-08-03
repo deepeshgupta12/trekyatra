@@ -21,6 +21,7 @@ import TrustSignals from "@/components/trust/TrustSignals";
 import StickyMobileCTA from "@/components/trust/StickyMobileCTA";
 import GatedContent from "@/components/subscription/GatedContent";
 import { buildArticleSchema, buildFAQSchema, buildBreadcrumbSchema, buildTrekSchema } from "@/lib/schema";
+import { regionSlugForState } from "@/lib/regions";
 import { formatDate } from "@/lib/date";
 import {
   Clock, TrendingUp, Calendar,
@@ -332,20 +333,11 @@ export default async function TrekDetailPage({ params }: { params: { slug: strin
   } : baseTrekSchema;
 
   const faqSchema = faqItems.length ? buildFAQSchema(faqItems) : null;
-  // Map canonical state names to the region slug used in /regions/[slug].
-  // This prevents wrong-page links when trek_state has an LLM misspelling
-  // like "Uttrakhand" that would otherwise fall through to the Himachal fallback.
-  const STATE_TO_REGION_SLUG: Record<string, string> = {
-    "Uttarakhand": "uttarakhand",  "Uttrakhand": "uttarakhand",
-    "Himachal Pradesh": "himachal", "Himachal": "himachal",
-    "Jammu & Kashmir": "kashmir",   "Ladakh": "ladakh",
-    "Maharashtra": "maharashtra",   "Sikkim": "sikkim",
-    "West Bengal": "west-bengal",   "Karnataka": "karnataka",
-  };
+  // Resolve the trek's state to its canonical region hub slug via the shared taxonomy
+  // (lib/regions.ts) — handles India states, composite international trek_states (e.g.
+  // "Koshi Province, Nepal / Tibet, China" → /regions/nepal), and LLM misspellings.
   const stateLabel = cmsPage?.trek_state || trek.state || "Treks";
-  const regionSlug = STATE_TO_REGION_SLUG[stateLabel]
-    ?? stateLabel.toLowerCase().replace(/\s+/g, "-");
-  const stateHref = stateLabel !== "Treks" ? `/regions/${regionSlug}` : "/explore";
+  const stateHref = stateLabel !== "Treks" ? `/regions/${regionSlugForState(stateLabel)}` : "/explore";
   const breadcrumbSchema = buildBreadcrumbSchema([
     { label: "Home", href: "/" },
     { label: stateLabel === "Treks" ? "Explore" : stateLabel, href: stateHref },

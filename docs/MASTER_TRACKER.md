@@ -18,6 +18,31 @@ Do not modify any code file without first:
 4. Checking impacted files and blast radius
 5. Updating the relevant step file in `docs/steps/`
 
+## 2026-08-03 — Region hubs fully dynamic (live bug + SEO/AEO rebuild)
+**Reported (web desktop + mobile):** (1) `/regions/gilgit-baltistan-pakistan` &
+`/regions/koshi-province-nepal-tibet-china` showed **Himachal** treks/content; (2) primary-nav
+"Regions" mega menu didn't list the new international hubs; (3) region pages were stubs — hardcoded
+stats, no dynamic content, no SEO/AEO schema, no FAQs, not sitemap-indexed.
+- **Root cause of (1):** the region page used a hardcoded `regionData` map keyed by short slugs; the
+  home chips auto-slugified composite `trek_state` values into slugs the map lacked → `?? regionData.himachal`.
+- **Fix — new `apps/web-next/lib/regions.ts`** (single source of truth): `REGIONS` + `resolveRegion`
+  (never falls back to the wrong region — synthesises un-curated states), `regionForState`/
+  `regionSlugForState` (composite/substring match), `groupStateCounts` (live counts → one card per
+  canonical hub; composite international states summed under nepal/pakistan/tibet). Consumed by home,
+  Header, region page, trek page, sitemap — so all region slugs are now canonical + consistent.
+- **(2)** Header "Top Regions" column now client-fetches `trek-state-counts` → grouped top-8 (static
+  fallback). **(3)** region page rewritten: dynamic stat strip (live trek count, beginner count, peak
+  season, per-country permit label), generated FAQs (or CMS `content_json.faqs`), schema =
+  `TouristDestination` (new `buildRegionSchema`) + `FAQPage` + `BreadcrumbList`, region-aware logistics,
+  `<link rel=canonical>` → short hub slug. Region hubs now emitted in root `sitemap.xml`
+  (`/regions/{slug}` per region w/ published treks). `next.config.mjs` 301s the crawled composite-slug
+  aliases → canonical hubs. Real per-region hero images added (`region-*.webp`, cwebp q80/1920w).
+- **App = NO release** (backend unchanged — `trek-state-counts`/`sitemap-treks` already dynamic).
+- Verified: `resolveRegion` maps all 6 live states correctly (gilgit→pakistan, koshi→nepal, no
+  himachal); `tsc --noEmit` ✓; `next build` ✓ (region route ● SSG, 10 hubs). gitnexus impact all LOW
+  (Region/Header/fetchTrekStateCounts); detect_changes = 8 files / 3 processes (Region→ApiFetch,
+  TrekDetailPage→ApiFetch/MergeImage) — matches expected scope. URL_MAP + DEPENDENCY_MAP updated.
+
 ## 2026-07-31 — International region hubs + substring trek_state filter
 - Backend: `list_pages` `trek_state` filter `==` → `ILIKE %value%` (consistent w/ season/suitability);
   a region like "Nepal" now matches composite trek_state values. **App = backend-only, NO new
