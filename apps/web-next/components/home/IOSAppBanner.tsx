@@ -1,7 +1,8 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { Sparkles, MapPin, Bell, ArrowRight, Check, Loader2 } from "lucide-react";
+import Image from "next/image";
+import { Sparkles, Map, CloudSun, ArrowRight, Check, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Logo } from "@/components/brand/Logo";
 import { subscribeNewsletter } from "@/lib/api";
@@ -9,10 +10,11 @@ import { trackNewsletterSubscribed, trackEvent } from "@/lib/analytics";
 
 const SOURCE = "ios_waitlist";
 
+// Real app USPs (no topo-map/GPX/permit-reminder claims — the app doesn't have those).
 const FEATURES = [
-  { icon: MapPin, text: "Downloadable maps & GPX for 200+ Indian trails" },
-  { icon: Sparkles, text: "Plan a trek end-to-end in under a minute" },
-  { icon: Bell, text: "Permit windows, weather shifts & safety alerts" },
+  { icon: Sparkles, text: "TrekSage AI answers + plan a full trek in 60 seconds" },
+  { icon: Map, text: "Deep guides: route maps, permits, packing & costs" },
+  { icon: CloudSun, text: "Live weather, trail conditions & real trip reports" },
 ];
 
 type Status = "idle" | "loading" | "ok" | "err";
@@ -27,6 +29,7 @@ export function IOSAppBanner() {
   const [email, setEmail] = useState("");
   const [status, setStatus] = useState<Status>("idle");
   const [message, setMessage] = useState("");
+  const [previewFailed, setPreviewFailed] = useState(false); // app-preview image missing → branded fallback
   const honeypot = useRef("");
   const sectionRef = useRef<HTMLElement>(null);
   const seen = useRef(false);
@@ -95,8 +98,9 @@ export function IOSAppBanner() {
               </h2>
 
               <p className="text-surface/75 text-base md:text-lg max-w-xl mt-4 leading-relaxed">
-                Offline topo maps for the Himalayas and Sahyadris. AI trip planning in 60 seconds.
-                Real-time weather alerts, permit reminders, and GPX tracks that work when the network doesn&apos;t.
+                India&apos;s most complete trek companion. Plan with AI, ask TrekSage anything, and
+                follow full route, permit, packing and cost guides — with live trail conditions,
+                trip reports, trek comparisons, and treks you save to open offline on the trail.
               </p>
 
               <ul className="mt-6 space-y-2.5">
@@ -160,16 +164,40 @@ export function IOSAppBanner() {
               )}
             </div>
 
-            {/* Right: preview card */}
-            <div className="rounded-3xl bg-white/5 p-8 text-center ring-1 ring-white/12">
-              <div className="flex justify-center">
-                <Logo variant="light" size="lg" />
+            {/* Right: app preview. Uses /images/app-preview.jpg with the phone status bar cropped
+                (object-position pushes the top out of view). Falls back to a branded card until the
+                image file exists, so the live banner never shows a broken image. */}
+            {previewFailed ? (
+              <div className="rounded-3xl bg-white/5 p-8 text-center ring-1 ring-white/12">
+                <div className="flex justify-center">
+                  <Logo variant="light" size="lg" />
+                </div>
+                <span className="mt-6 inline-flex items-center gap-1.5 rounded-full bg-white/10 px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.18em] text-surface/80 ring-1 ring-white/15">
+                  iOS App Preview
+                </span>
+                <p className="mt-3 text-sm text-surface/60">Explore. Dream. Discover.</p>
               </div>
-              <span className="mt-6 inline-flex items-center gap-1.5 rounded-full bg-white/10 px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.18em] text-surface/80 ring-1 ring-white/15">
-                iOS App Preview
-              </span>
-              <p className="mt-3 text-sm text-surface/60">Explore. Dream. Discover.</p>
-            </div>
+            ) : (
+              <div
+                className="relative mx-auto w-full max-w-[300px] overflow-hidden rounded-[2rem] ring-1 ring-white/12 shadow-2xl"
+                style={{ aspectRatio: "1242 / 2560" }}
+              >
+                <Image
+                  src="/images/app-preview.png"
+                  alt="TrekYatra for iOS"
+                  fill
+                  sizes="300px"
+                  className="object-cover"
+                  style={{ objectPosition: "center bottom" }} // crop the top status bar (~130px)
+                  onError={() => setPreviewFailed(true)}
+                />
+                <div className="absolute inset-x-0 bottom-0 flex justify-center bg-gradient-to-t from-black/55 to-transparent p-4">
+                  <span className="inline-flex items-center gap-1.5 rounded-full bg-white/15 px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.18em] text-white ring-1 ring-white/20">
+                    iOS App Preview
+                  </span>
+                </div>
+              </div>
+            )}
           </div>
         </div>
       </div>

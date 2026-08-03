@@ -35,6 +35,13 @@ composite values from the owner's list) so trek-detail pages can be created for 
 auto-pick-up the new regions. Region HUBS + web/mobile region chips = follow-up pending taxonomy +
 images sign-off (web filter substring-matches; mobile matches exactly — noted in DEPENDENCY_MAP).
 
+## 2026-07-31 — Web: iOS banner revised (accurate USPs + app-preview image)
+`IOSAppBanner.tsx` copy rewritten to real app USPs (TrekSage AI, 60s planning, route/permit/packing/
+cost guides, live conditions, trip reports, compare, offline-save) — removed the inaccurate
+topo-map/GPX/permit-reminder claims. Preview card now shows `/images/app-preview.png` (owner-supplied
+app-on-wallpaper shot) with the phone status bar cropped via `object-position: bottom`, and a graceful
+fallback to the branded card if the image is ever missing (so the live banner can't break).
+
 ## 2026-07-31 — Web: iOS "coming soon" waitlist banner on the home page
 Added `components/home/IOSAppBanner.tsx` as the last home section (above the footer, desktop+mobile).
 "Notify me" email capture reuses the existing newsletter subscribe API with
