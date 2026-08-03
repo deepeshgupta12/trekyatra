@@ -2656,3 +2656,21 @@ Mobile buddy matching UI consuming STEP-79 backend.
   sitemaps — Google dedupes by URL; harmless.
 - **Future regions:** adding a new international region requires a new `<region>-treks-sitemap.xml`
   route + a robots.ts entry (same as Indian states). Documented in URL_MAP.
+
+### Sitemap consolidation → single catch-all /treks-sitemap.xml (2026-08-03) blast radius
+- **Supersedes** the per-region sitemap approach above. Removed all 10 per-state/region route files
+  (`app/{uttarakhand,himachal,kashmir,ladakh,maharashtra,sikkim,karnataka,nepal,pakistan,tibet}-treks-sitemap.xml`)
+  and added a single `app/treks-sitemap.xml/route.ts` → `generateTrekSitemap()` (no state → ALL
+  published treks). **Any new region is now auto-included with ZERO code.**
+- `lib/state-sitemap.ts`: `generateStateTrekSitemap(stateName)` → `generateTrekSitemap(stateName?)`
+  (optional; no state = all treks); fetch limit 200 → 50000. gitnexus impact was MEDIUM (7 callers)
+  but all callers were the deleted route files → now 1 caller (the catch-all route).
+- `services/api/app/api/routes/sitemap_data.py`: `sitemap_treks` limit max `le=1000` → `le=50000`
+  (sitemap spec max) so the single sitemap scales. State param retained (substring) for flexibility.
+- `app/robots.ts`: 10 per-region entries → single `/treks-sitemap.xml` (5 sitemaps total).
+- `next.config.mjs`: **301 redirects** the 10 old `/{region}-treks-sitemap.xml` URLs → `/treks-sitemap.xml`
+  so search engines that discovered them via robots.txt don't 404 during the transition.
+- `app/sitemap.ts`: comments updated (trek pages covered by /treks-sitemap.xml, not per-state).
+- Test `test_sitemap_treks_state_substring_matches_composite_region` (delete-first for idempotency).
+- **Scale note:** one flat sitemap holds up to 50k URLs (spec limit); beyond that, re-shard via a
+  sitemap index. Current volume ~250 treks.

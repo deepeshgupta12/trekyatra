@@ -81,8 +81,8 @@ class TrekSitemapEntry(BaseModel):
 
 @router.get("/sitemap-treks", response_model=list[TrekSitemapEntry])
 def sitemap_treks(
-    state: str | None = Query(default=None, description="Filter by trek_state (case-insensitive)"),
-    limit: int = Query(default=500, ge=1, le=1000),
+    state: str | None = Query(default=None, description="Filter by trek_state (substring, case-insensitive)"),
+    limit: int = Query(default=500, ge=1, le=50000),  # 50000 = sitemap spec max (single catch-all sitemap)
     db: Session = Depends(get_db),
 ) -> list[TrekSitemapEntry]:
     """Published trek_guide pages with lastmod = max(cms_pages.updated_at, trek_conditions.last_updated_at).

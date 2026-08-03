@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 from fastapi.testclient import TestClient
+from sqlalchemy import delete
 
 from app.db.session import SessionLocal
 from app.main import app
@@ -14,6 +15,7 @@ def test_sitemap_treks_state_substring_matches_composite_region():
     """A per-region sitemap ("Nepal"/"Tibet") must include treks whose trek_state is a composite
     international value; Indian-state sitemaps are unaffected (nothing else contains "Himachal")."""
     with SessionLocal() as db:
+        db.execute(delete(CMSPage).where(CMSPage.slug.in_(["mount-everest-sm", "triund-sm"])))
         db.add(CMSPage(
             slug="mount-everest-sm", page_type="trek_guide", title="Everest", status="published",
             content_html="<p>x</p>", trek_state="Koshi Province, Nepal / Tibet, China",

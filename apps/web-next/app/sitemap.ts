@@ -95,14 +95,13 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   ];
 
   // NOTE: Static trek detail pages (/trek/{slug}) are intentionally excluded from the
-  // root sitemap. They are covered by state-specific sitemaps:
-  //   /uttarakhand-treks-sitemap.xml, /himachal-treks-sitemap.xml, etc.
+  // root sitemap. They are all covered by the single catch-all /treks-sitemap.xml.
   // This prevents duplicate indexing and keeps the root sitemap focused on hub pages.
 
   // Published CMS pages — trek_guide pages are excluded from the root sitemap;
-  // they are already listed in state-specific sitemaps (/uttarakhand-treks-sitemap.xml etc.)
+  // they are all listed in the single /treks-sitemap.xml (any region, auto-included).
   const PAGE_PREFIX: Record<string, string | undefined> = {
-    trek_guide: undefined, // excluded — covered by state-specific sitemaps
+    trek_guide: undefined, // excluded — covered by /treks-sitemap.xml
     news_article: undefined, // excluded — all /news/{slug} URLs live in /news-sitemap.xml
     packing_list: "/packing", packing_guide: "/packing",
     permit_guide: "/permits", beginner_guide: "/guides", beginner_roundup: "/guides",

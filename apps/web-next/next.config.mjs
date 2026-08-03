@@ -11,6 +11,16 @@ const nextConfig = {
   experimental: {
     proxyTimeout: 120_000, // 2 minutes — LLM-backed endpoints can take 30-60s
   },
+  async redirects() {
+    // The per-state/region trek sitemaps were consolidated into a single /treks-sitemap.xml.
+    // 301 the old URLs so search engines (which discovered them via robots.txt) don't hit 404s.
+    const oldRegions = ["uttarakhand", "himachal", "kashmir", "ladakh", "maharashtra", "sikkim", "karnataka", "nepal", "pakistan", "tibet"];
+    return oldRegions.map((r) => ({
+      source: `/${r}-treks-sitemap.xml`,
+      destination: "/treks-sitemap.xml",
+      permanent: true,
+    }));
+  },
   async rewrites() {
     // Read the public API base. DO App Platform encrypted vars (EV[...]) are not
     // decrypted at build time — guard against them with a startsWith check.

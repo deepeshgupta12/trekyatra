@@ -1,6 +1,6 @@
 /**
- * Shared helper for generating state-specific trek sitemaps.
- * Used by /uttarakhand-treks-sitemap.xml, /himachal-treks-sitemap.xml etc.
+ * Trek XML sitemap generator. Used by the single catch-all /treks-sitemap.xml (all published treks,
+ * every region auto-included). Optionally filters by state (substring) if per-region sitemaps return.
  *
  * lastmod = max(cms_pages.updated_at, trek_conditions.last_updated_at) so Google
  * re-crawls trek detail pages when live conditions or trail reports are refreshed.
@@ -15,9 +15,11 @@ interface TrekSitemapEntry {
   last_modified: string;
 }
 
-async function fetchTrekSitemapByState(stateName: string): Promise<TrekSitemapEntry[]> {
+async function fetchTrekSitemap(stateName?: string): Promise<TrekSitemapEntry[]> {
   const fallbackBase = "https://api.trekyatra.co.in";
-  const path = `/api/v1/public/sitemap-treks?state=${encodeURIComponent(stateName)}&limit=200`;
+  // No state → ALL published treks (the single catch-all sitemap). limit=50000 = sitemap spec max.
+  const qs = stateName ? `state=${encodeURIComponent(stateName)}&limit=50000` : `limit=50000`;
+  const path = `/api/v1/public/sitemap-treks?${qs}`;
 
   for (const base of [API_BASE, fallbackBase]) {
     try {
@@ -37,8 +39,12 @@ function xmlEscape(s: string) {
   return s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
 }
 
-export async function generateStateTrekSitemap(stateName: string): Promise<Response> {
-  const pages = await fetchTrekSitemapByState(stateName);
+/** Generate a trek XML sitemap. No `stateName` → ALL published treks (the single catch-all sitemap
+ *  at /treks-sitemap.xml, so any region — Indian or international — is auto-included with zero
+ *  per-region code). A `stateName` still works (substring-matched) if per-region sitemaps are ever
+ *  reintroduced. */
+export async function generateTrekSitemap(stateName?: string): Promise<Response> {
+  const pages = await fetchTrekSitemap(stateName);
 
   const urls = pages.map((p) => `
   <url>
