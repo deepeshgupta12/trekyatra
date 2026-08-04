@@ -50,6 +50,54 @@ def _sync_brevo(email: str, name: str | None) -> None:
     logger.info("Brevo sync done for %s (status %s)", email, resp.status_code)
 
 
+@celery_app.task(name="newsletter.send_welcome_email", bind=True, max_retries=3)
+def send_subscribe_welcome_email_task(self, email: str, source_page: str | None = None) -> dict:
+    """Send a source-aware welcome email to a NEW subscriber.
+
+    Reuses the SMTP sender from email_sequences (graceful no-op when SMTP is unset).
+    iOS-waitlist signups get waitlist-specific copy; everyone else gets the Trail Letter welcome.
+    """
+    if not settings.smtp_host or not settings.smtp_user:
+        logger.info("SMTP not configured — skipping subscribe welcome for %s", email)
+        return {"sent": False, "reason": "smtp_not_configured"}
+
+    from app.modules.email_sequences.tasks import _send_email
+
+    site = settings.frontend_url.rstrip("/")
+    is_waitlist = (source_page or "").lower() == "ios_waitlist"
+    if is_waitlist:
+        subject = "You're on the TrekYatra iOS waitlist 🏔️"
+        body = (
+            "Hi there,\n\n"
+            "You're on the list! We'll email you the moment the TrekYatra iOS app goes live on the "
+            "App Store.\n\n"
+            "In the meantime, everything the app does is already on the web:\n"
+            "- TrekSage AI — ask anything and plan a full trek in ~60 seconds\n"
+            "- 250+ deep trek guides: route maps, permits, packing & cost breakdowns\n"
+            "- Live weather, trail conditions and real trip reports\n\n"
+            f"Start exploring: {site}/explore\n\n"
+            "See you on the trail,\nThe TrekYatra Team\n"
+        )
+    else:
+        subject = "Welcome to the TrekYatra Trail Letter 🏔️"
+        body = (
+            "Hi there,\n\n"
+            "Thanks for subscribing to the TrekYatra Trail Letter — trail intel, seasonal picks, and "
+            "planning tips for trekking across India and the Himalaya.\n\n"
+            f"Browse all treks: {site}/explore\n"
+            f"Plan your next trek: {site}/plan\n\n"
+            "Happy trekking,\nThe TrekYatra Team\n"
+        )
+
+    try:
+        _send_email(email, subject, body)
+        logger.info("send_subscribe_welcome_email_task: sent to %s (waitlist=%s)", email, is_waitlist)
+        return {"sent": True, "waitlist": is_waitlist}
+    except Exception as exc:
+        logger.exception("send_subscribe_welcome_email_task failed for %s: %s", email, exc)
+        raise self.retry(exc=exc, countdown=60)
+
+
 @celery_app.task(name="newsletter.auto_generate")
 def auto_generate_newsletter_task() -> dict:
     """Weekly beat task: auto-generate a newsletter draft (human approves before send)."""

@@ -1,9 +1,12 @@
 from __future__ import annotations
 
+import csv
+import io
 import uuid
 from typing import Annotated
 
 from fastapi import APIRouter, Depends, HTTPException, Query
+from fastapi.responses import StreamingResponse
 from sqlalchemy.orm import Session
 
 from app.modules.auth.dependencies import get_current_admin
@@ -16,9 +19,55 @@ from app.schemas.newsletter import (
     RepurposeResponse,
     SendCampaignResponse,
     SocialSnippetResponse,
+    SubscriberListResponse,
+    SubscriberResponse,
 )
 
 router = APIRouter(prefix="/admin/newsletter", tags=["newsletter-admin"])
+
+
+@router.get("/subscribers", response_model=SubscriberListResponse)
+def list_subscribers(
+    _: Annotated[dict, Depends(get_current_admin)],
+    source_page: str | None = Query(default=None, description="Filter by source_page (substring, e.g. 'ios_waitlist')"),
+    limit: int = Query(default=100, ge=1, le=500),
+    offset: int = Query(default=0, ge=0),
+    db: Session = Depends(get_db),
+) -> SubscriberListResponse:
+    """Paginated newsletter subscribers, optionally filtered by source_page. Admin only (PII)."""
+    rows, total = newsletter_service.list_subscribers(db, source_page=source_page, limit=limit, offset=offset)
+    return SubscriberListResponse(
+        total=total,
+        limit=limit,
+        offset=offset,
+        subscribers=[SubscriberResponse.model_validate(r) for r in rows],
+    )
+
+
+@router.get("/subscribers/export.csv")
+def export_subscribers_csv(
+    _: Annotated[dict, Depends(get_current_admin)],
+    source_page: str | None = Query(default=None),
+    db: Session = Depends(get_db),
+) -> StreamingResponse:
+    """Export all matching subscribers as CSV. Admin only (PII)."""
+    rows, _total = newsletter_service.list_subscribers(db, source_page=source_page, limit=100_000, offset=0)
+    buf = io.StringIO()
+    writer = csv.writer(buf)
+    writer.writerow(["email", "name", "source_page", "lead_magnet", "active", "created_at"])
+    for r in rows:
+        writer.writerow([
+            r.email, r.name or "", r.source_page, r.lead_magnet or "",
+            "yes" if r.active else "no",
+            r.created_at.isoformat() if r.created_at else "",
+        ])
+    buf.seek(0)
+    filename = f"subscribers{('-' + source_page) if source_page else ''}.csv"
+    return StreamingResponse(
+        iter([buf.getvalue()]),
+        media_type="text/csv",
+        headers={"Content-Disposition": f'attachment; filename="{filename}"'},
+    )
 
 
 def _campaign_to_response(c: NewsletterCampaign) -> NewsletterCampaignResponse:

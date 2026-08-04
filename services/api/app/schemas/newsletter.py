@@ -30,6 +30,27 @@ class NewsletterSubscribeResponse(BaseModel):
     model_config = {"from_attributes": True}
 
 
+# ── Subscriber schemas (admin) ────────────────────────────────────────────────
+
+class SubscriberResponse(BaseModel):
+    id: uuid.UUID
+    email: str
+    name: str | None
+    source_page: str
+    lead_magnet: str | None
+    active: bool
+    created_at: datetime
+
+    model_config = {"from_attributes": True}
+
+
+class SubscriberListResponse(BaseModel):
+    total: int
+    limit: int
+    offset: int
+    subscribers: list[SubscriberResponse]
+
+
 # ── Campaign schemas ──────────────────────────────────────────────────────────
 
 class NewsletterCampaignResponse(BaseModel):

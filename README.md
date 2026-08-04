@@ -443,6 +443,9 @@ trekyatra/
 |---------|--------|
 | Home "trekking regions" — dynamic states + live counts (`/public/trek-state-counts`), real images | Done |
 | Region hubs `/regions/[slug]` — fully dynamic (canonical slugs via `lib/regions.ts`, incl. international 8000m ranges nepal/pakistan/tibet); live stats, generated FAQs, `TouristDestination`+`FAQPage`+`Breadcrumb` schema, sitemap-indexed, composite-slug 301s; nav + home chips grouped per hub | Done |
+| Regional hub generation in `/admin/hubs` — `RegionalContentAgent` (hybrid: deterministic scaffold + grounded FAQs from live treks + optional LLM intro); Regenerate + "Generate Missing Regional Hubs"; `GET /admin/hubs/regions/catalog` | Done |
+| Hub SEO parity — `/seasons/[slug]` emits `FAQPage`+`ItemList`; `/trek-types/[slug]` emits `FAQPage` JSON-LD | Done |
+| Newsletter subscriber visibility — admin **Subscribers** tab (`/admin/newsletter`): list + `source_page` filter (e.g. `ios_waitlist`) + CSV export; source-aware **welcome email** on new subscribe | Done |
 | Home editorial spotlight backed by a real published guide (name/excerpt/chips/link) | Done |
 | Clean comparison URLs `/compare/{a-vs-b}` — rendered LIVE from trek data (no CMS pages); pairs in `trek_comparisons`, publish-triggered agent, SEO+AEO JSON-LD, in sitemap; `/compare?slugs=` tool intact | Done |
 | Home comparisons section — personalized (trending + viewer difficulty) linking to clean pairs; server-synced cross-device profile via `BEHAVIOR_UPDATED_EVENT` | Done |

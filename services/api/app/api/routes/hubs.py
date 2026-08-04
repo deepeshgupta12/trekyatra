@@ -8,11 +8,14 @@ from app.modules.auth.dependencies import get_current_admin
 from app.db.session import get_db
 from app.modules.cms.models import CMSPage
 from app.modules.agents.seasonal_content.agent import SeasonalContentAgent, SEASON_META
+from app.modules.agents.regional_content.agent import RegionalContentAgent
+from app.modules.hubs.region_meta import REGIONS
 from app.schemas.hubs import (
     HUB_PAGE_TYPES,
     HubPageResponse,
     HubRegenerateRequest,
     HubRegenerateResponse,
+    RegionCatalogItem,
 )
 
 router = APIRouter(
@@ -89,10 +92,36 @@ def regenerate_hub(
             page_id=page_id,
         )
 
-    # cluster_hub and regional_hub: content generation uses existing CMS pipeline
-    # (ContentWritingAgent or manual) — return 501 stub for now
+    if hub_type == "regional_hub":
+        # slug format: "regions/{region_slug}"
+        region_slug = slug.split("/")[-1] if slug else None
+        if not region_slug:
+            raise HTTPException(status_code=422, detail=f"Cannot determine region from slug '{slug}'.")
+        agent = RegionalContentAgent(db=db, region_slug=region_slug)
+        result = agent.run(input_data={"region_slug": region_slug})
+        if result.get("errors"):
+            raise HTTPException(status_code=400, detail=result["errors"][0])
+        page_id = result.get("output", {}).get("page_id")
+        return HubRegenerateResponse(
+            slug=result.get("output", {}).get("slug", slug),
+            hub_type=hub_type,
+            message=f"Regional hub '{region_slug}' regenerated successfully.",
+            page_id=page_id,
+        )
+
+    # cluster_hub: content generation uses the existing publish pipeline (ContentWritingAgent)
     raise HTTPException(
         status_code=501,
         detail=f"Regeneration for hub_type='{hub_type}' is managed via the publish pipeline. "
-               "Trigger a new pipeline run with the matching cluster/region brief.",
+               "Trigger a new pipeline run with the matching cluster brief.",
     )
+
+
+@router.get("/regions/catalog", response_model=list[RegionCatalogItem])
+def region_catalog() -> list[RegionCatalogItem]:
+    """Canonical region hubs available to generate — powers the admin
+    'Generate Missing Regional Hubs' panel. Source: app.modules.hubs.region_meta.REGIONS."""
+    return [
+        RegionCatalogItem(slug=r.slug, name=r.name, hub_slug=f"regions/{r.slug}", country=r.country)
+        for r in REGIONS
+    ]

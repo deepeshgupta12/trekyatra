@@ -2713,3 +2713,40 @@ region schema/FAQs; region hubs weren't in the sitemap.
   -> real per-region hero photos (converted from user-supplied PNGs via cwebp @ q80/1920w, 236–376 KB).
 - **Backend: NONE.** `trek-state-counts` + `sitemap-treks` already existed and are dynamic → the mobile
   app (dynamic filter-facets) needs **no release**. next build ✓ (region route ● SSG, 10 hubs), tsc ✓.
+
+## 2026-08-04 — Regional hubs in /admin/hubs (hybrid gen) + newsletter subscriber visibility
+
+**Q2 — Regional hub generation (first-class in the Destination Hubs CMS feature):**
+- `services/api/app/modules/hubs/region_meta.py` **(NEW)** -> backend region taxonomy (`REGIONS`,
+  `region_by_slug`, `permit_copy`). **Mirrors `apps/web-next/lib/regions.ts` — keep in sync.**
+- `services/api/app/modules/agents/regional_content/agent.py` **(NEW)** -> `RegionalContentAgent`
+  (LangGraph BaseAgent, hybrid): deterministic scaffold (body + grounded FAQs from the region's real
+  published treks — count/beginner/peak-season/permits/trek names) + optional single LLM pass to
+  enrich ONLY the intro prose (fails safe to the deterministic blurb). Stores/updates a published
+  `regional_hub` CMSPage at `regions/{slug}`. blast radius: LOW (new leaf).
+- `services/api/app/api/routes/hubs.py` -> `regenerate_hub` regional branch now calls the agent
+  (was 501); new `GET /admin/hubs/regions/catalog`. `schemas/hubs.py` -> `RegionCatalogItem`.
+- Public `regions/[slug]/page.tsx` already overlays the CMS page (content_html + content_json.faqs) —
+  **no frontend change needed** for consumption; generated page enriches body + FAQPage schema.
+- `apps/web-next/app/(admin)/admin/hubs/page.tsx` -> Regenerate enabled for `regional_hub`;
+  "Generate Missing Regional Hubs" panel (driven by `fetchRegionCatalog`). `lib/api.ts` ->
+  `RegionCatalogItem` + `fetchRegionCatalog`.
+
+**Q1 — iOS waitlist / subscriber visibility + welcome email:**
+- `services/api/app/modules/newsletter/tasks.py` -> `send_subscribe_welcome_email_task` (source-aware:
+  ios_waitlist vs Trail Letter; reuses `email_sequences.tasks._send_email`; graceful no-op when SMTP unset).
+- `services/api/app/modules/newsletter/service.py` -> `subscribe()` dispatches the welcome for NEW
+  subscribers only; new `list_subscribers(db, source_page, limit, offset)` (paginated + total).
+- `services/api/app/api/routes/newsletter_admin.py` -> `GET /admin/newsletter/subscribers` (+ source_page
+  filter) and `GET /admin/newsletter/subscribers/export.csv` — **admin-gated (PII)**, registered BEFORE
+  the dynamic `/{campaign_id}` route. `schemas/newsletter.py` -> `SubscriberResponse`, `SubscriberListResponse`.
+- `apps/web-next/app/(admin)/admin/newsletter/page.tsx` -> new **Subscribers** tab (list + source filter +
+  CSV export + total). `lib/api.ts` -> `NewsletterSubscriber`, `fetchNewsletterSubscribers`, `subscribersCsvUrl`.
+
+**Bonus SEO parity:** `seasons/[slug]` now emits FAQPage + ItemList (trek names) JSON-LD;
+`trek-types/[slug]` now emits FAQPage JSON-LD (were breadcrumb-only). Region page already gold-standard.
+
+- **No DB migration** (regional_hub + newsletter_subscribers already exist). **No new env** (SMTP/NEWSLETTER
+  already in config). Backend: 804 pass + 9 new (2 failures = the known pre-existing test_refresh shared-DB
+  flake, passes 13/13 isolated). `tsc` ✓, `next build` ✓. gitnexus impact LOW; detect_changes = 12 files / 2
+  processes (NewsletterPage) — matches scope.

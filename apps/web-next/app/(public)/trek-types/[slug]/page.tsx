@@ -5,7 +5,7 @@ import { Mountain, ArrowLeft, Clock, ChevronRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { fetchCMSPage, fetchCMSPages } from "@/lib/api";
 import SchemaInjector from "@/components/seo/SchemaInjector";
-import { buildBreadcrumbSchema } from "@/lib/schema";
+import { buildBreadcrumbSchema, buildFAQSchema } from "@/lib/schema";
 import Breadcrumb from "@/components/content/Breadcrumb";
 import FAQAccordion from "@/components/content/FAQAccordion";
 
@@ -55,7 +55,12 @@ export default async function TrekTypePage({ params }: Props) {
 
   return (
     <>
-      <SchemaInjector schemas={[buildBreadcrumbSchema(breadcrumbItems)]} />
+      <SchemaInjector
+        schemas={[
+          buildBreadcrumbSchema(breadcrumbItems),
+          ...(faqs.length ? [buildFAQSchema(faqs)!] : []),
+        ]}
+      />
 
       {/* Hero */}
       <section className="relative min-h-[50vh] flex items-end overflow-hidden bg-gradient-to-br from-pine/20 via-[#0c0e14] to-accent/10">

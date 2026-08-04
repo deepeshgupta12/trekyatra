@@ -31,3 +31,10 @@ class HubRegenerateResponse(BaseModel):
     hub_type: str
     message: str
     page_id: str | None = None
+
+
+class RegionCatalogItem(BaseModel):
+    slug: str          # canonical region slug, e.g. "pakistan"
+    name: str          # display name, e.g. "Pakistan Karakoram"
+    hub_slug: str      # CMS/hub slug, e.g. "regions/pakistan"
+    country: str

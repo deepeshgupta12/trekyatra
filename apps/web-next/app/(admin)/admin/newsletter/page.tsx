@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
-import { Mail, Send, RefreshCw, Copy, Instagram, Twitter, Loader2, CheckCircle2 } from "lucide-react";
+import { Mail, Send, RefreshCw, Copy, Instagram, Twitter, Loader2, CheckCircle2, Download, Users } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   fetchNewsletterCampaigns,
@@ -9,8 +9,11 @@ import {
   sendNewsletterCampaign,
   fetchSocialSnippets,
   repurposePage,
+  fetchNewsletterSubscribers,
+  subscribersCsvUrl,
   type NewsletterCampaign,
   type SocialSnippet,
+  type NewsletterSubscriber,
 } from "@/lib/api";
 
 // ── Status badge ─────────────────────────────────────────────────────────────
@@ -121,12 +124,21 @@ function RepurposeForm({ onDone }: { onDone: () => void }) {
 
 // ── Main page ─────────────────────────────────────────────────────────────────
 
-type Tab = "campaigns" | "snippets";
+type Tab = "campaigns" | "snippets" | "subscribers";
+
+const TAB_LABELS: Record<Tab, string> = {
+  campaigns: "Campaigns",
+  snippets: "Social Snippets",
+  subscribers: "Subscribers",
+};
 
 export default function NewsletterPage() {
   const [tab, setTab] = useState<Tab>("campaigns");
   const [campaigns, setCampaigns] = useState<NewsletterCampaign[]>([]);
   const [snippets, setSnippets] = useState<SocialSnippet[]>([]);
+  const [subscribers, setSubscribers] = useState<NewsletterSubscriber[]>([]);
+  const [subTotal, setSubTotal] = useState(0);
+  const [sourceFilter, setSourceFilter] = useState("");
   const [loading, setLoading] = useState(false);
   const [generating, setGenerating] = useState(false);
   const [sendingId, setSendingId] = useState<string | null>(null);
@@ -153,10 +165,24 @@ export default function NewsletterPage() {
     }
   }, []);
 
+  const loadSubscribers = useCallback(async (source?: string) => {
+    setLoading(true);
+    try {
+      const res = await fetchNewsletterSubscribers({ source_page: source, limit: 500 });
+      setSubscribers(res.subscribers);
+      setSubTotal(res.total);
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
   useEffect(() => {
     if (tab === "campaigns") loadCampaigns();
-    else loadSnippets();
-  }, [tab, loadCampaigns, loadSnippets]);
+    else if (tab === "snippets") loadSnippets();
+    else loadSubscribers(sourceFilter || undefined);
+    // sourceFilter intentionally excluded — filter applies via the Apply button, not on keystroke
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [tab, loadCampaigns, loadSnippets, loadSubscribers]);
 
   async function handleGenerate() {
     setGenerating(true);
@@ -221,7 +247,7 @@ export default function NewsletterPage() {
 
       {/* Tabs */}
       <div className="flex gap-1 mb-5 bg-white/3 rounded-xl p-1 w-fit">
-        {(["campaigns", "snippets"] as Tab[]).map((t) => (
+        {(["campaigns", "snippets", "subscribers"] as Tab[]).map((t) => (
           <button
             key={t}
             onClick={() => setTab(t)}
@@ -229,10 +255,76 @@ export default function NewsletterPage() {
               tab === t ? "bg-white/10 text-white" : "text-white/40 hover:text-white/70"
             }`}
           >
-            {t === "campaigns" ? "Campaigns" : "Social Snippets"}
+            {TAB_LABELS[t]}
           </button>
         ))}
       </div>
+
+      {/* Subscribers tab */}
+      {tab === "subscribers" && (
+        <div className="bg-[#14161f] rounded-2xl border border-white/10 overflow-hidden">
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between px-5 py-3.5 border-b border-white/8">
+            <div className="flex items-center gap-2">
+              <Users className="h-4 w-4 text-accent" />
+              <h2 className="text-white font-semibold text-sm">Subscribers</h2>
+              <span className="text-white/30 text-xs">{subTotal} total</span>
+            </div>
+            <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
+              <input
+                value={sourceFilter}
+                onChange={(e) => setSourceFilter(e.target.value)}
+                onKeyDown={(e) => { if (e.key === "Enter") loadSubscribers(sourceFilter || undefined); }}
+                placeholder="Filter by source (e.g. ios_waitlist)"
+                className="w-full sm:w-56 bg-[#0f1117] border border-white/10 rounded-lg px-3 py-1.5 text-xs text-white placeholder:text-white/30 focus:outline-none focus:border-accent/40"
+              />
+              <div className="flex gap-2">
+                <Button variant="outline" size="sm" onClick={() => loadSubscribers(sourceFilter || undefined)} className="border-white/20 text-white/60 hover:text-white text-xs w-full sm:w-auto">
+                  Apply
+                </Button>
+                <a href={subscribersCsvUrl(sourceFilter || undefined)} className="inline-flex items-center gap-1.5 text-xs text-accent hover:text-accent/80 border border-accent/20 rounded-lg px-3 py-1.5 whitespace-nowrap">
+                  <Download className="h-3.5 w-3.5" /> Export CSV
+                </a>
+              </div>
+            </div>
+          </div>
+          {loading ? (
+            <div className="px-5 py-8 text-white/30 text-sm text-center">Loading…</div>
+          ) : subscribers.length === 0 ? (
+            <div className="px-5 py-8 text-center">
+              <Users className="h-8 w-8 text-white/10 mx-auto mb-3" />
+              <p className="text-white/30 text-sm">No subscribers{sourceFilter ? ` for source "${sourceFilter}"` : ""} yet.</p>
+            </div>
+          ) : (
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm min-w-[560px]">
+                <thead>
+                  <tr className="border-b border-white/8">
+                    <th className="text-left px-4 py-3 text-white/40 font-medium text-xs">Email</th>
+                    <th className="text-left px-4 py-3 text-white/40 font-medium text-xs hidden sm:table-cell">Source</th>
+                    <th className="text-left px-4 py-3 text-white/40 font-medium text-xs hidden md:table-cell">Subscribed</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {subscribers.map((s) => (
+                    <tr key={s.id} className="border-b border-white/5 last:border-0 hover:bg-white/3 transition-colors">
+                      <td className="px-4 py-3.5 text-white/80 text-xs sm:text-sm">
+                        {s.email}
+                        {s.name && <span className="text-white/30"> · {s.name}</span>}
+                      </td>
+                      <td className="px-4 py-3.5 hidden sm:table-cell">
+                        <span className="text-xs font-mono text-white/50 bg-white/5 border border-white/10 rounded px-2 py-0.5">{s.source_page}</span>
+                      </td>
+                      <td className="px-4 py-3.5 text-white/40 text-xs hidden md:table-cell">
+                        {new Date(s.created_at).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" })}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </div>
+      )}
 
       {/* Campaigns tab */}
       {tab === "campaigns" && (

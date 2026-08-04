@@ -6,7 +6,7 @@ import { Snowflake, Sun, Cloud, Leaf } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import { fetchCMSPage } from "@/lib/api";
 import SchemaInjector from "@/components/seo/SchemaInjector";
-import { buildBreadcrumbSchema } from "@/lib/schema";
+import { buildBreadcrumbSchema, buildFAQSchema, buildItemListSchema } from "@/lib/schema";
 import FAQAccordion from "@/components/content/FAQAccordion";
 import AffiliateDisclosure from "@/components/content/AffiliateDisclosure";
 
@@ -114,7 +114,13 @@ export default async function Seasonal({ params }: Props) {
 
   return (
     <>
-      <SchemaInjector schemas={[buildBreadcrumbSchema(breadcrumbItems)]} />
+      <SchemaInjector
+        schemas={[
+          buildBreadcrumbSchema(breadcrumbItems),
+          buildItemListSchema(treks.slice(0, 6).map((t) => t.name), `/seasons/${params.slug}`),
+          ...(faqs.length ? [buildFAQSchema(faqs)!] : []),
+        ]}
+      />
 
       <section className="relative h-[60vh] min-h-[480px] flex items-end overflow-hidden">
         <div className="absolute inset-0">

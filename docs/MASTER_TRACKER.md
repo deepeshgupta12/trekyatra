@@ -18,6 +18,27 @@ Do not modify any code file without first:
 4. Checking impacted files and blast radius
 5. Updating the relevant step file in `docs/steps/`
 
+## 2026-08-04 — Regional hubs in /admin/hubs (hybrid gen) + newsletter subscriber visibility
+Two owner asks, one coordinated pass.
+- **Q2 — Regional hubs are now first-class in the Destination Hubs CMS** (`/admin/hubs`, same feature
+  as Seasonal). New backend region taxonomy (`app/modules/hubs/region_meta.py`, mirrors
+  `lib/regions.ts`) + **`RegionalContentAgent`** (hybrid: deterministic scaffold with grounded FAQs
+  from the region's real treks + optional LLM intro enrich, fails safe). `regenerate_hub` regional
+  branch replaces the old 501; new `GET /admin/hubs/regions/catalog` drives a "Generate Missing
+  Regional Hubs" panel + a Regenerate action on regional rows. The generated `regional_hub` page is
+  consumed by the existing public `/regions/[slug]` overlay (rich body + FAQPage schema); already
+  sitemap-indexed. **App = no release** (backend/admin only).
+- **Q1 — iOS waitlist is now visible + exportable.** Confirmed: on "Notify me" the email is stored in
+  `newsletter_subscribers` (`source_page="ios_waitlist"`) but was **not** shown anywhere and **no mail**
+  was sent. Added: a source-aware **welcome email** on new subscribe (`send_subscribe_welcome_email_task`,
+  reuses SMTP sender, graceful when unset); an admin **Subscribers** tab on `/admin/newsletter` (list +
+  `source_page` filter + CSV export + total) backed by `GET /admin/newsletter/subscribers[/export.csv]`
+  (admin-gated, PII).
+- **Bonus SEO:** added FAQPage + ItemList (trek names) JSON-LD to `/seasons/[slug]` and FAQPage to
+  `/trek-types/[slug]` (were breadcrumb-only). Region page was already the gold standard.
+- No DB migration, no new env. Backend 804 pass + 9 new (2 failures = known `test_refresh` flake, passes
+  isolated); `tsc` ✓, `next build` ✓; gitnexus impact LOW, detect_changes 12 files / 2 processes = in scope.
+
 ## 2026-08-03 — Region hubs fully dynamic (live bug + SEO/AEO rebuild)
 **Reported (web desktop + mobile):** (1) `/regions/gilgit-baltistan-pakistan` &
 `/regions/koshi-province-nepal-tibet-china` showed **Himachal** treks/content; (2) primary-nav

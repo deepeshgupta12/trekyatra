@@ -16,7 +16,7 @@ logger = logging.getLogger(__name__)
 
 
 def subscribe(db: Session, payload: NewsletterSubscribeCreate) -> NewsletterSubscribeResponse:
-    from app.modules.newsletter.tasks import sync_subscriber_task
+    from app.modules.newsletter.tasks import sync_subscriber_task, send_subscribe_welcome_email_task
     existing = db.scalar(
         select(NewsletterSubscriber).where(NewsletterSubscriber.email == payload.email)
     )
@@ -40,7 +40,9 @@ def subscribe(db: Session, payload: NewsletterSubscribeCreate) -> NewsletterSubs
     db.add(subscriber)
     db.commit()
     db.refresh(subscriber)
+    # New subscriber only: sync to the mailing platform + send a source-aware welcome email.
     sync_subscriber_task.delay(subscriber.email, subscriber.name)
+    send_subscribe_welcome_email_task.delay(subscriber.email, subscriber.source_page)
     return NewsletterSubscribeResponse(
         id=subscriber.id,
         email=subscriber.email,
@@ -48,6 +50,31 @@ def subscribe(db: Session, payload: NewsletterSubscribeCreate) -> NewsletterSubs
         already_subscribed=False,
         created_at=subscriber.created_at,
     )
+
+
+def list_subscribers(
+    db: Session,
+    source_page: str | None = None,
+    limit: int = 100,
+    offset: int = 0,
+) -> tuple[list[NewsletterSubscriber], int]:
+    """Admin: paginated subscribers, optionally filtered by source_page (substring, case-insensitive).
+    Returns (rows, total_matching_count)."""
+    from sqlalchemy import func
+
+    base = select(NewsletterSubscriber)
+    count_q = select(func.count()).select_from(NewsletterSubscriber)
+    if source_page:
+        cond = NewsletterSubscriber.source_page.ilike(f"%{source_page}%")
+        base = base.where(cond)
+        count_q = count_q.where(cond)
+    total = db.scalar(count_q) or 0
+    rows = list(
+        db.scalars(
+            base.order_by(NewsletterSubscriber.created_at.desc()).limit(limit).offset(offset)
+        ).all()
+    )
+    return rows, total
 
 
 # ── Campaign helpers ──────────────────────────────────────────────────────────

@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { Globe, RefreshCw, ExternalLink, MapPin, Cloud, BarChart2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { fetchHubPages, regenerateHub, HubPage } from "@/lib/api";
+import { fetchHubPages, regenerateHub, fetchRegionCatalog, HubPage, RegionCatalogItem } from "@/lib/api";
 
 const HUB_TYPE_LABELS: Record<string, string> = {
   seasonal_hub: "Seasonal",
@@ -39,6 +39,7 @@ function formatDate(iso: string | null) {
 
 export default function HubsPage() {
   const [hubs, setHubs] = useState<HubPage[]>([]);
+  const [regionCatalog, setRegionCatalog] = useState<RegionCatalogItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [regenerating, setRegenerating] = useState<Record<string, boolean>>({});
   const [messages, setMessages] = useState<Record<string, string>>({});
@@ -49,6 +50,9 @@ export default function HubsPage() {
       .then(setHubs)
       .catch(() => setHubs([]))
       .finally(() => setLoading(false));
+    fetchRegionCatalog()
+      .then(setRegionCatalog)
+      .catch(() => setRegionCatalog([]));
   }, []);
 
   async function handleRegenerate(slug: string) {
@@ -73,6 +77,10 @@ export default function HubsPage() {
   // Seasonal stubs: show placeholders for seasons that don't have a CMS page yet
   const existingSeasonSlugs = new Set(hubs.filter((h) => h.page_type === "seasonal_hub").map((h) => h.slug));
   const missingSeasons = SEASON_SLUGS.filter((s) => !existingSeasonSlugs.has(s));
+
+  // Regional stubs: canonical regions (from backend catalog) without a regional_hub CMS page yet
+  const existingRegionSlugs = new Set(hubs.filter((h) => h.page_type === "regional_hub").map((h) => h.slug));
+  const missingRegions = regionCatalog.filter((r) => !existingRegionSlugs.has(r.hub_slug));
 
   return (
     <div>
@@ -174,7 +182,7 @@ export default function HubsPage() {
                       <td className="px-4 py-3.5 text-white/40 text-xs hidden md:table-cell">{formatDate(hub.updated_at)}</td>
                       <td className="px-4 py-3.5">
                         <div className="flex items-center gap-2">
-                          {hub.page_type === "seasonal_hub" && (
+                          {(hub.page_type === "seasonal_hub" || hub.page_type === "regional_hub") && (
                             <button
                               onClick={() => handleRegenerate(hub.slug)}
                               disabled={regenerating[hub.slug]}
@@ -236,6 +244,44 @@ export default function HubsPage() {
                 </div>
               );
             })}
+          </div>
+        </div>
+      )}
+
+      {/* Missing regional hubs panel */}
+      {(filter === "all" || filter === "regional_hub") && missingRegions.length > 0 && (
+        <div className="bg-[#14161f] rounded-2xl border border-white/10 overflow-hidden mt-6">
+          <div className="px-5 py-3.5 border-b border-white/8">
+            <h2 className="text-white font-semibold text-sm">Generate Missing Regional Hubs</h2>
+            <p className="text-white/40 text-xs mt-0.5">
+              These region hubs have no CMS page yet. Generating creates a rich, SEO-complete
+              <span className="text-white/60"> regional_hub</span> page (body + FAQs) grounded in the region&apos;s live treks.
+            </p>
+          </div>
+          <div className="p-5 grid sm:grid-cols-2 gap-3">
+            {missingRegions.map((r) => (
+              <div key={r.hub_slug} className="bg-[#0f1117] rounded-xl border border-white/8 p-4 flex items-center justify-between gap-3">
+                <div>
+                  <p className="text-white/80 font-medium text-sm">{r.name}</p>
+                  <p className="text-white/30 text-xs font-mono">{r.hub_slug}</p>
+                  {messages[r.hub_slug] && (
+                    <p className={`text-xs mt-1 ${messages[r.hub_slug].startsWith("✓") ? "text-pine" : "text-red-400"}`}>
+                      {messages[r.hub_slug]}
+                    </p>
+                  )}
+                </div>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  disabled={regenerating[r.hub_slug]}
+                  onClick={() => handleRegenerate(r.hub_slug)}
+                  className="border-white/20 text-white/60 hover:text-white text-xs flex-shrink-0"
+                >
+                  <RefreshCw className={`h-3.5 w-3.5 mr-1.5 ${regenerating[r.hub_slug] ? "animate-spin" : ""}`} />
+                  {regenerating[r.hub_slug] ? "Generating…" : "Generate"}
+                </Button>
+              </div>
+            ))}
           </div>
         </div>
       )}

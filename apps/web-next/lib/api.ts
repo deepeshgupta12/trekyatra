@@ -1091,6 +1091,46 @@ export async function fetchNewsletterCampaigns(params?: {
   return apiFetch<NewsletterCampaign[]>(`/admin/newsletter${q}`);
 }
 
+export interface NewsletterSubscriber {
+  id: string;
+  email: string;
+  name: string | null;
+  source_page: string;
+  lead_magnet: string | null;
+  active: boolean;
+  created_at: string;
+}
+
+export interface SubscriberListResult {
+  total: number;
+  limit: number;
+  offset: number;
+  subscribers: NewsletterSubscriber[];
+}
+
+export async function fetchNewsletterSubscribers(params?: {
+  source_page?: string;
+  limit?: number;
+  offset?: number;
+}): Promise<SubscriberListResult> {
+  const q = params
+    ? "?" + new URLSearchParams(
+        Object.entries(params)
+          .filter(([, v]) => v !== undefined && v !== "")
+          .map(([k, v]) => [k, String(v)])
+      )
+    : "";
+  const res = await fetch(`${apiBase}/api/v1/admin/newsletter/subscribers${q}`);
+  if (!res.ok) throw new Error(`API ${res.status}: fetch subscribers`);
+  return res.json();
+}
+
+/** Absolute URL for the CSV export (browser navigates to it; admin cookie is sent same-origin). */
+export function subscribersCsvUrl(sourcePage?: string): string {
+  const q = sourcePage ? `?source_page=${encodeURIComponent(sourcePage)}` : "";
+  return `${apiBase}/api/v1/admin/newsletter/subscribers/export.csv${q}`;
+}
+
 export async function generateNewsletter(): Promise<GenerateCampaignResult> {
   const res = await fetch(`${apiBase}/api/v1/admin/newsletter/generate`, { method: "POST" });
   if (!res.ok) {
@@ -1209,6 +1249,19 @@ export async function fetchHubPages(hubType?: string): Promise<HubPage[]> {
   const qs = hubType ? `?hub_type=${encodeURIComponent(hubType)}` : "";
   const res = await fetch(`${apiBase}/api/v1/admin/hubs${qs}`);
   if (!res.ok) throw new Error(`API ${res.status}: fetch hubs`);
+  return res.json();
+}
+
+export interface RegionCatalogItem {
+  slug: string;      // canonical region slug, e.g. "pakistan"
+  name: string;      // display name
+  hub_slug: string;  // CMS/hub slug, e.g. "regions/pakistan"
+  country: string;
+}
+
+export async function fetchRegionCatalog(): Promise<RegionCatalogItem[]> {
+  const res = await fetch(`${apiBase}/api/v1/admin/hubs/regions/catalog`);
+  if (!res.ok) throw new Error(`API ${res.status}: fetch region catalog`);
   return res.json();
 }
 

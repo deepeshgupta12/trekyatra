@@ -225,7 +225,11 @@ Last updated: 2026-08-03 (region hubs made fully dynamic + SEO/AEO schema + site
 | `/api/v1/treks/*` | Public trek data |
 | `/api/v1/plan/*` | Trip planner |
 | `/api/v1/leads` | Lead capture |
-| `/api/v1/newsletter/*` | Newsletter |
+| `/api/v1/newsletter/*` | Newsletter (public subscribe → `newsletter_subscribers`; new signups get a source-aware **welcome email** + platform sync) |
+| `/api/v1/admin/newsletter/subscribers` | **Admin GET** — paginated subscribers, filter `?source_page=` (e.g. `ios_waitlist`); PII, admin-gated (2026-08-04) |
+| `/api/v1/admin/newsletter/subscribers/export.csv` | **Admin GET** — CSV export of matching subscribers; PII, admin-gated (2026-08-04) |
+| `/api/v1/admin/hubs/{slug}/regenerate` | **Admin POST** — regenerate a hub. `seasonal_hub` → SeasonalContentAgent; **`regional_hub` → RegionalContentAgent** (hybrid: deterministic scaffold + optional LLM intro; 2026-08-04); `cluster_hub` → 501 (pipeline) |
+| `/api/v1/admin/hubs/regions/catalog` | **Admin GET** — canonical region hubs available to generate (powers "Generate Missing Regional Hubs"); source `app.modules.hubs.region_meta.REGIONS` (2026-08-04) |
 | `/api/v1/operators/*` | Operators public |
 | `/api/v1/inquiries` | Booking inquiries |
 | `/api/v1/products/*` | Digital products |
