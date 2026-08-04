@@ -19,31 +19,43 @@ from app.modules.cms.service import _md_to_html
 MODEL = "claude-sonnet-4-6"
 MAX_TOKENS = 2000
 
-SEASON_META: dict[str, dict] = {
-    "winter": {
-        "title": "Best Winter Treks in India",
-        "months": "December – March",
-        "overview": "snow-covered Himalayan trails, frozen lake crossings, and pristine white campsites",
-        "regions": "Uttarakhand, Himachal Pradesh",
+from app.modules.hubs.season_meta import SEASONS as _CANON_SEASONS, treks_in_season
+
+# Per-season prose enrichment (overview + regions), keyed by the canonical 5-season slugs
+# (app.modules.hubs.season_meta.SEASONS). Title + month label come from the canonical table so
+# the agent, the endpoint, the home tabs and the /seasons/[slug] hub all agree.
+_SEASON_ENRICH: dict[str, dict] = {
+    "spring": {
+        "overview": "rhododendron forests in bloom, snow-free lower trails, ideal weather windows",
+        "regions": "Uttarakhand, Sikkim, North East",
     },
     "summer": {
-        "title": "Best Summer Treks in India",
-        "months": "May – June",
         "overview": "alpine meadows in full bloom, pre-monsoon shoulder season, manageable temperatures",
         "regions": "Himachal Pradesh, Ladakh, Kashmir",
     },
     "monsoon": {
-        "title": "Best Monsoon Treks in India",
-        "months": "June – September",
         "overview": "lush green landscapes, cascading waterfalls, misty ridges in the Western Ghats",
         "regions": "Maharashtra (Sahyadris), Kerala, Coorg",
     },
-    "spring": {
-        "title": "Best Spring Treks in India",
-        "months": "March – April",
-        "overview": "rhododendron forests in bloom, snow-free lower trails, ideal weather windows",
-        "regions": "Uttarakhand, Sikkim, North East",
+    "autumn": {
+        "overview": "crisp post-monsoon skies, stable weather, and the clearest high-Himalayan views of the year",
+        "regions": "Uttarakhand, Himachal Pradesh, Sikkim",
     },
+    "winter": {
+        "overview": "snow-covered Himalayan trails, frozen lake crossings, and pristine white campsites",
+        "regions": "Uttarakhand, Himachal Pradesh",
+    },
+}
+
+# Backward-compatible SEASON_META (now the canonical 5 seasons): title + months label + enrichment.
+SEASON_META: dict[str, dict] = {
+    slug: {
+        "title": _CANON_SEASONS[slug]["title"],
+        "months": _CANON_SEASONS[slug]["label"],
+        "overview": _SEASON_ENRICH[slug]["overview"],
+        "regions": _SEASON_ENRICH[slug]["regions"],
+    }
+    for slug in _CANON_SEASONS
 }
 
 SEASONAL_PROMPT = """You are a senior trekking content writer for TrekYatra, India's leading trekking guide platform.
@@ -116,6 +128,15 @@ class SeasonalContentAgent(BaseAgent):
             .replace("{overview}", meta["overview"])
             .replace("{regions}", meta["regions"])
         )
+        # Ground the article in the REAL treks that match this season (canonical matcher) so the
+        # LLM references actual published guides, not invented ones.
+        real_treks = treks_in_season(self.db, self.season_slug, limit=8)
+        names = [(p.trek_name or p.title) for p in real_treks if (p.trek_name or p.title)]
+        if names:
+            prompt += (
+                f"\n\nWhen naming treks, prefer these real published TrekYatra treks for "
+                f"{self.season_slug.capitalize()}: {', '.join(names)}."
+            )
 
         client = get_anthropic_client()
         response = client.messages.create(

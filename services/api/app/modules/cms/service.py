@@ -154,22 +154,15 @@ def _month_in_season(month: int, season_range: tuple[int, int]) -> bool:
 
 
 def get_seasonal_pages(db: Session, *, month: int, limit: int = 6) -> list[CMSPage]:
-    """Return published trek_guide pages whose trek_season covers the given month (1-12)."""
-    pages = list(
-        db.scalars(
-            select(CMSPage).where(
-                CMSPage.page_type == "trek_guide",
-                CMSPage.status == "published",
-                CMSPage.trek_season.isnot(None),
-            )
-        ).all()
-    )
-    matches = []
-    for page in pages:
-        season_range = _parse_season_range(page.trek_season or "")
-        if season_range and _month_in_season(month, season_range):
-            matches.append(page)
-    return matches[:limit]
+    """Published trek_guide pages active in the given month (1-12).
+
+    Delegates to the canonical season matcher (app.modules.hubs.season_meta), which uses the
+    Trek Backfill month arrays first (trek_best_months → trek_open_months) and only falls back to
+    parsing the trek_season string. This keeps month/season matching identical everywhere.
+    """
+    from app.modules.hubs.season_meta import treks_in_month
+
+    return treks_in_month(db, month, limit=limit)
 
 
 def update_page(db: Session, *, page: CMSPage, patch: CMSPagePatch) -> CMSPage:

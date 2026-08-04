@@ -3,9 +3,11 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { Mountain, ArrowLeft, Clock, ChevronRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { fetchCMSPage, fetchCMSPages } from "@/lib/api";
+import { fetchCMSPage, fetchCMSPages, fetchClusterTreks } from "@/lib/api";
+import { cmsPageToTrek } from "@/lib/trek-utils";
+import { TrekCard } from "@/components/trek/TrekCard";
 import SchemaInjector from "@/components/seo/SchemaInjector";
-import { buildBreadcrumbSchema, buildFAQSchema } from "@/lib/schema";
+import { buildBreadcrumbSchema, buildFAQSchema, buildItemListSchema } from "@/lib/schema";
 import Breadcrumb from "@/components/content/Breadcrumb";
 import FAQAccordion from "@/components/content/FAQAccordion";
 
@@ -53,11 +55,17 @@ export default async function TrekTypePage({ params }: Props) {
 
   const faqs = page?.content_json?.faqs ?? [];
 
+  // Real member treks for this Trek Category from Master CMS + Trek Backfill (canonical matcher):
+  // cluster_id membership first, then a trek_themes keyword fallback (the slug label).
+  const clusterPages = await fetchClusterTreks({ clusterId: page?.cluster_id ?? null, theme: label, limit: 9 });
+  const clusterTreks = clusterPages.map(cmsPageToTrek);
+
   return (
     <>
       <SchemaInjector
         schemas={[
           buildBreadcrumbSchema(breadcrumbItems),
+          ...(clusterTreks.length ? [buildItemListSchema(clusterTreks.map((t) => t.name), `/trek-types/${params.slug}`)] : []),
           ...(faqs.length ? [buildFAQSchema(faqs)!] : []),
         ]}
       />
@@ -133,6 +141,22 @@ export default async function TrekTypePage({ params }: Props) {
           )}
         </div>
       </section>
+
+      {/* Member treks (real CMS + backfill) */}
+      {clusterTreks.length > 0 && (
+        <section className="py-12 border-t border-white/8">
+          <div className="container-wide">
+            <h2 className="font-display text-2xl font-semibold text-white mb-6 capitalize">
+              {label} treks
+            </h2>
+            <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-5">
+              {clusterTreks.map((t) => (
+                <TrekCard key={t.slug} trek={t} />
+              ))}
+            </div>
+          </div>
+        </section>
+      )}
 
       {/* FAQ section */}
       {faqs.length > 0 && (

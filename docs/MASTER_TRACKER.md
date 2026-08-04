@@ -18,6 +18,24 @@ Do not modify any code file without first:
 4. Checking impacted files and blast radius
 5. Updating the relevant step file in `docs/steps/`
 
+## 2026-08-04 — Hub↔trek mapping unified + consistent site-wide
+Owner correction: cluster/seasonal/regional hub pages must show their REAL treks (Master CMS + Trek
+Backfill) via ONE consistent mapping. Audit found 3 conflicting season definitions (home showed
+**Autumn**, hub showed **Spring**, hub page used static data, backfill month arrays unused) and cluster
+pages showed **zero** treks. Fixed by making the backend the single source of truth.
+- **Decisions:** season signal = **backfill month arrays** (`trek_best_months`→`trek_open_months`→
+  `trek_season` string fallback); season set = **5 canonical** (spring/summer/monsoon/autumn/winter);
+  cluster rule = **cluster_id FK, fallback trek_themes**.
+- **Backend (canonical):** new `hubs/season_meta.py` + `hubs/cluster_meta.py`; `get_seasonal_pages`
+  now backfill-first; `/treks/seasonal?season=` + new `/treks/by-cluster`; `SeasonalContentAgent`
+  aligned to 5 seasons + grounded in real treks.
+- **Frontend (all consume the same source):** new `lib/seasons.ts` (mirrors backend); home season tabs
+  rebuilt (5 seasons, backfill-first); `/seasons/[slug]` now real CMS treks + ItemList + **autumn** hub;
+  `/trek-types/[slug]` now renders a real member-trek grid + ItemList; `CMSPage`/`Trek` carry the backfill
+  month arrays. Region hubs already consistent (trek_state).
+- No DB migration, no new env. Backend 809 pass + new mapping tests (2 failures = known test_refresh
+  flake); `tsc` ✓, `next build` ✓; gitnexus impact LOW.
+
 ## 2026-08-04 — Regional hubs in /admin/hubs (hybrid gen) + newsletter subscriber visibility
 Two owner asks, one coordinated pass.
 - **Q2 — Regional hubs are now first-class in the Destination Hubs CMS** (`/admin/hubs`, same feature

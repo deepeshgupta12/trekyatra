@@ -19,6 +19,9 @@ export type Trek = {
   description: string;
   beginner?: boolean;
   suitability?: string;  // from CMS trek_suitability
+  // Trek Backfill month arrays — drive canonical season matching (lib/seasons.ts)
+  trek_best_months?: number[] | null;
+  trek_open_months?: number[] | null;
 };
 
 const diffColors: Record<string, string> = {

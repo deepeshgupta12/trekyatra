@@ -20,5 +20,7 @@ export function cmsPageToTrek(page: CMSPage): Trek {
     beginner:    page.trek_suitability?.toLowerCase().includes("begin")
                    ?? rawDiff.toLowerCase().startsWith("easy"),
     suitability: page.trek_suitability ?? undefined,
+    trek_best_months: page.trek_best_months ?? null,
+    trek_open_months: page.trek_open_months ?? null,
   };
 }

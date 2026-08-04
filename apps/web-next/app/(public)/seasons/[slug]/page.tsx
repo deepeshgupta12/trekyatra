@@ -4,11 +4,20 @@ import { TrekCard } from "@/components/trek/TrekCard";
 import { treks } from "@/data/treks";
 import { Snowflake, Sun, Cloud, Leaf } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
-import { fetchCMSPage } from "@/lib/api";
+import { fetchCMSPage, fetchSeasonalTreks, fetchSeasonalTreksByMonth } from "@/lib/api";
+import { cmsPageToTrek } from "@/lib/trek-utils";
 import SchemaInjector from "@/components/seo/SchemaInjector";
 import { buildBreadcrumbSchema, buildFAQSchema, buildItemListSchema } from "@/lib/schema";
 import FAQAccordion from "@/components/content/FAQAccordion";
 import AffiliateDisclosure from "@/components/content/AffiliateDisclosure";
+
+// Maps each seasonal-hub slug to the canonical backend query (season slug or month number) so the
+// trek grid is populated from real published CMS treks + Trek Backfill data (consistent site-wide).
+const SEASON_QUERY: Record<string, { season?: string; month?: number }> = {
+  spring: { season: "spring" }, summer: { season: "summer" }, monsoon: { season: "monsoon" },
+  autumn: { season: "autumn" }, winter: { season: "winter" },
+  december: { month: 12 }, may: { month: 5 },
+};
 
 const SEASON_STATIC: Record<string, {
   title: string;
@@ -44,6 +53,13 @@ const SEASON_STATIC: Record<string, {
     image: "/images/region-uttarakhand-snow.jpg",
     blurb: "March to April. Rhododendron forests in bloom, snow-free lower trails, ideal weather windows.",
     months: "Mar – Apr",
+  },
+  autumn: {
+    title: "Best Autumn Treks in India",
+    icon: Leaf,
+    image: "/images/region-uttarakhand-snow.jpg",
+    blurb: "October to November. Crisp post-monsoon skies, stable weather, and the clearest high-Himalayan views of the year.",
+    months: "Oct – Nov",
   },
   december: {
     title: "Best Treks to do in December",
@@ -106,6 +122,14 @@ export default async function Seasonal({ params }: Props) {
 
   const faqs = cmsPage?.content_json?.faqs ?? [];
 
+  // Real treks for this season/month from Master CMS + Trek Backfill (canonical matcher),
+  // falling back to the static seed list only if the CMS returns nothing.
+  const q = SEASON_QUERY[params.slug];
+  const cmsSeasonPages = q
+    ? await (q.season ? fetchSeasonalTreks(q.season, 6) : fetchSeasonalTreksByMonth(q.month!, 6))
+    : [];
+  const seasonTreks = cmsSeasonPages.length ? cmsSeasonPages.map(cmsPageToTrek) : treks.slice(0, 6);
+
   const breadcrumbItems = [
     { label: "Home", href: `${siteUrl}/` },
     { label: "Seasonal Treks", href: `${siteUrl}/seasons` },
@@ -117,7 +141,7 @@ export default async function Seasonal({ params }: Props) {
       <SchemaInjector
         schemas={[
           buildBreadcrumbSchema(breadcrumbItems),
-          buildItemListSchema(treks.slice(0, 6).map((t) => t.name), `/seasons/${params.slug}`),
+          buildItemListSchema(seasonTreks.map((t) => t.name), `/seasons/${params.slug}`),
           ...(faqs.length ? [buildFAQSchema(faqs)!] : []),
         ]}
       />
@@ -159,7 +183,7 @@ export default async function Seasonal({ params }: Props) {
 
           <h2 className="font-display text-2xl font-semibold mb-6">Top treks for {s.months}</h2>
           <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-5">
-            {treks.slice(0, 6).map((t) => (
+            {seasonTreks.map((t) => (
               <TrekCard key={t.slug} trek={t} />
             ))}
           </div>

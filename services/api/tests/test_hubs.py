@@ -44,7 +44,8 @@ def _make_hub_page(
 # ── TC-B01: SEASON_META contains all 4 seasons ──────────────────────────────
 
 def test_season_meta_has_all_slugs():
-    assert set(SEASON_META.keys()) == {"winter", "summer", "monsoon", "spring"}
+    # Canonical 5-season taxonomy (2026-08-04): spring/summer/monsoon/autumn/winter
+    assert set(SEASON_META.keys()) == {"spring", "summer", "monsoon", "autumn", "winter"}
     for meta in SEASON_META.values():
         assert "title" in meta
         assert "months" in meta

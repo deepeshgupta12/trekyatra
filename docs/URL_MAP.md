@@ -223,6 +223,8 @@ Last updated: 2026-08-03 (region hubs made fully dynamic + SEO/AEO schema + site
 | `/api/v1/admin/auth/*` | Admin CMS auth |
 | `/api/v1/cms/pages/*` | CMS CRUD |
 | `/api/v1/treks/*` | Public trek data |
+| `/api/v1/treks/seasonal?season=&month=` | **Public GET** — treks in a canonical season (`spring\|summer\|monsoon\|autumn\|winter`) or month; **backfill-first** matcher (`trek_best_months`→`trek_open_months`→`trek_season` string) via `app.modules.hubs.season_meta`. Powers home season tabs + `/seasons/[slug]` (2026-08-04) |
+| `/api/v1/treks/by-cluster?cluster_id=&theme=` | **Public GET** — treks in a Trek Category: `cluster_id` FK membership first, then `trek_themes` keyword fallback (`app.modules.hubs.cluster_meta`). Powers `/trek-types/[slug]` (2026-08-04) |
 | `/api/v1/plan/*` | Trip planner |
 | `/api/v1/leads` | Lead capture |
 | `/api/v1/newsletter/*` | Newsletter (public subscribe → `newsletter_subscribers`; new signups get a source-aware **welcome email** + platform sync) |

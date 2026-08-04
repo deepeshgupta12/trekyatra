@@ -82,6 +82,11 @@ export interface CMSPage {
   trek_suitability: string | null;
   trek_permit_required: boolean | null;
   is_featured: boolean;
+  // Trek Backfill / taxonomy fields — drive the canonical season + cluster hub mapping
+  trek_region: string | null;
+  trek_best_months: number[] | null;
+  trek_open_months: number[] | null;
+  trek_themes: string[] | null;
 }
 
 // ---------------------------------------------------------------------------
@@ -1960,6 +1965,44 @@ export async function fetchAllCMSTreks(): Promise<CMSTrekCard[]> {
       region:      p.trek_state ?? "",
       beginner:    p.trek_suitability?.toLowerCase().includes("begin") ?? false,
     } satisfies CMSTrekCard));
+  } catch {
+    return [];
+  }
+}
+
+/**
+ * Canonical SEASON → treks (backend `/treks/seasonal?season=`, backfill-first matcher).
+ * Used by the /seasons/[slug] hub. Season slug: spring|summer|monsoon|autumn|winter.
+ */
+export async function fetchSeasonalTreks(season: string, limit = 12): Promise<CMSPage[]> {
+  try {
+    return await apiFetch<CMSPage[]>(`/treks/seasonal?season=${encodeURIComponent(season)}&limit=${limit}`);
+  } catch {
+    return [];
+  }
+}
+
+/** Canonical MONTH → treks (backend `/treks/seasonal?month=`) — for month-specific hubs (december, may). */
+export async function fetchSeasonalTreksByMonth(month: number, limit = 12): Promise<CMSPage[]> {
+  try {
+    return await apiFetch<CMSPage[]>(`/treks/seasonal?month=${month}&limit=${limit}`);
+  } catch {
+    return [];
+  }
+}
+
+/**
+ * Canonical CLUSTER → treks (backend `/treks/by-cluster`). cluster_id membership first, then a
+ * trek_themes keyword fallback. Used by the /trek-types/[slug] hub.
+ */
+export async function fetchClusterTreks(params: { clusterId?: string | null; theme?: string | null; limit?: number }): Promise<CMSPage[]> {
+  const q = new URLSearchParams();
+  if (params.clusterId) q.set("cluster_id", params.clusterId);
+  if (params.theme) q.set("theme", params.theme);
+  q.set("limit", String(params.limit ?? 12));
+  if (!params.clusterId && !params.theme) return [];
+  try {
+    return await apiFetch<CMSPage[]>(`/treks/by-cluster?${q.toString()}`);
   } catch {
     return [];
   }

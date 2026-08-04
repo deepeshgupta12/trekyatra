@@ -30,7 +30,8 @@ const STATUS_COLORS: Record<string, string> = {
   archived: "text-white/40 bg-white/5 border border-white/10",
 };
 
-const SEASON_SLUGS = ["seasons/winter", "seasons/summer", "seasons/monsoon", "seasons/spring"];
+// Canonical 5-season taxonomy (mirrors backend season_meta.SEASONS)
+const SEASON_SLUGS = ["seasons/spring", "seasons/summer", "seasons/monsoon", "seasons/autumn", "seasons/winter"];
 
 function formatDate(iso: string | null) {
   if (!iso) return "—";

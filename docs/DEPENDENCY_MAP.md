@@ -2750,3 +2750,40 @@ region schema/FAQs; region hubs weren't in the sitemap.
   already in config). Backend: 804 pass + 9 new (2 failures = the known pre-existing test_refresh shared-DB
   flake, passes 13/13 isolated). `tsc` ✓, `next build` ✓. gitnexus impact LOW; detect_changes = 12 files / 2
   processes (NewsletterPage) — matches scope.
+
+## 2026-08-04 — Hub↔trek mapping unified + consistent site-wide (cluster/seasonal/regional)
+
+**Goal (owner):** cluster/seasonal/regional hub pages must enumerate their REAL treks from Master CMS
++ Trek Backfill, using ONE mapping that's consistent everywhere. Regional already did (trek_state);
+this brings seasonal + cluster up to that standard and makes the backend the single source of truth.
+
+**Canonical matchers (backend = source of truth; frontend + agents + mobile consume the same endpoints):**
+- `services/api/app/modules/hubs/season_meta.py` **(NEW)** -> canonical 5-season taxonomy
+  (spring/summer/monsoon/autumn/winter → month sets); `trek_months(page)` = `trek_best_months` →
+  `trek_open_months` → parse `trek_season` string (decided 2026-08-04); `treks_in_season`, `treks_in_month`.
+- `services/api/app/modules/hubs/cluster_meta.py` **(NEW)** -> `treks_in_cluster(cluster_id, theme)` =
+  cluster_id FK members first, then `trek_themes` keyword fallback.
+- `cms/service.get_seasonal_pages` -> now delegates to `season_meta.treks_in_month` (backfill-first;
+  was `trek_season`-string only). `routes/treks.py` -> `/treks/seasonal` gains `?season=`; new
+  `/treks/by-cluster?cluster_id=&theme=`. blast radius: LOW (leaf endpoints; `get_seasonal_pages` 0 upstream).
+- `agents/seasonal_content/agent.py` -> `SEASON_META` now the canonical 5 seasons (title/label from
+  `season_meta.SEASONS` + local overview/regions enrichment); prompt grounded with real `treks_in_season`.
+  `routes/hubs.py` seasonal validation + admin "Generate Missing Seasonal Hubs" now cover 5 seasons.
+
+**Frontend (all consume the canonical endpoints / mirror the taxonomy):**
+- `apps/web-next/lib/seasons.ts` **(NEW)** -> mirrors `season_meta` (5 seasons, `trekMonths` backfill-first,
+  `trekMatchesSeason`, `seasonForMonth`). `lib/api.ts` -> `fetchSeasonalTreks(season)`,
+  `fetchSeasonalTreksByMonth(month)`, `fetchClusterTreks({clusterId,theme})`; `CMSPage` gains
+  `trek_region`/`trek_best_months`/`trek_open_months`/`trek_themes` (already in backend `CMSPageResponse`).
+- `components/home/SeasonalTreksSection.tsx` -> rebuilt on `lib/seasons` (5-season tabs incl. Spring/Autumn;
+  backfill-first matching via the now-exposed month arrays; `/seasons/{slug}` links). `components/trek/TrekCard.tsx`
+  `Trek` + `lib/trek-utils.cmsPageToTrek` -> carry `trek_best_months`/`trek_open_months`.
+- `app/(public)/seasons/[slug]/page.tsx` -> trek grid + ItemList now from `fetchSeasonalTreks`/`ByMonth`
+  (real CMS treks; static list only as fallback); added the **autumn** hub. `SEASON_QUERY` maps each slug
+  (incl. december/may month hubs) to the canonical query.
+- `app/(public)/trek-types/[slug]/page.tsx` -> now renders a real member-trek grid + ItemList via
+  `fetchClusterTreks(page.cluster_id, label)`.
+
+- **No DB migration, no new env.** Backend 809 pass + new mapping tests (2 failures = known test_refresh
+  flake). `tsc` ✓, `next build` ✓. gitnexus impact LOW (get_seasonal_pages / CMSPageResponse / SeasonalTreksSection
+  all 0 upstream). URL_MAP, MASTER_TRACKER, README updated.
