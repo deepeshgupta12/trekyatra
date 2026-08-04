@@ -2960,3 +2960,23 @@ that editors own.
 - `agents/regional_content/agent.py` -> content_json.hub {intro, overview, why (REGION_WHY), faqs}.
 - All keep content_json.faqs (back-compat) + a rendered content_html. blast radius: LOW (agents 0 upstream).
 - Tests: seasonal/regional/cluster generate tests now assert content_json.hub. Backend suite green.
+
+## 2026-08-04 — FIX: welcome emails not sending (Celery worker dependency removed)
+
+Owner: newsletter + iOS-waitlist welcome emails were not arriving. Root cause: the welcome was
+dispatched via a NEW Celery task (`newsletter.send_welcome_email`, added in cbf786a); Celery workers do
+NOT hot-reload, so unless the prod worker was restarted after that deploy, it rejected the message as an
+unregistered task and the email never sent (the subscriber row still saved via the older sync task).
+Fix removes the worker dependency for this transactional email.
+- `services/api/app/modules/newsletter/tasks.py` -> extracted a SYNCHRONOUS, self-contained
+  `send_subscribe_welcome_email(email, source_page)` (graceful no-op when SMTP unset; never raises).
+  The Celery `send_subscribe_welcome_email_task` is kept as a thin wrapper (back-compat).
+- `services/api/app/modules/newsletter/service.py` -> `subscribe()` no longer dispatches the welcome
+  Celery task (still dispatches the non-urgent platform sync).
+- `services/api/app/api/routes/newsletter.py` -> `newsletter_subscribe` now takes `BackgroundTasks` and,
+  for NEW subscribers only, sends the welcome via `background_tasks.add_task(send_subscribe_welcome_email,
+  ...)` — runs in the API process after the response, so NO Celery worker is required.
+- Tests updated to patch `app.api.routes.newsletter.send_subscribe_welcome_email` (BackgroundTask path).
+  blast radius: LOW (newsletter_subscribe 0 upstream). No DB migration, no new env.
+- NOTE: still requires SMTP_* set in DO (confirmed present). If mail still does not arrive, verify the
+  GoDaddy SMTP port is 587 with STARTTLS (what `_send_email` uses) and the from-address domain is authorised.

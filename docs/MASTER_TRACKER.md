@@ -18,6 +18,17 @@ Do not modify any code file without first:
 4. Checking impacted files and blast radius
 5. Updating the relevant step file in `docs/steps/`
 
+## 2026-08-04 — FIX: welcome emails not sending (removed Celery worker dependency)
+Owner: newsletter + iOS-waitlist welcome emails were not arriving. Root cause: the welcome was a NEW
+Celery task (`newsletter.send_welcome_email`, cbf786a) and Celery workers do not hot-reload, so the prod
+worker rejected it as unregistered (subscriber row still saved via the older sync task). Fixed by sending
+the welcome via a FastAPI **BackgroundTask** in the API process instead of Celery: extracted a synchronous
+`send_subscribe_welcome_email()` (graceful, never raises); the `/newsletter/subscribe` route sends it for
+new subscribers only; `subscribe()` no longer dispatches the welcome Celery task. No worker needed now.
+Caught + fixed a decorator-placement bug during this (the @celery_app.task had landed on the plain fn).
+Tests updated; backend suite green. Still needs SMTP_* in DO (present); if mail still fails, verify GoDaddy
+port 587 + STARTTLS and an authorised from-address.
+
 ## 2026-08-04 — Hub SEO/AEO depth + Hybrid (dynamic) content model
 Owner: hub pages too thin vs Indiahikes; needed richer content, more interlinking, full schema, and
 human prose with no dashes/hyphens; and content must be dynamic/editable, not static.

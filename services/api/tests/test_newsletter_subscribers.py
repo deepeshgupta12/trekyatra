@@ -18,14 +18,15 @@ def _unique_email() -> str:
     return f"wl-{uuid.uuid4().hex[:10]}@example.com"
 
 
-# ── TC-B01: subscribing dispatches a source-aware welcome email (new only) ──
+# ── TC-B01: subscribing sends a source-aware welcome email via BackgroundTask (new only) ──
 def test_subscribe_dispatches_welcome_email():
     email = _unique_email()
-    with patch("app.modules.newsletter.tasks.send_subscribe_welcome_email_task.delay") as mock_welcome, \
+    with patch("app.api.routes.newsletter.send_subscribe_welcome_email") as mock_welcome, \
          patch("app.modules.newsletter.tasks.sync_subscriber_task.delay"):
         resp = client.post("/api/v1/newsletter/subscribe", json={"email": email, "source_page": "ios_waitlist"})
         assert resp.status_code == 200
         assert resp.json()["already_subscribed"] is False
+        # TestClient runs BackgroundTasks synchronously after the response.
         mock_welcome.assert_called_once()
         args = mock_welcome.call_args.args
         assert args[0] == email and args[1] == "ios_waitlist"
@@ -34,10 +35,10 @@ def test_subscribe_dispatches_welcome_email():
 # ── TC-B02: duplicate subscribe does NOT re-send the welcome ────────────────
 def test_duplicate_subscribe_no_welcome():
     email = _unique_email()
-    with patch("app.modules.newsletter.tasks.send_subscribe_welcome_email_task.delay"), \
+    with patch("app.api.routes.newsletter.send_subscribe_welcome_email"), \
          patch("app.modules.newsletter.tasks.sync_subscriber_task.delay"):
         client.post("/api/v1/newsletter/subscribe", json={"email": email, "source_page": "ios_waitlist"})
-    with patch("app.modules.newsletter.tasks.send_subscribe_welcome_email_task.delay") as mock_welcome, \
+    with patch("app.api.routes.newsletter.send_subscribe_welcome_email") as mock_welcome, \
          patch("app.modules.newsletter.tasks.sync_subscriber_task.delay"):
         resp = client.post("/api/v1/newsletter/subscribe", json={"email": email, "source_page": "ios_waitlist"})
         assert resp.json()["already_subscribed"] is True

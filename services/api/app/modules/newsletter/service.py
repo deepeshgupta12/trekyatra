@@ -16,7 +16,7 @@ logger = logging.getLogger(__name__)
 
 
 def subscribe(db: Session, payload: NewsletterSubscribeCreate) -> NewsletterSubscribeResponse:
-    from app.modules.newsletter.tasks import sync_subscriber_task, send_subscribe_welcome_email_task
+    from app.modules.newsletter.tasks import sync_subscriber_task
     existing = db.scalar(
         select(NewsletterSubscriber).where(NewsletterSubscriber.email == payload.email)
     )
@@ -40,9 +40,9 @@ def subscribe(db: Session, payload: NewsletterSubscribeCreate) -> NewsletterSubs
     db.add(subscriber)
     db.commit()
     db.refresh(subscriber)
-    # New subscriber only: sync to the mailing platform + send a source-aware welcome email.
+    # New subscriber only: sync to the mailing platform (Celery, non-urgent). The welcome email is sent
+    # by the route via a FastAPI BackgroundTask so it never depends on the Celery worker being up/restarted.
     sync_subscriber_task.delay(subscriber.email, subscriber.name)
-    send_subscribe_welcome_email_task.delay(subscriber.email, subscriber.source_page)
     return NewsletterSubscribeResponse(
         id=subscriber.id,
         email=subscriber.email,

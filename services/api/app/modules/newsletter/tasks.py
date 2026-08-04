@@ -50,11 +50,11 @@ def _sync_brevo(email: str, name: str | None) -> None:
     logger.info("Brevo sync done for %s (status %s)", email, resp.status_code)
 
 
-@celery_app.task(name="newsletter.send_welcome_email", bind=True, max_retries=3)
-def send_subscribe_welcome_email_task(self, email: str, source_page: str | None = None) -> dict:
-    """Send a source-aware welcome email to a NEW subscriber.
+def send_subscribe_welcome_email(email: str, source_page: str | None = None) -> dict:
+    """Send a source-aware welcome email to a NEW subscriber. SYNCHRONOUS and self-contained so it can
+    run from a FastAPI BackgroundTask (in the API process, no Celery worker needed) or from the Celery
+    task below. Graceful no-op when SMTP is unset; never raises to the caller.
 
-    Reuses the SMTP sender from email_sequences (graceful no-op when SMTP is unset).
     iOS-waitlist signups get waitlist-specific copy; everyone else gets the Trail Letter welcome.
     """
     if not settings.smtp_host or not settings.smtp_user:
@@ -91,11 +91,18 @@ def send_subscribe_welcome_email_task(self, email: str, source_page: str | None 
 
     try:
         _send_email(email, subject, body)
-        logger.info("send_subscribe_welcome_email_task: sent to %s (waitlist=%s)", email, is_waitlist)
+        logger.info("send_subscribe_welcome_email: sent to %s (waitlist=%s)", email, is_waitlist)
         return {"sent": True, "waitlist": is_waitlist}
-    except Exception as exc:
-        logger.exception("send_subscribe_welcome_email_task failed for %s: %s", email, exc)
-        raise self.retry(exc=exc, countdown=60)
+    except Exception as exc:  # noqa: BLE001 — never crash the request / background task
+        logger.exception("send_subscribe_welcome_email failed for %s: %s", email, exc)
+        return {"sent": False, "reason": str(exc)}
+
+
+@celery_app.task(name="newsletter.send_welcome_email", bind=True, max_retries=3)
+def send_subscribe_welcome_email_task(self, email: str, source_page: str | None = None) -> dict:
+    """Celery wrapper (kept for backward compatibility / manual dispatch). The live subscribe flow now
+    sends the welcome via a FastAPI BackgroundTask so it does not depend on the Celery worker."""
+    return send_subscribe_welcome_email(email, source_page)
 
 
 @celery_app.task(name="newsletter.auto_generate")
