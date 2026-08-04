@@ -18,6 +18,14 @@ Do not modify any code file without first:
 4. Checking impacted files and blast radius
 5. Updating the relevant step file in `docs/steps/`
 
+## 2026-08-04 — Sitemap: seasonal + trek-category hubs now indexed code-first
+Owner Q: is sitemap/robots updated for the hub releases? Found region hubs were emitted but seasonal +
+trek-category hubs only appeared once a CMS page was generated — even though those pages render
+code-first. `sitemap.ts` now emits `/seasons/{slug}` (5 canonical seasons + december/may) and
+`/trek-types/{slug}` (6 curated categories) from the taxonomies, so they're indexed immediately;
+generated CMS hub pages de-dupe. `robots.ts` unchanged (all hubs are in the core sitemap; robots lists
+the 5 sitemaps + disallows admin/account/auth/api). gitnexus impact sitemap = LOW; tsc + next build clean.
+
 ## 2026-08-04 — Trek Category (cluster) hub generation + non-destructive confirmation
 Owner reported: (1) no function to generate Trek Category pages in /admin/hubs; (2) will generating a
 regional hub replace the working region pages (images/linking/mapping)?

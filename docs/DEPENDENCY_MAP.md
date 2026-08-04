@@ -2829,3 +2829,16 @@ taxonomy. Decision = **Both**: a curated category taxonomy (works now) + keyword
 an OVERLAY. Region image (same `/images/region-*.webp` path via region_meta), home/nav linking
 (`lib/regions.ts`), and the live trek grid (`fetchCMSTreksByState`) are all code-first and unchanged;
 generation only ADDS content_html + FAQs + refines seo_description. Same overlay model for cluster hubs.
+
+## 2026-08-04 — Sitemap: emit seasonal + trek-category hubs code-first (consistency with regions)
+Audit (owner Q): were sitemap/robots updated for the hub releases? Region hubs were emitted live, but
+seasonal + trek-category hubs were only in the sitemap if a CMS hub page had been generated — while
+those pages actually render code-first. Fixed for parity.
+- `apps/web-next/app/sitemap.ts` -> now emits `/seasons/{slug}` for the 5 canonical seasons
+  (`lib/seasons.SEASONS`) + `december`/`may`, and `/trek-types/{slug}` for the 6 curated categories
+  (`lib/categories.TREK_CATEGORY_SLUGS`), regardless of CMS generation. Region emission unchanged.
+  Existing per-URL dedup handles overlap with generated seasonal_hub/cluster_hub CMS pages.
+  blast radius: LOW (sitemap 0 upstream). `tsc` + `next build` clean.
+- `apps/web-next/app/robots.ts` -> **no change needed** — all hubs live in the core `sitemap.xml`;
+  robots still lists the 5 sitemaps (core + treks + hi-trek + news + compare) and disallows
+  /admin/ /account/ /auth/ /api/.
