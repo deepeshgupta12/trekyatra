@@ -1,35 +1,32 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { notFound } from "next/navigation";
 import { TrekCard } from "@/components/trek/TrekCard";
 import { treks } from "@/data/treks";
 import { Snowflake, Sun, Cloud, Leaf, MapPin, Calendar, Mountain, ShieldCheck } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
-import { fetchCMSPage, fetchSeasonalTreks, fetchSeasonalTreksByMonth } from "@/lib/api";
+import { fetchCMSPage, fetchSeasonalTreks } from "@/lib/api";
 import { cmsPageToTrek } from "@/lib/trek-utils";
-import { getSeasonContent } from "@/lib/season-content";
+import { getSeasonContent, SEASON_CONTENT } from "@/lib/season-content";
 import SchemaInjector from "@/components/seo/SchemaInjector";
 import { buildBreadcrumbSchema, buildFAQSchema, buildItemListSchema } from "@/lib/schema";
 import FAQAccordion, { type FAQItem } from "@/components/content/FAQAccordion";
 import AffiliateDisclosure from "@/components/content/AffiliateDisclosure";
 
-// Each seasonal-hub slug → its canonical backend trek query (season slug or month number).
-const SEASON_QUERY: Record<string, { season?: string; month?: number }> = {
-  spring: { season: "spring" }, summer: { season: "summer" }, monsoon: { season: "monsoon" },
-  autumn: { season: "autumn" }, winter: { season: "winter" },
-  december: { month: 12 }, may: { month: 5 },
-};
-
+// /seasons is EXCLUSIVELY the canonical 5 seasons. Month hubs (december/may) were removed — they
+// duplicated winter/summer. Any other slug 404s.
 const SEASON_ICON: Record<string, LucideIcon> = {
   spring: Leaf, summer: Sun, monsoon: Cloud, autumn: Leaf, winter: Snowflake,
-  december: Snowflake, may: Sun,
 };
+
+const isSeasonSlug = (slug: string): boolean => slug in SEASON_CONTENT;
 
 interface Props {
   params: { slug: string };
 }
 
 export function generateStaticParams() {
-  return Object.keys(SEASON_QUERY).map((slug) => ({ slug }));
+  return Object.keys(SEASON_CONTENT).map((slug) => ({ slug }));
 }
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
@@ -52,6 +49,10 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 export const revalidate = 3600;
 
 export default async function Seasonal({ params }: Props) {
+  // Only the canonical 5 seasons render; anything else (e.g. the removed /seasons/december) 404s.
+  if (!isSeasonSlug(params.slug)) {
+    notFound();
+  }
   const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? "https://www.trekyatra.co.in";
   const c = getSeasonContent(params.slug);
   const name = params.slug.charAt(0).toUpperCase() + params.slug.slice(1);
@@ -65,11 +66,8 @@ export default async function Seasonal({ params }: Props) {
     // code-first
   }
 
-  // Live treks matching this season/month (Master CMS + Trek Backfill), static seed as last resort.
-  const q = SEASON_QUERY[params.slug];
-  const cmsSeasonPages = q
-    ? await (q.season ? fetchSeasonalTreks(q.season, 9) : fetchSeasonalTreksByMonth(q.month!, 9))
-    : [];
+  // Live treks matching this season (Master CMS + Trek Backfill), static seed as last resort.
+  const cmsSeasonPages = await fetchSeasonalTreks(params.slug, 9);
   const seasonTreks = cmsSeasonPages.length ? cmsSeasonPages.map(cmsPageToTrek) : treks.slice(0, 6);
   const trekCount = cmsSeasonPages.length || seasonTreks.length;
 

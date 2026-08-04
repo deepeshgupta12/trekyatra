@@ -2,7 +2,8 @@
  * Rich, UNIQUE editorial content per seasonal hub (/seasons/{slug}) — the SEO/AEO substance that
  * makes each season page stand out (distinct hero, why-trek, best regions, month-by-month table,
  * packing list, weather). Rendered code-first so the pages are strong without depending on the
- * LLM/CMS generation. Keyed by the canonical season slugs + the two month hubs (december, may).
+ * LLM/CMS generation. Keyed by the canonical 5 season slugs ONLY (month hubs december/may were
+ * removed 2026-08-04 — they duplicated winter/summer and cannibalised SEO).
  */
 
 export interface SeasonContent {
@@ -162,61 +163,6 @@ export const SEASON_CONTENT: Record<string, SeasonContent> = {
     weather: "Snow on the trails, short days, and nights of −5 to −15 °C at altitude, with bright, clear days between snowfalls.",
     prep: "Microspikes and gaiters are essential; watch for frostbite and AMS, and never trek solo above the snowline.",
     beginnerNote: "The best beginner snow season — Kedarkantha and Brahmatal are purpose-built first snow treks with the right guide and gear.",
-  },
-  december: {
-    title: "Best Treks to do in December",
-    heroImage: "/images/region-uttarakhand-snow.webp",
-    monthsLabel: "December",
-    tagline: "The gentle start of the snow season",
-    intro:
-      "December is the softest entry into winter trekking — early, powdery snow on the classic Uttarakhand ridgelines, festive New-Year summit camps, and cold-but-manageable conditions perfect for a first snow trek.",
-    whyTrek:
-      "Before the deep snow and hard cold of January, December offers just enough snow for the full winter experience with a gentler edge — ideal for first-timers and for New-Year celebration treks on peaks like Kedarkantha.",
-    bestRegions: [
-      { name: "Uttarakhand", slug: "uttarakhand", note: "Kedarkantha and Brahmatal for early-season snow and New-Year camps." },
-      { name: "Himachal Pradesh", slug: "himachal", note: "Kheerganga and lower Kullu ridgelines under first snow." },
-    ],
-    monthTable: [
-      { month: "Early December", conditions: "Light, early snow — the easiest winter conditions of the season." },
-      { month: "Late December", conditions: "More snow and festive New-Year summit treks." },
-    ],
-    packing: [
-      "Warm insulation and thermals for −2 to −10 °C nights",
-      "Microspikes and gaiters for early snow",
-      "A waterproof shell and insulated gloves",
-      "UV sunglasses for snow glare",
-    ],
-    weather: "Early-season snow with nights of −2 to −10 °C at altitude and bright, crisp days.",
-    prep: "Lighter snow than January, but still carry microspikes and a proper sleeping system; book early for New-Year dates.",
-    beginnerNote: "One of the best months for a first snow trek — snow underfoot without the extreme cold of deep winter.",
-  },
-  may: {
-    title: "Best Treks to do in May",
-    heroImage: "/images/region-himachal.webp",
-    monthsLabel: "May",
-    tagline: "The shoulder month before the monsoon",
-    intro:
-      "May is the sweet spot of the trekking year — snow is melting off the high routes, meadows are greening, and the high Himalaya opens up before both the summer crowds and the June rains arrive.",
-    whyTrek:
-      "As the snowline retreats, May unlocks the high meadow and lake treks while daytime temperatures stay comfortable. It is a quieter, greener window than peak June, with the season's flagship routes just coming into condition.",
-    bestRegions: [
-      { name: "Kashmir", slug: "kashmir", note: "Great Lakes approach greening up as snow melts." },
-      { name: "Himachal Pradesh", slug: "himachal", note: "Hampta Pass and Bhrigu Lake opening for the season." },
-      { name: "Uttarakhand", slug: "uttarakhand", note: "Valley of Flowers approach and high bugyals clearing." },
-    ],
-    monthTable: [
-      { month: "Early May", conditions: "Snowmelt underway; shoulder-season quiet on many high routes." },
-      { month: "Late May", conditions: "Meadows greening and high camps opening before the June peak." },
-    ],
-    packing: [
-      "Sun protection — high UV as snow reflects light",
-      "Layers for warm days and still-cold high-altitude nights",
-      "A light rain shell for early pre-monsoon showers",
-      "Microspikes for any lingering snow on high passes",
-    ],
-    weather: "Warm days, cold nights, active snowmelt on high routes and the first hints of pre-monsoon weather late in the month.",
-    prep: "Some high passes still hold snow early in May — check conditions and carry traction for the highest sections.",
-    beginnerNote: "A friendly month for beginners — mild weather and opening meadow treks, with altitude the main thing to respect.",
   },
 };
 

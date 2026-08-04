@@ -4,9 +4,6 @@ import { SEASONS } from "@/lib/seasons";
 import { TREK_CATEGORY_SLUGS } from "@/lib/categories";
 // fetchTreks removed — static trek pages are covered by state-specific sitemaps
 
-// Month-specific seasonal hubs that exist as code pages alongside the 5 canonical seasons.
-const SEASON_MONTH_HUB_SLUGS = ["december", "may"];
-
 // Always fetch fresh CMS pages so newly published pages appear immediately
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
@@ -137,9 +134,6 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   // page has been generated. Any generated seasonal_hub page at the same slug de-dupes below.
   for (const s of SEASONS) {
     entries.push(url(`/seasons/${s.slug}`, 0.7, "monthly"));
-  }
-  for (const slug of SEASON_MONTH_HUB_SLUGS) {
-    entries.push(url(`/seasons/${slug}`, 0.6, "monthly"));
   }
 
   // Trek Category hubs (/trek-types/{slug}) — the curated categories render code-first with a live

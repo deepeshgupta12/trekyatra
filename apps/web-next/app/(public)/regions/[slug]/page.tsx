@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { notFound } from "next/navigation";
 import { TrekCard } from "@/components/trek/TrekCard";
 import { Button } from "@/components/ui/button";
 import { MapPin, Sparkles, ArrowRight } from "lucide-react";
@@ -15,7 +16,7 @@ import {
 } from "@/lib/api";
 import {
   REGIONS,
-  resolveRegion,
+  regionBySlug,
   regionSlugForState,
   type RegionMeta,
 } from "@/lib/regions";
@@ -28,19 +29,11 @@ interface Props {
 }
 
 /**
- * Pre-render curated regions + every live region derived from published trek states.
- * dynamicParams stays on (default) so a brand-new state renders on-demand + then ISR.
+ * /regions is EXCLUSIVELY the curated regions (lib/regions.REGIONS). Any other slug 404s — no
+ * synthesised junk region pages. New regions must be added to REGIONS to get a page.
  */
-export async function generateStaticParams() {
-  const curated = REGIONS.map((r) => r.slug);
-  let live: string[] = [];
-  try {
-    const counts = await fetchTrekStateCounts();
-    live = counts.map((c) => regionSlugForState(c.state));
-  } catch {
-    // curated-only fallback
-  }
-  return Array.from(new Set([...curated, ...live])).map((slug) => ({ slug }));
+export function generateStaticParams() {
+  return REGIONS.map((r) => ({ slug: r.slug }));
 }
 
 /** Permit answer copy per country — used in generated FAQs + stat strip. */
@@ -71,9 +64,8 @@ function permitCopy(r: RegionMeta): { label: string; answer: string } {
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? "https://www.trekyatra.co.in";
-  const r = resolveRegion(params.slug);
-  // Canonical always points at the region's canonical slug — dedupes any composite-slug
-  // alias (e.g. /regions/gilgit-baltistan-pakistan) onto /regions/pakistan.
+  const r = regionBySlug(params.slug);
+  if (!r) return {}; // non-curated slug → the page 404s
   const canonical = `${siteUrl}/regions/${r.slug}`;
   try {
     const page = await fetchCMSPage(`regions/${params.slug}`);
@@ -97,7 +89,10 @@ export const revalidate = 3600;
 
 export default async function Region({ params }: Props) {
   const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? "https://www.trekyatra.co.in";
-  const r = resolveRegion(params.slug);
+  const r = regionBySlug(params.slug);
+  if (!r) {
+    notFound();
+  }
 
   // Try CMS regional hub first (optional — enriches with editor content + custom FAQs)
   let cmsPage = null;
@@ -269,6 +264,17 @@ export default async function Region({ params }: Props) {
           ))}
         </div>
       </section>
+
+      {/* Why trek in {region} — unique narrative (SEO/AEO substance) */}
+      {r.whyTrek && (
+        <section className="py-14">
+          <div className="container-wide max-w-4xl">
+            <div className="text-xs uppercase tracking-[0.25em] text-accent mb-3">{r.tagline}</div>
+            <h2 className="font-display text-3xl md:text-4xl font-semibold mb-5">Why trek in {r.name}?</h2>
+            <p className="text-lg text-foreground/85 leading-relaxed">{r.whyTrek}</p>
+          </div>
+        </section>
+      )}
 
       {/* CMS rich content block (if available) */}
       {cmsPage?.content_html && (

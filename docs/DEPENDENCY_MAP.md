@@ -2888,3 +2888,24 @@ genuinely unique and SEO/AEO-complete, with no dependency on the LLM/CMS generat
   0 upstream). tsc + next build clean (SSG, 7 pages).
 - SeasonalContentAgent is now OPTIONAL (page is rich without it). Any thin generated seasonal_hub CMS
   pages are harmless (hidden unless >400 chars); the owner can delete them via /admin/cms if desired.
+
+## 2026-08-04 — Hub pages: strict slugs + rich parity across seasons / regions / clusters
+
+Owner: /seasons/december + /seasons/may were junk (duplicated winter/summer); and the same rich +
+strict treatment applied to seasons was needed for region + cluster pages.
+- **Seasons:** removed december/may from `lib/season-content.ts`, `seasons/[slug]` (SEASON_QUERY gone;
+  fetch is `fetchSeasonalTreks(slug)`), sitemap, and generateStaticParams. `/seasons/[slug]` now
+  **404s** for any non-canonical slug (`isSeasonSlug`). `next.config.mjs` 301s /seasons/december→winter,
+  /seasons/may→summer.
+- **Regions:** `regions/[slug]` now uses `regionBySlug` + **`notFound()` for non-curated slugs** (was
+  `resolveRegion` which synthesised junk pages); generateStaticParams = curated only. Added a unique
+  "Why trek in {region}" H2 (`whyTrek` in `lib/regions.ts`, `REGION_WHY`). `groupStateCounts` is now
+  **curated-only** (skips states with no curated region instead of slugifying → junk). blast radius:
+  `groupStateCounts` HIGH (3 callers: home, Header, sitemap) but SAFE — all live states map to curated
+  regions, so output is unchanged for current data; it only prevents future junk region URLs.
+- **Clusters:** `lib/category-content.ts` **(NEW)** — rich per-category content (hero, tagline, intro,
+  whyChoose, tips[], bestRegions[]) for the 6 categories. `trek-types/[slug]` **rewritten** rich:
+  distinct hero + H1, stat strip, why-choose, planning tips bullets, best-regions cards, live member-trek
+  grid, generated FAQs → FAQPage + ItemList + Breadcrumb. 404s (via `getCategoryContent`) for non-curated.
+- Frontend-only (no backend change). gitnexus impact: Seasonal/Region/TrekTypePage LOW; groupStateCounts
+  HIGH (flagged, safe). tsc + next build clean (all 3 routes SSG). URL_MAP + MASTER_TRACKER + README updated.

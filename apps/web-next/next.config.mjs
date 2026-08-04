@@ -30,7 +30,12 @@ const nextConfig = {
       { source: "/regions/gandaki-province-nepal", destination: "/regions/nepal", permanent: true },
       { source: "/regions/tibet-china", destination: "/regions/tibet", permanent: true },
     ];
-    return [...sitemapRedirects, ...regionAliasRedirects];
+    // Month-specific season hubs were removed (they duplicated winter/summer) — 301 to the parent season.
+    const seasonMonthRedirects = [
+      { source: "/seasons/december", destination: "/seasons/winter", permanent: true },
+      { source: "/seasons/may", destination: "/seasons/summer", permanent: true },
+    ];
+    return [...sitemapRedirects, ...regionAliasRedirects, ...seasonMonthRedirects];
   },
   async rewrites() {
     // Read the public API base. DO App Platform encrypted vars (EV[...]) are not

@@ -34,7 +34,33 @@ export interface RegionMeta {
   matchStates?: string[];
   /** "Getting there" rows — [hub, note]. Region-aware (India cities ≠ Nepal/Pakistan). */
   logistics: [string, string][];
+  /** Unique "Why trek here" narrative — rendered as an H2 section (SEO/AEO substance). */
+  whyTrek?: string;
 }
+
+// Per-region "Why trek here" narrative, keyed by slug (kept separate from REGIONS to stay readable).
+const REGION_WHY: Record<string, string> = {
+  uttarakhand:
+    "Uttarakhand is where most Indians take their first Himalayan trek. Garhwal and Kumaon pack an extraordinary range into short approaches — beginner snow summits like Kedarkantha and Brahmatal, the flower meadows of the Valley of Flowers, and serious high routes like Roopkund — all reachable within a day of the roadhead. Well-marked trails, a mature guiding ecosystem, and reliable winter snow make it the most beginner-friendly big-mountain region in the country.",
+  himachal:
+    "No Indian state offers more variety than Himachal. In a single state you can walk the green Kullu valleys, cross a glaciated pass on Hampta, camp beside Bhrigu Lake, or step into the cold desert of Spiti and Pin Parvati. That range — lush to lunar, gentle to technical — plus easy access from Delhi and Chandigarh makes Himachal the trekker's playground across almost every season.",
+  kashmir:
+    "Kashmir's high meadows are simply unrivalled in India. The Great Lakes trek strings together a chain of turquoise alpine lakes below jagged peaks, and Tarsar Marsar delivers the same beauty with fewer crowds. Lush pasture, wildflowers and a short, spectacular summer window make Kashmir the country's premier meadow-and-lake trekking destination.",
+  ladakh:
+    "Ladakh is high-altitude trekking at its most raw. Every route stays above 3,500 m, crossing ochre moonscapes, Buddhist villages and glacier-fed rivers — Markha Valley, Stok Kangri, and the frozen Chadar. This is a region for acclimatised, experienced trekkers chasing big altitude and stark, otherworldly landscapes rather than green meadows.",
+  maharashtra:
+    "Maharashtra's Sahyadris are India's monsoon trekking capital. When the Himalaya shuts down for the rains, these basalt ranges erupt with waterfalls, fort ramparts and misty ridgelines. With 70+ documented routes within a few hours of Mumbai and Pune, the Sahyadris deliver dramatic, accessible weekend trekking from June right through February.",
+  sikkim:
+    "Sikkim and the North-East pair jaw-dropping Kanchenjunga views with some of India's richest biodiversity. Goecha La, Dzongri and the ridge walk to Sandakphu pass through rhododendron forest, high yak pasture and orchid-strewn valleys. Quieter and greener than the western Himalaya, it rewards trekkers who want scenery and solitude in equal measure.",
+  karnataka:
+    "Karnataka brings the Western Ghats within a weekend of Bengaluru. Kudremukh's rolling grasslands, the granite dome of Kumara Parvatha and the coffee-country ridgelines of Tadiyandamol range from gentle to genuinely tough. Lush, green and easy to reach, it's the south's most rewarding trekking region.",
+  nepal:
+    "The Nepal Himalaya holds the greatest concentration of 8000 m giants on Earth and the world's most storied treks. From the Everest Base Camp trail to the Annapurna Circuit and the wild approaches to Kanchenjunga and Makalu, Nepal blends soaring high-altitude scenery with a deep teahouse-trekking culture that makes long routes surprisingly accessible.",
+  pakistan:
+    "Pakistan's Karakoram packs the most extreme high peaks on the planet into one range — K2, the Gasherbrums, Broad Peak and, nearby, Nanga Parbat. Treks like the Baltoro Glacier to Concordia walk beneath a wall of 8000ers unlike anywhere else. Remote, permit-heavy and serious, Gilgit-Baltistan is high-altitude trekking at the sharpest end.",
+  tibet:
+    "Tibet is the high, remote north side of the Himalaya — a vast high-altitude desert of turquoise lakes, monasteries and the north approaches to Everest, Cho Oyu and Shishapangma. Big logistics and strict, guide-only permits are the price of admission to some of the most austere and spiritual trekking terrain on Earth.",
+};
 
 const INDIA_LOGISTICS: [string, string][] = [
   ["Delhi", "Overnight train/bus to base towns. 8–12 hrs."],
@@ -148,6 +174,11 @@ export const REGIONS: RegionMeta[] = [
   },
 ];
 
+// Attach the per-region "Why trek here" narrative (kept in REGION_WHY above for readability).
+for (const r of REGIONS) {
+  r.whyTrek = REGION_WHY[r.slug];
+}
+
 /** Slugify an arbitrary state name into a stable URL slug (fallback for un-curated states). */
 export function slugifyState(s: string): string {
   return s.toLowerCase().replace(/&/g, "and").replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
@@ -212,18 +243,15 @@ export function groupStateCounts(
   const bySlug = new Map<string, RegionCard>();
   for (const { state, count } of counts) {
     if (!count) continue;
+    // Curated regions ONLY. A state that doesn't map to a curated region is skipped rather than
+    // slugified into a junk /regions/{slug} URL (which now 404s). Add it to REGIONS to surface it.
     const region = regionForState(state);
-    const slug = region?.slug ?? slugifyState(state);
-    const existing = bySlug.get(slug);
+    if (!region) continue;
+    const existing = bySlug.get(region.slug);
     if (existing) {
       existing.count += count;
     } else {
-      bySlug.set(slug, {
-        slug,
-        name: region?.name ?? state,
-        image: region?.image ?? "/images/region-himachal-camp.webp",
-        count,
-      });
+      bySlug.set(region.slug, { slug: region.slug, name: region.name, image: region.image, count });
     }
   }
   return Array.from(bySlug.values()).sort((a, b) => b.count - a.count);

@@ -18,6 +18,18 @@ Do not modify any code file without first:
 4. Checking impacted files and blast radius
 5. Updating the relevant step file in `docs/steps/`
 
+## 2026-08-04 — Hub pages: strict slugs + rich parity (seasons/regions/clusters)
+Owner: (1) /seasons/december + /seasons/may are junk (duplicate winter/summer) — remove them; (2) apply
+the same rich + strict treatment to Region and Cluster pages.
+- **Seasons:** december/may removed everywhere (content, page, sitemap, staticParams); `/seasons/[slug]`
+  **404s** for non-canonical slugs; next.config 301s december→winter, may→summer.
+- **Regions:** `/regions/[slug]` now **404s** for non-curated slugs (was synthesised junk via
+  resolveRegion); `groupStateCounts` curated-only (HIGH-risk symbol — flagged — but safe, all live
+  states map to curated); added a unique "Why trek in {region}" section (`whyTrek`/`REGION_WHY`).
+- **Clusters:** new `lib/category-content.ts` + **rewrote `/trek-types/[slug]` rich** — distinct hero,
+  stat strip, why-choose, planning tips, best-regions cards, live trek grid, generated FAQs + full schema.
+- Frontend-only. tsc + next build clean (all 3 routes SSG). gitnexus impact flagged HIGH on groupStateCounts (safe).
+
 ## 2026-08-04 — Seasonal hub pages rebuilt rich + unique (SEO/AEO)
 Owner: the 5 /seasons/{slug} pages were thin + near-identical (same body, shared hero image, no FAQs,
 no rich schema) and monsoon's H1 wrongly read "Best Monsoon Treks in **Maharashtra**". Rebuilt fully:
