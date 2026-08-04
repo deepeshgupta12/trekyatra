@@ -163,14 +163,16 @@ def test_api_regenerate_seasonal_hub():
     assert data["hub_type"] == "seasonal_hub"
     assert "page_id" in data
 
-    # Clean up generated page
+    # Structured hub content_json (dynamic, editable) + clean up
     with SessionLocal() as db:
         page = db.scalar(
             __import__("sqlalchemy", fromlist=["select"]).select(CMSPage).where(CMSPage.slug == slug)
         )
-        if page:
-            db.delete(page)
-            db.commit()
+        assert page is not None
+        hub = (page.content_json or {}).get("hub", {})
+        assert hub.get("why") and hub.get("monthTable") and hub.get("packing") and hub.get("faqs")
+        db.delete(page)
+        db.commit()
 
 
 # ── TC-B08: Regenerate non-seasonal hub returns 501 ─────────────────────────

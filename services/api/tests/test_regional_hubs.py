@@ -71,6 +71,9 @@ def test_api_regenerate_regional_hub_creates_page():
         assert page.page_type == "regional_hub"
         assert page.status == "published"
         assert page.content_json and page.content_json.get("faqs")
+        # Structured hub content_json (rendered dynamically by the frontend, editable in /admin/cms)
+        assert page.content_json.get("hub", {}).get("why")
+        assert page.content_json["hub"].get("faqs")
         # A beginner trek was seeded → the beginner FAQ must be present
         assert any("beginner" in f["q"].lower() for f in page.content_json["faqs"])
         assert page.hero_image_url == region_by_slug("himachal").hero_image

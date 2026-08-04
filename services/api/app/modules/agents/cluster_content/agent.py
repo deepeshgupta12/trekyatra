@@ -109,30 +109,33 @@ class ClusterContentAgent(BaseAgent):
         names = ctx["names"]
         count = ctx["count"]
 
-        top = "<ul>" + "".join(f"<li>{n}</li>" for n in names[:10]) + "</ul>" if names else \
-            "<p>Trek guides for this category are being published.</p>"
-        body_html = (
-            f"<p>{intro}</p>"
-            f"<h2>Why choose {ctx['name'].lower()}?</h2><p>{ctx['blurb']}</p>"
-            f"<h2>Top {ctx['name']}</h2>{top}"
-        )
+        from app.modules.hubs.hub_content import CATEGORY_CONTENT, hub_to_html
+        rc = CATEGORY_CONTENT.get(ctx["category_slug"] or "", {})
+        label = (ctx["category_slug"] or ctx["slug"]).replace("-", " ")
+        best_regions = rc.get("bestRegions", [])
+        prepare = rc.get("prepare", [])
         faqs = [
-            {"q": f"How many {ctx['name'].lower()} are documented?",
-             "a": f"TrekYatra documents {count} trek{'s' if count != 1 else ''} in the {ctx['name']} "
-                  f"category, each with a full route breakdown, permits, costs, and live conditions."},
-            {"q": f"Are {ctx['name'].lower()} suitable for me?",
-             "a": f"{ctx['blurb']} Every guide lists the fitness level, altitude and prior experience needed "
-                  f"so you can pick the right route."},
+            {"q": f"How many {label} does TrekYatra cover?",
+             "a": f"{count} {label} across India, each with a full route breakdown, difficulty, permits, cost estimates and live trail conditions."},
+            {"q": f"Which regions have the best {label}?",
+             "a": " ".join(f"{r['name']}, {r['note']}" for r in best_regions) or f"Documented {label} span India's major trekking regions."},
+            {"q": f"Are {label} good for beginners?", "a": rc.get("beginnerNote", "Each guide lists the fitness and experience needed so you can pick the right route.")},
+            {"q": f"What should I know before choosing {label}?", "a": (", ".join(prepare) + ".") if prepare else "Match the route to your fitness, altitude experience and available days."},
         ]
+        hub = {
+            "intro": intro, "overview": rc.get("overview", ""), "why": rc.get("why", ctx["blurb"]),
+            "bestRegions": best_regions, "prepare": prepare, "faqs": faqs,
+        }
+        body_html = hub_to_html(hub, f"choose {label}")
 
         slug = f"trek-types/{ctx['slug']}"
-        title = ctx["name"]
+        title = f"{ctx['name']} in India" if not ctx["name"].lower().endswith("india") else ctx["name"]
         now = datetime.now(timezone.utc)
         content_json = {
-            "faqs": faqs, "trek_names": names[:10],
+            "hub": hub, "faqs": faqs, "trek_names": names[:10],
             "category_slug": ctx["category_slug"], "generated_by": "cluster_content_agent",
         }
-        seo_description = f"{ctx['name']} in India: {count} documented route{'s' if count != 1 else ''}, "\
+        seo_description = f"{label} in India: {count} documented route{'s' if count != 1 else ''}, "\
                           f"with difficulty, seasons, permits, costs and live conditions. {ctx['tagline']}."
 
         existing = self.db.scalar(select(CMSPage).where(CMSPage.slug == slug))

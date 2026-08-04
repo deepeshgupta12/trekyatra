@@ -2943,3 +2943,20 @@ schema, and human prose with NO dashes/hyphens. Also: content must be dynamic/ed
   `lib/regions.ts` (REGION_WHY, blurbs, logistics) rewritten as human prose with added overview +
   prepare. Pages add: overview paragraph, comparison table, how-to-prepare bullets, interlinks, speakable.
 - tsc + next build clean (all 3 SSG). gitnexus impact LOW; buildItemListSchema 2 consumers LOW.
+
+## 2026-08-04 — Hub agents emit structured content_json.hub (dynamic content, backend half)
+
+Completes the Hybrid content model: the hub agents now GENERATE the structured, editable content that
+the frontend renders (content_json.hub), so clicking Generate in /admin/hubs produces real CMS content
+that editors own.
+- `services/api/app/modules/hubs/hub_content.py` **(NEW)** -> SEASON_CONTENT / CATEGORY_CONTENT /
+  REGION_WHY (Python port of the frontend fallback prose, no dashes/hyphens) + `hub_to_html(hub, name)`
+  renderer for the editable content_html body.
+- `agents/seasonal_content/agent.py` -> now deterministic-first: builds content_json.hub {intro, overview,
+  why, bestRegions, monthTable, prepare, packing, weather, faqs} from SEASON_CONTENT + real season-matched
+  trek count; optional LLM intro polish (fails safe, rejects dashes). content_html = hub_to_html.
+- `agents/cluster_content/agent.py` -> content_json.hub {intro, overview, why, bestRegions, prepare, faqs}
+  from CATEGORY_CONTENT + real cluster trek count.
+- `agents/regional_content/agent.py` -> content_json.hub {intro, overview, why (REGION_WHY), faqs}.
+- All keep content_json.faqs (back-compat) + a rendered content_html. blast radius: LOW (agents 0 upstream).
+- Tests: seasonal/regional/cluster generate tests now assert content_json.hub. Backend suite green.

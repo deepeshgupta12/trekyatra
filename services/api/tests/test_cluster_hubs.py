@@ -85,6 +85,9 @@ def test_generate_cluster_hub_category():
         assert page is not None and page.page_type == "cluster_hub" and page.status == "published"
         assert page.content_json.get("category_slug") == "lake-treks"
         assert page.content_json.get("faqs")
+        # Structured hub content_json (dynamic, editable)
+        assert page.content_json.get("hub", {}).get("why")
+        assert page.content_json["hub"].get("bestRegions")
 
 
 # ── TC-B05: generate for an unknown category → 422 (curated-only validation) ─

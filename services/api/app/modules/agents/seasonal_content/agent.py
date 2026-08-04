@@ -14,7 +14,7 @@ from app.modules.agents.base_agent import BaseAgent
 from app.modules.agents.client import get_anthropic_client
 from app.modules.agents.state import BaseAgentState
 from app.modules.cms.models import CMSPage
-from app.modules.cms.service import _md_to_html
+from app.modules.hubs.hub_content import SEASON_CONTENT, hub_to_html
 
 MODEL = "claude-sonnet-4-6"
 MAX_TOKENS = 2000
@@ -104,59 +104,73 @@ class SeasonalContentAgent(BaseAgent):
         return graph.compile()
 
     def _prepare_context(self, state: BaseAgentState) -> BaseAgentState:
-        meta = SEASON_META.get(self.season_slug)
-        if not meta:
+        content = SEASON_CONTENT.get(self.season_slug)
+        if not content:
             state["errors"] = [
-                f"Unknown season slug '{self.season_slug}'. "
-                f"Valid values: {list(SEASON_META.keys())}"
+                f"Unknown season slug '{self.season_slug}'. Valid values: {list(SEASON_CONTENT.keys())}"
             ]
             return state
-
         state["output"]["season_slug"] = self.season_slug
-        state["output"]["meta"] = meta
+        state["output"]["content"] = content
+        state["output"]["trek_count"] = len(treks_in_season(self.db, self.season_slug, limit=50))
         return state
 
     def _generate_content(self, state: BaseAgentState) -> BaseAgentState:
+        # Optional LLM polish of the intro only (fails safe to the deterministic intro). All facts,
+        # regions, months, packing and FAQs stay deterministic so nothing is hallucinated.
         if state.get("errors"):
             return state
-
-        meta = state["output"]["meta"]
-        prompt = (
-            SEASONAL_PROMPT
-            .replace("{season_name}", self.season_slug.capitalize())
-            .replace("{months}", meta["months"])
-            .replace("{overview}", meta["overview"])
-            .replace("{regions}", meta["regions"])
-        )
-        # Ground the article in the REAL treks that match this season (canonical matcher) so the
-        # LLM references actual published guides, not invented ones.
+        content = state["output"]["content"]
+        intro = content["intro"]
         real_treks = treks_in_season(self.db, self.season_slug, limit=8)
         names = [(p.trek_name or p.title) for p in real_treks if (p.trek_name or p.title)]
         if names:
-            prompt += (
-                f"\n\nWhen naming treks, prefer these real published TrekYatra treks for "
-                f"{self.season_slug.capitalize()}: {', '.join(names)}."
-            )
-
-        client = get_anthropic_client()
-        response = client.messages.create(
-            model=MODEL,
-            max_tokens=MAX_TOKENS,
-            messages=[{"role": "user", "content": prompt}],
-        )
-        markdown = response.content[0].text.strip()
-        state["output"]["markdown"] = markdown
+            try:
+                prompt = (
+                    f"Rewrite this intro paragraph for a page about {self.season_slug} trekking in India, "
+                    f"in 60 to 90 words, human and vivid, using NO dashes or hyphens, and do not invent "
+                    f"treks. Prefer these real treks if you name any: {', '.join(names[:6])}.\n\n{intro}"
+                )
+                client = get_anthropic_client()
+                resp = client.messages.create(model=MODEL, max_tokens=400, messages=[{"role": "user", "content": prompt}])
+                text = (resp.content[0].text or "").strip()
+                if len(text) >= 60 and "-" not in text and "—" not in text and "–" not in text:
+                    intro = text
+            except Exception:  # noqa: BLE001 — enrichment is best effort
+                pass
+        state["output"]["intro"] = intro
         return state
 
     def _store_page(self, state: BaseAgentState) -> BaseAgentState:
-        if state.get("errors") or not state.get("output", {}).get("markdown"):
+        if state.get("errors"):
             return state
+        content = state["output"]["content"]
+        intro = state["output"].get("intro", content["intro"])
+        count = state["output"]["trek_count"]
+        name = self.season_slug.capitalize()
 
-        meta = state["output"]["meta"]
-        markdown = state["output"]["markdown"]
+        faqs = [
+            {"q": f"When is the best time for {name.lower()} treks in India?",
+             "a": f"The {name.lower()} trekking window runs {content['months_label']}. {content['weather']}"},
+            {"q": f"Which regions are best for {name.lower()} trekking?",
+             "a": " ".join(f"{r['name']}, {r['note']}" for r in content["bestRegions"])},
+            {"q": f"How many {name.lower()} treks does TrekYatra cover?",
+             "a": f"{count} treks match the {name.lower()} window, each with a full route breakdown, permits, cost estimates and live trail conditions."},
+            {"q": f"What should I pack for {name.lower()} treks?",
+             "a": f"Key items are {', '.join(content['packing'])}. {content['prep']}"},
+            {"q": f"Are {name.lower()} treks good for beginners?", "a": content["beginnerNote"]},
+        ]
+        hub = {
+            "intro": intro, "overview": content["overview"], "why": content["why"],
+            "bestRegions": content["bestRegions"], "monthTable": content["monthTable"],
+            "prepare": content["prepare"], "packing": content["packing"],
+            "weather": content["weather"], "faqs": faqs,
+        }
         slug = f"seasons/{self.season_slug}"
-        title = meta["title"]
-        content_html = _md_to_html(markdown)
+        title = f"Best {name} Treks in India"
+        content_html = hub_to_html(hub, f"trek in {name}")
+        content_json = {"hub": hub, "faqs": faqs, "season_slug": self.season_slug, "generated_by": "seasonal_content_agent"}
+        seo_description = f"The best {name.lower()} treks in India for {content['months_label']}. {content['why'][:120]}"
 
         existing = self.db.scalar(select(CMSPage).where(CMSPage.slug == slug))
         now = datetime.now(timezone.utc)
@@ -164,25 +178,19 @@ class SeasonalContentAgent(BaseAgent):
         if existing:
             existing.title = title
             existing.content_html = content_html
-            existing.content_json = {"markdown": markdown, "season_slug": self.season_slug}
+            existing.content_json = content_json
             existing.status = "published"
-            existing.published_at = now
+            existing.seo_title = f"{title} | TrekYatra"
+            existing.seo_description = seo_description
+            existing.published_at = existing.published_at or now
             existing.updated_at = now
             page_id = str(existing.id)
         else:
             page = CMSPage(
-                id=uuid.uuid4(),
-                slug=slug,
-                page_type="seasonal_hub",
-                title=title,
-                content_html=content_html,
-                content_json={"markdown": markdown, "season_slug": self.season_slug},
-                status="published",
-                seo_title=f"{title} | TrekYatra",
-                seo_description=f"Discover the best {self.season_slug} treks in India. Expert guide to trails, packing, safety, and planning for {meta['months']}.",
-                published_at=now,
-                created_at=now,
-                updated_at=now,
+                id=uuid.uuid4(), slug=slug, page_type="seasonal_hub", title=title,
+                content_html=content_html, content_json=content_json, status="published",
+                seo_title=f"{title} | TrekYatra", seo_description=seo_description,
+                published_at=now, created_at=now, updated_at=now,
             )
             self.db.add(page)
             page_id = str(page.id)

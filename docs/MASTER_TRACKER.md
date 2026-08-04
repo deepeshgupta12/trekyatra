@@ -31,8 +31,12 @@ human prose with no dashes/hyphens; and content must be dynamic/editable, not st
   (related regions/seasons/categories + planning guides) on all 3 hubs.
 - **Content:** season/category/region prose rewritten as human copy with NO dashes/hyphens, plus an
   overview paragraph and a how-to-prepare section.
-- Frontend-only this pass. tsc + next build clean (3 hubs SSG). **NEXT: extend the hub agents to emit
-  content_json.hub so the content is fully CMS-generated + editable (Hybrid backend half).**
+- Frontend-only this pass. tsc + next build clean (3 hubs SSG).
+- **DONE (backend half):** the hub agents now generate the structured `content_json.hub` (new
+  `hubs/hub_content.py` with SEASON_CONTENT / CATEGORY_CONTENT / REGION_WHY, no dashes). Clicking
+  Generate in /admin/hubs produces real, editable CMS content the frontend renders; code content is the
+  fallback until a hub is generated. Seasonal/Regional/Cluster generate tests assert content_json.hub;
+  backend suite green. gitnexus impact agents LOW.
 
 ## 2026-08-04 — Cluster page UI parity + Trek Categories in nav
 Owner: the /trek-types cluster page UI was breaking (it used the dark admin palette on a public page).

@@ -198,10 +198,18 @@ class RegionalContentAgent(BaseAgent):
                      f"fitness level and prior experience needed.",
             })
 
+        from app.modules.hubs.hub_content import REGION_WHY
         slug = f"regions/{meta.slug}"
         title = f"{meta.name} Treks"
         now = datetime.now(timezone.utc)
+        hub = {
+            "intro": intro,
+            "overview": meta.blurb,
+            "why": REGION_WHY.get(meta.slug, meta.blurb),
+            "faqs": faqs,
+        }
         content_json = {
+            "hub": hub,
             "faqs": faqs,
             "region_slug": meta.slug,
             "trek_names": top_names,
