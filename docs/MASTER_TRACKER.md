@@ -18,6 +18,17 @@ Do not modify any code file without first:
 4. Checking impacted files and blast radius
 5. Updating the relevant step file in `docs/steps/`
 
+## 2026-08-04 — Seasonal hub pages rebuilt rich + unique (SEO/AEO)
+Owner: the 5 /seasons/{slug} pages were thin + near-identical (same body, shared hero image, no FAQs,
+no rich schema) and monsoon's H1 wrongly read "Best Monsoon Treks in **Maharashtra**". Rebuilt fully:
+- New `lib/season-content.ts` — distinct per-season content (hero, intro, why-trek, best regions,
+  month-by-month table, packing, weather) for all 5 seasons + december/may.
+- `/seasons/[slug]` rewritten code-first (no LLM dependency): unique hero + H1, dynamic stat strip,
+  "Why trek", best-regions cards, live season-matched trek grid, a month table, packing bullets +
+  weather panel, and generated season-specific FAQs → FAQPage + ItemList + Breadcrumb schema. Fixed
+  the monsoon title and per-season hero images. SeasonalContentAgent is now optional.
+- gitnexus impact Seasonal = LOW; tsc + next build clean (SSG, 7 pages). URL_MAP + DEPENDENCY_MAP + README updated.
+
 ## 2026-08-04 — HOTFIX: removed per-trek /trek-types URLs (SEO cannibalisation)
 Owner reported junk URLs like `/trek-types/tarsar-marsar-trek-guide`. Cause: the "Both" cluster design
 generated a cluster_hub per keyword_cluster, but this project's keyword_clusters are named **per-trek**,

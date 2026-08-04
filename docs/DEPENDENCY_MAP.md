@@ -2869,3 +2869,22 @@ thematic categories.
 
 ### Owner action after deploy: run `python scripts/cleanup_cluster_hubs.py --apply` on the DO api
 console to delete the junk /trek-types pages, then request re-crawl in Search Console for those URLs.
+
+## 2026-08-04 — Seasonal hub pages rebuilt rich + unique (were thin/duplicate)
+
+Owner: /seasons/{spring,summer,monsoon,autumn,winter} were thin and near-identical — same body, same
+hero image (winter/spring/autumn shared region-uttarakhand-snow.jpg), no FAQs, no rich schema, and
+monsoon's H1 wrongly said "Best Monsoon Treks in **Maharashtra**". Rebuilt code-first so each page is
+genuinely unique and SEO/AEO-complete, with no dependency on the LLM/CMS generation.
+- `apps/web-next/lib/season-content.ts` **(NEW)** -> `SEASON_CONTENT` per slug (distinct heroImage,
+  tagline, intro, whyTrek, bestRegions[], monthTable[], packing[], weather, prep, beginnerNote) for
+  spring/summer/monsoon/autumn/winter + december/may; `getSeasonContent(slug)`.
+- `apps/web-next/app/(public)/seasons/[slug]/page.tsx` -> full rewrite. Renders: unique hero + H1,
+  dynamic stat strip (live trek count / peak months / regions / months), "Why trek in {season}",
+  "Best regions" cards (link /regions/{slug}), live season-matched trek grid, a **month-by-month table**,
+  a packing bullet list + weather panel, and **generated season-specific FAQs**. Schema = FAQPage +
+  ItemList (trek names) + BreadcrumbList (always emitted now). CMS `content_html` is an optional extra
+  block only when >400 chars. Fixed monsoon title + per-season hero images. blast radius: LOW (Seasonal
+  0 upstream). tsc + next build clean (SSG, 7 pages).
+- SeasonalContentAgent is now OPTIONAL (page is rich without it). Any thin generated seasonal_hub CMS
+  pages are harmless (hidden unless >400 chars); the owner can delete them via /admin/cms if desired.
