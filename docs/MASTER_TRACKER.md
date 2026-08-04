@@ -18,6 +18,25 @@ Do not modify any code file without first:
 4. Checking impacted files and blast radius
 5. Updating the relevant step file in `docs/steps/`
 
+## 2026-08-04 — Cross-surface placement audit (last 3 releases) + nav consistency fix
+Audited every placement of the region/season/cluster hubs + newsletter work across desktop + mobile
+web and the admin CMS (bd05b16, cbf786a, 2a5ff08). gitnexus impact on `megaSections` = LOW (0 upstream).
+- **Verified OK:** Home region chips (dynamic, responsive, grouped) + season tabs (5-season, responsive);
+  desktop primary nav "Regions" mega has dynamic Top Regions; Footer entry links; Admin sidebar has
+  **Destination Hubs** (`/admin/hubs`) + **Newsletter** (`/admin/newsletter`); CMSPageForm exposes
+  regional_hub/cluster_hub/seasonal page types; admin/cms + sitemap map all hub types to URLs.
+- **Gap FIXED:** desktop mega "By Season" listed only Winter/Monsoon/Summer + December/May — **missing
+  Spring + Autumn** (inconsistent with the now-canonical 5 seasons). Updated `Header.tsx` mega to the
+  canonical 5 (spring/summer/monsoon/autumn/winter); dropped the December/May month links from nav (still
+  live at their URLs + in sitemap). tsc ✓.
+- **Flagged (not bugs — noted for the owner):** (a) mobile hamburger is a **flat** list — "Regions"→
+  /regions/himachal and "Seasons"→/seasons/winter are single entry links (no submenu); regions/seasons are
+  reached on mobile via the responsive home chips/tabs. (b) **Cluster hubs (/trek-types) have no global nav/
+  footer/home link** — discoverable via sitemap + trek-page internal links only (by design; pipeline SEO
+  landing pages). (c) There is **no `/regions` or `/seasons` index page** — hubs are entered via home/nav.
+- **SMTP is configured in DO** (owner screenshot: SMTP_HOST/PORT/USER/PASSWORD/FROM_EMAIL + FRONTEND_URL) →
+  the newsletter/iOS-waitlist **welcome email now actually sends** (was a graceful no-op). Live-facing.
+
 ## 2026-08-04 — Hub↔trek mapping unified + consistent site-wide
 Owner correction: cluster/seasonal/regional hub pages must show their REAL treks (Master CMS + Trek
 Backfill) via ONE consistent mapping. Audit found 3 conflicting season definitions (home showed

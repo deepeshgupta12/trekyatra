@@ -2787,3 +2787,12 @@ this brings seasonal + cluster up to that standard and makes the backend the sin
 - **No DB migration, no new env.** Backend 809 pass + new mapping tests (2 failures = known test_refresh
   flake). `tsc` ✓, `next build` ✓. gitnexus impact LOW (get_seasonal_pages / CMSPageResponse / SeasonalTreksSection
   all 0 upstream). URL_MAP, MASTER_TRACKER, README updated.
+
+## 2026-08-04 — Nav consistency fix (audit follow-up)
+- `apps/web-next/components/layout/Header.tsx` -> mega "By Season" column updated from 4 (Winter/Monsoon/
+  Summer + December/May month links) to the canonical 5 seasons (spring/summer/monsoon/autumn/winter),
+  matching `lib/seasons.ts` + the home tabs + `/seasons/[slug]`. Spring + Autumn hubs are no longer
+  orphaned from nav. blast radius: LOW (megaSections 0 upstream). No other consumers.
+- Placement audit confirmed: admin sidebar (`app/(admin)/admin/layout.tsx`) already lists Destination Hubs
+  + Newsletter; home region chips + season tabs are responsive; footer entry links present. Cluster
+  (/trek-types) hubs remain nav-orphaned by design (pipeline SEO landing pages).

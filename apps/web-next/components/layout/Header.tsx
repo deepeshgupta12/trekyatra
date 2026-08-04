@@ -41,12 +41,13 @@ const megaSections = [
   {
     title: "By Season",
     icon: Calendar,
+    // Canonical 5-season taxonomy (lib/seasons.ts) — keep in sync with the home tabs + /seasons/[slug].
     items: [
-      { label: "Best Winter Treks", to: "/seasons/winter" },
+      { label: "Best Spring Treks", to: "/seasons/spring" },
+      { label: "Best Summer Treks", to: "/seasons/summer" },
       { label: "Monsoon Treks (Sahyadri)", to: "/seasons/monsoon" },
-      { label: "Summer Himalayan Treks", to: "/seasons/summer" },
-      { label: "Treks in December", to: "/seasons/december" },
-      { label: "Treks in May", to: "/seasons/may" },
+      { label: "Best Autumn Treks", to: "/seasons/autumn" },
+      { label: "Best Winter Treks", to: "/seasons/winter" },
     ],
   },
   {
