@@ -2920,3 +2920,26 @@ strict treatment applied to seasons was needed for region + cluster pages.
   mega grid `grid-cols-4` → `grid-cols-3 lg:grid-cols-5` (Top Regions + Trek Categories + By City + By
   Season + Trust). `components/layout/Footer.tsx` -> added Snow/Lake trek category links to Discover.
 - tsc + next build clean. URL_MAP + MASTER_TRACKER updated.
+
+## 2026-08-04 — Hub pages SEO/AEO depth + Hybrid content model (dynamic, editable)
+
+Owner: pages were too thin vs competitors (Indiahikes), needed richer content, more interlinking, full
+schema, and human prose with NO dashes/hyphens. Also: content must be dynamic/editable, not static.
+- **Hybrid content model:** `lib/api.ts` `HubContent` type on `content_json.hub` (intro, overview, why,
+  bestRegions[], monthTable[], prepare[], packing[], weather, faqs[]). The hub pages render each field
+  from `content_json.hub` when present (editable in /admin/cms, agent-generated) and fall back to code
+  content per field. So content is dynamic; code is the fallback. (Backend agents emitting this
+  content_json is the next step; the code content is the fallback until then.)
+- **Maximal schema:** `lib/schema.ts` new `buildCollectionPageSchema` (+ `buildTrekItemList`) emits a
+  CollectionPage with a rich ItemList (each trek a TouristAttraction with url/image/description +
+  difficulty/duration/altitude PropertyValues), `about`, `primaryImageOfPage`, `significantLink`
+  interlinks, `keywords`, and a `SpeakableSpecification` (.hub-intro, .hub-faq) for AEO. Regions also
+  keep TouristDestination; all keep FAQPage + BreadcrumbList. blast radius: LOW (buildItemListSchema
+  unchanged; new builder additive).
+- **Interlinking + tables:** `components/hub/TrekComparisonTable.tsx` (treks table, each row links to
+  /trek/{slug}) and `components/hub/HubInterlinks.tsx` ("Explore more": related regions/seasons/
+  categories + planning guides) — both shared by all three hubs.
+- **Content rewrite (no dashes/hyphens, richer):** `lib/season-content.ts`, `lib/category-content.ts`,
+  `lib/regions.ts` (REGION_WHY, blurbs, logistics) rewritten as human prose with added overview +
+  prepare. Pages add: overview paragraph, comparison table, how-to-prepare bullets, interlinks, speakable.
+- tsc + next build clean (all 3 SSG). gitnexus impact LOW; buildItemListSchema 2 consumers LOW.

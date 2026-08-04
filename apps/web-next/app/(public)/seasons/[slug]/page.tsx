@@ -3,22 +3,21 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { TrekCard } from "@/components/trek/TrekCard";
 import { treks } from "@/data/treks";
-import { Snowflake, Sun, Cloud, Leaf, MapPin, Calendar, Mountain, ShieldCheck } from "lucide-react";
+import { Snowflake, Sun, Cloud, Leaf, MapPin, Calendar, Mountain, ShieldCheck, CheckCircle2 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import { fetchCMSPage, fetchSeasonalTreks } from "@/lib/api";
 import { cmsPageToTrek } from "@/lib/trek-utils";
 import { getSeasonContent, SEASON_CONTENT } from "@/lib/season-content";
 import SchemaInjector from "@/components/seo/SchemaInjector";
-import { buildBreadcrumbSchema, buildFAQSchema, buildItemListSchema } from "@/lib/schema";
+import { buildBreadcrumbSchema, buildFAQSchema, buildCollectionPageSchema } from "@/lib/schema";
 import FAQAccordion, { type FAQItem } from "@/components/content/FAQAccordion";
 import AffiliateDisclosure from "@/components/content/AffiliateDisclosure";
+import { TrekComparisonTable } from "@/components/hub/TrekComparisonTable";
+import { HubInterlinks } from "@/components/hub/HubInterlinks";
 
-// /seasons is EXCLUSIVELY the canonical 5 seasons. Month hubs (december/may) were removed — they
-// duplicated winter/summer. Any other slug 404s.
 const SEASON_ICON: Record<string, LucideIcon> = {
   spring: Leaf, summer: Sun, monsoon: Cloud, autumn: Leaf, winter: Snowflake,
 };
-
 const isSeasonSlug = (slug: string): boolean => slug in SEASON_CONTENT;
 
 interface Props {
@@ -35,11 +34,9 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   let cmsPage = null;
   try {
     cmsPage = await fetchCMSPage(`seasons/${params.slug}`);
-  } catch {
-    // code-first fallback
-  }
+  } catch { /* code-first */ }
   return {
-    title: cmsPage?.seo_title ?? `${c.title} — Routes, Months, Packing & Weather | TrekYatra`,
+    title: cmsPage?.seo_title ?? `${c.title}, Routes, Months, Packing and Weather | TrekYatra`,
     description: cmsPage?.seo_description ?? c.intro.slice(0, 155),
     alternates: { canonical: `${siteUrl}/seasons/${params.slug}` },
     openGraph: { title: c.title, images: [cmsPage?.hero_image_url ?? c.heroImage] },
@@ -49,56 +46,43 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 export const revalidate = 3600;
 
 export default async function Seasonal({ params }: Props) {
-  // Only the canonical 5 seasons render; anything else (e.g. the removed /seasons/december) 404s.
-  if (!isSeasonSlug(params.slug)) {
-    notFound();
-  }
+  if (!isSeasonSlug(params.slug)) notFound();
   const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? "https://www.trekyatra.co.in";
   const c = getSeasonContent(params.slug);
   const name = params.slug.charAt(0).toUpperCase() + params.slug.slice(1);
   const Icon = SEASON_ICON[params.slug] ?? Calendar;
 
-  // Optional CMS overlay (editor enrichment) — the rich body below always renders regardless.
   let cmsPage = null;
   try {
     cmsPage = await fetchCMSPage(`seasons/${params.slug}`);
-  } catch {
-    // code-first
-  }
+  } catch { /* code-first */ }
 
-  // Live treks matching this season (Master CMS + Trek Backfill), static seed as last resort.
+  // Hybrid content model: prefer the editable structured content_json.hub, fall back to code per field.
+  const hub = cmsPage?.content_json?.hub ?? {};
+  const intro = hub.intro ?? c.intro;
+  const overview = hub.overview ?? c.overview;
+  const whyTrek = hub.why ?? c.whyTrek;
+  const bestRegions = hub.bestRegions?.length ? hub.bestRegions : c.bestRegions;
+  const monthTable = hub.monthTable?.length ? hub.monthTable : c.monthTable;
+  const prepare = hub.prepare?.length ? hub.prepare : c.prepare;
+  const packing = hub.packing?.length ? hub.packing : c.packing;
+  const weather = hub.weather ?? c.weather;
+
   const cmsSeasonPages = await fetchSeasonalTreks(params.slug, 9);
   const seasonTreks = cmsSeasonPages.length ? cmsSeasonPages.map(cmsPageToTrek) : treks.slice(0, 6);
   const trekCount = cmsSeasonPages.length || seasonTreks.length;
 
   const heroImage = cmsPage?.hero_image_url ?? c.heroImage;
-  const description = cmsPage?.seo_description ?? c.intro;
+  const description = cmsPage?.seo_description ?? intro;
 
-  // Generated, season-specific FAQs (unique per page; grounded in real data). Prefer CMS FAQs if set.
-  const cmsFaqs: FAQItem[] = (cmsPage?.content_json?.faqs ?? []).filter((f) => f.q && f.a);
   const generatedFaqs: FAQItem[] = [
-    {
-      q: `When is the best time for ${name.toLowerCase()} treks in India?`,
-      a: `The ${name.toLowerCase()} trekking window runs ${c.monthsLabel}. ${c.weather}`,
-    },
-    {
-      q: `Which regions are best for ${name.toLowerCase()} trekking?`,
-      a: `${c.bestRegions.map((r) => `${r.name} — ${r.note}`).join(" ")}`,
-    },
-    {
-      q: `How many ${name.toLowerCase()} treks does TrekYatra cover?`,
-      a: `${trekCount} trek${trekCount !== 1 ? "s" : ""} match the ${name.toLowerCase()} window, each with a full route breakdown, permits, cost estimates and live trail conditions.`,
-    },
-    {
-      q: `What should I pack for ${name.toLowerCase()} treks?`,
-      a: `Key items: ${c.packing.join("; ")}. ${c.prep}`,
-    },
-    {
-      q: `Are ${name.toLowerCase()} treks good for beginners?`,
-      a: c.beginnerNote,
-    },
+    { q: `When is the best time for ${name.toLowerCase()} treks in India?`, a: `The ${name.toLowerCase()} trekking window runs ${c.monthsLabel}. ${weather}` },
+    { q: `Which regions are best for ${name.toLowerCase()} trekking?`, a: bestRegions.map((r) => `${r.name}, ${r.note}`).join(" ") },
+    { q: `How many ${name.toLowerCase()} treks does TrekYatra cover?`, a: `${trekCount} treks match the ${name.toLowerCase()} window, each with a full route breakdown, permits, cost estimates and live trail conditions.` },
+    { q: `What should I pack for ${name.toLowerCase()} treks?`, a: `Key items are ${packing.join(", ")}. ${c.prep}` },
+    { q: `Are ${name.toLowerCase()} treks good for beginners?`, a: c.beginnerNote },
   ];
-  const faqs: FAQItem[] = cmsFaqs.length ? cmsFaqs : generatedFaqs;
+  const faqs: FAQItem[] = hub.faqs?.length ? hub.faqs : (cmsPage?.content_json?.faqs?.length ? cmsPage.content_json.faqs : generatedFaqs);
 
   const breadcrumbItems = [
     { label: "Home", href: `${siteUrl}/` },
@@ -109,8 +93,34 @@ export default async function Seasonal({ params }: Props) {
   const stats: [string, string][] = [
     [String(trekCount), trekCount === 1 ? "Trek in season" : "Treks in season"],
     [c.monthsLabel, "Peak months"],
-    [String(c.bestRegions.length), "Prime regions"],
-    [`${c.monthTable.length}`, c.monthTable.length === 1 ? "Month covered" : "Months covered"],
+    [String(bestRegions.length), "Prime regions"],
+    [String(monthTable.length), monthTable.length === 1 ? "Month covered" : "Months covered"],
+  ];
+
+  // Interlinking targets beyond the trek cards.
+  const otherSeasons = Object.keys(SEASON_CONTENT).filter((s) => s !== params.slug);
+  const interlinkGroups = [
+    { title: "Best regions this season", links: bestRegions.map((r) => ({ label: r.name, href: `/regions/${r.slug}` })) },
+    { title: "Other seasons", links: otherSeasons.map((s) => ({ label: `${s.charAt(0).toUpperCase() + s.slice(1)} treks`, href: `/seasons/${s}` })) },
+    { title: "Trek by type", links: [
+      { label: "Beginner friendly treks", href: "/trek-types/beginner-friendly-treks" },
+      { label: "Snow treks", href: "/trek-types/snow-treks" },
+      { label: "Lake treks", href: "/trek-types/lake-treks" },
+      { label: "High altitude treks", href: "/trek-types/high-altitude-treks" },
+    ] },
+    { title: "Plan your trek", links: [
+      { label: "Packing checklists", href: "/packing" },
+      { label: "Permit guides", href: "/permits" },
+      { label: "Cost estimators", href: "/costs" },
+      { label: "Compare treks", href: "/compare" },
+      { label: "Plan my trek", href: "/plan" },
+    ] },
+  ];
+
+  const significantLinks = [
+    ...bestRegions.map((r) => `/regions/${r.slug}`),
+    ...otherSeasons.map((s) => `/seasons/${s}`),
+    "/packing", "/permits", "/plan",
   ];
 
   return (
@@ -118,7 +128,17 @@ export default async function Seasonal({ params }: Props) {
       <SchemaInjector
         schemas={[
           buildBreadcrumbSchema(breadcrumbItems),
-          buildItemListSchema(seasonTreks.map((t) => t.name), `/seasons/${params.slug}`),
+          buildCollectionPageSchema({
+            name: c.title,
+            description,
+            url: `/seasons/${params.slug}`,
+            image: heroImage,
+            dateModified: cmsPage?.updated_at ?? null,
+            about: { type: "Thing", name: `${name} trekking in India`, description: whyTrek },
+            treks: seasonTreks.map((t) => ({ name: t.name, slug: t.slug, image: t.image, description: t.description, difficulty: t.difficulty, duration: t.duration, altitude: t.altitude, season: t.season })),
+            significantLinks,
+            keywords: [`${name.toLowerCase()} treks`, `best ${name.toLowerCase()} treks india`, ...bestRegions.map((r) => `${name.toLowerCase()} treks ${r.name.toLowerCase()}`)],
+          }),
           buildFAQSchema(faqs)!,
         ]}
       />
@@ -131,16 +151,14 @@ export default async function Seasonal({ params }: Props) {
         </div>
         <div className="container-wide relative pb-12 text-surface">
           <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full glass-dark text-xs uppercase tracking-widest mb-5">
-            <Icon className="h-3 w-3 text-accent-glow" /> Season · {c.monthsLabel}
+            <Icon className="h-3 w-3 text-accent-glow" /> Season, {c.monthsLabel}
           </div>
-          <h1 className="font-display text-5xl md:text-7xl font-semibold leading-[0.95] mb-5 max-w-4xl">
-            {cmsPage?.title ?? c.title}
-          </h1>
-          <p className="text-surface/85 text-lg max-w-2xl">{description}</p>
+          <h1 className="font-display text-5xl md:text-7xl font-semibold leading-[0.95] mb-5 max-w-4xl">{cmsPage?.title ?? c.title}</h1>
+          <p className="hub-intro text-surface/85 text-lg max-w-2xl">{description}</p>
         </div>
       </section>
 
-      {/* Dynamic stat strip */}
+      {/* Stat strip */}
       <section className="bg-card border-b border-border">
         <div className="container-wide grid grid-cols-2 md:grid-cols-4 divide-x divide-border">
           {stats.map(([v, l]) => (
@@ -152,28 +170,24 @@ export default async function Seasonal({ params }: Props) {
         </div>
       </section>
 
-      {/* Why trek this season */}
+      {/* Why trek + overview */}
       <section className="py-14">
         <div className="container-wide max-w-4xl">
-          <div className="text-xs uppercase tracking-[0.25em] text-accent mb-3 flex items-center gap-2">
-            <Sun className="h-3.5 w-3.5" /> {c.tagline}
-          </div>
+          <div className="text-xs uppercase tracking-[0.25em] text-accent mb-3">{c.tagline}</div>
           <h2 className="font-display text-3xl md:text-4xl font-semibold mb-5">Why trek in {name}?</h2>
-          <p className="text-lg text-foreground/85 leading-relaxed">{c.whyTrek}</p>
+          <p className="text-lg text-foreground/85 leading-relaxed mb-4">{whyTrek}</p>
+          <p className="text-foreground/75 leading-relaxed">{overview}</p>
         </div>
       </section>
 
-      {/* Best regions this season */}
+      {/* Best regions */}
       <section className="py-12 bg-surface-muted">
         <div className="container-wide">
           <h2 className="font-display text-2xl md:text-3xl font-semibold mb-6">Best regions for {name} trekking</h2>
           <div className="grid md:grid-cols-3 gap-5">
-            {c.bestRegions.map((r) => (
+            {bestRegions.map((r) => (
               <Link key={r.slug} href={`/regions/${r.slug}`} className="block p-6 bg-card border border-border rounded-2xl hover:border-accent/40 transition-colors">
-                <div className="flex items-center gap-2 mb-2">
-                  <MapPin className="h-4 w-4 text-accent" />
-                  <h3 className="font-display text-lg font-semibold">{r.name}</h3>
-                </div>
+                <div className="flex items-center gap-2 mb-2"><MapPin className="h-4 w-4 text-accent" /><h3 className="font-display text-lg font-semibold">{r.name}</h3></div>
                 <p className="text-sm text-muted-foreground">{r.note}</p>
               </Link>
             ))}
@@ -181,40 +195,34 @@ export default async function Seasonal({ params }: Props) {
         </div>
       </section>
 
-      {/* Top treks (real, season-matched) */}
+      {/* Trek grid */}
       <section className="py-14">
         <div className="container-wide">
           <div className="flex items-end justify-between mb-8">
             <h2 className="font-display text-3xl md:text-4xl font-semibold">Top {name} treks</h2>
-            <Link href="/explore" className="text-sm text-accent font-medium hidden md:block whitespace-nowrap">
-              Browse all treks →
-            </Link>
+            <Link href="/explore" className="text-sm text-accent font-medium hidden md:block whitespace-nowrap">Browse all treks &rarr;</Link>
           </div>
           <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-5">
-            {seasonTreks.map((t) => (
-              <TrekCard key={t.slug} trek={t} />
-            ))}
+            {seasonTreks.map((t) => <TrekCard key={t.slug} trek={t} />)}
           </div>
         </div>
       </section>
 
-      {/* Month-by-month table */}
-      <section className="py-12 bg-surface-muted">
+      {/* Comparison table */}
+      <TrekComparisonTable treks={seasonTreks} title={`Compare ${name} treks`} caption={`How the top ${name.toLowerCase()} treks stack up on difficulty, duration, season and altitude.`} />
+
+      {/* Month by month */}
+      <section className="py-12">
         <div className="container-wide max-w-4xl">
-          <div className="flex items-center gap-2 mb-6">
-            <Calendar className="h-5 w-5 text-accent" />
-            <h2 className="font-display text-2xl md:text-3xl font-semibold">{name} month-by-month</h2>
-          </div>
+          <div className="flex items-center gap-2 mb-6"><Calendar className="h-5 w-5 text-accent" /><h2 className="font-display text-2xl md:text-3xl font-semibold">{name} month by month</h2></div>
           <div className="overflow-x-auto bg-card border border-border rounded-2xl">
             <table className="w-full text-sm min-w-[420px]">
-              <thead>
-                <tr className="border-b border-border">
-                  <th className="text-left px-5 py-3 text-muted-foreground font-medium text-xs uppercase tracking-widest">Month</th>
-                  <th className="text-left px-5 py-3 text-muted-foreground font-medium text-xs uppercase tracking-widest">Conditions</th>
-                </tr>
-              </thead>
+              <thead><tr className="border-b border-border">
+                <th className="text-left px-5 py-3 text-muted-foreground font-medium text-xs uppercase tracking-widest">Month</th>
+                <th className="text-left px-5 py-3 text-muted-foreground font-medium text-xs uppercase tracking-widest">Conditions</th>
+              </tr></thead>
               <tbody>
-                {c.monthTable.map((m) => (
+                {monthTable.map((m) => (
                   <tr key={m.month} className="border-b border-border/60 last:border-0">
                     <td className="px-5 py-3.5 font-semibold whitespace-nowrap">{m.month}</td>
                     <td className="px-5 py-3.5 text-foreground/80">{m.conditions}</td>
@@ -223,52 +231,44 @@ export default async function Seasonal({ params }: Props) {
               </tbody>
             </table>
           </div>
-          <p className="text-sm text-muted-foreground mt-4 flex items-start gap-2">
-            <ShieldCheck className="h-4 w-4 text-accent flex-shrink-0 mt-0.5" /> {c.prep}
-          </p>
+          <p className="text-sm text-muted-foreground mt-4 flex items-start gap-2"><ShieldCheck className="h-4 w-4 text-accent flex-shrink-0 mt-0.5" /> {c.prep}</p>
         </div>
       </section>
 
-      {/* What to pack + weather */}
-      <section className="py-14">
+      {/* How to prepare + What to pack */}
+      <section className="py-12 bg-surface-muted">
         <div className="container-wide grid lg:grid-cols-2 gap-10">
           <div>
-            <div className="flex items-center gap-2 mb-4">
-              <Mountain className="h-5 w-5 text-accent" />
-              <h2 className="font-display text-2xl md:text-3xl font-semibold">What to pack for {name} treks</h2>
-            </div>
+            <div className="flex items-center gap-2 mb-4"><CheckCircle2 className="h-5 w-5 text-accent" /><h2 className="font-display text-2xl md:text-3xl font-semibold">How to prepare</h2></div>
             <ul className="space-y-3">
-              {c.packing.map((item) => (
-                <li key={item} className="flex items-start gap-3 text-foreground/85">
-                  <span className="mt-2 h-1.5 w-1.5 rounded-full bg-accent flex-shrink-0" />
-                  <span>{item}</span>
-                </li>
-              ))}
+              {prepare.map((p) => <li key={p} className="flex items-start gap-3 text-foreground/85"><span className="mt-2 h-1.5 w-1.5 rounded-full bg-accent flex-shrink-0" /><span>{p}</span></li>)}
             </ul>
           </div>
-          <div className="bg-gradient-pine text-surface rounded-2xl p-8 flex flex-col justify-center">
-            <div className="text-xs uppercase tracking-[0.25em] text-accent-glow mb-3">Weather &amp; conditions</div>
-            <p className="text-surface/90 text-lg leading-relaxed">{c.weather}</p>
+          <div>
+            <div className="flex items-center gap-2 mb-4"><Mountain className="h-5 w-5 text-accent" /><h2 className="font-display text-2xl md:text-3xl font-semibold">What to pack</h2></div>
+            <ul className="space-y-3">
+              {packing.map((p) => <li key={p} className="flex items-start gap-3 text-foreground/85"><span className="mt-2 h-1.5 w-1.5 rounded-full bg-accent flex-shrink-0" /><span>{p}</span></li>)}
+            </ul>
+            <p className="text-sm text-muted-foreground mt-5">{weather}</p>
           </div>
         </div>
       </section>
 
-      {/* Optional editor-authored in-depth guide (CMS overlay) — only if substantial */}
+      {/* Editor overlay (rich HTML) */}
       {cmsPage?.content_html && cmsPage.content_html.length > 400 && (
-        <section className="py-8">
-          <div className="container-wide max-w-3xl">
-            <div className="cms-section prose max-w-none text-foreground/85" dangerouslySetInnerHTML={{ __html: cmsPage.content_html }} />
-          </div>
-        </section>
+        <section className="py-8"><div className="container-wide max-w-3xl"><div className="cms-section prose max-w-none text-foreground/85" dangerouslySetInnerHTML={{ __html: cmsPage.content_html }} /></div></section>
       )}
 
-      {/* FAQs (generated, season-specific) */}
+      {/* FAQs */}
       <section className="py-12 border-t border-border">
-        <div className="container-wide max-w-3xl">
-          <h2 className="font-display text-2xl md:text-3xl font-semibold mb-6">{name} trekking — Frequently Asked Questions</h2>
+        <div className="hub-faq container-wide max-w-3xl">
+          <h2 className="font-display text-2xl md:text-3xl font-semibold mb-6">{name} trekking, frequently asked questions</h2>
           <FAQAccordion items={faqs} />
         </div>
       </section>
+
+      {/* Interlinks */}
+      <HubInterlinks groups={interlinkGroups} />
 
       <AffiliateDisclosure />
     </>

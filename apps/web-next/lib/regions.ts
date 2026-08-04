@@ -41,32 +41,32 @@ export interface RegionMeta {
 // Per-region "Why trek here" narrative, keyed by slug (kept separate from REGIONS to stay readable).
 const REGION_WHY: Record<string, string> = {
   uttarakhand:
-    "Uttarakhand is where most Indians take their first Himalayan trek. Garhwal and Kumaon pack an extraordinary range into short approaches — beginner snow summits like Kedarkantha and Brahmatal, the flower meadows of the Valley of Flowers, and serious high routes like Roopkund — all reachable within a day of the roadhead. Well-marked trails, a mature guiding ecosystem, and reliable winter snow make it the most beginner-friendly big-mountain region in the country.",
+    "Uttarakhand is where most Indians take their first Himalayan trek. Garhwal and Kumaon pack an extraordinary range into short approaches, from beginner snow summits like Kedarkantha and Brahmatal to the flower meadows of the Valley of Flowers and serious high routes like Roopkund, and almost all of them sit within a day of the roadhead. Well marked trails, a mature guiding network and reliable winter snow make this the friendliest big mountain region in the country for a first timer.",
   himachal:
-    "No Indian state offers more variety than Himachal. In a single state you can walk the green Kullu valleys, cross a glaciated pass on Hampta, camp beside Bhrigu Lake, or step into the cold desert of Spiti and Pin Parvati. That range — lush to lunar, gentle to technical — plus easy access from Delhi and Chandigarh makes Himachal the trekker's playground across almost every season.",
+    "No Indian state offers more variety than Himachal. In one state you can walk the green Kullu valleys, cross a glaciated pass on Hampta, camp beside Bhrigu Lake, or step into the cold desert of Spiti and Pin Parvati. That range, from lush to lunar and gentle to technical, together with easy access from Delhi and Chandigarh, makes Himachal the trekker's playground across almost every season.",
   kashmir:
-    "Kashmir's high meadows are simply unrivalled in India. The Great Lakes trek strings together a chain of turquoise alpine lakes below jagged peaks, and Tarsar Marsar delivers the same beauty with fewer crowds. Lush pasture, wildflowers and a short, spectacular summer window make Kashmir the country's premier meadow-and-lake trekking destination.",
+    "The high meadows of Kashmir are simply unrivalled in India. The Great Lakes trek strings together a chain of turquoise alpine lakes below jagged peaks, and Tarsar Marsar delivers the same beauty with far fewer people. Lush pasture, wildflowers and a short but spectacular summer window make Kashmir the country's premier destination for meadow and lake trekking.",
   ladakh:
-    "Ladakh is high-altitude trekking at its most raw. Every route stays above 3,500 m, crossing ochre moonscapes, Buddhist villages and glacier-fed rivers — Markha Valley, Stok Kangri, and the frozen Chadar. This is a region for acclimatised, experienced trekkers chasing big altitude and stark, otherworldly landscapes rather than green meadows.",
+    "Ladakh is high altitude trekking at its most raw. Every route stays above 3,500 metres, crossing ochre moonscapes, Buddhist villages and glacier fed rivers on trails like Markha Valley, Stok Kangri and the frozen Chadar. This is a region for acclimatised, experienced trekkers who are chasing big altitude and stark, otherworldly landscapes rather than green meadows.",
   maharashtra:
-    "Maharashtra's Sahyadris are India's monsoon trekking capital. When the Himalaya shuts down for the rains, these basalt ranges erupt with waterfalls, fort ramparts and misty ridgelines. With 70+ documented routes within a few hours of Mumbai and Pune, the Sahyadris deliver dramatic, accessible weekend trekking from June right through February.",
+    "The Sahyadris of Maharashtra are the monsoon trekking capital of India. When the Himalaya shuts down for the rains, these basalt ranges erupt with waterfalls, fort ramparts and misty ridgelines. With more than seventy documented routes within a few hours of Mumbai and Pune, the Sahyadris deliver dramatic, accessible weekend trekking from June right through February.",
   sikkim:
-    "Sikkim and the North-East pair jaw-dropping Kanchenjunga views with some of India's richest biodiversity. Goecha La, Dzongri and the ridge walk to Sandakphu pass through rhododendron forest, high yak pasture and orchid-strewn valleys. Quieter and greener than the western Himalaya, it rewards trekkers who want scenery and solitude in equal measure.",
+    "Sikkim and the North East pair jaw dropping Kanchenjunga views with some of the richest biodiversity in India. Goecha La, Dzongri and the ridge walk to Sandakphu pass through rhododendron forest, high yak pasture and orchid strewn valleys. Quieter and greener than the western Himalaya, this region rewards trekkers who want scenery and solitude in equal measure.",
   karnataka:
-    "Karnataka brings the Western Ghats within a weekend of Bengaluru. Kudremukh's rolling grasslands, the granite dome of Kumara Parvatha and the coffee-country ridgelines of Tadiyandamol range from gentle to genuinely tough. Lush, green and easy to reach, it's the south's most rewarding trekking region.",
+    "Karnataka brings the Western Ghats within a weekend of Bengaluru. The rolling grasslands of Kudremukh, the granite dome of Kumara Parvatha and the coffee country ridgelines of Tadiyandamol range from gentle to genuinely tough. Lush, green and easy to reach, it is the most rewarding trekking region in the south.",
   nepal:
-    "The Nepal Himalaya holds the greatest concentration of 8000 m giants on Earth and the world's most storied treks. From the Everest Base Camp trail to the Annapurna Circuit and the wild approaches to Kanchenjunga and Makalu, Nepal blends soaring high-altitude scenery with a deep teahouse-trekking culture that makes long routes surprisingly accessible.",
+    "The Nepal Himalaya holds the greatest concentration of eight thousand metre giants on Earth and the most storied treks in the world. From the Everest Base Camp trail to the Annapurna Circuit and the wild approaches to Kanchenjunga and Makalu, Nepal blends soaring high altitude scenery with a deep teahouse trekking culture that makes long routes surprisingly accessible.",
   pakistan:
-    "Pakistan's Karakoram packs the most extreme high peaks on the planet into one range — K2, the Gasherbrums, Broad Peak and, nearby, Nanga Parbat. Treks like the Baltoro Glacier to Concordia walk beneath a wall of 8000ers unlike anywhere else. Remote, permit-heavy and serious, Gilgit-Baltistan is high-altitude trekking at the sharpest end.",
+    "The Karakoram of Pakistan packs the most extreme high peaks on the planet into one range, from K2 and the Gasherbrums to Broad Peak and, close by, Nanga Parbat. Treks like the Baltoro Glacier to Concordia walk beneath a wall of eight thousand metre peaks unlike anywhere else. Remote, permit heavy and serious, Gilgit Baltistan is high altitude trekking at the sharpest end.",
   tibet:
-    "Tibet is the high, remote north side of the Himalaya — a vast high-altitude desert of turquoise lakes, monasteries and the north approaches to Everest, Cho Oyu and Shishapangma. Big logistics and strict, guide-only permits are the price of admission to some of the most austere and spiritual trekking terrain on Earth.",
+    "Tibet is the high, remote north side of the Himalaya, a vast high altitude desert of turquoise lakes, monasteries and the north approaches to Everest, Cho Oyu and Shishapangma. Big logistics and strict, guide only permits are the price of admission to some of the most austere and spiritual trekking terrain on Earth.",
 };
 
 const INDIA_LOGISTICS: [string, string][] = [
-  ["Delhi", "Overnight train/bus to base towns. 8–12 hrs."],
-  ["Mumbai", "Flight to nearest hub + 6–10 hr drive."],
-  ["Bangalore", "Flight to Delhi/Chandigarh + onward."],
-  ["Chandigarh", "Closest hub for most Himachal/Uttarakhand treks."],
+  ["Delhi", "Overnight train or bus to the base towns, around 8 to 12 hours."],
+  ["Mumbai", "Flight to the nearest hub, then a 6 to 10 hour drive."],
+  ["Bengaluru", "Flight to Delhi or Chandigarh, then onward by road."],
+  ["Chandigarh", "The closest hub for most Himachal and Uttarakhand treks."],
 ];
 
 /**
@@ -80,7 +80,7 @@ export const REGIONS: RegionMeta[] = [
     matchStates: ["Uttarakhand", "Uttrakhand"], // guards a known LLM misspelling
     tagline: "Land of the great Himalayan snow treks",
     image: "/images/region-uttarakhand.webp",
-    blurb: "Garhwal and Kumaon hold India's most loved beginner snow treks — Kedarkantha, Brahmatal, Valley of Flowers, Roopkund.",
+    blurb: "Garhwal and Kumaon hold India's most loved beginner snow treks, from Kedarkantha and Brahmatal to the Valley of Flowers and Roopkund.",
     logistics: INDIA_LOGISTICS,
   },
   {
@@ -102,7 +102,7 @@ export const REGIONS: RegionMeta[] = [
     slug: "ladakh", name: "Ladakh", matchWord: "ladakh", country: "India",
     tagline: "High desert, high stakes, high reward",
     image: "/images/region-ladakh-hd.webp",
-    blurb: "Above 3,500 m on every trek. Markha Valley, Stok Kangri, the legendary Chadar — Ladakh trekking is not for first-timers.",
+    blurb: "Above 3,500 metres on every trek, from Markha Valley and Stok Kangri to the legendary Chadar. Ladakh trekking is not for first timers.",
     logistics: INDIA_LOGISTICS,
   },
   {
@@ -111,8 +111,8 @@ export const REGIONS: RegionMeta[] = [
     image: "/images/region-sahyadri.webp",
     blurb: "70+ documented treks from Mumbai and Pune. Best between June and February.",
     logistics: [
-      ["Mumbai", "2–4 hr drive/train to most Sahyadri base villages."],
-      ["Pune", "1.5–3 hr drive to the Western Ghats trailheads."],
+      ["Mumbai", "A 2 to 4 hour drive or train to most Sahyadri base villages."],
+      ["Pune", "A 1.5 to 3 hour drive to the Western Ghats trailheads."],
       ["Nashik", "Gateway to the northern Sahyadri forts and peaks."],
     ],
   },
@@ -120,10 +120,10 @@ export const REGIONS: RegionMeta[] = [
     slug: "sikkim", name: "Sikkim & North East", matchWord: "sikkim", country: "India",
     tagline: "Quiet, lush, photogenic",
     image: "/images/region-ladakh.webp",
-    blurb: "Goecha La, Sandakphu, Dzongri — North East treks pair stunning Kanchenjunga views with rich biodiversity.",
+    blurb: "Goecha La, Sandakphu and Dzongri pair stunning Kanchenjunga views with rich biodiversity across the North East.",
     logistics: [
-      ["Kolkata", "Flight/train to Bagdogra (NJP) + 4–5 hr drive to Yuksom/Darjeeling."],
-      ["Bagdogra", "Nearest airport — road to Gangtok/Yuksom trailheads."],
+      ["Kolkata", "Flight or train to Bagdogra, then a 4 to 5 hour drive to Yuksom or Darjeeling."],
+      ["Bagdogra", "The nearest airport, with road access to the Gangtok and Yuksom trailheads."],
       ["Delhi", "Direct flight to Bagdogra, then onward by road."],
     ],
   },

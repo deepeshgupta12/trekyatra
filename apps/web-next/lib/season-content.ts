@@ -1,168 +1,208 @@
 /**
- * Rich, UNIQUE editorial content per seasonal hub (/seasons/{slug}) — the SEO/AEO substance that
- * makes each season page stand out (distinct hero, why-trek, best regions, month-by-month table,
- * packing list, weather). Rendered code-first so the pages are strong without depending on the
- * LLM/CMS generation. Keyed by the canonical 5 season slugs ONLY (month hubs december/may were
- * removed 2026-08-04 — they duplicated winter/summer and cannibalised SEO).
+ * Rich, UNIQUE editorial content per seasonal hub (/seasons/{slug}). Written to read as human prose
+ * (no dashes, no hyphens), with tables and bullets rendered by the page. Keyed by the canonical 5
+ * season slugs ONLY (month hubs december/may were removed 2026-08-04).
  */
 
 export interface SeasonContent {
-  title: string;        // H1 / SEO title stem — "Best {X} Treks in India"
+  title: string;        // H1 / SEO title stem
   heroImage: string;    // distinct per season
-  monthsLabel: string;  // "Mar – Apr"
+  monthsLabel: string;  // "March to April"
   tagline: string;
   intro: string;        // lead paragraph (unique)
-  whyTrek: string;      // "Why trek in {season}" paragraph
+  overview: string;     // second overview paragraph (adds depth)
+  whyTrek: string;
   bestRegions: { name: string; slug: string; note: string }[];
   monthTable: { month: string; conditions: string }[];
+  prepare: string[];    // how to prepare bullets
   packing: string[];
   weather: string;
-  prep: string;         // safety / permits note
-  beginnerNote: string; // for the generated "good for beginners?" FAQ
+  prep: string;         // one line safety / permits note
+  beginnerNote: string;
 }
 
 export const SEASON_CONTENT: Record<string, SeasonContent> = {
   spring: {
     title: "Best Spring Treks in India",
     heroImage: "/images/region-nepal.webp",
-    monthsLabel: "Mar – Apr",
+    monthsLabel: "March to April",
     tagline: "Rhododendron season in the lower Himalaya",
     intro:
-      "Spring is India's rhododendron season. As the snow retreats from the lower ridgelines, the forests of Uttarakhand, Himachal and the North-East erupt in red and pink bloom, and the trails dry out into some of the most colourful — and least crowded — walking of the year.",
+      "Spring is the season the Himalaya wakes up. Through March and April the snow pulls back from the lower ridgelines, the oak and rhododendron forests of Uttarakhand, Himachal and the North East burst into red and pink flower, and the trails firm up into some of the most colourful walking of the whole year.",
+    overview:
+      "It is also one of the quietest windows on the calendar. The winter snow crowds have gone home and the big summer rush has not yet arrived, so popular ridgelines feel almost private. Days are mild in the forest, nights are cold higher up, and the light through the flowering canopy is something photographers plan a whole year around.",
     whyTrek:
-      "Spring hits the sweet spot between the deep snow of winter and the crowds of summer. Lower and mid-altitude trails are snow-free and stable, the rhododendron and magnolia forests are in full flower, and daytime weather is mild. High passes above ~4,000 m can still hold snow, so spring rewards forest and ridge treks over big glacier crossings.",
+      "Spring sits in the sweet spot between the deep snow of winter and the crowds of summer. Lower and mid altitude trails are clear of snow and stable underfoot, the forests are in full bloom, and the weather is gentle enough for relaxed days. Passes above roughly 4,000 metres can still hold snow, so spring rewards forest and ridge treks rather than big glacier crossings.",
     bestRegions: [
-      { name: "Uttarakhand", slug: "uttarakhand", note: "Brahmatal and Ali–Bedni Bugyal for rhododendron ridgelines." },
-      { name: "Sikkim & North East", slug: "sikkim", note: "Sandakphu and the Goecha La approach for Himalayan bloom." },
+      { name: "Uttarakhand", slug: "uttarakhand", note: "Brahmatal and Ali Bedni Bugyal for ridgelines lined with rhododendron." },
+      { name: "Sikkim and North East", slug: "sikkim", note: "Sandakphu and the Goecha La approach for Himalayan bloom." },
       { name: "Himachal Pradesh", slug: "himachal", note: "Lower Kullu and Dhauladhar forest trails clearing of snow." },
     ],
     monthTable: [
-      { month: "March", conditions: "Rhododendron begins in the lower forests; high passes still snow-bound." },
-      { month: "April", conditions: "Peak bloom, drying trails, warm days — the best spring window." },
+      { month: "March", conditions: "Rhododendron begins in the lower forests while high passes stay under snow." },
+      { month: "April", conditions: "Peak bloom, drying trails and warm days make this the best spring window." },
+    ],
+    prepare: [
+      "Build a base of cardio fitness with regular walking or jogging four to six weeks ahead",
+      "Book early for popular rhododendron ridgelines, which fill fast on weekends",
+      "Carry traction for any high sections that still hold snow",
+      "Plan for warm days and cold nights by packing a proper layering system",
     ],
     packing: [
       "Light insulating layers for cold mornings and nights",
-      "A packable rain shell for occasional spring showers",
-      "Strong sun protection — UV is high at altitude",
-      "Trekking poles for lingering snow on higher sections",
+      "A packable rain shell for the odd spring shower",
+      "Strong sun protection because the light is intense at altitude",
+      "Trekking poles for lingering snow on the higher sections",
     ],
-    weather: "Mild days of 10–18 °C in the forests, cold nights at altitude, and residual snow on passes above 4,000 m.",
-    prep: "Some high passes remain snow-bound into April — check current conditions and carry microspikes for higher routes.",
-    beginnerNote: "Excellent — spring's snow-free forest trails are among the gentlest for first-time Himalayan trekkers.",
+    weather: "Mild days of 10 to 18 degrees in the forests, cold nights higher up, and residual snow on passes above 4,000 metres.",
+    prep: "Some high passes stay under snow into April, so check current conditions and carry traction for the higher routes.",
+    beginnerNote: "Spring is an excellent first season because the forest trails are clear of snow and the grade stays gentle.",
   },
   summer: {
     title: "Best Summer Treks in India",
     heroImage: "/images/region-himachal.webp",
-    monthsLabel: "May – Jun",
+    monthsLabel: "May to June",
     tagline: "Alpine meadows and the high Himalaya opening up",
     intro:
-      "Summer is the pre-monsoon window when the high Himalaya finally opens. Snowmelt turns the high meadows emerald, the big alpine-lake and pass routes of Kashmir, Himachal and Ladakh become accessible, and long daylight makes for relaxed, unhurried days on the trail.",
+      "Summer is when the high Himalaya finally opens. As the snowline retreats through May and June, the high meadows turn a deep emerald, and the great alpine lake and pass routes of Kashmir, Himachal and Ladakh become walkable again. Long daylight makes for slow, unhurried days on the trail.",
+    overview:
+      "This is the flagship trekking window of the year and it draws trekkers from across the country and the world. Schools and offices are on break, the meadows are at their greenest, and the classic routes are all in condition at once. It rewards a little planning, because the best homestays, guides and permits get booked out well in advance.",
     whyTrek:
-      "With schools and offices on break and the snowline retreating fast, summer is peak Himalayan trekking season. It is the time for the flagship high routes — Kashmir's Great Lakes, Hampta Pass, Beas Kund and the early Valley of Flowers — when meadows bloom and high camps are snow-free.",
+      "With the snowline retreating fast and the whole country on holiday, summer is peak Himalayan trekking season. It is the time for the marquee high routes, from the Kashmir Great Lakes to Hampta Pass, Beas Kund and the early Valley of Flowers, when the meadows bloom and the high camps are clear of snow.",
     bestRegions: [
-      { name: "Kashmir", slug: "kashmir", note: "The Great Lakes trek at its turquoise-meadow best." },
-      { name: "Himachal Pradesh", slug: "himachal", note: "Hampta Pass, Bhrigu Lake and Beas Kund open up." },
-      { name: "Ladakh", slug: "ladakh", note: "Markha Valley and high-desert routes become accessible." },
+      { name: "Kashmir", slug: "kashmir", note: "The Great Lakes trek at its turquoise and meadow best." },
+      { name: "Himachal Pradesh", slug: "himachal", note: "Hampta Pass, Bhrigu Lake and Beas Kund all open up." },
+      { name: "Ladakh", slug: "ladakh", note: "Markha Valley and the high desert routes become accessible." },
     ],
     monthTable: [
-      { month: "May", conditions: "Snowmelt, meadows greening, shoulder-season quiet on many routes." },
-      { month: "June", conditions: "Peak meadow season and warmest weather before the monsoon arrives." },
+      { month: "May", conditions: "Snow melts fast, meadows begin to green and many routes stay quiet." },
+      { month: "June", conditions: "Peak meadow season and the warmest weather before the monsoon arrives." },
+    ],
+    prepare: [
+      "Book permits, homestays and guides early because this is the busiest season",
+      "Arrive with solid cardio fitness for long days and real altitude",
+      "Give yourself acclimatisation days on the higher lake and pass routes",
+      "Carry two litres of water capacity for dry, sunny days",
     ],
     packing: [
-      "High-SPF sunscreen, lip balm and UV sunglasses — glare is intense",
-      "Layers for warm days (15–25 °C) and cold high-altitude nights",
-      "A light rain shell for pre-monsoon afternoon showers",
-      "1.5–2 L hydration capacity for dry, sunny days",
+      "High factor sunscreen, lip balm and UV sunglasses for intense glare",
+      "Layers for warm days and cold high altitude nights",
+      "A light rain shell for the first showers by late June",
+      "A wide brimmed hat and a buff for sun on open meadows",
     ],
-    weather: "Warm days of 15–25 °C at base, cold nights at altitude, very strong UV, and the first pre-monsoon showers by late June.",
-    prep: "This is the busiest season — book permits, homestays and guides well ahead, and prioritise hydration and sun protection.",
-    beginnerNote: "Great for beginners with reasonable fitness — meadow treks like Bhrigu Lake are approachable, though altitude acclimatisation still matters.",
+    weather: "Warm days of 15 to 25 degrees at base, cold nights at altitude, very strong sun, and the first showers by late June.",
+    prep: "This is the busiest window, so book ahead, hydrate well and prioritise sun protection on the open meadows.",
+    beginnerNote: "Summer suits beginners with reasonable fitness, though meadow treks still climb high enough that acclimatisation matters.",
   },
   monsoon: {
     title: "Best Monsoon Treks in India",
     heroImage: "/images/region-sahyadri.webp",
-    monthsLabel: "Jul – Sep",
-    tagline: "Waterfalls, emerald forts and rain-shadow deserts",
+    monthsLabel: "July to September",
+    tagline: "Waterfalls, emerald forts and rain shadow deserts",
     intro:
-      "When the monsoon closes most of the Himalaya, the Western Ghats come alive. Maharashtra's Sahyadri forts stream with waterfalls, the forests of Karnataka and Coorg turn emerald, and — in the rain-shadow of the main range — Ladakh and Spiti stay dry and trekkable.",
+      "When the monsoon closes most of the Himalaya, the Western Ghats come alive. Through July, August and September the Sahyadri forts of Maharashtra run with waterfalls, the forests of Karnataka and Coorg turn a brilliant green, and, tucked away in the rain shadow of the main range, Ladakh and Spiti stay dry and walkable.",
+    overview:
+      "Monsoon trekking is a completely different country. Instead of snow peaks you get misty ramparts, roaring waterfalls and cloud pouring over basalt cliffs. It calls for good rain gear and respect for fast rising water, but it delivers some of the most atmospheric and affordable trekking of the year, all within a few hours of Mumbai, Pune and Bengaluru.",
     whyTrek:
-      "The monsoon is a completely different trekking country. The high Himalaya is prone to landslides and leeches, but the Sahyadris deliver dramatic fort walks, misty ridges and roaring waterfalls, while the rain-shadow deserts of Ladakh offer the only reliable high-altitude trekking of the season.",
+      "The high Himalaya is prone to landslides and leeches in the rains, but the Sahyadris are at their dramatic best, and the rain shadow deserts of Ladakh offer the only reliable high altitude trekking of the season. It is the time to trade snow for green and to walk historic fort trails in the cloud.",
     bestRegions: [
-      { name: "Maharashtra (Sahyadris)", slug: "maharashtra", note: "Fort treks and waterfalls at their monsoon peak." },
-      { name: "Karnataka", slug: "karnataka", note: "Kudremukh and the Western Ghats in full green." },
-      { name: "Ladakh", slug: "ladakh", note: "Rain-shadow high-desert routes stay dry and open." },
+      { name: "Maharashtra Sahyadris", slug: "maharashtra", note: "Fort treks and waterfalls at their full monsoon peak." },
+      { name: "Karnataka", slug: "karnataka", note: "Kudremukh and the Western Ghats in deep green." },
+      { name: "Ladakh", slug: "ladakh", note: "Rain shadow high desert routes stay dry and open." },
     ],
     monthTable: [
-      { month: "July", conditions: "Peak monsoon in the Ghats — full waterfalls, heavy rain, leeches out." },
-      { month: "August", conditions: "Deep green everywhere; slippery basalt and active leeches in the Sahyadris." },
-      { month: "September", conditions: "Rain tapers — arguably the best, greenest Sahyadri trekking." },
+      { month: "July", conditions: "Peak monsoon in the Ghats with full waterfalls, heavy rain and leeches out." },
+      { month: "August", conditions: "Deep green everywhere, with slick basalt and active leeches in the Sahyadris." },
+      { month: "September", conditions: "The rain tapers off and the Sahyadris are at their greenest and finest." },
+    ],
+    prepare: [
+      "Skip the main Himalaya during the rains and choose the Ghats or the rain shadow",
+      "Waterproof everything inside your pack with a liner and dry bags",
+      "Carry leech protection such as salt, tobacco or leech socks",
+      "Never attempt to cross a swollen stream in spate",
     ],
     packing: [
-      "A genuinely waterproof jacket and pack cover (not just water-resistant)",
-      "Quick-dry clothing and a spare set sealed in a dry bag",
-      "Anti-leech measures — salt, tobacco or leech socks",
-      "Shoes with aggressive grip for slick, wet basalt",
+      "A genuinely waterproof jacket and pack cover, not just water resistant",
+      "Quick drying clothing and a spare set sealed in a dry bag",
+      "Leech protection for the Western Ghats",
+      "Shoes with aggressive grip for wet, slippery basalt",
     ],
-    weather: "Heavy, persistent rain and leeches in the Western Ghats; dry, sunny and cool in rain-shadow Ladakh and Spiti.",
-    prep: "Avoid the main Himalaya (landslide and leech risk). In the Ghats, prioritise waterproofing, grip and leech protection; never cross swollen streams.",
-    beginnerNote: "Yes for the Sahyadris — short, low-altitude fort treks suit beginners, but respect slippery rock and fast-rising water.",
+    weather: "Heavy, persistent rain and leeches in the Western Ghats, and dry, cool, sunny weather in rain shadow Ladakh and Spiti.",
+    prep: "Avoid the main Himalaya for landslide and leech reasons, and in the Ghats focus on waterproofing, grip and stream safety.",
+    beginnerNote: "The Sahyadris are beginner friendly in the monsoon because the fort treks are short and low, though wet rock and rising water need respect.",
   },
   autumn: {
     title: "Best Autumn Treks in India",
     heroImage: "/images/hero-himalaya-dawn.webp",
-    monthsLabel: "Oct – Nov",
+    monthsLabel: "October to November",
     tagline: "The clearest Himalayan skies of the year",
     intro:
-      "Autumn is the connoisseur's season. The monsoon has scrubbed the atmosphere clean, leaving crystal-clear air, razor-sharp mountain views and stable, dry weather — the classic window for the big high-Himalaya and base-camp treks.",
+      "Autumn is the season the mountains show off. The monsoon has scrubbed the sky clean, so the air is crystal clear and the peaks stand out razor sharp against a deep blue. Through October and November the weather turns stable and dry, and the trails harden into perfect walking.",
+    overview:
+      "This is the classic window for the big high routes and the great base camp approaches. Rivers have dropped, the light is gorgeous, and the giants are at their cleanest before winter closes in. Early October is warm and settled, while November turns colder and quieter as the first snow dusts the high passes.",
     whyTrek:
-      "Post-monsoon, visibility is unmatched: this is when the giants stand out cleanest against a deep blue sky. Trails are dry, rivers have dropped, and the weather is stable — ideal for high passes, ridge walks and the great base-camp approaches before winter closes in.",
+      "After the monsoon the visibility is simply unmatched, and this is when the biggest peaks stand cleanest against the sky. Trails are dry, the weather is stable, and it is the finest time for high passes, ridge walks and the famous base camp treks before the cold sets in.",
     bestRegions: [
-      { name: "Uttarakhand", slug: "uttarakhand", note: "Kuari Pass and Kedarkantha for panoramic post-monsoon views." },
-      { name: "Sikkim & North East", slug: "sikkim", note: "Goecha La for the cleanest Kanchenjunga views of the year." },
-      { name: "Nepal Himalaya", slug: "nepal", note: "Everest and Annapurna base-camp routes at their prime." },
+      { name: "Uttarakhand", slug: "uttarakhand", note: "Kuari Pass and Kedarkantha for wide, clear panoramas." },
+      { name: "Sikkim and North East", slug: "sikkim", note: "Goecha La for the cleanest Kanchenjunga views of the year." },
+      { name: "Nepal Himalaya", slug: "nepal", note: "Everest and Annapurna base camp routes at their prime." },
     ],
     monthTable: [
-      { month: "October", conditions: "Peak clarity and stable weather — the finest high-Himalaya trekking." },
+      { month: "October", conditions: "Peak clarity and stable weather deliver the finest high Himalaya trekking." },
       { month: "November", conditions: "Colder and quieter, with the first winter snow arriving on high passes." },
     ],
-    packing: [
-      "A warm down or synthetic jacket for sub-zero nights at altitude",
-      "Layered insulation — days are mild but nights are cold",
-      "A headlamp — daylight shortens noticeably through November",
-      "Sun protection for bright, high-UV afternoons",
+    prepare: [
+      "Start walking early each day because the daylight shortens through November",
+      "Carry a warm sleeping system for nights that drop below freezing at altitude",
+      "Book base camp routes ahead, as October is a popular window",
+      "Pack a headlamp for early starts and short evenings",
     ],
-    weather: "Crisp, dry and exceptionally clear; pleasant days with nights dropping below freezing at altitude, and early snow on high passes by late November.",
-    prep: "Days shorten fast — start early and carry a headlamp. Nights are cold, so a proper sleeping system matters above 3,500 m.",
-    beginnerNote: "Ideal for beginners — dry, stable trails and famous first-timer routes like Kedarkantha and Kuari Pass are at their best.",
+    packing: [
+      "A warm down or synthetic jacket for freezing nights at altitude",
+      "Layered insulation because days are mild but nights are cold",
+      "A headlamp for shorter days through November",
+      "Sun protection for bright, high altitude afternoons",
+    ],
+    weather: "Crisp, dry and exceptionally clear, with pleasant days, nights below freezing at altitude, and early snow on high passes by late November.",
+    prep: "Daylight shortens quickly, so start early and carry a proper sleeping system for the cold nights above 3,500 metres.",
+    beginnerNote: "Autumn is ideal for beginners because the trails are dry and stable and the famous first timer routes are at their best.",
   },
   winter: {
     title: "Best Winter Treks in India",
     heroImage: "/images/region-uttarakhand-snow.webp",
-    monthsLabel: "Dec – Feb",
+    monthsLabel: "December to February",
     tagline: "Snow treks and frozen trails",
     intro:
-      "Winter turns the lower ridgelines of Uttarakhand and Himachal white, and with them come India's most loved snow treks. Powder-covered pine forests, frozen meadows and glowing sunrise summits make this the season that turns first-timers into lifelong trekkers.",
+      "Winter turns the lower ridgelines of Uttarakhand and Himachal white, and with them come India's most loved snow treks. Powder covered pine forests, frozen meadows and glowing sunrise summits make this the season that turns curious first timers into lifelong trekkers.",
+    overview:
+      "The beauty of the Indian winter is that you can walk on snow without technical mountaineering. Summits like Kedarkantha, Brahmatal and Nag Tibba give you the full alpine experience, a pristine white campsite and a wide snow panorama, with nothing more than good gear and a guide. December is the gentle start, January is the deep cold, and February pairs deep snow with brighter, clearer spells.",
     whyTrek:
-      "Winter is snow-trek season. Accessible summits like Kedarkantha, Brahmatal and Nag Tibba offer the full alpine experience — pristine white campsites and 360° snow panoramas — without technical mountaineering. It is the most photogenic and beginner-friendly way to walk on snow.",
+      "Winter is snow trek season. Accessible summits offer the full alpine experience of pristine white campsites and wide snow panoramas without any technical climbing. It is the most photogenic and the most beginner friendly way to walk on snow in the country.",
     bestRegions: [
-      { name: "Uttarakhand", slug: "uttarakhand", note: "Kedarkantha, Brahmatal and Dayara Bugyal — the classic snow treks." },
+      { name: "Uttarakhand", slug: "uttarakhand", note: "Kedarkantha, Brahmatal and Dayara Bugyal are the classic snow treks." },
       { name: "Himachal Pradesh", slug: "himachal", note: "Kheerganga and Prashar Lake under fresh snow." },
-      { name: "Kashmir", slug: "kashmir", note: "Winter meadows and the Gulmarg-area snowscape." },
+      { name: "Kashmir", slug: "kashmir", note: "Winter meadows and the Gulmarg area snowscape." },
     ],
     monthTable: [
-      { month: "December", conditions: "Early, powdery snow — the gentlest month for first-time snow trekkers." },
-      { month: "January", conditions: "Deep winter, heaviest snow and the coldest nights." },
-      { month: "February", conditions: "Deep snow with clearer, brighter spells and stunning summits." },
+      { month: "December", conditions: "Early powdery snow makes this the gentlest month for first time snow trekkers." },
+      { month: "January", conditions: "Deep winter brings the heaviest snow and the coldest nights." },
+      { month: "February", conditions: "Deep snow pairs with clearer, brighter spells and stunning summits." },
+    ],
+    prepare: [
+      "Rent or buy microspikes and gaiters before the trek for snow and ice",
+      "Carry winter grade insulation and an insulated sleeping bag",
+      "Trek December to February and pick December if you are new to snow",
+      "Go with a registered guide and never head above the snowline alone",
     ],
     packing: [
-      "Heavy insulation — down jacket, thermals and an insulated sleeping bag",
+      "Heavy insulation including a down jacket, thermals and an insulated sleeping bag",
       "Microspikes and gaiters for snow and ice underfoot",
-      "A waterproof outer shell and insulated, waterproof gloves",
-      "UV sunglasses — snow glare is severe",
+      "A waterproof outer shell and insulated waterproof gloves",
+      "UV sunglasses because snow glare is severe",
     ],
-    weather: "Snow on the trails, short days, and nights of −5 to −15 °C at altitude, with bright, clear days between snowfalls.",
-    prep: "Microspikes and gaiters are essential; watch for frostbite and AMS, and never trek solo above the snowline.",
-    beginnerNote: "The best beginner snow season — Kedarkantha and Brahmatal are purpose-built first snow treks with the right guide and gear.",
+    weather: "Snow on the trails, short days, and nights of minus 5 to minus 15 degrees at altitude, with bright clear days between snowfalls.",
+    prep: "Microspikes and gaiters are essential, watch for frostbite and altitude sickness, and never trek solo above the snowline.",
+    beginnerNote: "This is the best beginner snow season, and Kedarkantha and Brahmatal are made for a first snow trek with the right guide and gear.",
   },
 };
 

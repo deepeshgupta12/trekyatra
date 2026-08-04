@@ -18,6 +18,22 @@ Do not modify any code file without first:
 4. Checking impacted files and blast radius
 5. Updating the relevant step file in `docs/steps/`
 
+## 2026-08-04 — Hub SEO/AEO depth + Hybrid (dynamic) content model
+Owner: hub pages too thin vs Indiahikes; needed richer content, more interlinking, full schema, and
+human prose with no dashes/hyphens; and content must be dynamic/editable, not static.
+- **Hybrid content model chosen:** structured `content_json.hub` (intro/overview/why/bestRegions/
+  monthTable/prepare/packing/weather/faqs) rendered dynamically per field, with code fallback. Editable
+  in /admin/cms; backend agents will emit it (next step). `lib/api.ts` `HubContent` type added.
+- **Maximal schema:** new `buildCollectionPageSchema` + `buildTrekItemList` (rich ItemList with per-trek
+  facts, about, primaryImageOfPage, significantLink interlinks, keywords, SpeakableSpecification for AEO)
+  on all 3 hubs; regions keep TouristDestination; all keep FAQPage + Breadcrumb.
+- **Interlinking + tables:** shared `TrekComparisonTable` (row per trek → /trek/{slug}) + `HubInterlinks`
+  (related regions/seasons/categories + planning guides) on all 3 hubs.
+- **Content:** season/category/region prose rewritten as human copy with NO dashes/hyphens, plus an
+  overview paragraph and a how-to-prepare section.
+- Frontend-only this pass. tsc + next build clean (3 hubs SSG). **NEXT: extend the hub agents to emit
+  content_json.hub so the content is fully CMS-generated + editable (Hybrid backend half).**
+
 ## 2026-08-04 — Cluster page UI parity + Trek Categories in nav
 Owner: the /trek-types cluster page UI was breaking (it used the dark admin palette on a public page).
 Re-styled to the **light public theme** matching seasons/regions (container-wide, bg-card, text-surface

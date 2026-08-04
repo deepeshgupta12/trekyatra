@@ -21,8 +21,10 @@ import {
   type RegionMeta,
 } from "@/lib/regions";
 import SchemaInjector from "@/components/seo/SchemaInjector";
-import { buildBreadcrumbSchema, buildFAQSchema, buildRegionSchema } from "@/lib/schema";
+import { buildBreadcrumbSchema, buildFAQSchema, buildRegionSchema, buildCollectionPageSchema } from "@/lib/schema";
 import FAQAccordion, { type FAQItem } from "@/components/content/FAQAccordion";
+import { TrekComparisonTable } from "@/components/hub/TrekComparisonTable";
+import { HubInterlinks } from "@/components/hub/HubInterlinks";
 
 interface Props {
   params: { slug: string };
@@ -222,6 +224,31 @@ export default async function Region({ params }: Props) {
   const heroImage = cmsPage?.hero_image_url ?? r.image;
   const description = cmsPage?.seo_description ?? r.blurb;
 
+  // Interlinking targets beyond the trek cards.
+  const otherRegions = REGIONS.filter((x) => x.slug !== r.slug).slice(0, 6);
+  const interlinkGroups = [
+    { title: "Nearby regions", links: otherRegions.map((x) => ({ label: x.name, href: `/regions/${x.slug}` })) },
+    { title: "Trek by season", links: [
+      { label: "Spring treks", href: "/seasons/spring" },
+      { label: "Summer treks", href: "/seasons/summer" },
+      { label: "Autumn treks", href: "/seasons/autumn" },
+      { label: "Winter treks", href: "/seasons/winter" },
+    ] },
+    { title: "Trek by type", links: [
+      { label: "Beginner friendly treks", href: "/trek-types/beginner-friendly-treks" },
+      { label: "Weekend treks", href: "/trek-types/weekend-treks" },
+      { label: "Lake treks", href: "/trek-types/lake-treks" },
+      { label: "Snow treks", href: "/trek-types/snow-treks" },
+    ] },
+    { title: "Plan your trek", links: [
+      { label: "Packing checklists", href: "/packing" },
+      { label: "Permit guides", href: "/permits" },
+      { label: "Cost estimators", href: "/costs" },
+      { label: "Compare treks", href: "/compare" },
+      { label: "Plan my trek", href: "/plan" },
+    ] },
+  ];
+
   return (
     <>
       <SchemaInjector
@@ -234,6 +261,17 @@ export default async function Region({ params }: Props) {
             imageUrl: heroImage,
             country: r.country,
             treks: combinedTreks.map((t) => ({ name: t.name, slug: t.slug })),
+          }),
+          buildCollectionPageSchema({
+            name: `${r.name} Treks`,
+            description,
+            url: `/regions/${r.slug}`,
+            image: heroImage,
+            dateModified: cmsPage?.updated_at ?? null,
+            about: { type: "Place", name: r.name, description: r.whyTrek ?? r.blurb },
+            treks: combinedTreks.map((t) => ({ name: t.name, slug: t.slug, image: t.image, description: t.description, difficulty: t.difficulty, duration: t.duration, altitude: t.altitude, season: t.season })),
+            significantLinks: [...interlinkGroups.flatMap((g) => g.links.map((l) => l.href))],
+            keywords: [`${r.name.toLowerCase()} treks`, `best treks in ${r.name.toLowerCase()}`, `${r.name.toLowerCase()} trekking`],
           }),
           ...(faqs.length ? [buildFAQSchema(faqs)!] : []),
         ]}
@@ -250,7 +288,7 @@ export default async function Region({ params }: Props) {
           </div>
           <h1 className="font-display text-5xl md:text-7xl font-semibold leading-[0.95] mb-4 max-w-4xl">{r.name}</h1>
           <p className="text-xl text-accent-glow mb-4">{r.tagline}</p>
-          <p className="text-surface/85 max-w-2xl text-lg">{description}</p>
+          <p className="hub-intro text-surface/85 max-w-2xl text-lg">{description}</p>
         </div>
       </section>
 
@@ -266,12 +304,12 @@ export default async function Region({ params }: Props) {
       </section>
 
       {/* Why trek in {region} — unique narrative (SEO/AEO substance) */}
-      {r.whyTrek && (
+      {(cmsPage?.content_json?.hub?.why ?? r.whyTrek) && (
         <section className="py-14">
           <div className="container-wide max-w-4xl">
             <div className="text-xs uppercase tracking-[0.25em] text-accent mb-3">{r.tagline}</div>
             <h2 className="font-display text-3xl md:text-4xl font-semibold mb-5">Why trek in {r.name}?</h2>
-            <p className="text-lg text-foreground/85 leading-relaxed">{r.whyTrek}</p>
+            <p className="text-lg text-foreground/85 leading-relaxed">{cmsPage?.content_json?.hub?.why ?? r.whyTrek}</p>
           </div>
         </section>
       )}
@@ -315,9 +353,12 @@ export default async function Region({ params }: Props) {
         </div>
       </section>
 
+      {/* Comparison table */}
+      <TrekComparisonTable treks={combinedTreks} title={`Compare treks in ${r.name}`} caption={`How the top ${r.name} treks compare on difficulty, duration, season and altitude.`} />
+
       {faqs.length > 0 && (
         <section className="py-12 border-t border-border">
-          <div className="container-wide max-w-3xl">
+          <div className="hub-faq container-wide max-w-3xl">
             <h2 className="font-display text-2xl font-semibold mb-6">Frequently Asked Questions</h2>
             <FAQAccordion items={faqs} />
           </div>
@@ -379,6 +420,9 @@ export default async function Region({ params }: Props) {
           </div>
         </div>
       </section>
+
+      {/* Interlinks */}
+      <HubInterlinks groups={interlinkGroups} />
     </>
   );
 }

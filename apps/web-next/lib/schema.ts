@@ -117,6 +117,102 @@ export function buildItemListSchema(items: string[], url: string) {
 }
 
 // ---------------------------------------------------------------------------
+// Rich CollectionPage schema for hub pages (regions / seasons / trek categories)
+// Passes as much relevant info as possible: a rich ItemList of treks (each a
+// TouristAttraction with url, image, description and fact PropertyValues), the page's
+// `about` entity, primaryImageOfPage, significantLink interlinks, and a SpeakableSpecification
+// for voice / AEO. Follows schema.org + Google structured-data guidance.
+// ---------------------------------------------------------------------------
+export interface HubTrekItem {
+  name: string;
+  slug: string;
+  image?: string | null;
+  description?: string | null;
+  difficulty?: string | null;
+  duration?: string | null;
+  altitude?: string | null;
+  season?: string | null;
+}
+
+function abs(u: string): string {
+  return u.startsWith("http") ? u : `${SITE_URL}${u}`;
+}
+
+/** ItemList (no @context — meant to nest as mainEntity) with rich per-trek TouristAttraction items. */
+export function buildTrekItemList(treks: HubTrekItem[], listUrl: string) {
+  return {
+    "@type": "ItemList",
+    name: "Treks",
+    numberOfItems: treks.length,
+    itemListOrder: "https://schema.org/ItemListOrderAscending",
+    url: `${SITE_URL}${listUrl}`,
+    itemListElement: treks.map((t, i) => {
+      const props = [
+        t.difficulty && { "@type": "PropertyValue", name: "Difficulty", value: t.difficulty },
+        t.duration && { "@type": "PropertyValue", name: "Duration", value: t.duration },
+        t.altitude && t.altitude !== "—" && { "@type": "PropertyValue", name: "Max altitude", value: t.altitude },
+        t.season && t.season !== "—" && { "@type": "PropertyValue", name: "Best season", value: t.season },
+      ].filter(Boolean);
+      return {
+        "@type": "ListItem",
+        position: i + 1,
+        item: {
+          "@type": "TouristAttraction",
+          name: t.name,
+          url: `${SITE_URL}/trek/${t.slug}`,
+          ...(t.image ? { image: abs(t.image) } : {}),
+          ...(t.description ? { description: t.description } : {}),
+          ...(props.length ? { additionalProperty: props } : {}),
+        },
+      };
+    }),
+  };
+}
+
+export interface CollectionPageOpts {
+  name: string;
+  description: string;
+  url: string;                                   // path, e.g. "/seasons/winter"
+  image?: string | null;
+  datePublished?: string | null;
+  dateModified?: string | null;
+  about?: { type: string; name: string; description?: string };  // Place / Event(season) / Thing
+  treks?: HubTrekItem[];
+  significantLinks?: string[];                    // interlink URLs (paths or absolute)
+  speakableSelectors?: string[];                  // CSS selectors for AEO / voice
+  keywords?: string[];
+}
+
+export function buildCollectionPageSchema(o: CollectionPageOpts) {
+  return {
+    "@context": "https://schema.org",
+    "@type": "CollectionPage",
+    name: o.name,
+    description: o.description,
+    url: abs(o.url),
+    inLanguage: "en-IN",
+    isPartOf: { "@type": "WebSite", name: SITE_NAME, url: SITE_URL },
+    publisher: {
+      "@type": "Organization",
+      name: SITE_NAME,
+      url: SITE_URL,
+      logo: { "@type": "ImageObject", url: LOGO_URL, width: 512, height: 512 },
+    },
+    ...(o.image ? { primaryImageOfPage: { "@type": "ImageObject", url: abs(o.image) } } : {}),
+    ...(o.datePublished ? { datePublished: o.datePublished } : {}),
+    ...(o.dateModified ? { dateModified: o.dateModified } : {}),
+    ...(o.keywords?.length ? { keywords: o.keywords.join(", ") } : {}),
+    ...(o.about ? { about: { "@type": o.about.type, name: o.about.name, ...(o.about.description ? { description: o.about.description } : {}) } } : {}),
+    ...(o.treks?.length ? { mainEntity: buildTrekItemList(o.treks, o.url) } : {}),
+    ...(o.significantLinks?.length ? { significantLink: o.significantLinks.map(abs) } : {}),
+    speakable: {
+      "@type": "SpeakableSpecification",
+      cssSelector: o.speakableSelectors?.length ? o.speakableSelectors : [".hub-intro", ".hub-faq"],
+    },
+  };
+}
+
+// ---------------------------------------------------------------------------
 // TouristDestination schema for region hub pages (/regions/[slug])
 // Surfaces the region as a place with its documented treks as attractions.
 // ---------------------------------------------------------------------------
