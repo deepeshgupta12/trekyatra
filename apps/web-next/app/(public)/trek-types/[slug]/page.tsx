@@ -39,13 +39,20 @@ export const revalidate = 3600;
 
 export default async function TrekTypePage({ params }: Props) {
   const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? "https://www.trekyatra.co.in";
+
+  // /trek-types is EXCLUSIVELY the curated thematic categories (lib/categories). Any other slug
+  // (e.g. a per-trek "tarsar-marsar-trek-guide") 404s — it would duplicate the /trek/{slug} detail
+  // page and cannibalise SEO. This also stops the dynamic route returning 200 for arbitrary slugs.
+  if (!isTrekCategorySlug(params.slug)) {
+    notFound();
+  }
   const label = params.slug.replace(/-/g, " ");
 
   let page = null;
   try {
     page = await fetchCMSPage(`trek-types/${params.slug}`);
   } catch {
-    // falls through to static template
+    // no CMS overlay yet — renders code-first (fallback body + live trek grid)
   }
 
   const breadcrumbItems = [
@@ -56,11 +63,8 @@ export default async function TrekTypePage({ params }: Props) {
 
   const faqs = page?.content_json?.faqs ?? [];
 
-  // Real member treks for this Trek Category from Master CMS + Trek Backfill (canonical matcher):
-  // a curated category slug matches by predicate; otherwise cluster_id FK, then trek_themes (label).
-  const clusterPages = isTrekCategorySlug(params.slug)
-    ? await fetchClusterTreks({ category: params.slug, limit: 9 })
-    : await fetchClusterTreks({ clusterId: page?.cluster_id ?? null, theme: label, limit: 9 });
+  // Live member treks for this curated category (predicate match on Master CMS + Trek Backfill).
+  const clusterPages = await fetchClusterTreks({ category: params.slug, limit: 9 });
   const clusterTreks = clusterPages.map(cmsPageToTrek);
 
   return (

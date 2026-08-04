@@ -87,10 +87,22 @@ def test_generate_cluster_hub_category():
         assert page.content_json.get("faqs")
 
 
-# ── TC-B05: generate for an unknown category → 400 ──────────────────────────
+# ── TC-B05: generate for an unknown category → 422 (curated-only validation) ─
 def test_generate_cluster_unknown_category():
     resp = client.post("/api/v1/admin/hubs/clusters/generate", json={"category_slug": "nope-treks"})
-    assert resp.status_code == 400
+    assert resp.status_code == 422
+
+
+# ── TC-B06: keyword_cluster generation is REMOVED (cluster_id rejected) ──────
+def test_generate_cluster_by_cluster_id_rejected():
+    resp = client.post("/api/v1/admin/hubs/clusters/generate", json={"cluster_id": "some-uuid"})
+    assert resp.status_code == 422  # cluster_id is no longer accepted; curated category required
+
+
+def test_cluster_catalog_is_curated_only():
+    resp = client.get("/api/v1/admin/hubs/clusters/catalog")
+    assert resp.status_code == 200
+    assert all(i["kind"] == "category" for i in resp.json())
 
 
 def test_generate_cluster_missing_params_422():

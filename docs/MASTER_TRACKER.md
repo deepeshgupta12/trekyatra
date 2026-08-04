@@ -18,6 +18,17 @@ Do not modify any code file without first:
 4. Checking impacted files and blast radius
 5. Updating the relevant step file in `docs/steps/`
 
+## 2026-08-04 — HOTFIX: removed per-trek /trek-types URLs (SEO cannibalisation)
+Owner reported junk URLs like `/trek-types/tarsar-marsar-trek-guide`. Cause: the "Both" cluster design
+generated a cluster_hub per keyword_cluster, but this project's keyword_clusters are named **per-trek**,
+so it created /trek-types/{trek} pages duplicating /trek/{slug} detail pages. **Removed the keyword_cluster
+path entirely** — /trek-types is now ONLY the 6 curated thematic categories:
+- Backend: `cluster_catalog` + `generate_cluster_hub` curated-category-only (cluster_id → 422); agent
+  category-only. `/trek-types/[slug]` now **404s** for any non-curated slug (was 200 for anything).
+  Sitemap drops `cluster_hub` PAGE_PREFIX → only the 6 curated URLs. New `scripts/cleanup_cluster_hubs.py`
+  deletes existing junk cluster_hub pages (**owner: run `--apply` on the DO console, then request re-crawl**).
+- Tests updated; backend suite + new tests pass; tsc + next build clean; gitnexus impact LOW.
+
 ## 2026-08-04 — Sitemap: seasonal + trek-category hubs now indexed code-first
 Owner Q: is sitemap/robots updated for the hub releases? Found region hubs were emitted but seasonal +
 trek-category hubs only appeared once a CMS page was generated — even though those pages render

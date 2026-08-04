@@ -3,17 +3,16 @@
 HYBRID (same shape as RegionalContentAgent): deterministic scaffold (body + grounded FAQs from the
 category's real matching treks) + optional LLM intro enrichment (fails safe to deterministic).
 
-Handles BOTH sources of a Trek Category:
-  - a curated category  (app.modules.hubs.category_meta.CATEGORIES) → matched by predicate
-  - a keyword_cluster    (content pipeline) → matched by cluster_id / trek_themes
+A Trek Category is ONLY a curated thematic category (app.modules.hubs.category_meta.CATEGORIES),
+matched by predicate. Keyword_cluster-sourced generation was removed (2026-08-04): those clusters are
+named per-trek and produced /trek-types/{trek} URLs that duplicate /trek/{slug} detail pages.
 
 The generated page's content_html + content_json.faqs are consumed as an overlay by the
-/trek-types/[slug] page; the member-trek grid stays live (fetched by category/cluster each render).
+/trek-types/[slug] page; the member-trek grid stays live (fetched by category each render).
 """
 from __future__ import annotations
 
 import logging
-import re
 import uuid
 from datetime import datetime, timezone
 from typing import Any
@@ -26,9 +25,7 @@ from app.modules.agents.base_agent import BaseAgent
 from app.modules.agents.client import get_anthropic_client
 from app.modules.agents.state import BaseAgentState
 from app.modules.cms.models import CMSPage
-from app.modules.content.models import KeywordCluster
 from app.modules.hubs.category_meta import category_by_slug, treks_in_category
-from app.modules.hubs.cluster_meta import treks_in_cluster
 
 logger = logging.getLogger(__name__)
 
@@ -48,22 +45,12 @@ Confident, expert, accessible tone. No headings, no lists, no markdown, no pream
 the paragraph text."""
 
 
-def _slugify(name: str) -> str:
-    return re.sub(r"[^a-z0-9]+", "-", name.lower()).strip("-")
-
-
 class ClusterContentAgent(BaseAgent):
     agent_type = "cluster_content"
 
-    def __init__(
-        self, db: Session, *, category_slug: str | None = None, cluster_id: str | None = None,
-        use_llm: bool = True,
-    ) -> None:
-        if bool(category_slug) == bool(cluster_id):
-            raise ValueError("Pass exactly one of category_slug or cluster_id.")
+    def __init__(self, db: Session, *, category_slug: str, use_llm: bool = True) -> None:
         self.db = db
         self.category_slug = category_slug
-        self.cluster_id = cluster_id
         self.use_llm = use_llm
         super().__init__()
 
@@ -79,23 +66,13 @@ class ClusterContentAgent(BaseAgent):
         return graph.compile()
 
     def _prepare_context(self, state: BaseAgentState) -> BaseAgentState:
-        if self.category_slug:
-            meta = category_by_slug(self.category_slug)
-            if not meta:
-                state["errors"] = [f"Unknown category slug '{self.category_slug}'."]
-                return state
-            treks = treks_in_category(self.db, self.category_slug, limit=12)
-            ctx = {"name": meta.name, "tagline": meta.tagline, "blurb": meta.blurb,
-                   "slug": meta.slug, "cluster_fk": None, "category_slug": meta.slug}
-        else:
-            kc = self.db.get(KeywordCluster, uuid.UUID(str(self.cluster_id)))
-            if not kc:
-                state["errors"] = [f"Keyword cluster '{self.cluster_id}' not found."]
-                return state
-            treks = treks_in_cluster(self.db, cluster_id=str(kc.id), theme=kc.primary_keyword, limit=12)
-            ctx = {"name": kc.name, "tagline": kc.primary_keyword,
-                   "blurb": f"Curated {kc.name.lower()} in India — {kc.primary_keyword}.",
-                   "slug": _slugify(kc.name), "cluster_fk": str(kc.id), "category_slug": None}
+        meta = category_by_slug(self.category_slug)
+        if not meta:
+            state["errors"] = [f"Unknown category slug '{self.category_slug}'."]
+            return state
+        treks = treks_in_category(self.db, self.category_slug, limit=12)
+        ctx = {"name": meta.name, "tagline": meta.tagline, "blurb": meta.blurb,
+               "slug": meta.slug, "category_slug": meta.slug}
         ctx["names"] = [(p.trek_name or p.title) for p in treks if (p.trek_name or p.title)]
         ctx["count"] = len(treks)
         ctx["hero"] = next((p.hero_image_url for p in treks if p.hero_image_url), None)
@@ -166,8 +143,6 @@ class ClusterContentAgent(BaseAgent):
             existing.status = "published"
             existing.seo_title = f"{title} | TrekYatra"
             existing.seo_description = seo_description
-            if ctx["cluster_fk"]:
-                existing.cluster_id = uuid.UUID(ctx["cluster_fk"])
             if not existing.hero_image_url and ctx["hero"]:
                 existing.hero_image_url = ctx["hero"]
             existing.published_at = existing.published_at or now
@@ -179,7 +154,6 @@ class ClusterContentAgent(BaseAgent):
                 content_html=body_html, content_json=content_json, status="published",
                 seo_title=f"{title} | TrekYatra", seo_description=seo_description,
                 hero_image_url=ctx["hero"],
-                cluster_id=uuid.UUID(ctx["cluster_fk"]) if ctx["cluster_fk"] else None,
                 published_at=now, created_at=now, updated_at=now,
             )
             self.db.add(page)

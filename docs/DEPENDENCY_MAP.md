@@ -2842,3 +2842,30 @@ those pages actually render code-first. Fixed for parity.
 - `apps/web-next/app/robots.ts` -> **no change needed** — all hubs live in the core `sitemap.xml`;
   robots still lists the 5 sitemaps (core + treks + hi-trek + news + compare) and disallows
   /admin/ /account/ /auth/ /api/.
+
+## 2026-08-04 — HOTFIX: remove per-trek /trek-types URLs (keyword_cluster generation was wrong)
+
+Owner reported junk URLs like `/trek-types/tarsar-marsar-trek-guide`. Root cause: the "Both" cluster
+design generated a cluster_hub per **keyword_cluster**, but this project's keyword_clusters are named
+**per-trek**, so it produced /trek-types/{trek} pages that duplicate /trek/{slug} detail pages (SEO
+cannibalisation). Removed the keyword_cluster path entirely; /trek-types is now ONLY the 6 curated
+thematic categories.
+- `services/api/app/api/routes/hubs.py` -> `cluster_catalog` returns curated categories only (dropped
+  the keyword_clusters loop); `generate_cluster_hub` accepts a **curated `category_slug` only**
+  (cluster_id → 422); regenerate cluster branch only for curated-category slugs. Removed `KeywordCluster`
+  + `_slugify` imports.
+- `services/api/app/modules/agents/cluster_content/agent.py` -> category-only (removed the cluster_id
+  branch, KeywordCluster/cluster_meta imports, `_slugify`). `schemas/hubs.py`: `ClusterGenerateRequest`
+  dropped `cluster_id`; `ClusterCatalogItem.kind` is always "category".
+- `apps/web-next/app/(public)/trek-types/[slug]/page.tsx` -> **`notFound()` unless the slug is a curated
+  category** (`isTrekCategorySlug`) — arbitrary slugs no longer return 200. Fetch simplified to `category=`.
+- `apps/web-next/app/sitemap.ts` -> `cluster_hub` removed from PAGE_PREFIX (arbitrary cluster_hub CMS
+  pages no longer emitted); only the 6 curated `/trek-types/{slug}` are in the sitemap.
+- `apps/web-next/lib/api.ts` + `admin/hubs/page.tsx` -> catalog/generate types + handler are curated-only.
+- `services/api/scripts/cleanup_cluster_hubs.py` **(NEW)** -> deletes existing non-curated cluster_hub
+  CMS pages (dry-run default; `--apply` to delete). **Run on prod to purge the junk.**
+- Tests updated (unknown category → 422; cluster_id rejected; catalog curated-only). Backend suite +
+  new tests pass; tsc + next build clean. gitnexus impact LOW (sitemap/hubs 0 upstream).
+
+### Owner action after deploy: run `python scripts/cleanup_cluster_hubs.py --apply` on the DO api
+console to delete the junk /trek-types pages, then request re-crawl in Search Console for those URLs.

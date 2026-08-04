@@ -160,7 +160,9 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     // NOTE: clean comparison URLs are emitted separately from the trek_comparisons
     // pair table below (they are NOT page_type="comparison" CMS pages).
     seasonal: "/seasons", seasonal_hub: "/seasons",
-    cluster_hub: "/trek-types", regional_hub: "/regions", editorial: "/",
+    // cluster_hub excluded — /trek-types is ONLY the 6 curated categories (emitted explicitly above).
+    // Arbitrary cluster_hub CMS pages (e.g. per-trek junk) must never enter the sitemap.
+    cluster_hub: undefined, regional_hub: "/regions", editorial: "/",
   };
   const cmsPages = await fetchCmsSitemapPages();
   for (const p of cmsPages) {

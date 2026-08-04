@@ -1271,8 +1271,8 @@ export async function fetchRegionCatalog(): Promise<RegionCatalogItem[]> {
 }
 
 export interface ClusterCatalogItem {
-  kind: "category" | "cluster";
-  key: string;       // category slug OR keyword_cluster id
+  kind: "category";  // curated only — keyword_cluster hubs removed (SEO)
+  key: string;       // curated category slug
   name: string;
   hub_slug: string;  // e.g. "trek-types/lake-treks"
   has_page: boolean;
@@ -1284,7 +1284,7 @@ export async function fetchClusterCatalog(): Promise<ClusterCatalogItem[]> {
   return res.json();
 }
 
-export async function generateClusterHub(item: { category_slug?: string; cluster_id?: string }): Promise<HubRegenerateResult> {
+export async function generateClusterHub(item: { category_slug: string }): Promise<HubRegenerateResult> {
   const res = await fetch(`${apiBase}/api/v1/admin/hubs/clusters/generate`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },

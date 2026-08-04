@@ -9,8 +9,7 @@ from app.db.session import get_db
 from app.modules.cms.models import CMSPage
 from app.modules.agents.seasonal_content.agent import SeasonalContentAgent, SEASON_META
 from app.modules.agents.regional_content.agent import RegionalContentAgent
-from app.modules.agents.cluster_content.agent import ClusterContentAgent, _slugify
-from app.modules.content.models import KeywordCluster
+from app.modules.agents.cluster_content.agent import ClusterContentAgent
 from app.modules.hubs.region_meta import REGIONS
 from app.modules.hubs.category_meta import CATEGORIES, category_by_slug
 from app.schemas.hubs import (
@@ -115,21 +114,17 @@ def regenerate_hub(
         )
 
     if hub_type == "cluster_hub":
-        # Regenerate an EXISTING cluster hub — resolve its source (curated category or keyword_cluster)
-        # from the stored page. New ones are created via POST /admin/hubs/clusters/generate.
-        if not page:
-            raise HTTPException(status_code=404, detail="Cluster hub page not found; use 'Generate' to create it.")
-        cj = page.content_json if isinstance(page.content_json, dict) else {}
-        cat_slug = cj.get("category_slug")
+        # Trek Category hubs are ONLY the curated thematic categories (category_meta). Per-trek /
+        # per-keyword-cluster trek-types pages are NOT allowed (they duplicate /trek/{slug} detail
+        # pages and cannibalise SEO). Regenerate only when the slug is a curated category.
         seg = slug.split("/")[-1]
-        if cat_slug and category_by_slug(cat_slug):
-            agent = ClusterContentAgent(db=db, category_slug=cat_slug)
-        elif page.cluster_id:
-            agent = ClusterContentAgent(db=db, cluster_id=str(page.cluster_id))
-        elif category_by_slug(seg):
-            agent = ClusterContentAgent(db=db, category_slug=seg)
-        else:
-            raise HTTPException(status_code=422, detail="Cannot determine this hub's source (category or keyword cluster).")
+        if not category_by_slug(seg):
+            raise HTTPException(
+                status_code=422,
+                detail=f"'{slug}' is not a curated Trek Category. Only the fixed categories "
+                       f"({', '.join(c.slug for c in CATEGORIES)}) are supported.",
+            )
+        agent = ClusterContentAgent(db=db, category_slug=seg)
         result = agent.run(input_data={})
         if result.get("errors"):
             raise HTTPException(status_code=400, detail=result["errors"][0])
@@ -155,19 +150,15 @@ def region_catalog() -> list[RegionCatalogItem]:
 @router.get("/clusters/catalog", response_model=list[ClusterCatalogItem])
 def cluster_catalog(db: Session = Depends(get_db)) -> list[ClusterCatalogItem]:
     """Trek Category hubs available to generate — powers 'Generate Missing Trek Category Hubs'.
-    Combines the curated category taxonomy (category_meta.CATEGORIES) with any pipeline
-    keyword_clusters (both, per the 2026-08-04 decision)."""
+    ONLY the curated thematic categories (category_meta.CATEGORIES). Keyword_cluster-sourced hubs
+    were removed (2026-08-04): they are named per-trek and produced /trek-types/{trek} URLs that
+    duplicate /trek/{slug} detail pages and harm SEO."""
     existing = {p.slug for p in db.scalars(select(CMSPage).where(CMSPage.page_type == "cluster_hub")).all()}
-    items: list[ClusterCatalogItem] = []
-    for c in CATEGORIES:
-        hub_slug = f"trek-types/{c.slug}"
-        items.append(ClusterCatalogItem(kind="category", key=c.slug, name=c.name,
-                                        hub_slug=hub_slug, has_page=hub_slug in existing))
-    for kc in db.scalars(select(KeywordCluster).order_by(KeywordCluster.name)).all():
-        hub_slug = f"trek-types/{_slugify(kc.name)}"
-        items.append(ClusterCatalogItem(kind="cluster", key=str(kc.id), name=kc.name,
-                                        hub_slug=hub_slug, has_page=hub_slug in existing))
-    return items
+    return [
+        ClusterCatalogItem(kind="category", key=c.slug, name=c.name,
+                           hub_slug=f"trek-types/{c.slug}", has_page=f"trek-types/{c.slug}" in existing)
+        for c in CATEGORIES
+    ]
 
 
 @router.post("/clusters/generate", response_model=HubRegenerateResponse)
@@ -175,13 +166,13 @@ def generate_cluster_hub(
     body: ClusterGenerateRequest,
     db: Session = Depends(get_db),
 ) -> HubRegenerateResponse:
-    """Generate a Trek Category (cluster) hub from a curated category OR a keyword_cluster."""
-    if body.category_slug:
-        agent = ClusterContentAgent(db=db, category_slug=body.category_slug)
-    elif body.cluster_id:
-        agent = ClusterContentAgent(db=db, cluster_id=body.cluster_id)
-    else:
-        raise HTTPException(status_code=422, detail="Provide category_slug or cluster_id.")
+    """Generate a Trek Category (cluster) hub from a CURATED category only."""
+    if not body.category_slug or not category_by_slug(body.category_slug):
+        raise HTTPException(
+            status_code=422,
+            detail=f"Provide a curated category_slug ({', '.join(c.slug for c in CATEGORIES)}).",
+        )
+    agent = ClusterContentAgent(db=db, category_slug=body.category_slug)
     result = agent.run(input_data={})
     if result.get("errors"):
         raise HTTPException(status_code=400, detail=result["errors"][0])

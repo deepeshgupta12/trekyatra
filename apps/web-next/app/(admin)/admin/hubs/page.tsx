@@ -65,9 +65,7 @@ export default function HubsPage() {
     setRegenerating((p) => ({ ...p, [k]: true }));
     setMessages((p) => ({ ...p, [k]: "" }));
     try {
-      const res = await generateClusterHub(
-        item.kind === "category" ? { category_slug: item.key } : { cluster_id: item.key },
-      );
+      const res = await generateClusterHub({ category_slug: item.key });
       setMessages((p) => ({ ...p, [k]: `✓ ${res.message}` }));
       const [updatedHubs, updatedCatalog] = await Promise.all([fetchHubPages(), fetchClusterCatalog()]);
       setHubs(updatedHubs);
@@ -319,7 +317,7 @@ export default function HubsPage() {
           <div className="px-5 py-3.5 border-b border-white/8">
             <h2 className="text-white font-semibold text-sm">Generate Missing Trek Category Hubs</h2>
             <p className="text-white/40 text-xs mt-0.5">
-              Curated categories + keyword clusters without a <span className="text-white/60">cluster_hub</span> page yet.
+              Curated thematic Trek Categories without a <span className="text-white/60">cluster_hub</span> page yet.
               Generating creates an SEO-complete page (body + FAQs) grounded in the category&apos;s matching treks.
             </p>
           </div>

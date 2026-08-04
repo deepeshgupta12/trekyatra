@@ -41,13 +41,12 @@ class RegionCatalogItem(BaseModel):
 
 
 class ClusterCatalogItem(BaseModel):
-    kind: str          # "category" (curated) | "cluster" (keyword_cluster)
-    key: str           # category slug OR keyword_cluster id
+    kind: str          # always "category" (curated) — keyword_cluster hubs removed (SEO)
+    key: str           # curated category slug
     name: str          # display name
     hub_slug: str      # CMS/hub slug, e.g. "trek-types/lake-treks"
     has_page: bool     # whether a cluster_hub CMS page already exists at hub_slug
 
 
 class ClusterGenerateRequest(BaseModel):
-    category_slug: str | None = None   # curated category
-    cluster_id: str | None = None      # keyword_cluster id
+    category_slug: str | None = None   # curated category (the only allowed source)
