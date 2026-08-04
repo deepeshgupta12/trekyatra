@@ -36,7 +36,7 @@ Last updated: 2026-08-03 (region hubs made fully dynamic + SEO/AEO schema + site
 | `/compare` | Comparison tool | — | |
 | `/regions/[slug]` | Regional hub | `regional_hub` (optional) | **Dynamic, code-rendered hub (2026-08-03 rewrite).** Single source of truth = `lib/regions.ts` (`REGIONS` + `resolveRegion`/`regionSlugForState`/`groupStateCounts`). Canonical slugs: uttarakhand, himachal, kashmir, ladakh, maharashtra, sikkim, karnataka (India) + `nepal`, `pakistan`, `tibet` (International Himalaya). A trek's `trek_state` (incl. composite international values like "Koshi Province, Nepal / Tibet, China") resolves to the right hub by exact/`matchWord` substring match — **no per-region code**. Stats (trek count, beginner routes, peak season, permits), FAQs, and schema (`TouristDestination` + `FAQPage` + `BreadcrumbList`) are all generated live from published trek data. An optional `regional_hub` CMS page at slug `regions/{slug}` enriches with editor content + custom FAQs (not required). **Canonical dedupe:** the region page emits `<link rel=canonical>` to the short hub slug; the old auto-slugified composite URLs (`/regions/gilgit-baltistan-pakistan`, `/regions/koshi-province-nepal-tibet-china`, etc.) **301-redirect** to their canonical hub (`next.config.mjs`). Indexed via the root `sitemap.xml` (one `/regions/{slug}` per region with published treks, derived from `trek-state-counts`). Region hero images are real per-region photos in `/public/images/region-*.webp`. |
 | `/seasons/[slug]` | Seasonal hub | `seasonal_hub` | CMS-powered |
-| `/trek-types/[slug]` | Cluster hub | `cluster_hub` | CMS-powered |
+| `/trek-types/[slug]` | Cluster hub (Trek Category) | `cluster_hub` | Code-first + CMS overlay (like regions). **Generatable from `/admin/hubs`** (2026-08-04): curated categories (`category_meta` — beginner-friendly/weekend/high-altitude/lake/snow/family, matched by predicate) OR keyword_clusters. Renders a live member-trek grid (`/treks/by-cluster?category=` or `?cluster_id=`) + FAQ/ItemList schema. |
 | `/safety` | Safety hub | — | Static |
 | `/safety-disclaimer` | Safety disclaimer | `editorial` | CMS-driven |
 
@@ -232,6 +232,9 @@ Last updated: 2026-08-03 (region hubs made fully dynamic + SEO/AEO schema + site
 | `/api/v1/admin/newsletter/subscribers/export.csv` | **Admin GET** — CSV export of matching subscribers; PII, admin-gated (2026-08-04) |
 | `/api/v1/admin/hubs/{slug}/regenerate` | **Admin POST** — regenerate a hub. `seasonal_hub` → SeasonalContentAgent; **`regional_hub` → RegionalContentAgent** (hybrid: deterministic scaffold + optional LLM intro; 2026-08-04); `cluster_hub` → 501 (pipeline) |
 | `/api/v1/admin/hubs/regions/catalog` | **Admin GET** — canonical region hubs available to generate (powers "Generate Missing Regional Hubs"); source `app.modules.hubs.region_meta.REGIONS` (2026-08-04) |
+| `/api/v1/admin/hubs/clusters/catalog` | **Admin GET** — Trek Category hubs available to generate: curated categories (`category_meta.CATEGORIES`) + pipeline keyword_clusters, each with `has_page` (powers "Generate Missing Trek Category Hubs") (2026-08-04) |
+| `/api/v1/admin/hubs/clusters/generate` | **Admin POST** — generate a `cluster_hub` from `{category_slug}` (curated) or `{cluster_id}` (keyword_cluster) via **ClusterContentAgent** (hybrid). Existing cluster hubs also regenerate via `/{slug}/regenerate` (2026-08-04) |
+| `/api/v1/treks/by-cluster?category=` | **Public GET** — curated Trek Category slug matches treks by predicate (`category_meta`); else cluster_id/theme. Powers `/trek-types/[slug]` (2026-08-04) |
 | `/api/v1/operators/*` | Operators public |
 | `/api/v1/inquiries` | Booking inquiries |
 | `/api/v1/products/*` | Digital products |

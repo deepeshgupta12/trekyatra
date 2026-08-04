@@ -1270,6 +1270,33 @@ export async function fetchRegionCatalog(): Promise<RegionCatalogItem[]> {
   return res.json();
 }
 
+export interface ClusterCatalogItem {
+  kind: "category" | "cluster";
+  key: string;       // category slug OR keyword_cluster id
+  name: string;
+  hub_slug: string;  // e.g. "trek-types/lake-treks"
+  has_page: boolean;
+}
+
+export async function fetchClusterCatalog(): Promise<ClusterCatalogItem[]> {
+  const res = await fetch(`${apiBase}/api/v1/admin/hubs/clusters/catalog`);
+  if (!res.ok) throw new Error(`API ${res.status}: fetch cluster catalog`);
+  return res.json();
+}
+
+export async function generateClusterHub(item: { category_slug?: string; cluster_id?: string }): Promise<HubRegenerateResult> {
+  const res = await fetch(`${apiBase}/api/v1/admin/hubs/clusters/generate`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(item),
+  });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error(err.detail || `API ${res.status}: generate cluster hub`);
+  }
+  return res.json();
+}
+
 export async function regenerateHub(slug: string): Promise<HubRegenerateResult> {
   const encodedSlug = slug.split("/").map(encodeURIComponent).join("/");
   const res = await fetch(`${apiBase}/api/v1/admin/hubs/${encodedSlug}/regenerate`, {
@@ -1995,12 +2022,13 @@ export async function fetchSeasonalTreksByMonth(month: number, limit = 12): Prom
  * Canonical CLUSTER → treks (backend `/treks/by-cluster`). cluster_id membership first, then a
  * trek_themes keyword fallback. Used by the /trek-types/[slug] hub.
  */
-export async function fetchClusterTreks(params: { clusterId?: string | null; theme?: string | null; limit?: number }): Promise<CMSPage[]> {
+export async function fetchClusterTreks(params: { clusterId?: string | null; theme?: string | null; category?: string | null; limit?: number }): Promise<CMSPage[]> {
   const q = new URLSearchParams();
+  if (params.category) q.set("category", params.category);
   if (params.clusterId) q.set("cluster_id", params.clusterId);
   if (params.theme) q.set("theme", params.theme);
   q.set("limit", String(params.limit ?? 12));
-  if (!params.clusterId && !params.theme) return [];
+  if (!params.category && !params.clusterId && !params.theme) return [];
   try {
     return await apiFetch<CMSPage[]>(`/treks/by-cluster?${q.toString()}`);
   } catch {

@@ -4,6 +4,7 @@ import { notFound } from "next/navigation";
 import { Mountain, ArrowLeft, Clock, ChevronRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { fetchCMSPage, fetchCMSPages, fetchClusterTreks } from "@/lib/api";
+import { isTrekCategorySlug } from "@/lib/categories";
 import { cmsPageToTrek } from "@/lib/trek-utils";
 import { TrekCard } from "@/components/trek/TrekCard";
 import SchemaInjector from "@/components/seo/SchemaInjector";
@@ -56,8 +57,10 @@ export default async function TrekTypePage({ params }: Props) {
   const faqs = page?.content_json?.faqs ?? [];
 
   // Real member treks for this Trek Category from Master CMS + Trek Backfill (canonical matcher):
-  // cluster_id membership first, then a trek_themes keyword fallback (the slug label).
-  const clusterPages = await fetchClusterTreks({ clusterId: page?.cluster_id ?? null, theme: label, limit: 9 });
+  // a curated category slug matches by predicate; otherwise cluster_id FK, then trek_themes (label).
+  const clusterPages = isTrekCategorySlug(params.slug)
+    ? await fetchClusterTreks({ category: params.slug, limit: 9 })
+    : await fetchClusterTreks({ clusterId: page?.cluster_id ?? null, theme: label, limit: 9 });
   const clusterTreks = clusterPages.map(cmsPageToTrek);
 
   return (

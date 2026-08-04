@@ -175,12 +175,14 @@ def test_api_regenerate_seasonal_hub():
 
 # ── TC-B08: Regenerate non-seasonal hub returns 501 ─────────────────────────
 
-def test_api_regenerate_cluster_hub_returns_501():
+def test_api_regenerate_cluster_hub_unresolvable_source_422():
+    # Cluster regeneration is now supported (curated category / keyword_cluster). A cluster_hub page
+    # whose slug is not a curated category and has no cluster_id can't be resolved → 422 (was 501).
     with SessionLocal() as db:
         page = _make_hub_page(db, page_type="cluster_hub", slug=f"trek-types/t501-{uuid.uuid4().hex[:6]}")
         try:
             resp = client.post(f"/api/v1/admin/hubs/{page.slug}/regenerate", json={})
-            assert resp.status_code == 501
+            assert resp.status_code == 422
         finally:
             db.refresh(page)
             db.delete(page)

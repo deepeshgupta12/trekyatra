@@ -119,11 +119,18 @@ def get_seasonal_treks(
 def get_cluster_treks(
     cluster_id: str | None = Query(default=None, description="keyword_clusters.id (FK membership)"),
     theme: str | None = Query(default=None, description="trek_themes keyword fallback"),
+    category: str | None = Query(default=None, description="curated Trek Category slug (category_meta)"),
     limit: int = Query(default=12, ge=1, le=50),
     db: Session = Depends(get_db),
 ) -> list[CMSPageResponse]:
-    """Published trek guides in a Trek Category (cluster). cluster_id members first, then a
-    trek_themes keyword fallback (see app.modules.hubs.cluster_meta). Powers the /trek-types hub."""
+    """Published trek guides in a Trek Category. A curated `category` slug matches by predicate
+    (app.modules.hubs.category_meta); otherwise cluster_id FK members first, then a trek_themes
+    keyword fallback (app.modules.hubs.cluster_meta). Powers the /trek-types hub."""
+    if category:
+        from app.modules.hubs.category_meta import treks_in_category
+        pages = treks_in_category(db, category, limit=limit)
+        return [cms_page_card(p) for p in pages]
+
     from app.modules.hubs.cluster_meta import treks_in_cluster
 
     if not cluster_id and not theme:

@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { Globe, RefreshCw, ExternalLink, MapPin, Cloud, BarChart2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { fetchHubPages, regenerateHub, fetchRegionCatalog, HubPage, RegionCatalogItem } from "@/lib/api";
+import { fetchHubPages, regenerateHub, fetchRegionCatalog, fetchClusterCatalog, generateClusterHub, HubPage, RegionCatalogItem, ClusterCatalogItem } from "@/lib/api";
 
 const HUB_TYPE_LABELS: Record<string, string> = {
   seasonal_hub: "Seasonal",
@@ -41,6 +41,7 @@ function formatDate(iso: string | null) {
 export default function HubsPage() {
   const [hubs, setHubs] = useState<HubPage[]>([]);
   const [regionCatalog, setRegionCatalog] = useState<RegionCatalogItem[]>([]);
+  const [clusterCatalog, setClusterCatalog] = useState<ClusterCatalogItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [regenerating, setRegenerating] = useState<Record<string, boolean>>({});
   const [messages, setMessages] = useState<Record<string, string>>({});
@@ -54,7 +55,29 @@ export default function HubsPage() {
     fetchRegionCatalog()
       .then(setRegionCatalog)
       .catch(() => setRegionCatalog([]));
+    fetchClusterCatalog()
+      .then(setClusterCatalog)
+      .catch(() => setClusterCatalog([]));
   }, []);
+
+  async function handleGenerateCluster(item: ClusterCatalogItem) {
+    const k = item.hub_slug;
+    setRegenerating((p) => ({ ...p, [k]: true }));
+    setMessages((p) => ({ ...p, [k]: "" }));
+    try {
+      const res = await generateClusterHub(
+        item.kind === "category" ? { category_slug: item.key } : { cluster_id: item.key },
+      );
+      setMessages((p) => ({ ...p, [k]: `✓ ${res.message}` }));
+      const [updatedHubs, updatedCatalog] = await Promise.all([fetchHubPages(), fetchClusterCatalog()]);
+      setHubs(updatedHubs);
+      setClusterCatalog(updatedCatalog);
+    } catch (err: unknown) {
+      setMessages((p) => ({ ...p, [k]: `✗ ${err instanceof Error ? err.message : "Failed"}` }));
+    } finally {
+      setRegenerating((p) => ({ ...p, [k]: false }));
+    }
+  }
 
   async function handleRegenerate(slug: string) {
     setRegenerating((p) => ({ ...p, [slug]: true }));
@@ -82,6 +105,9 @@ export default function HubsPage() {
   // Regional stubs: canonical regions (from backend catalog) without a regional_hub CMS page yet
   const existingRegionSlugs = new Set(hubs.filter((h) => h.page_type === "regional_hub").map((h) => h.slug));
   const missingRegions = regionCatalog.filter((r) => !existingRegionSlugs.has(r.hub_slug));
+
+  // Trek Category stubs: curated categories + keyword-clusters without a cluster_hub CMS page yet
+  const missingClusters = clusterCatalog.filter((c) => !c.has_page);
 
   return (
     <div>
@@ -183,7 +209,7 @@ export default function HubsPage() {
                       <td className="px-4 py-3.5 text-white/40 text-xs hidden md:table-cell">{formatDate(hub.updated_at)}</td>
                       <td className="px-4 py-3.5">
                         <div className="flex items-center gap-2">
-                          {(hub.page_type === "seasonal_hub" || hub.page_type === "regional_hub") && (
+                          {(hub.page_type === "seasonal_hub" || hub.page_type === "regional_hub" || hub.page_type === "cluster_hub") && (
                             <button
                               onClick={() => handleRegenerate(hub.slug)}
                               disabled={regenerating[hub.slug]}
@@ -280,6 +306,47 @@ export default function HubsPage() {
                 >
                   <RefreshCw className={`h-3.5 w-3.5 mr-1.5 ${regenerating[r.hub_slug] ? "animate-spin" : ""}`} />
                   {regenerating[r.hub_slug] ? "Generating…" : "Generate"}
+                </Button>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Missing trek-category (cluster) hubs panel */}
+      {(filter === "all" || filter === "cluster_hub") && missingClusters.length > 0 && (
+        <div className="bg-[#14161f] rounded-2xl border border-white/10 overflow-hidden mt-6">
+          <div className="px-5 py-3.5 border-b border-white/8">
+            <h2 className="text-white font-semibold text-sm">Generate Missing Trek Category Hubs</h2>
+            <p className="text-white/40 text-xs mt-0.5">
+              Curated categories + keyword clusters without a <span className="text-white/60">cluster_hub</span> page yet.
+              Generating creates an SEO-complete page (body + FAQs) grounded in the category&apos;s matching treks.
+            </p>
+          </div>
+          <div className="p-5 grid sm:grid-cols-2 gap-3">
+            {missingClusters.map((c) => (
+              <div key={c.hub_slug} className="bg-[#0f1117] rounded-xl border border-white/8 p-4 flex items-center justify-between gap-3">
+                <div>
+                  <p className="text-white/80 font-medium text-sm">{c.name}</p>
+                  <p className="text-white/30 text-xs font-mono">
+                    {c.hub_slug}
+                    <span className="ml-2 text-white/20">{c.kind === "category" ? "curated" : "cluster"}</span>
+                  </p>
+                  {messages[c.hub_slug] && (
+                    <p className={`text-xs mt-1 ${messages[c.hub_slug].startsWith("✓") ? "text-pine" : "text-red-400"}`}>
+                      {messages[c.hub_slug]}
+                    </p>
+                  )}
+                </div>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  disabled={regenerating[c.hub_slug]}
+                  onClick={() => handleGenerateCluster(c)}
+                  className="border-white/20 text-white/60 hover:text-white text-xs flex-shrink-0"
+                >
+                  <RefreshCw className={`h-3.5 w-3.5 mr-1.5 ${regenerating[c.hub_slug] ? "animate-spin" : ""}`} />
+                  {regenerating[c.hub_slug] ? "Generating…" : "Generate"}
                 </Button>
               </div>
             ))}

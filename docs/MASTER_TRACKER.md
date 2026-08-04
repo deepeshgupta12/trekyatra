@@ -18,6 +18,23 @@ Do not modify any code file without first:
 4. Checking impacted files and blast radius
 5. Updating the relevant step file in `docs/steps/`
 
+## 2026-08-04 — Trek Category (cluster) hub generation + non-destructive confirmation
+Owner reported: (1) no function to generate Trek Category pages in /admin/hubs; (2) will generating a
+regional hub replace the working region pages (images/linking/mapping)?
+- **(2) Answer = NO (verified in code):** the region page is code-first + CMS **overlay**. Generating a
+  regional_hub keeps the same image (region_meta mirrors the /images path), home/nav linking
+  (lib/regions.ts), and live trek grid (fetchCMSTreksByState) — it only ADDS an editorial body + FAQs +
+  refined meta description. Safe to generate all regions.
+- **(1) Built cluster generation.** Data check: 0 keyword_clusters + sparse trek_themes → needs a
+  taxonomy. Owner chose **Both** + all 6 starter categories. New `category_meta.py` (6 curated
+  categories matched by predicate over trek_suitability/difficulty/duration/altitude/themes) +
+  `ClusterContentAgent` (hybrid; generates a cluster_hub from a curated category OR a keyword_cluster).
+  `/admin/hubs` now has a "Generate Missing Trek Category Hubs" panel + Regenerate on cluster rows;
+  new `GET /admin/hubs/clusters/catalog` + `POST /admin/hubs/clusters/generate`; `/treks/by-cluster`
+  gains `?category=`; `/trek-types/[slug]` renders a live category trek grid + ItemList.
+- No DB migration, no new env. Backend 816 pass + new cluster tests (2 failures = known test_refresh
+  flake). tsc + next build clean. gitnexus impact LOW (regenerate_hub/list_hubs/TrekTypePage/get_cluster_treks).
+
 ## 2026-08-04 — Cross-surface placement audit (last 3 releases) + nav consistency fix
 Audited every placement of the region/season/cluster hubs + newsletter work across desktop + mobile
 web and the admin CMS (bd05b16, cbf786a, 2a5ff08). gitnexus impact on `megaSections` = LOW (0 upstream).

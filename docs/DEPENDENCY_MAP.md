@@ -2796,3 +2796,36 @@ this brings seasonal + cluster up to that standard and makes the backend the sin
 - Placement audit confirmed: admin sidebar (`app/(admin)/admin/layout.tsx`) already lists Destination Hubs
   + Newsletter; home region chips + season tabs are responsive; footer entry links present. Cluster
   (/trek-types) hubs remain nav-orphaned by design (pipeline SEO landing pages).
+
+## 2026-08-04 — Trek Category (cluster) hub generation in /admin/hubs
+
+Owner ask: /admin/hubs had no function to generate Trek Category (cluster_hub) pages (regenerate =
+501). Data check found 0 keyword_clusters + sparse trek_themes, so cluster hubs need a defined
+taxonomy. Decision = **Both**: a curated category taxonomy (works now) + keyword_cluster support.
+
+- `services/api/app/modules/hubs/category_meta.py` **(NEW)** -> 6 curated categories (beginner-friendly,
+  weekend, high-altitude, lake, snow, family) each a `CategoryMeta` with a **predicate** over reliable
+  trek fields (trek_suitability/difficulty/duration/altitude/themes); `treks_in_category`. Mirrored
+  (slugs) in `apps/web-next/lib/categories.ts`.
+- `services/api/app/modules/agents/cluster_content/agent.py` **(NEW)** -> `ClusterContentAgent`
+  (hybrid, mirrors RegionalContentAgent) — generates a published `cluster_hub` at `trek-types/{slug}`
+  from EITHER a curated `category_slug` OR a keyword `cluster_id`; deterministic body + grounded FAQs +
+  optional LLM intro; stores `content_json.category_slug`/`cluster_id` for regeneration.
+- `services/api/app/api/routes/hubs.py` -> `regenerate_hub` cluster branch (was 501) resolves an
+  existing cluster_hub's source from its stored page; new `GET /admin/hubs/clusters/catalog`
+  (categories + keyword_clusters, has_page) + `POST /admin/hubs/clusters/generate`. `schemas/hubs.py`:
+  `ClusterCatalogItem`, `ClusterGenerateRequest`.
+- `services/api/app/api/routes/treks.py` -> `/treks/by-cluster` gains `?category=` (predicate match).
+- `apps/web-next/app/(public)/trek-types/[slug]/page.tsx` -> fetches member treks by `category=` when
+  the slug is a curated category (else cluster_id/theme). `lib/api.ts`: `fetchClusterTreks` category
+  param, `fetchClusterCatalog`, `generateClusterHub`, `ClusterCatalogItem`.
+- `apps/web-next/app/(admin)/admin/hubs/page.tsx` -> "Generate Missing Trek Category Hubs" panel +
+  Regenerate enabled on cluster_hub rows.
+- No DB migration, no new env. Backend 816 pass + new cluster tests (2 failures = known test_refresh
+  flake). tsc + next build clean. gitnexus impact LOW (regenerate_hub / list_hubs / TrekTypePage /
+  get_cluster_treks all 0 upstream).
+
+### Non-destructive note (owner Q): generating a regional_hub does NOT replace the region page — it is
+an OVERLAY. Region image (same `/images/region-*.webp` path via region_meta), home/nav linking
+(`lib/regions.ts`), and the live trek grid (`fetchCMSTreksByState`) are all code-first and unchanged;
+generation only ADDS content_html + FAQs + refines seo_description. Same overlay model for cluster hubs.
