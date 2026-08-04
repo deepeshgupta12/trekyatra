@@ -18,6 +18,13 @@ Do not modify any code file without first:
 4. Checking impacted files and blast radius
 5. Updating the relevant step file in `docs/steps/`
 
+## 2026-08-04 — Cluster page UI parity + Trek Categories in nav
+Owner: the /trek-types cluster page UI was breaking (it used the dark admin palette on a public page).
+Re-styled to the **light public theme** matching seasons/regions (container-wide, bg-card, text-surface
+hero, gradient-pine CTA, same section structure). Added the 6 Trek Category links to the **navigation**
+— a new "Trek Categories" mega-menu column (grid now lg:grid-cols-5) + Snow/Lake links in the footer.
+tsc + next build clean; gitnexus impact TrekTypePage/megaSections LOW.
+
 ## 2026-08-04 — Hub pages: strict slugs + rich parity (seasons/regions/clusters)
 Owner: (1) /seasons/december + /seasons/may are junk (duplicate winter/summer) — remove them; (2) apply
 the same rich + strict treatment to Region and Cluster pages.

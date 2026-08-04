@@ -28,6 +28,19 @@ const FALLBACK_REGIONS: RegionNavItem[] = [
 // region hubs) — see `regionItems` in the component. The other columns are static.
 const megaSections = [
   {
+    title: "Trek Categories",
+    icon: Mountain,
+    // Curated Trek Category hubs (/trek-types) — keep in sync with lib/categories + category_meta.
+    items: [
+      { label: "Beginner-Friendly Treks", to: "/trek-types/beginner-friendly-treks" },
+      { label: "Weekend Treks", to: "/trek-types/weekend-treks" },
+      { label: "High-Altitude Treks", to: "/trek-types/high-altitude-treks" },
+      { label: "Lake Treks", to: "/trek-types/lake-treks" },
+      { label: "Snow Treks", to: "/trek-types/snow-treks" },
+      { label: "Family Treks", to: "/trek-types/family-treks" },
+    ],
+  },
+  {
     title: "By City",
     icon: Compass,
     items: [
@@ -237,7 +250,7 @@ export const Header = () => {
               onMouseLeave={() => closeMega()}
               className="absolute left-0 right-0 top-16 bg-surface border-b border-border shadow-elevated animate-fade-up"
             >
-              <div className="container-wide py-8 grid grid-cols-4 gap-8">
+              <div className="container-wide py-8 grid grid-cols-3 lg:grid-cols-5 gap-8">
                 <div>
                   <div className="flex items-center gap-2 mb-4 text-xs uppercase tracking-widest text-muted-foreground">
                     <MapPin className="h-3.5 w-3.5 text-accent" />

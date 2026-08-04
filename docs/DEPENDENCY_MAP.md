@@ -2909,3 +2909,14 @@ strict treatment applied to seasons was needed for region + cluster pages.
   grid, generated FAQs → FAQPage + ItemList + Breadcrumb. 404s (via `getCategoryContent`) for non-curated.
 - Frontend-only (no backend change). gitnexus impact: Seasonal/Region/TrekTypePage LOW; groupStateCounts
   HIGH (flagged, safe). tsc + next build clean (all 3 routes SSG). URL_MAP + MASTER_TRACKER + README updated.
+
+## 2026-08-04 — Cluster page UI → public theme + Trek Categories in nav
+- `apps/web-next/app/(public)/trek-types/[slug]/page.tsx` -> re-styled from the dark admin palette
+  (bg-[#0c0e14]/#14161f, text-white) to the **light public theme** used by seasons/regions (container-wide,
+  bg-card, text-foreground, text-surface hero, bg-surface-muted, gradient-pine CTA). Same section
+  structure as seasons (hero → stat strip → why → tips → best-regions → trek grid → FAQs → CTA →
+  AffiliateDisclosure). blast radius: LOW (TrekTypePage 0 upstream).
+- `components/layout/Header.tsx` -> new "Trek Categories" mega column (6 curated `/trek-types/*` links);
+  mega grid `grid-cols-4` → `grid-cols-3 lg:grid-cols-5` (Top Regions + Trek Categories + By City + By
+  Season + Trust). `components/layout/Footer.tsx` -> added Snow/Lake trek category links to Discover.
+- tsc + next build clean. URL_MAP + MASTER_TRACKER updated.
