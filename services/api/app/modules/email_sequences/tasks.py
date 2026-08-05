@@ -55,13 +55,14 @@ def send_account_welcome_email(user_email: str, user_name: str | None = None) ->
         trek_lines = [f"- {p.title}" for p in pages] if pages else [f"- {b}" for b in _DEFAULT_TREK_BULLETS]
 
         name = user_name or "Explorer"
+        site = settings.frontend_url.rstrip("/")
         body = (
             f"Hi {name},\n\n"
             f"Welcome to TrekYatra! You've just joined a growing community of trekkers across India.\n\n"
             f"Here are 3 top trek guides to get you started:\n"
             + "\n".join(trek_lines)
             + "\n\n"
-            f"Browse all treks at trekyatra.com/explore — and don't hesitate to reach out if you need help planning.\n\n"
+            f"Browse all treks at {site}/explore — and don't hesitate to reach out if you need help planning.\n\n"
             f"Happy trekking,\nThe TrekYatra Team\n"
         )
         _send_email(user_email, "Welcome to TrekYatra — your trail starts here", body)
