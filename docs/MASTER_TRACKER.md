@@ -18,6 +18,19 @@ Do not modify any code file without first:
 4. Checking impacted files and blast radius
 5. Updating the relevant step file in `docs/steps/`
 
+## 2026-08-05 — FIX: account signup welcome email (same Celery-dispatch bug)
+Owner: the account signup welcome email had the identical root cause as the newsletter/waitlist welcome —
+`signup_email` dispatched `send_welcome_email_task.delay()` (Celery task `email_sequences.send_welcome_email`),
+which the prod worker never received (workers don't hot-reload; task registered but delivery unreliable, and
+the flow depended on the worker being up). Fixed the same in-process way: extracted a synchronous
+`send_account_welcome_email(user_email, user_name)` in `email_sequences/tasks.py` (graceful no-op when SMTP
+unset, never raises) and made `send_welcome_email_task` a thin Celery wrapper (back-compat). `signup_email`
+now takes `background_tasks: BackgroundTasks` and sends the welcome via `background_tasks.add_task(...)` — no
+worker dependency, same model as the working verification email. Google/Apple OAuth signup unchanged (never
+sent a welcome). Added test `test_signup_email_sends_account_welcome_via_background_task`. Impact LOW (1 caller,
+0 upstream); detect_changes: low risk, 0 affected processes. Full suite green (the 2 test_refresh failures are
+the pre-existing order-dependent shared-DB flake — 13/13 pass isolated).
+
 ## 2026-08-04 — FIX: welcome emails not sending (removed Celery worker dependency)
 Owner: newsletter + iOS-waitlist welcome emails were not arriving. Root cause: the welcome was a NEW
 Celery task (`newsletter.send_welcome_email`, cbf786a) and Celery workers do not hot-reload, so the prod

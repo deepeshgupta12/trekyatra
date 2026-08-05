@@ -6,7 +6,7 @@ import uuid
 from email.mime.text import MIMEText
 
 import httpx
-from fastapi import APIRouter, Depends, HTTPException, Request, Response, status
+from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, Request, Response, status
 from sqlalchemy.orm import Session
 
 from app.core.config import settings
@@ -84,6 +84,7 @@ def signup_email(
     payload: EmailSignupRequest,
     response: Response,
     request: Request,
+    background_tasks: BackgroundTasks,
     db: Session = Depends(get_db),
 ) -> AuthResponse:
     try:
@@ -111,11 +112,10 @@ def signup_email(
     db.refresh(session)
 
     _set_auth_cookie(response, token)
-    try:
-        from app.modules.email_sequences.tasks import send_welcome_email_task
-        send_welcome_email_task.delay(user.email, user.full_name)
-    except Exception:
-        pass
+    # Send the account welcome email in the API process (BackgroundTask), not via Celery, so it does
+    # not depend on the worker being up/restarted (same model as the verification email below).
+    from app.modules.email_sequences.tasks import send_account_welcome_email
+    background_tasks.add_task(send_account_welcome_email, user.email, user.full_name)
 
     # Send email verification link immediately on signup (Z04)
     try:

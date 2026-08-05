@@ -157,3 +157,18 @@ def test_signup_email_sends_verification_on_register():
         mock_send.assert_called_once()
         call_args = mock_send.call_args
         assert call_args[0][0] == email
+
+
+def test_signup_email_sends_account_welcome_via_background_task():
+    """The account welcome email now sends in-process via a BackgroundTask (not Celery), so it does
+    not depend on the worker. TestClient runs BackgroundTasks synchronously after the response."""
+    email = f"welcome-{uuid.uuid4().hex[:8]}@example.com"
+    with patch("app.api.routes.auth._send_verification_email_helper"), \
+         patch("app.modules.email_sequences.tasks.send_account_welcome_email") as mock_welcome:
+        resp = client.post(
+            "/api/v1/auth/signup/email",
+            json={"email": email, "password": "strongpass123", "full_name": "Welcome User"},
+        )
+        assert resp.status_code == 201
+        mock_welcome.assert_called_once()
+        assert mock_welcome.call_args[0][0] == email

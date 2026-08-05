@@ -33,8 +33,10 @@ def _send_email(to: str, subject: str, body: str) -> None:
         server.sendmail(settings.smtp_from_email, [to], msg.as_string())
 
 
-@celery_app.task(name="email_sequences.send_welcome_email", bind=True, max_retries=3)
-def send_welcome_email_task(self, user_email: str, user_name: str | None = None) -> dict:
+def send_account_welcome_email(user_email: str, user_name: str | None = None) -> dict:
+    """Synchronous, self-contained account welcome email. Runs from a FastAPI BackgroundTask in the API
+    process (no Celery worker needed, same model as the working verification email). Graceful no-op when
+    SMTP is unset; never raises to the caller."""
     if not settings.smtp_host or not settings.smtp_user:
         logger.info("SMTP not configured — skipping welcome email for %s", user_email)
         return {"sent": False, "reason": "smtp_not_configured"}
@@ -63,12 +65,19 @@ def send_welcome_email_task(self, user_email: str, user_name: str | None = None)
             f"Happy trekking,\nThe TrekYatra Team\n"
         )
         _send_email(user_email, "Welcome to TrekYatra — your trail starts here", body)
-        logger.info("send_welcome_email_task: sent to %s", user_email)
+        logger.info("send_account_welcome_email: sent to %s", user_email)
         return {"sent": True, "recipient": user_email}
 
-    except Exception as exc:
-        logger.exception("send_welcome_email_task failed for %s: %s", user_email, exc)
-        raise self.retry(exc=exc, countdown=60)
+    except Exception as exc:  # noqa: BLE001 — never crash the request / background task
+        logger.exception("send_account_welcome_email failed for %s: %s", user_email, exc)
+        return {"sent": False, "reason": str(exc)}
+
+
+@celery_app.task(name="email_sequences.send_welcome_email", bind=True, max_retries=3)
+def send_welcome_email_task(self, user_email: str, user_name: str | None = None) -> dict:
+    """Celery wrapper (back-compat). The live signup flow sends the welcome via a FastAPI
+    BackgroundTask so it does not depend on the Celery worker being up/restarted."""
+    return send_account_welcome_email(user_email, user_name)
 
 
 @celery_app.task(name="email_sequences.process_nurture_sequences", bind=True, max_retries=3)
