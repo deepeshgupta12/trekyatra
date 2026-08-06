@@ -18,6 +18,29 @@ Do not modify any code file without first:
 4. Checking impacted files and blast radius
 5. Updating the relevant step file in `docs/steps/`
 
+## 2026-08-06 — CDP P1 depth + admin analytics exclusion (web, desktop + mobile web)
+Owner: analytics audit found (a) GA4 + first-party CDP both fire on /admin (site-wide GA in root
+layout + provider); (b) `batch_log_events` — the MAIN web ingest path — never set `is_internal`, so
+admin/internal traffic could not be excluded from the CDP at all; (c) `os`/`ip_hash` modeled but never
+populated for web; (d) profiles stored only raw counters (no lifecycle/scoring).
+Delivered (Commit 1 = P1):
+- **Admin exclusion via code** (chosen over the GA data-filter, which can't filter by page path):
+  GA4 `send_page_view:false` + page_views sent manually from `lib/analytics.ts`, skipping `/admin` +
+  internal; internal events are no longer mirrored to GA. `isInternalContext()` flags any `/admin`
+  route (evaluated per-call for SPA nav). Admin now excluded from BOTH GA and the CDP.
+- **is_internal batch-parity fix** — `batch_log_events` now computes `is_internal` (was the bug).
+- **Capture enrichment** — client sends `os`; server hashes client IP (salted SHA-256, first hop of
+  X-Forwarded-For; raw IP never stored) and reads country from CDN geo headers (cf-ipcountry/…).
+  Consolidated the old unsalted 32-char `hash_ip` → salted 64-hex, None-safe (TC-B23 updated).
+- **Profiles: lifecycle + scoring** — migration `20260806_0058` adds `lifecycle_stage`
+  (new|active|dormant|churned), `engagement_score` (0–100), `lead_score` (0–100), `traits_computed_at`
+  to `user_traits`; `compute_lifecycle_and_scores()` derives them in `refresh_user_traits`;
+  `recompute_all_traits()` + admin `POST /admin/cdp/traits/recompute`. Surfaced as Lifecycle badge +
+  Lead score columns in `/admin/cdp/users`.
+- New env `ANALYTICS_IP_SALT`. 10 new backend tests (test_cdp_p1_depth.py); full CDP suite 83 pass.
+Impact: log_event/batch_log_events/_touch_user_trait all LOW, 0 upstream. **P2 (prebuilt + new-vs-repeat
+segments, attribution model report, acquisition/behavior cohorts, saved funnels) is the next commit.**
+
 ## 2026-08-05 — FIX: account signup welcome email (same Celery-dispatch bug)
 Owner: the account signup welcome email had the identical root cause as the newsletter/waitlist welcome —
 `signup_email` dispatched `send_welcome_email_task.delay()` (Celery task `email_sequences.send_welcome_email`),

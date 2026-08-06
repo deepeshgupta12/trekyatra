@@ -115,6 +115,11 @@ class Settings(BaseSettings):
     # Events from these IDs are marked is_internal=true and excluded from analytics by default.
     internal_anonymous_ids: list[str] = []
 
+    # P1 CDP depth — server-side IP hashing salt. The raw client IP is NEVER stored; only a
+    # salted SHA-256 (ip_hash) is persisted for privacy (DPDP-friendly). Set a stable random
+    # value in prod so hashes are consistent across restarts; empty falls back to a fixed dev salt.
+    analytics_ip_salt: str = ""
+
     # Step 72 — TrekSage MCP server: shared secret gating write/LLM-cost tools
     # (create_trek_plan_lead, translate_trek_content) when called via MCP.
     mcp_shared_secret: str | None = None

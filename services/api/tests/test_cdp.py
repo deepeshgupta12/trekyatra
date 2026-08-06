@@ -309,11 +309,14 @@ def test_classify_channel_email():
 
 
 def test_hash_ip():
-    """TC-B23: hash_ip produces a 32-char hex string."""
+    """TC-B23: hash_ip produces a salted 64-char hex string, deterministic + None-safe (P1 hardened)."""
     from app.modules.cdp.service import hash_ip
     result = hash_ip("192.168.1.1")
-    assert len(result) == 32
+    assert len(result) == 64
     assert result == hash_ip("192.168.1.1")  # deterministic
+    assert result != "192.168.1.1"           # never the raw IP
+    assert hash_ip(None) is None             # None-safe
+    assert hash_ip("") is None
 
 
 def test_session_start_records_attribution():

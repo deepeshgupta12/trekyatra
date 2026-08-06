@@ -91,6 +91,12 @@ class UserTrait(Base):
     device_types_used = Column(JSONB, nullable=False, default=list)
     countries = Column(JSONB, nullable=False, default=list)
     custom_traits = Column(JSONB, nullable=False, default=dict)
+    # Derived / computed profile fields (P1 CDP depth — populated by refresh_user_traits +
+    # the admin recompute endpoint; see cdp.service.compute_lifecycle_and_scores).
+    lifecycle_stage = Column(String(16), nullable=True, index=True)  # new|active|dormant|churned
+    engagement_score = Column(Integer(), nullable=True)  # 0–100 breadth/frequency/recency composite
+    lead_score = Column(Integer(), nullable=True)        # 0–100 plan/purchase-intent composite
+    traits_computed_at = Column(DateTime(timezone=True), nullable=True)
     updated_at = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now(), nullable=False)
     created_at = Column(DateTime(timezone=True), server_default=func.now(), nullable=False)
 

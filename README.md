@@ -636,6 +636,7 @@ cd apps/web-next && npm run build
 | CDP admin — content | `GET /api/v1/admin/cdp/content/pages`, `/content/treks` | Admin auth |
 | CDP admin — webhooks | `GET/POST /api/v1/admin/cdp/webhooks`, `DELETE /webhooks/{id}` | Admin auth |
 | CDP admin — users | `GET /api/v1/admin/cdp/users`, `GET /users/{user_id}`, `GET /users/activity` | Admin auth |
+| CDP admin — profiles | `POST /api/v1/admin/cdp/traits/recompute` (lifecycle/engagement/lead re-derive) | Admin auth |
 | CDP admin — gsc | `GET /api/v1/admin/cdp/gsc` | Admin auth |
 | CDP admin — suppressions | `GET /api/v1/admin/cdp/suppressions` | Admin auth |
 | DPDP compliance | `GET /api/v1/auth/me/data-export`, `DELETE /api/v1/auth/me/data` | User auth required |
@@ -655,7 +656,7 @@ Full API docs available at http://localhost:8000/docs when the backend is runnin
 
 ## Database Overview
 
-**45 Alembic migrations applied.** Key table groups:
+**46 Alembic migrations applied.** Key table groups:
 
 | Domain | Tables |
 |--------|--------|
@@ -680,7 +681,7 @@ Full API docs available at http://localhost:8000/docs when the backend is runnin
 | Community / Trip Reports (Step 78) | `trip_reports` (id, user_id FK, trek_slug, title, body, condition, trek_date, status pending/approved/rejected, moderated_by nullable, moderated_at, created_at), `trek_media` (id, report_id FK, user_id, trek_slug, url, s3_key, width, height, file_size, uploaded_at) |
 | Community / Buddy Matching (Step 79) | `buddy_signals` (id uuid, user_id FK, trek_slug, month_year, group_size, experience, notes, active, expires_at, created_at; UNIQUE user_id+trek_slug+month_year), `buddy_requests` (id, sender_id FK, signal_id FK, message, status pending/accepted/rejected, responded_at; UNIQUE sender_id+signal_id), `buddy_chat_messages` (id, request_id FK, sender_id FK, content, is_read, created_at); `bio`+`avatar_url` added to `user_profiles` |
 | Coordinates + conditions (Step 80) | `trek_base_lat`/`trek_base_lng` Float nullable added to `cms_pages`; `trek_conditions` (id uuid pk, slug unique+index, weather_json JSONB, trail_status, permit_status, permit_notes, condition_summary, weather_updated_at, trail_updated_at, last_updated_at, created_at, updated_at) |
-| CDP (Step 64) | `analytics_events`, `analytics_sessions`, `user_traits`, `attribution_touchpoints`, `gsc_performance` |
+| CDP (Step 64) | `analytics_events` (+`ip_hash` salted, `os`, `country` now populated for web), `analytics_sessions`, `user_traits` (+`lifecycle_stage`, `engagement_score`, `lead_score`, `traits_computed_at` — P1 depth), `attribution_touchpoints`, `gsc_performance` |
 
 ---
 

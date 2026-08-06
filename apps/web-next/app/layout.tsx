@@ -90,16 +90,19 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       <body>
         <Providers>{children}</Providers>
       </body>
-      {/* GA4 — lazyOnload defers until page is fully idle, reducing TBT */}
+      {/* GA4 — the gtag shim + config load early (so page_view calls always queue into dataLayer,
+          even before the heavy library finishes), while the library itself stays lazyOnload (low TBT).
+          send_page_view:false — page_views are sent manually from lib/analytics.ts trackEvent, which
+          skips /admin + internal traffic, so admin routes never reach GA4. */}
       {GA4_ID && (
         <>
+          <Script id="ga4-init" strategy="afterInteractive">
+            {`window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag('js',new Date());gtag('config','${GA4_ID}',{send_page_view:false});`}
+          </Script>
           <Script
             src={`https://www.googletagmanager.com/gtag/js?id=${GA4_ID}`}
             strategy="lazyOnload"
           />
-          <Script id="ga4-init" strategy="lazyOnload">
-            {`window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag('js',new Date());gtag('config','${GA4_ID}');`}
-          </Script>
         </>
       )}
       {/* AdSense — deferred until idle */}

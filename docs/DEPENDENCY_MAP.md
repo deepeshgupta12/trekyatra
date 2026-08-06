@@ -2980,3 +2980,27 @@ Fix removes the worker dependency for this transactional email.
   blast radius: LOW (newsletter_subscribe 0 upstream). No DB migration, no new env.
 - NOTE: still requires SMTP_* set in DO (confirmed present). If mail still does not arrive, verify the
   GoDaddy SMTP port is 587 with STARTTLS (what `_send_email` uses) and the from-address domain is authorised.
+
+## 2026-08-06 — CDP P1 depth + admin analytics exclusion (Commit 1 of 2)
+Shared backend (services/api) + web (apps/web-next). Mobile app unaffected (no app release). blast radius
+of the touched ingest functions: LOW, 0 upstream (verified via gitnexus_impact).
+- `services/api/alembic/versions/20260806_0058_user_trait_lifecycle_scores.py` — NEW migration: adds
+  `lifecycle_stage`(idx)/`engagement_score`/`lead_score`/`traits_computed_at` to `user_traits`. Additive.
+- `services/api/app/modules/cdp/models.py` — UserTrait: +4 derived columns. blast radius: LOW (additive).
+- `services/api/app/modules/cdp/service.py` — `hash_ip` consolidated to salted 64-hex + None-safe (was
+  unsalted 32-char, no prod callers); `log_event`/`batch_log_events` gained `ip`+`country` params and now
+  set `ip_hash`+country; **`batch_log_events` now sets `is_internal` (bug fix — was omitted)**;
+  NEW `compute_lifecycle_and_scores()` (applied in `refresh_user_traits`) + `recompute_all_traits()`;
+  `list_users` returns the 3 derived fields. blast radius: LOW.
+- `services/api/app/api/routes/cdp.py` — `ingest_event`/`ingest_events_batch` take `Request`; `_client_ip`
+  (first hop of X-Forwarded-For) + `_client_country` (cf-ipcountry/x-vercel-ip-country/…) helpers; NEW
+  admin `POST /admin/cdp/traits/recompute`. blast radius: LOW (additive params; existing callers pass IP now).
+- `services/api/app/schemas/cdp.py` — `UserTraitOut`+`UserListItem` gain lifecycle/engagement/lead fields.
+- `services/api/app/core/config.py` + `.env.example` — NEW `ANALYTICS_IP_SALT` (raw IP never stored).
+- `apps/web-next/lib/analytics.ts` — `getOS()` + `os` in payload; `isInternalContext()` flags `/admin`
+  (per-call, SPA-safe); GA mirror skips internal + sends GA4-native `page_view`. blast radius: LOW.
+- `apps/web-next/app/layout.tsx` — GA4 `send_page_view:false` + shim `afterInteractive` (page_views sent
+  manually, skipping /admin). Admin now excluded from BOTH GA and the CDP.
+- `apps/web-next/app/(admin)/admin/cdp/users/page.tsx` — Lifecycle badge + Lead score columns.
+- Tests: `services/api/tests/test_cdp_p1_depth.py` (NEW, 10) + `test_cdp.py::test_hash_ip` updated (64-hex).
+- Owner action after deploy: set `ANALYTICS_IP_SALT` in DO (stable random) so ip_hash is consistent.

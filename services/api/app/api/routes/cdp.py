@@ -4,7 +4,7 @@ from __future__ import annotations
 import uuid
 from typing import Optional
 
-from fastapi import APIRouter, Depends, HTTPException, Query
+from fastapi import APIRouter, Depends, HTTPException, Query, Request
 from sqlalchemy.orm import Session
 
 from app.db.session import get_db
@@ -62,25 +62,49 @@ admin_router = APIRouter(
 
 # ── Public: event ingest ──────────────────────────────────────────────────────
 
+def _client_ip(request: Request) -> Optional[str]:
+    """First hop of X-Forwarded-For (proxy/CDN chain) else the direct peer. Only a salted hash of
+    this is ever stored (cdp_service.hash_ip) — the raw IP is not persisted."""
+    xff = request.headers.get("x-forwarded-for")
+    if xff:
+        return xff.split(",")[0].strip()
+    return request.client.host if request.client else None
+
+
+def _client_country(request: Request) -> Optional[str]:
+    """Country from a CDN/proxy geo header if present (Cloudflare / DO / Vercel). No GeoIP dep."""
+    for h in ("cf-ipcountry", "x-vercel-ip-country", "x-country", "x-geo-country"):
+        v = request.headers.get(h)
+        if v and v.upper() not in ("XX", "T1"):  # CF sentinels for unknown/Tor
+            return v.upper()
+    return None
+
+
 @public_router.post("/event", response_model=EventOut, status_code=201)
 def ingest_event(
     body: EventIn,
+    request: Request,
     db: Session = Depends(get_db),
     current_user=Depends(get_optional_user),
 ) -> EventOut:
     user_id = current_user.id if current_user else None
-    event = cdp_service.log_event(db, body, user_id=user_id)
+    event = cdp_service.log_event(
+        db, body, user_id=user_id, ip=_client_ip(request), country=_client_country(request)
+    )
     return EventOut.model_validate(event)
 
 
 @public_router.post("/events/batch", status_code=201)
 def ingest_events_batch(
     body: BatchEventIn,
+    request: Request,
     db: Session = Depends(get_db),
     current_user=Depends(get_optional_user),
 ) -> dict:
     user_id = current_user.id if current_user else None
-    count = cdp_service.batch_log_events(db, body.events, user_id=user_id)
+    count = cdp_service.batch_log_events(
+        db, body.events, user_id=user_id, ip=_client_ip(request), country=_client_country(request)
+    )
     return {"ingested": count}
 
 
@@ -149,6 +173,17 @@ def list_users(
 ) -> UserListOut:
     result = cdp_service.list_users(db, page=page, page_size=page_size, search=search, source=source)
     return UserListOut(**result)
+
+
+@admin_router.post("/traits/recompute")
+def recompute_traits(
+    limit: Optional[int] = Query(None, ge=1, le=100000),
+    db: Session = Depends(get_db),
+) -> dict:
+    """Re-derive lifecycle_stage + engagement_score + lead_score across all trait rows (e.g. after a
+    scoring-rule change or to reflect time passing). Per-user refresh already runs on identify."""
+    updated = cdp_service.recompute_all_traits(db, limit=limit)
+    return {"recomputed": updated}
 
 
 # Static route registered before dynamic /users/{user_id} to prevent path shadowing

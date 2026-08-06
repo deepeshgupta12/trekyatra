@@ -14,6 +14,30 @@ interface UserRow {
   last_seen_at: string | null;
   acquisition_source: string | null;
   signed_up_at: string | null;
+  lifecycle_stage: string | null;
+  engagement_score: number | null;
+  lead_score: number | null;
+}
+
+// Lifecycle badge colours — align with the admin status-badge palette (see root CLAUDE.md §15).
+const lifecycleStyle: Record<string, string> = {
+  new: "text-blue-400 bg-blue-400/10 border border-blue-400/20",
+  active: "text-pine bg-pine/10 border border-pine/20",
+  dormant: "text-amber-400 bg-amber-400/10 border border-amber-400/20",
+  churned: "text-red-400 bg-red-400/10 border border-red-400/20",
+};
+
+function LifecycleBadge({ stage }: { stage: string | null }) {
+  if (!stage) return <span className="text-white/20 text-xs">—</span>;
+  const cls = lifecycleStyle[stage] ?? "text-white/40 bg-white/5 border border-white/10";
+  return <span className={`text-xs font-medium px-2 py-0.5 rounded-full ${cls}`}>{stage}</span>;
+}
+
+// Lead score → colour by intent band (0–100).
+function LeadScore({ score }: { score: number | null }) {
+  if (score == null) return <span className="text-white/20 text-xs">—</span>;
+  const color = score >= 60 ? "text-pine" : score >= 30 ? "text-amber-400" : "text-white/50";
+  return <span className={`text-xs font-semibold tabular-nums ${color}`}>{score}</span>;
 }
 
 interface UserList {
@@ -78,6 +102,8 @@ export default function CdpUsersPage() {
             <thead>
               <tr className="border-b border-white/8">
                 <th className="text-left px-4 py-3 text-white/40 font-medium text-xs">User</th>
+                <th className="text-left px-4 py-3 text-white/40 font-medium text-xs">Lifecycle</th>
+                <th className="text-left px-4 py-3 text-white/40 font-medium text-xs">Lead</th>
                 <th className="text-left px-4 py-3 text-white/40 font-medium text-xs hidden sm:table-cell">Source</th>
                 <th className="text-left px-4 py-3 text-white/40 font-medium text-xs">Sessions</th>
                 <th className="text-left px-4 py-3 text-white/40 font-medium text-xs hidden md:table-cell">Events</th>
@@ -88,9 +114,9 @@ export default function CdpUsersPage() {
             </thead>
             <tbody>
               {loading ? (
-                <tr><td colSpan={7} className="px-4 py-8 text-center text-white/30 text-sm">Loading…</td></tr>
+                <tr><td colSpan={9} className="px-4 py-8 text-center text-white/30 text-sm">Loading…</td></tr>
               ) : !data?.users.length ? (
-                <tr><td colSpan={7} className="px-4 py-8 text-center text-white/30 text-sm">No users yet.</td></tr>
+                <tr><td colSpan={9} className="px-4 py-8 text-center text-white/30 text-sm">No users yet.</td></tr>
               ) : (
                 data.users.map((u, i) => (
                   <tr key={u.user_id ?? u.anonymous_id ?? i} className="border-b border-white/5 last:border-0 hover:bg-white/3 transition-colors">
@@ -103,6 +129,8 @@ export default function CdpUsersPage() {
                         <span className="text-white/40 text-xs font-mono">{(u.anonymous_id ?? "").slice(0, 16)}…</span>
                       )}
                     </td>
+                    <td className="px-4 py-3.5"><LifecycleBadge stage={u.lifecycle_stage} /></td>
+                    <td className="px-4 py-3.5"><LeadScore score={u.lead_score} /></td>
                     <td className="px-4 py-3.5 text-white/50 text-xs hidden sm:table-cell">{u.acquisition_source ?? "direct"}</td>
                     <td className="px-4 py-3.5 text-white/80 text-xs">{u.total_sessions}</td>
                     <td className="px-4 py-3.5 text-white/50 text-xs hidden md:table-cell">{u.total_events}</td>

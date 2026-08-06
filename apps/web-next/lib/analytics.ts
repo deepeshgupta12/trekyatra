@@ -19,10 +19,16 @@ const CONSENT_KEY = "ty_consent";
 const FLUSH_INTERVAL_MS = 5000;
 const MAX_BATCH_SIZE = 20;
 
-// Internal traffic flag — set true on localhost or via env var for QA/staging
-const IS_INTERNAL: boolean =
-  process.env.NEXT_PUBLIC_IS_INTERNAL === "true" ||
-  (typeof window !== "undefined" && window.location.hostname === "localhost");
+// Internal traffic — true on localhost, via env var (QA/staging), OR on any /admin route.
+// Evaluated PER CALL (not a module const) so SPA navigations into/out of /admin are classified
+// correctly. Internal events are still logged to the CDP (flagged is_internal) but are excluded
+// from dashboards by default and are NOT mirrored to GA4 — so admin browsing no longer pollutes
+// either system.
+function isInternalContext(): boolean {
+  if (process.env.NEXT_PUBLIC_IS_INTERNAL === "true") return true;
+  if (typeof window === "undefined") return false;
+  return window.location.hostname === "localhost" || window.location.pathname.startsWith("/admin");
+}
 
 // ── Anonymous ID ──────────────────────────────────────────────────────────────
 
@@ -153,6 +159,7 @@ interface EventPayload {
   utm_content?: string;
   device_type?: string;
   browser?: string;
+  os?: string;
   consent_given: boolean;
   is_internal: boolean;
 }
@@ -204,8 +211,9 @@ export function trackEvent(
     referrer: document.referrer || undefined,
     device_type: getDeviceType(),
     browser: getBrowser(),
+    os: getOS(),
     consent_given: getConsent(),
-    is_internal: IS_INTERNAL,
+    is_internal: isInternalContext(),
     ...utms,
   };
   _queue.push(payload);
@@ -218,9 +226,18 @@ export function trackEvent(
   } else {
     scheduleFlush();
   }
-  // Mirror to GA4 (client-side)
-  if (typeof window.gtag === "function") {
-    window.gtag("event", name, { event_category: category, ...properties });
+  // Mirror to GA4 (client-side) — but NEVER for internal/admin traffic (keeps GA clean).
+  if (!payload.is_internal && typeof window.gtag === "function") {
+    if (name === "page_view") {
+      // GA4-native page_view (config sets send_page_view:false, so this is the only source — no double count)
+      window.gtag("event", "page_view", {
+        page_location: window.location.href,
+        page_title: document.title,
+        page_path: window.location.pathname,
+      });
+    } else {
+      window.gtag("event", name, { event_category: category, ...properties });
+    }
   }
 }
 
@@ -390,9 +407,20 @@ function getDeviceType(): string {
 function getBrowser(): string {
   if (typeof window === "undefined") return "unknown";
   const ua = navigator.userAgent;
+  if (ua.includes("Edg")) return "Edge";       // check Edge before Chrome (UA contains both)
   if (ua.includes("Chrome")) return "Chrome";
   if (ua.includes("Firefox")) return "Firefox";
   if (ua.includes("Safari")) return "Safari";
-  if (ua.includes("Edge")) return "Edge";
+  return "Other";
+}
+
+function getOS(): string {
+  if (typeof window === "undefined") return "unknown";
+  const ua = navigator.userAgent;
+  if (/Windows/i.test(ua)) return "Windows";
+  if (/Android/i.test(ua)) return "Android";           // check before Linux (Android UA contains Linux)
+  if (/iPhone|iPad|iPod/i.test(ua)) return "iOS";
+  if (/Mac OS X|Macintosh/i.test(ua)) return "macOS";
+  if (/Linux/i.test(ua)) return "Linux";
   return "Other";
 }

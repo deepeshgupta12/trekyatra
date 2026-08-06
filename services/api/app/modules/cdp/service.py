@@ -39,7 +39,13 @@ def _is_internal_event(event_in: EventIn) -> bool:
     return event_in.anonymous_id in (settings.internal_anonymous_ids or [])
 
 
-def log_event(db: Session, event_in: EventIn, user_id: Optional[uuid.UUID] = None) -> AnalyticsEvent:
+def log_event(
+    db: Session,
+    event_in: EventIn,
+    user_id: Optional[uuid.UUID] = None,
+    ip: Optional[str] = None,
+    country: Optional[str] = None,
+) -> AnalyticsEvent:
     event = AnalyticsEvent(
         anonymous_id=event_in.anonymous_id,
         user_id=user_id,
@@ -59,8 +65,10 @@ def log_event(db: Session, event_in: EventIn, user_id: Optional[uuid.UUID] = Non
         device_type=event_in.device_type,
         browser=event_in.browser,
         os=event_in.os,
-        country=event_in.country,
+        # Client may send country; else fall back to the proxy-derived country from the route.
+        country=event_in.country or country,
         city=event_in.city,
+        ip_hash=hash_ip(ip),
         consent_given=event_in.consent_given,
         is_internal=_is_internal_event(event_in),
         platform=event_in.platform,
@@ -78,8 +86,13 @@ def log_event(db: Session, event_in: EventIn, user_id: Optional[uuid.UUID] = Non
 
 
 def batch_log_events(
-    db: Session, events: List[EventIn], user_id: Optional[uuid.UUID] = None
+    db: Session,
+    events: List[EventIn],
+    user_id: Optional[uuid.UUID] = None,
+    ip: Optional[str] = None,
+    country: Optional[str] = None,
 ) -> int:
+    ip_hash = hash_ip(ip)
     rows = [
         AnalyticsEvent(
             anonymous_id=e.anonymous_id,
@@ -100,9 +113,14 @@ def batch_log_events(
             device_type=e.device_type,
             browser=e.browser,
             os=e.os,
-            country=e.country,
+            country=e.country or country,
             city=e.city,
+            ip_hash=ip_hash,
             consent_given=e.consent_given,
+            # FIX: the batch path (the main web ingest route) previously never set is_internal,
+            # so internal/admin traffic could not be excluded from CDP dashboards. Now parity
+            # with log_event.
+            is_internal=_is_internal_event(e),
             platform=e.platform,
             app_version=e.app_version,
         )
@@ -322,6 +340,9 @@ def list_users(
             "last_seen_at": r.UserTrait.last_seen_at,
             "acquisition_source": r.UserTrait.acquisition_source,
             "signed_up_at": r.UserTrait.signed_up_at,
+            "lifecycle_stage": r.UserTrait.lifecycle_stage,
+            "engagement_score": r.UserTrait.engagement_score,
+            "lead_score": r.UserTrait.lead_score,
         }
         for r in rows
     ]
@@ -382,6 +403,96 @@ def get_gsc_data(
 
 # ── User traits refresh ───────────────────────────────────────────────────────
 
+def _aware(dt: Optional[datetime]) -> Optional[datetime]:
+    """Normalise a possibly tz-naive datetime to UTC-aware for safe subtraction."""
+    if dt is None:
+        return None
+    return dt if dt.tzinfo is not None else dt.replace(tzinfo=timezone.utc)
+
+
+def compute_lifecycle_and_scores(trait: UserTrait, now: Optional[datetime] = None) -> None:
+    """Derive lifecycle_stage + engagement_score + lead_score from a trait's already-computed
+    aggregates. Mutates the trait in place. Pure/deterministic given the trait + now, and safe to
+    call repeatedly (idempotent). Called at the end of refresh_user_traits and by the admin recompute.
+
+    lifecycle_stage: new (≤1 session, seen ≤14d) | active (≥2 sessions, seen ≤14d) |
+                     dormant (last seen 15–60d) | churned (>60d) | new (no activity yet)
+    engagement_score 0–100: breadth (events/sessions/pageviews/treks) + recency
+    lead_score 0–100: plan/purchase intent (wizard, signup, repeat sign-in, trek/search intent)
+    """
+    now = now or datetime.now(timezone.utc)
+    last_seen = _aware(trait.last_seen_at)
+    first_seen = _aware(trait.first_seen_at)
+    sessions = trait.total_sessions or 0
+    events = trait.total_events or 0
+    page_views = trait.total_page_views or 0
+    treks = len(trait.viewed_treks or [])
+    searches = len(trait.searched_queries or [])
+    days_since = (now - last_seen).days if last_seen else None
+
+    # ── lifecycle stage ──
+    if last_seen is None or first_seen is None:
+        stage = "new"
+    elif days_since is not None and days_since > 60:
+        stage = "churned"
+    elif days_since is not None and days_since > 14:
+        stage = "dormant"
+    elif sessions <= 1:
+        stage = "new"
+    else:
+        stage = "active"
+
+    # ── engagement score (0–100) ──
+    eng = 0.0
+    eng += min(events, 50) * 0.6          # up to 30
+    eng += min(sessions, 10) * 2.0        # up to 20
+    eng += min(page_views, 20) * 0.5      # up to 10
+    eng += min(treks, 10) * 2.0           # up to 20
+    if days_since is not None:            # recency up to 20
+        if days_since <= 1:
+            eng += 20
+        elif days_since <= 7:
+            eng += 14
+        elif days_since <= 14:
+            eng += 8
+        elif days_since <= 30:
+            eng += 3
+    engagement = int(min(round(eng), 100))
+
+    # ── lead score (0–100) — intent signals ──
+    lead = 0.0
+    if trait.plan_wizard_started:
+        lead += 20
+    if trait.plan_wizard_completed:
+        lead += 35
+    if trait.signed_up_at:
+        lead += 20
+    lead += min(trait.signed_in_count or 0, 5) * 2.0   # up to 10
+    lead += min(treks, 5) * 2.0                          # up to 10
+    lead += min(searches, 5) * 1.0                       # up to 5
+    lead_score = int(min(round(lead), 100))
+
+    trait.lifecycle_stage = stage
+    trait.engagement_score = engagement
+    trait.lead_score = lead_score
+    trait.traits_computed_at = now
+
+
+def recompute_all_traits(db: Session, limit: Optional[int] = None) -> int:
+    """Recompute derived lifecycle/scores across all trait rows (admin-triggered / batch). Does NOT
+    re-aggregate raw counters (that is refresh_user_traits' job) — it re-derives the scores from the
+    current aggregates so a scoring-rule change or time passing is reflected. Returns rows updated."""
+    now = datetime.now(timezone.utc)
+    q = db.query(UserTrait)
+    if limit:
+        q = q.limit(limit)
+    traits = q.all()
+    for trait in traits:
+        compute_lifecycle_and_scores(trait, now=now)
+    db.commit()
+    return len(traits)
+
+
 def refresh_user_traits(db: Session, anonymous_id: str) -> UserTrait:
     """Recompute trait aggregates for a single anonymous_id."""
     events = db.query(AnalyticsEvent).filter(AnalyticsEvent.anonymous_id == anonymous_id).all()
@@ -418,6 +529,9 @@ def refresh_user_traits(db: Session, anonymous_id: str) -> UserTrait:
         trait.acquisition_source = first_session.utm_source
         trait.acquisition_medium = first_session.utm_medium
         trait.acquisition_campaign = first_session.utm_campaign
+
+    # Derive lifecycle_stage + engagement_score + lead_score from the fresh aggregates above.
+    compute_lifecycle_and_scores(trait)
 
     db.commit()
     db.refresh(trait)
@@ -824,8 +938,15 @@ def _classify_channel(utm_source: Optional[str], utm_medium: Optional[str]) -> s
     return utm_medium
 
 
-def hash_ip(ip: str) -> str:
-    return hashlib.sha256(ip.encode()).hexdigest()[:32]
+def hash_ip(ip: Optional[str]) -> Optional[str]:
+    """Salted SHA-256 of the client IP. The raw IP is NEVER stored — only this hash — so it supports
+    uniqueness/geo signals without persisting PII (DPDP-friendly). Returns None for a missing/blank IP.
+    (P1: salted + full 64-hex + None-safe; previously an unsalted 32-char truncation.)"""
+    if not ip:
+        return None
+    from app.core.config import settings
+    salt = settings.analytics_ip_salt or "trekyatra-cdp-dev-salt"
+    return hashlib.sha256(f"{salt}:{ip.strip()}".encode("utf-8")).hexdigest()
 
 
 # ── Step 67: KPI Dashboard ────────────────────────────────────────────────────

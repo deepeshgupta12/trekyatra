@@ -114,6 +114,10 @@ class UserTraitOut(BaseModel):
     device_types_used: List[str]
     countries: List[str]
     custom_traits: Dict[str, Any]
+    lifecycle_stage: Optional[str] = None
+    engagement_score: Optional[int] = None
+    lead_score: Optional[int] = None
+    traits_computed_at: Optional[datetime] = None
     updated_at: datetime
 
     model_config = {"from_attributes": True}
@@ -143,6 +147,9 @@ class UserListItem(BaseModel):
     last_seen_at: Optional[datetime]
     acquisition_source: Optional[str]
     signed_up_at: Optional[datetime]
+    lifecycle_stage: Optional[str] = None
+    engagement_score: Optional[int] = None
+    lead_score: Optional[int] = None
 
 
 class UserListOut(BaseModel):
