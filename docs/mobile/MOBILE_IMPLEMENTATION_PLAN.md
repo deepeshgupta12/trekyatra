@@ -476,3 +476,57 @@ Fourth review surfaced 6 issues; a shared backend auth root cause explained seve
 **Mobile Bug Fix Pass (2026-07-09) — DONE:** 7 production bugs resolved after simulator testing. **(1) Plan → sign-in → results auth break**: `mobileApi.ts` `getAccessToken()` now uses Zustand in-memory `accessToken` as primary (eliminates SecureStore async race post-login); `results.tsx` gates on `accessToken` dep in useEffect and handles auth errors by showing re-login instead of generic error screen. **(2a) Home tab tap doing nothing from About screen**: `CustomTabBar.tsx` — when home tab is already focused, calls `router.navigate("/(tabs)/(home)")` to pop inner stack to root. **(2b) Emoji logo on About screen**: `about.tsx` — replaced `🏔` `<Text>` with `<Image source={require("@/assets/logo.png")} />` (80×80 contain); added `top` safe area edge. **(3) Trek hero image breaking**: `CMSPage` interface in `mobileApi.ts` gets `route_image_url` field; `trek/[slug].tsx` falls back `hero_image_url ?? route_image_url ?? null`. **(3+4+7) Trek detail premium UI redesign**: `_layout.tsx` sets `headerShown: false` for trek detail; `TrekHero.tsx` rewritten — 360px tall, 4-stop gradient, state pill badge (saffron), text-shadow on title, custom circular back button + optional share button at safe-area-aware position. `TrekMetaStrip.tsx` rewritten — Ionicons with colored icon-wrap, card-style chips (border + shadow/elevation), dark/light adaptive. **(5) Tables breaking on mobile**: `TableBlock.tsx` rewritten using `StyleSheet.create()` replacing all NativeWind `className` — explicit `flexDirection: "row"` on every row, `COL_MIN_WIDTH = 120`, alternating row backgrounds, horizontal `ScrollView`. **(6) Shortlist/bookmark icon not working**: `TrekStickyBar.tsx` — `Ionicons bookmark/bookmark-outline` replaces heart icons; `Alert.alert()` on save failure (was silent); compare route fixed to `/(tabs)/(home)/compare?slug=…`. `npx tsc --noEmit` ✅ zero errors. Build succeeded on iPhone 17 Pro simulator.
 
 **Current next step:** M21 — News Feed + Multilingual (Hindi).
+
+---
+
+## Android Enablement — Prerequisites (recorded 2026-08-06)
+
+Context: iOS 1.1.0 is submitted to App Store Connect (in review). The app is already a single
+cross-platform Expo/RN codebase — **no port is needed**; Android is partially scaffolded. This section
+records everything required before a first Play Store build + submission. Verified against the actual
+config (`apps/mobile/eas.json`, `apps/mobile/app.config.ts`, `apps/mobile/lib/googleAuth.ts`).
+
+### Already in place (verified)
+- **EAS build profiles** (`eas.json`): dev/preview → `buildType: apk`; **production → `app-bundle` (AAB)**.
+- **EAS submit** (`eas.json` `submit.production.android`): `track: production`, `serviceAccountKeyPath: ./google-service-account.json`.
+- **`app.config.ts` android block**: `package: in.co.trekyatra.app`, `adaptiveIcon` (foreground + `#0c0e14` bg), `permissions: [INTERNET]`.
+- **`versionCode`**: managed **remotely** by EAS (`appVersionSource: remote` + production `autoIncrement: true`) — same as iOS buildNumber; do NOT hand-bump.
+- **Native module fallbacks**: `GlassSurface` already degrades `expo-glass-effect` (iOS-26 only) → `expo-blur` on Android; `expo-speech-recognition` declares `androidSpeechServicePackages: [com.google.android.googlequicksearchbox]`.
+
+### Blocking prerequisites — OWNER only (needs Google/GCP access under the owner identity)
+1. **Google Play Developer account** — $25 one-time. Identity verification can take days. **New personal
+   developer accounts must run a 14-day closed test with 20+ testers before production publishing is
+   unlocked** — this is the critical-path, longest-lead item. Start FIRST. (Org accounts differ — confirm which applies.)
+2. **Android Google OAuth client** — Google Sign-In currently uses the **iOS** OAuth client (reversed
+   scheme in `lib/googleAuth.ts:16`). Android login **will fail** until a separate **Android OAuth client**
+   is created in Google Cloud Console, registered with package `in.co.trekyatra.app` + the **SHA-1**
+   fingerprint of the EAS signing keystore (obtained via `eas credentials` after the first Android build).
+3. **Play service account JSON** — `eas.json` references `./google-service-account.json` but **the file
+   does not exist yet**. Create a GCP service account, grant Play Console API access, download JSON to
+   `apps/mobile/google-service-account.json` (gitignored). Required for `eas submit -p android`.
+
+### Config / code gaps — CAN BE DONE IN-REPO (no external accounts)
+4. **Signing keystore** — let EAS auto-generate & manage the Android upload keystore on first
+   `eas build -p android` (recommended). Its SHA-1 feeds prereq #2.
+5. **Platform-gate Apple Sign-In** — `expo-apple-authentication` is iOS-only; the Apple button must be
+   `Platform.OS === "ios"`-gated so it does not render/crash on Android. (Verify current gating.)
+6. **Push / FCM** — `expo-notifications` is a dependency; if push is wired for Android it needs **Firebase
+   `google-services.json` + `googleServicesFile` in `app.config.ts`** (iOS uses APNs). Confirm whether push
+   is actually enabled before shipping.
+7. **Permissions merge check** — android declares only `INTERNET`; the `expo-location` +
+   `expo-speech-recognition` plugins inject location + `RECORD_AUDIO` at build. Verify the merged manifest
+   on a real device (no background location — matches the privacy copy).
+
+### Store listing + process
+8. **Play listing assets**: feature graphic (1024×500), ≥2 phone screenshots, short + full description,
+   privacy policy URL, **Data Safety form**, content rating questionnaire, target-audience declaration
+   (much reusable from iOS, different formats).
+9. **Release-log tracking** (CLAUDE.md §18): `docs/mobile/APP_STORE_RELEASES.md` is iOS-only today — add an
+   Android section and log every Android `eas build` / `eas submit` (version, versionCode, EAS Build ID,
+   submission status).
+10. **Both-platform testing gate** (Execution Rule #5): Android safe-area / gesture insets differ from iOS —
+    re-verify safe-area, `trekyatra://` deep links, voice search, glass fallback, and Google login on a real
+    Android device before submission.
+
+**Owner starts #1–#3; #4–#7, #9 are in-repo tasks I can take in parallel. A dedicated
+`docs/mobile/steps/STEP-M23-android-enablement.md` step doc should carry the implementation.**
