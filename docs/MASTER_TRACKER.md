@@ -18,6 +18,24 @@ Do not modify any code file without first:
 4. Checking impacted files and blast radius
 5. Updating the relevant step file in `docs/steps/`
 
+## 2026-08-06 — CDP audit: deferred items (FUTURE PASS — not yet implemented)
+Explicitly deferred by owner after P1+P2 shipped. These are the remaining analytics-audit recommendations,
+parked for a later pass (no code exists for them yet — do not assume they are done):
+- **DPDP consent-gating + GA Consent Mode v2** — currently GA4 and first-party events fire regardless of
+  consent (only a consent flag is recorded). Future: default consent "denied" → "granted" on Accept; gate
+  non-essential events until consent.
+- **Anonymous-ID resilience** — `ty_anon_id` lives only in localStorage (lost to Safari ITP / incognito /
+  clears). Future: server-set first-party cookie (Domain=.trekyatra.co.in, same-site) as a fallback, with
+  CORS credentials, so anon profiles survive.
+- **Event idempotency** — client-generated `event_id` (UUID) + unique constraint so batch retries can't
+  double-count.
+- **Server-side event validation** — validate/register incoming event names against `event_definitions`
+  to prevent schema drift.
+- **Periodic trait recompute** — a Celery beat task to run `recompute_all_traits` on a schedule (today it
+  is admin-triggered via POST /admin/cdp/traits/recompute + per-user on identify).
+- **True conversion-path attribution** — current `get_attribution_report` credits by touchpoint role
+  (first/last/linear counts); a future pass can tie credit to actual conversion events per user path.
+
 ## 2026-08-06 — CDP P2: segments + attribution + segmented cohorts + saved funnels (Commit 2/2)
 Owner: build on P1 to make the CDP actionable. Delivered:
 - **Segments (+6, now 17)**: lifecycle segments (New/Active/Dormant/Churned via `user_traits.lifecycle_stage`)
