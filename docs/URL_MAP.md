@@ -141,8 +141,8 @@ Last updated: 2026-08-03 (region hubs made fully dynamic + SEO/AEO schema + site
 | `/admin/cdp/users` | CDP Users | Paginated user list with search |
 | `/admin/cdp/users/[id]` | CDP User Detail | Profile, sessions, events, touchpoints |
 | `/admin/cdp/events` | CDP Event Explorer | Filterable event table (7 filters: category, event name, anonymous_id, page_url, date range, exclude_internal) + pagination + CSV export (Step 67) |
-| `/admin/cdp/funnels` | CDP Funnels | Dynamic funnel builder — event catalog dropdowns, date range, count-type toggle + 6 preset templates (Steps 65, 67) |
-| `/admin/cdp/cohorts` | CDP Cohorts | Retention heatmap — N×M 9-week color-coded grid + configurable cohort type (Steps 65, 67) |
+| `/admin/cdp/funnels` | CDP Funnels | Dynamic funnel builder — event catalog dropdowns, date range, count-type toggle + 6 preset templates (Steps 65, 67); **P2: save/run/delete named funnels with a conversion window** |
+| `/admin/cdp/cohorts` | CDP Cohorts | Retention heatmap — N×M 9-week color-coded grid + configurable cohort type (Steps 65, 67); **P2: acquisition-source + behavior cohort filters + Channel Attribution (first/last/linear) section** |
 | `/admin/cdp/segments` | CDP Segments | 10 expanded audience segments with human-readable criteria (Step 65) |
 | `/admin/cdp/segments/builder` | CDP Segment Builder | Visual rule builder — AND condition rows, event catalog dropdown, live preview count, save to backend (Step 67) |
 | `/admin/cdp/content` | CDP Content Analytics | Per-page CMS analytics: views 7d/30d, scroll depth, leads, sortable + page_type filter (Step 67) |

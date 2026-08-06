@@ -173,12 +173,12 @@ def test_user_activity_missing_email_param():
 # ── TC-B12: Segments ──────────────────────────────────────────────────────────
 
 def test_segments_returns_ten():
-    """TC-B12: GET /admin/cdp/segments returns all defined segments (11 after mobile parity fix)."""
+    """TC-B12: GET /admin/cdp/segments returns all defined segments (17 after P2 lifecycle+intent adds)."""
     res = client.get("/api/v1/admin/cdp/segments")
     assert res.status_code == 200
     data = res.json()
     assert "segments" in data
-    assert len(data["segments"]) == 11
+    assert len(data["segments"]) == 17
 
 
 def test_segments_have_criteria_label():

@@ -253,12 +253,13 @@ def test_admin_event_stream_returns_events():
 
 
 def test_admin_segments_returns_list():
-    """TC-B16: /admin/cdp/segments returns all 10 defined segments."""
+    """TC-B16: /admin/cdp/segments returns all defined segments."""
     res = client.get("/api/v1/admin/cdp/segments")
     assert res.status_code == 200
     data = res.json()
     assert "segments" in data
-    assert len(data["segments"]) == 11  # 11 segments: added App Users + Mobile Browser Users (replaced Mobile-First Users)
+    # 17 = 11 base + P2 (4 lifecycle: New/Active/Dormant/Churned + 2 high-intent: Trek Lovers No Signup, Lead Drop-offs)
+    assert len(data["segments"]) == 17
 
 
 def test_admin_gsc_returns_rows():

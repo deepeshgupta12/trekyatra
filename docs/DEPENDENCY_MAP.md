@@ -3004,3 +3004,21 @@ of the touched ingest functions: LOW, 0 upstream (verified via gitnexus_impact).
 - `apps/web-next/app/(admin)/admin/cdp/users/page.tsx` — Lifecycle badge + Lead score columns.
 - Tests: `services/api/tests/test_cdp_p1_depth.py` (NEW, 10) + `test_cdp.py::test_hash_ip` updated (64-hex).
 - Owner action after deploy: set `ANALYTICS_IP_SALT` in DO (stable random) so ip_hash is consistent.
+
+## 2026-08-06 — CDP P2: segments + attribution + segmented cohorts + saved funnels (Commit 2 of 2)
+Shared backend (services/api) + web (apps/web-next). No new URLs (existing admin pages extended). Impact of
+extended functions all LOW/0-upstream (gitnexus_impact on get_segments/get_cohort_heatmap/get_dynamic_funnel).
+- `services/api/alembic/versions/20260806_0059_saved_funnels.py` — NEW migration: `saved_funnels` table.
+- `services/api/app/modules/cdp/models.py` — NEW `SavedFunnel` ORM (registered in db/base.py + __all__).
+- `services/api/app/modules/cdp/service.py` — SEGMENTS +6 (lifecycle x4 + 2 high-intent) + `lifecycle_stage`
+  criteria handler; `get_cohort_heatmap(source=, behavior_event=)` optional filters (parameterised SQL);
+  NEW `get_attribution_report()`; NEW saved-funnel CRUD (`create/list/delete/run_saved_funnel`). blast radius LOW.
+- `services/api/app/api/routes/cdp.py` — NEW admin routes: `GET /attribution`, `GET/POST/DELETE /funnels/saved`,
+  `POST /funnels/saved/{id}/run`; `GET /cohorts` gains `source`+`behavior_event` query params. `/funnels/saved`
+  static path registered before any dynamic `/funnels/{id}` (no shadowing).
+- `services/api/app/schemas/cdp.py` — NEW AttributionReportOut/AttributionChannel + SavedFunnel{In,Out,ListOut}.
+- `apps/web-next/app/(admin)/admin/cdp/cohorts/page.tsx` — source/behavior segmentation controls + Channel
+  Attribution section.
+- `apps/web-next/app/(admin)/admin/cdp/funnels/page.tsx` — save/run/delete saved funnels.
+- `apps/web-next/app/(admin)/admin/cdp/segments/page.tsx` — unchanged (new segments render automatically).
+- Tests: `services/api/tests/test_cdp_p2.py` (NEW, 9); `test_cdp.py`/`test_cdp_step65.py` segment-count asserts 11→17.

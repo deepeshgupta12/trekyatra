@@ -43,6 +43,7 @@ from app.modules.cdp.models import (
     EventDefinition,
     CustomSegment,
     CdpWebhookRule,
+    SavedFunnel,
 )
 
 __all__ = [
@@ -106,6 +107,7 @@ __all__ = [
     "EventDefinition",
     "CustomSegment",
     "CdpWebhookRule",
+    "SavedFunnel",
     "MobileDevice",
     "UserTrekHistory",
     "MobilePushLog",

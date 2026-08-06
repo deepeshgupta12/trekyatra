@@ -169,6 +169,19 @@ class CustomSegment(Base):
     created_at = Column(DateTime(timezone=True), server_default=func.now(), nullable=False)
 
 
+class SavedFunnel(Base):
+    """P2 — a named, reusable funnel definition (steps + optional conversion window). Distinct from the
+    ad-hoc dynamic funnel builder: these persist so a team tracks the same conversion path over time."""
+    __tablename__ = "saved_funnels"
+
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    name = Column(String(120), nullable=False)
+    steps = Column(JSONB, nullable=False, default=list)          # [{"event_name": "...", "event_category": "..."}]
+    conversion_window_days = Column(Integer(), nullable=True)     # None = all-time
+    count_type = Column(String(24), nullable=False, server_default="unique_users")
+    created_at = Column(DateTime(timezone=True), server_default=func.now(), nullable=False)
+
+
 class CdpWebhookRule(Base):
     __tablename__ = "cdp_webhook_rules"
 

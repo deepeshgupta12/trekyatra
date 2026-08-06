@@ -596,3 +596,53 @@ class SuppressionItem(BaseModel):
 class SuppressionsOut(BaseModel):
     users: List[SuppressionItem]
     total: int
+
+
+# ── P2: attribution report ────────────────────────────────────────────────────
+
+class AttributionChannel(BaseModel):
+    channel: str
+    first_touch: int
+    last_touch: int
+    touchpoints: int
+    first_touch_pct: float
+    last_touch_pct: float
+    linear_pct: float
+
+
+class AttributionReportOut(BaseModel):
+    window_days: int
+    total_touchpoints: int
+    total_first_touch: int
+    total_last_touch: int
+    channels: List[AttributionChannel]
+
+
+# ── P2: saved (named) funnels ─────────────────────────────────────────────────
+
+class SavedFunnelStep(BaseModel):
+    event_name: str = Field(..., min_length=1)
+    event_category: Optional[str] = None
+
+
+class SavedFunnelIn(BaseModel):
+    name: str = Field(..., min_length=1, max_length=120)
+    steps: List[SavedFunnelStep] = Field(..., min_length=2, max_length=8)
+    conversion_window_days: Optional[int] = Field(None, ge=1, le=365)
+    count_type: str = "unique_users"
+
+
+class SavedFunnelOut(BaseModel):
+    id: uuid.UUID
+    name: str
+    steps: List[Dict[str, Any]]
+    conversion_window_days: Optional[int]
+    count_type: str
+    created_at: datetime
+
+    model_config = {"from_attributes": True}
+
+
+class SavedFunnelListOut(BaseModel):
+    funnels: List[SavedFunnelOut]
+    total: int

@@ -14,6 +14,7 @@ from fastapi.responses import StreamingResponse
 
 from app.schemas.cdp import (
     AlertsOut,
+    AttributionReportOut,
     BatchEventIn,
     CohortHeatmapOut,
     ConsentOut,
@@ -36,6 +37,9 @@ from app.schemas.cdp import (
     IdentifyIn,
     KpisOut,
     RealtimeFeedOut,
+    SavedFunnelIn,
+    SavedFunnelListOut,
+    SavedFunnelOut,
     SegmentListOut,
     SegmentPreviewIn,
     SegmentPreviewOut,
@@ -284,11 +288,59 @@ def run_dynamic_funnel(
     return DynamicFunnelOut(**result)
 
 
-# ── Admin: cohort retention heatmap ──────────────────────────────────────────
+# ── Admin: saved (named) funnels (P2) — static path registered before any /funnels/{id} ──
+
+@admin_router.get("/funnels/saved", response_model=SavedFunnelListOut)
+def list_saved_funnels(db: Session = Depends(get_db)) -> SavedFunnelListOut:
+    funnels = cdp_service.list_saved_funnels(db)
+    return SavedFunnelListOut(funnels=funnels, total=len(funnels))
+
+
+@admin_router.post("/funnels/saved", response_model=SavedFunnelOut, status_code=201)
+def create_saved_funnel(body: SavedFunnelIn, db: Session = Depends(get_db)) -> SavedFunnelOut:
+    funnel = cdp_service.create_saved_funnel(
+        db,
+        name=body.name,
+        steps=[s.model_dump() for s in body.steps],
+        conversion_window_days=body.conversion_window_days,
+        count_type=body.count_type,
+    )
+    return SavedFunnelOut.model_validate(funnel)
+
+
+@admin_router.post("/funnels/saved/{funnel_id}/run", response_model=DynamicFunnelOut)
+def run_saved_funnel(funnel_id: uuid.UUID, db: Session = Depends(get_db)) -> DynamicFunnelOut:
+    result = cdp_service.run_saved_funnel(db, funnel_id)
+    if result is None:
+        raise HTTPException(status_code=404, detail="Saved funnel not found")
+    return DynamicFunnelOut(**{k: result[k] for k in ("steps", "overall_conversion_pct", "date_from", "date_to", "count_type")})
+
+
+@admin_router.delete("/funnels/saved/{funnel_id}", status_code=204)
+def delete_saved_funnel(funnel_id: uuid.UUID, db: Session = Depends(get_db)) -> None:
+    if not cdp_service.delete_saved_funnel(db, funnel_id):
+        raise HTTPException(status_code=404, detail="Saved funnel not found")
+
+
+# ── Admin: cohort retention heatmap (P2 — optional source/behavior segmentation) ──
 
 @admin_router.get("/cohorts", response_model=CohortHeatmapOut)
-def get_cohorts(db: Session = Depends(get_db)) -> CohortHeatmapOut:
-    return cdp_service.get_cohort_heatmap(db)
+def get_cohorts(
+    source: Optional[str] = Query(None, description="Acquisition-source cohorts"),
+    behavior_event: Optional[str] = Query(None, description="Behavior cohorts — users who fired this event"),
+    db: Session = Depends(get_db),
+) -> CohortHeatmapOut:
+    return cdp_service.get_cohort_heatmap(db, source=source, behavior_event=behavior_event)
+
+
+# ── Admin: channel attribution report (P2) ────────────────────────────────────
+
+@admin_router.get("/attribution", response_model=AttributionReportOut)
+def get_attribution(
+    days: int = Query(90, ge=1, le=365),
+    db: Session = Depends(get_db),
+) -> AttributionReportOut:
+    return AttributionReportOut(**cdp_service.get_attribution_report(db, days=days))
 
 
 # ── Admin: event stream ───────────────────────────────────────────────────────

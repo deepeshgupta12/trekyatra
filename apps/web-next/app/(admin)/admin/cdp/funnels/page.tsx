@@ -30,6 +30,14 @@ interface FunnelResult {
   count_type: string;
 }
 
+interface SavedFunnel {
+  id: string;
+  name: string;
+  steps: { event_name: string; event_category?: string }[];
+  conversion_window_days: number | null;
+  count_type: string;
+}
+
 const COUNT_TYPE_OPTIONS = [
   { value: "unique_users", label: "Unique Users" },
   { value: "total_events", label: "Total Events" },
@@ -47,6 +55,10 @@ export default function FunnelsPage() {
   const [result, setResult] = useState<FunnelResult | null>(null);
   const [running, setRunning] = useState(false);
   const [error, setError] = useState("");
+  // P2 — saved (named) funnels
+  const [saved, setSaved] = useState<SavedFunnel[]>([]);
+  const [saveName, setSaveName] = useState("");
+  const [saveWindow, setSaveWindow] = useState("");
 
   useEffect(() => {
     fetch(`${API}/admin/cdp/events/catalog`, { credentials: "include" })
@@ -54,6 +66,61 @@ export default function FunnelsPage() {
       .then((d) => setCatalog(d.events ?? []))
       .catch(() => {});
   }, []);
+
+  function loadSaved() {
+    fetch(`${API}/admin/cdp/funnels/saved`, { credentials: "include" })
+      .then((r) => r.json())
+      .then((d) => setSaved(d.funnels ?? []))
+      .catch(() => {});
+  }
+  useEffect(loadSaved, []);
+
+  async function saveFunnel() {
+    const validSteps = steps.filter((s) => s.event_name.trim());
+    if (!saveName.trim() || validSteps.length < 2) {
+      setError("Give the funnel a name and at least 2 events to save it.");
+      return;
+    }
+    setError("");
+    try {
+      const res = await fetch(`${API}/admin/cdp/funnels/saved`, {
+        method: "POST",
+        credentials: "include",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          name: saveName.trim(),
+          steps: validSteps.map((s) => ({ event_name: s.event_name, ...(s.event_category ? { event_category: s.event_category } : {}) })),
+          ...(saveWindow ? { conversion_window_days: Number(saveWindow) } : {}),
+          count_type: countType,
+        }),
+      });
+      if (!res.ok) throw new Error();
+      setSaveName("");
+      setSaveWindow("");
+      loadSaved();
+    } catch {
+      setError("Failed to save funnel.");
+    }
+  }
+
+  async function runSaved(id: string) {
+    setError("");
+    setRunning(true);
+    try {
+      const res = await fetch(`${API}/admin/cdp/funnels/saved/${id}/run`, { method: "POST", credentials: "include" });
+      if (!res.ok) throw new Error();
+      setResult(await res.json());
+    } catch {
+      setError("Failed to run saved funnel.");
+    } finally {
+      setRunning(false);
+    }
+  }
+
+  async function deleteSaved(id: string) {
+    await fetch(`${API}/admin/cdp/funnels/saved/${id}`, { method: "DELETE", credentials: "include" }).catch(() => {});
+    loadSaved();
+  }
 
   const uniqueEventNames = Array.from(new Set(catalog.map((e) => e.event_name)));
   const categoriesFor = (eventName: string) =>
@@ -227,7 +294,58 @@ export default function FunnelsPage() {
             </Button>
           </div>
         </div>
+
+        {/* Save the current funnel (P2) */}
+        <div className="mt-4 pt-4 border-t border-white/8 flex flex-col sm:flex-row gap-2 sm:items-center">
+          <input
+            className="w-full sm:w-56 bg-[#0c0e14] border border-white/10 rounded-xl px-3 py-2 text-sm text-white placeholder:text-white/30 focus:outline-none focus:border-white/30"
+            placeholder="Name this funnel to save"
+            value={saveName}
+            onChange={(e) => setSaveName(e.target.value)}
+          />
+          <input
+            type="number"
+            min={1}
+            max={365}
+            className="w-full sm:w-44 bg-[#0c0e14] border border-white/10 rounded-xl px-3 py-2 text-sm text-white placeholder:text-white/30 focus:outline-none focus:border-white/30"
+            placeholder="Window (days, optional)"
+            value={saveWindow}
+            onChange={(e) => setSaveWindow(e.target.value)}
+          />
+          <button
+            onClick={saveFunnel}
+            className="border border-white/20 text-white/70 hover:text-white text-sm px-4 py-2 rounded-xl transition-colors w-full sm:w-auto"
+          >
+            Save funnel
+          </button>
+        </div>
       </div>
+
+      {/* Saved funnels (P2) */}
+      {saved.length > 0 && (
+        <div className="bg-[#14161f] rounded-2xl border border-white/10 overflow-hidden mb-6">
+          <div className="px-5 py-3.5 border-b border-white/8">
+            <h2 className="text-white font-semibold text-sm">Saved Funnels</h2>
+          </div>
+          <div className="divide-y divide-white/5">
+            {saved.map((f) => (
+              <div key={f.id} className="flex items-center justify-between gap-3 px-5 py-3">
+                <div className="min-w-0">
+                  <p className="text-white/85 text-sm font-medium truncate">{f.name}</p>
+                  <p className="text-white/40 text-xs truncate">
+                    {f.steps.map((s) => s.event_name).join(" → ")}
+                    {f.conversion_window_days ? ` · ${f.conversion_window_days}d window` : ""}
+                  </p>
+                </div>
+                <div className="flex items-center gap-2 flex-shrink-0">
+                  <button onClick={() => runSaved(f.id)} className="text-accent text-xs font-medium hover:underline">Run</button>
+                  <button onClick={() => deleteSaved(f.id)} className="text-white/30 hover:text-red-400 text-xs transition-colors">Delete</button>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
 
       {/* Results */}
       {result && (

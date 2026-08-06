@@ -18,6 +18,25 @@ Do not modify any code file without first:
 4. Checking impacted files and blast radius
 5. Updating the relevant step file in `docs/steps/`
 
+## 2026-08-06 — CDP P2: segments + attribution + segmented cohorts + saved funnels (Commit 2/2)
+Owner: build on P1 to make the CDP actionable. Delivered:
+- **Segments (+6, now 17)**: lifecycle segments (New/Active/Dormant/Churned via `user_traits.lifecycle_stage`)
+  + high-intent conversion-gap segments (Trek Lovers No Signup = trek_viewed·NOT user_signed_up;
+  Lead Drop-offs = lead_form_started·NOT lead_submitted). New criteria handler `lifecycle_stage`.
+  Surface automatically on the existing `/admin/cdp/segments` page.
+- **Channel attribution report**: `get_attribution_report()` + `GET /admin/cdp/attribution?days=` — per-channel
+  first-touch / last-touch / linear credit from `attribution_touchpoints` (channel via `_classify_channel`).
+  Surfaced as a "Channel Attribution" section on the cohorts page.
+- **Segmented cohorts**: `get_cohort_heatmap` gains optional `source` (acquisition-source cohorts) +
+  `behavior_event` (behavior cohorts, e.g. TrekSage users) filters; `GET /admin/cdp/cohorts` gains the two
+  query params. Surfaced as source/behavior controls on `/admin/cdp/cohorts`.
+- **Saved (named) funnels**: migration `20260806_0059` + `saved_funnels` table + `SavedFunnel` ORM; service
+  CRUD + `run_saved_funnel` (delegates to get_dynamic_funnel with a conversion window); admin
+  `GET/POST/DELETE /admin/cdp/funnels/saved` + `POST /funnels/saved/{id}/run`; save/run/delete UI on the
+  funnels page. `SavedFunnel` registered in db/base.py.
+- No new URLs (extended existing admin pages — respects §17). 9 new backend tests (test_cdp_p2.py); two
+  legacy segment-count asserts updated (11→17). Full suite green; next build clean; impact all LOW/0-upstream.
+
 ## 2026-08-06 — CDP P1 depth + admin analytics exclusion (web, desktop + mobile web)
 Owner: analytics audit found (a) GA4 + first-party CDP both fire on /admin (site-wide GA in root
 layout + provider); (b) `batch_log_events` — the MAIN web ingest path — never set `is_internal`, so

@@ -17,6 +17,7 @@ from app.modules.cdp.models import (
     CustomSegment,
     EventDefinition,
     GscPerformance,
+    SavedFunnel,
     UserTrait,
 )
 from app.modules.auth.models import User
@@ -623,16 +624,93 @@ def get_dynamic_funnel(
     }
 
 
+# ── P2: saved (named) funnels ─────────────────────────────────────────────────
+
+def create_saved_funnel(
+    db: Session,
+    name: str,
+    steps: List[Dict[str, Any]],
+    conversion_window_days: Optional[int] = None,
+    count_type: str = "unique_users",
+) -> SavedFunnel:
+    funnel = SavedFunnel(
+        name=name,
+        steps=steps,
+        conversion_window_days=conversion_window_days,
+        count_type=count_type,
+    )
+    db.add(funnel)
+    db.commit()
+    db.refresh(funnel)
+    return funnel
+
+
+def list_saved_funnels(db: Session) -> List[SavedFunnel]:
+    return db.query(SavedFunnel).order_by(SavedFunnel.created_at.desc()).all()
+
+
+def delete_saved_funnel(db: Session, funnel_id: uuid.UUID) -> bool:
+    funnel = db.get(SavedFunnel, funnel_id)
+    if not funnel:
+        return False
+    db.delete(funnel)
+    db.commit()
+    return True
+
+
+def run_saved_funnel(db: Session, funnel_id: uuid.UUID) -> Optional[Dict[str, Any]]:
+    """Compute a saved funnel. Its conversion_window_days is applied as date_from = today − window,
+    then delegated to get_dynamic_funnel (single source of funnel math)."""
+    funnel = db.get(SavedFunnel, funnel_id)
+    if not funnel:
+        return None
+    date_from = None
+    if funnel.conversion_window_days:
+        date_from = (datetime.now(timezone.utc) - timedelta(days=funnel.conversion_window_days)).date().isoformat()
+    result = get_dynamic_funnel(
+        db,
+        steps=funnel.steps or [],
+        date_from=date_from,
+        count_type=funnel.count_type or "unique_users",
+    )
+    result["id"] = str(funnel.id)
+    result["name"] = funnel.name
+    result["conversion_window_days"] = funnel.conversion_window_days
+    return result
+
+
 # ── Enhanced cohort retention heatmap ─────────────────────────────────────────
 
-def get_cohort_heatmap(db: Session, max_weeks: int = 9) -> Dict[str, Any]:
+def get_cohort_heatmap(
+    db: Session,
+    max_weeks: int = 9,
+    source: Optional[str] = None,
+    behavior_event: Optional[str] = None,
+) -> Dict[str, Any]:
     """Full N×M retention heatmap. Returns week 0–8 retention per cohort.
     Uses analytics_events as the universal base so mobile app users (who have
-    events but no analytics_sessions rows) are included alongside web users."""
+    events but no analytics_sessions rows) are included alongside web users.
+
+    P2 — optional cohort segmentation:
+      source:         restrict to users whose acquisition_source matches (acquisition-source cohorts)
+      behavior_event: restrict to users who fired this event at least once (behavior cohorts,
+                      e.g. behavior_event="treksage_message" → retention of TrekSage users)
+    """
     week_cases = " ".join(
         f"COUNT(DISTINCT CASE WHEN week_offset >= {w} AND week_offset < {w + 1} THEN anonymous_id END) AS w{w},"
         for w in range(max_weeks)
     ).rstrip(",")
+
+    # Optional segment filter — applied identically to cohort_base and all_activity so the cohort
+    # membership and the retention numerator stay consistent. Parameterised (no SQL injection).
+    params: Dict[str, Any] = {}
+    seg_filter = ""
+    if source:
+        seg_filter += " AND anonymous_id IN (SELECT anonymous_id FROM user_traits WHERE acquisition_source = :source)"
+        params["source"] = source
+    if behavior_event:
+        seg_filter += " AND anonymous_id IN (SELECT DISTINCT anonymous_id FROM analytics_events WHERE event_name = :behavior_event)"
+        params["behavior_event"] = behavior_event
 
     rows = db.execute(
         text(
@@ -642,7 +720,7 @@ def get_cohort_heatmap(db: Session, max_weeks: int = 9) -> Dict[str, Any]:
                     anonymous_id,
                     date_trunc('week', MIN(created_at))::date AS cohort_week
                 FROM analytics_events
-                WHERE is_internal = false
+                WHERE is_internal = false{seg_filter}
                 GROUP BY anonymous_id
             ),
             all_activity AS (
@@ -663,7 +741,8 @@ def get_cohort_heatmap(db: Session, max_weeks: int = 9) -> Dict[str, Any]:
             )
             SELECT * FROM retention ORDER BY cohort_week DESC LIMIT 12
             """
-        )
+        ),
+        params,
     ).mappings().all()
 
     # Post-process: compute percentages, mark future cells
@@ -823,6 +902,44 @@ SEGMENTS = [
         "criteria_label": "search_performed ≥ 1",
         "filter_criteria": {"event_name": "search_performed", "days": 365},
     },
+    # ── P2: lifecycle segments (derived from user_traits.lifecycle_stage) ──
+    {
+        "name": "New Users",
+        "description": "First visit — one session or fewer so far",
+        "criteria_label": "lifecycle_stage = new",
+        "filter_criteria": {"lifecycle_stage": "new"},
+    },
+    {
+        "name": "Active Users",
+        "description": "Return visitors seen within the last 14 days",
+        "criteria_label": "lifecycle_stage = active",
+        "filter_criteria": {"lifecycle_stage": "active"},
+    },
+    {
+        "name": "Dormant Users",
+        "description": "Last seen 15–60 days ago — a re-engagement target",
+        "criteria_label": "lifecycle_stage = dormant",
+        "filter_criteria": {"lifecycle_stage": "dormant"},
+    },
+    {
+        "name": "Churned Users",
+        "description": "No activity in over 60 days",
+        "criteria_label": "lifecycle_stage = churned",
+        "filter_criteria": {"lifecycle_stage": "churned"},
+    },
+    # ── P2: high-intent / conversion-gap segments ──
+    {
+        "name": "Trek Lovers, No Signup",
+        "description": "Viewed treks but never signed up — a prime conversion target",
+        "criteria_label": "trek_viewed · NOT user_signed_up",
+        "filter_criteria": {"started": "trek_viewed", "not_completed": "user_signed_up"},
+    },
+    {
+        "name": "Lead Drop-offs",
+        "description": "Started a lead form but never submitted it",
+        "criteria_label": "lead_form_started · NOT lead_submitted",
+        "filter_criteria": {"started": "lead_form_started", "not_completed": "lead_submitted"},
+    },
 ]
 
 
@@ -884,6 +1001,13 @@ def get_segments(db: Session) -> Dict[str, Any]:
                     .scalar()
                     or 0
                 )
+            elif "lifecycle_stage" in criteria:
+                count = (
+                    db.query(func.count(UserTrait.id))
+                    .filter(UserTrait.lifecycle_stage == criteria["lifecycle_stage"])
+                    .scalar()
+                    or 0
+                )
             elif "platform_in" in criteria:
                 count = (
                     db.query(func.count(func.distinct(AnalyticsEvent.anonymous_id)))
@@ -936,6 +1060,59 @@ def _classify_channel(utm_source: Optional[str], utm_medium: Optional[str]) -> s
     if medium == "referral":
         return "referral"
     return utm_medium
+
+
+def get_attribution_report(db: Session, days: int = 90) -> Dict[str, Any]:
+    """Channel attribution across attribution_touchpoints for the last `days`. Reports credit under
+    three models so acquisition can be judged fairly:
+      first_touch : credit to the channel that first introduced the user (first_touch touchpoints)
+      last_touch  : credit to the channel of the converting/most-recent visit (last_touch touchpoints)
+      linear      : equal credit to every touchpoint in the path (share of all touchpoints)
+    Channels come from _classify_channel (organic_search / paid_search / social / referral / email /
+    direct). Returns per-channel counts + each model's % share, ranked by touchpoint volume."""
+    cutoff = datetime.now(timezone.utc) - timedelta(days=days)
+    rows = db.execute(
+        text(
+            """
+            SELECT COALESCE(channel, 'direct') AS channel,
+                   COUNT(*) FILTER (WHERE touchpoint_type = 'first_touch') AS first_touch,
+                   COUNT(*) FILTER (WHERE touchpoint_type = 'last_touch')  AS last_touch,
+                   COUNT(*)                                                AS touchpoints
+            FROM attribution_touchpoints
+            WHERE created_at >= :cutoff
+            GROUP BY COALESCE(channel, 'direct')
+            ORDER BY touchpoints DESC
+            """
+        ),
+        {"cutoff": cutoff},
+    ).mappings().all()
+
+    tot_first = sum(r["first_touch"] for r in rows) or 0
+    tot_last = sum(r["last_touch"] for r in rows) or 0
+    tot_tp = sum(r["touchpoints"] for r in rows) or 0
+
+    def _pct(n: int, d: int) -> float:
+        return round(n / d * 100, 1) if d else 0.0
+
+    channels = [
+        {
+            "channel": r["channel"],
+            "first_touch": r["first_touch"],
+            "last_touch": r["last_touch"],
+            "touchpoints": r["touchpoints"],
+            "first_touch_pct": _pct(r["first_touch"], tot_first),
+            "last_touch_pct": _pct(r["last_touch"], tot_last),
+            "linear_pct": _pct(r["touchpoints"], tot_tp),
+        }
+        for r in rows
+    ]
+    return {
+        "window_days": days,
+        "total_touchpoints": tot_tp,
+        "total_first_touch": tot_first,
+        "total_last_touch": tot_last,
+        "channels": channels,
+    }
 
 
 def hash_ip(ip: Optional[str]) -> Optional[str]:
