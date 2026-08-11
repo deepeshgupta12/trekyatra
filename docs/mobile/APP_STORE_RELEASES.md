@@ -13,7 +13,7 @@ Single source of truth for every EAS build and its App Store Connect (ASC) submi
 
 | Version (build) | buildNumber | EAS Build ID | Submitted to ASC | ASC status | Date | Notes |
 |-----------------|-------------|--------------|------------------|-----------|------|-------|
-| 1.1.0 (6) | 6 | `a9575b76-5d55-4829-bc4c-c66049127306` | ✅ Yes — Submission `a7b7c517-4c68-4df4-b5ae-8f0ec457030e` | **Uploaded → Apple processing** (2026-08-11) | 2026-08-11 | Fixes build (5) rejection: in-app account deletion (5.1.1, `DELETE /auth/me` + Settings "Delete account") + premium surface removed on iOS (2.1.0). EAS auto-incremented 5→6. Backend deployed on prod (migration …0060 applied 2026-08-11). Owner: after Apple finishes processing, attach build 6 to the 1.1.0 version + Submit for Review with the reviewer note (Delete account in Settings; no paid tier on iOS). |
+| 1.1.0 (6) | 6 | `a9575b76-5d55-4829-bc4c-c66049127306` | ✅ Yes — Submission `a7b7c517-…` (thread `6d0479fc-…`) | **Waiting for Review** (resubmitted 2026-08-11) | 2026-08-11 | Fixes build (5) rejection: in-app account deletion (5.1.1, `DELETE /auth/me` + Settings "Delete account") + premium surface removed on iOS (2.1.0). EAS auto-incremented 5→6. Backend deployed + migration …0060 applied on prod. Build 6 attached + submitted; App Review Notes include the account-deletion screen recording + the 2.1(b) business-model answers (iOS all-free, no IAP). Awaiting Apple review. |
 | 1.1.0 (5) | 5 | `1c4a8825-929b-4d58-bb79-3e29b15f090d` | ✅ Yes — resubmitted `6d0479fc-…` | **Rejected (2026-08-11)** — 2.1.0 + 5.1.1 (ATT now resolved) | 2026-07-31 → 2026-08-11 | ATT/tracking issue RESOLVED (Device ID removed from ASC label). NEW rejection needs a rebuild: **5.1.1** = no in-app account deletion (only Sign out + data-delete that keeps account active; no `DELETE /auth/me`). **2.1.0** = Premium shown ("You're Premium!") with no purchasable IAP (iOS forces isPremium=true but still surfaces premium/subscription UI). **Both need code + a NEW build (→ 6).** |
 | 1.1.0 (4) | 4 | `e4bdb9ab-8c33-4d01-97bb-4136a22b79f3` | ⚠️ Attempted — **failed** | Rejected at upload (duplicate build number) | 2026-07-31 | `eas submit` failed: "build number 4 already used". Its build number was consumed on ASC → superseded by (5). |
 | 1.1.0 (3) | 3 | `d216a1c6-a554-4e0c-9b95-6a735598fe2d` | ❌ No | — | 2026-07-31 | Built for owner device-test only (STEP-M30 N01–N13). |
@@ -88,6 +88,15 @@ Single source of truth for every EAS build and its App Store Connect (ASC) submi
     with the business-model answers (iOS has no paid subscriptions/IAP; all features free; nothing unlocked
     by external purchase); (c) ensure the ASC **listing metadata/screenshots** don't mention Premium/
     subscription/Ad-free; (d) confirm build **6** (not 5) is the build attached for review.
+  - **2026-08-11 — Delete-account error investigation.** Owner hit "could not delete account" repeatedly
+    while testing. Verified: prod `DELETE /api/v1/auth/me` with a real mobile bearer token returns **204**
+    (endpoint deployed, migration applied) and `apiDelete` handles 204 correctly — so the backend + client
+    call are sound. Root cause is environment (a build/session not hitting the deployed endpoint — e.g. a
+    stale local dev server) and/or a post-delete `signOut` hiccup being mis-reported as a delete failure.
+    Hardened `settings.tsx` delete handler: only the delete request can surface an error (post-delete
+    cleanup can't re-report), and the REAL error detail is now shown for diagnosis. **Verify on TestFlight
+    build 6 (hits prod).** If the delete still errors there, the surfaced message will name the cause and a
+    build 7 with the hardened handler will be cut.
 - One version train (e.g. `1.1.0`) requires a **unique build number** per upload; a consumed build
   number can never be reused (why (4) → (5)).
 

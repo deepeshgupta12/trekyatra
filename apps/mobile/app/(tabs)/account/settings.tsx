@@ -109,15 +109,25 @@ export default function SettingsScreen() {
           style: "destructive",
           onPress: async () => {
             setIsDeletingAccount(true);
+            // Only the deletion request itself should be able to surface a failure. Post-delete
+            // cleanup (signOut) must never re-report as "could not delete", and the real error
+            // detail is shown so failures are diagnosable.
             try {
               await authMeApi.deleteAccount();
+            } catch (err) {
+              setIsDeletingAccount(false);
+              const detail = err instanceof Error ? err.message : "Unknown error";
+              Alert.alert(
+                "Could not delete account",
+                `${detail}\n\nPlease try again, or contact explore@trekyatra.co.in.`,
+              );
+              return;
+            }
+            // Server confirmed deletion — clear the local session (AuthGate redirects to sign-in).
+            try {
               await signOut();
             } catch {
-              setIsDeletingAccount(false);
-              Alert.alert(
-                "Error",
-                "Could not delete your account. Please try again, or contact explore@trekyatra.co.in.",
-              );
+              // ignore — the account is already deleted server-side
             }
           },
         },
