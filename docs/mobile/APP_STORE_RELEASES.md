@@ -97,6 +97,11 @@ Single source of truth for every EAS build and its App Store Connect (ASC) submi
     cleanup can't re-report), and the REAL error detail is now shown for diagnosis. **Verify on TestFlight
     build 6 (hits prod).** If the delete still errors there, the surfaced message will name the cause and a
     build 7 with the hardened handler will be cut.
+  - **2026-08-11 — RESOLVED: delete works on TestFlight build 6.** Owner re-tested build 6 on TestFlight and
+    account deletion works correctly — the earlier failures were transient (backend deploy propagation /
+    stale token before deploy). **No new build needed; build 6 stays in review.** The handler hardening
+    (commit `afc3a77`) is a defensive improvement that ships in the next release — NOT required for this
+    review. Build 6 = final for the 2.1.0/5.1.1 fixes.
 - One version train (e.g. `1.1.0`) requires a **unique build number** per upload; a consumed build
   number can never be reused (why (4) → (5)).
 
