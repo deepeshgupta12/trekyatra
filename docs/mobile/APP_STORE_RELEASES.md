@@ -46,6 +46,17 @@ Single source of truth for every EAS build and its App Store Connect (ASC) submi
     Action: verify + **Publish** label shows "Data Not Used to Track You", remove any advertising purpose,
     Cancel Submission → resubmit build (5), and post an escalation reply asking Apple to name the specific
     data element they read as tracking + request manual review. Still NO rebuild required.
+  - **2026-08-11 — ROOT CAUSE FOUND (ASC label over-declared vs code).** Owner's App Privacy screenshots show
+    14 declared data types; the binary manifest declares only 3. Verified against code — 3 are WRONG and must
+    be removed: (a) **Device ID** — app has no hardware Device ID; identity is an app-generated
+    `Crypto.randomUUID()` in SecureStore (lib/identity.ts), already declared as User ID. Device ID
+    linked+Analytics is the classic ATT tracking trigger → **remove**. (b) **Precise Location** — app uses
+    `Location.Accuracy.Balanced` (~coarse) (lib/location.ts) → **remove**. (c) **Browsing History** — app
+    collects only in-app views (=Product Interaction), not external web history → **remove**. Keep (all real,
+    none tracking): Email, Name, Phone Number, Coarse Location, Product Interaction, Photos/Videos, User ID,
+    Search History, Crash/Performance/Other Diagnostic (Sentry). Action: delete those 3 types, set every
+    remaining type "used to track"=No, Publish, Cancel+resubmit (5). FUTURE build: reconcile the binary
+    privacy manifest (currently 3 types) to the real set (rebuild — not needed for this resubmit).
 - One version train (e.g. `1.1.0`) requires a **unique build number** per upload; a consumed build
   number can never be reused (why (4) → (5)).
 
