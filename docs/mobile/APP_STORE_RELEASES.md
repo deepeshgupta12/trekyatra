@@ -78,6 +78,16 @@ Single source of truth for every EAS build and its App Store Connect (ASC) submi
     menu row hidden on iOS (AccountDashboard) + `premium.tsx` redirects away on iOS. Backend tests +2, tsc
     ✅, full suite green. **Owner to run: `eas build --profile production --platform ios` (→ build 6) →
     `eas submit` → resubmit.** Also run `alembic upgrade head` on the API (adds `users.deleted_at`).
+  - **2026-08-11 — Apple message on build (5) submission `6d0479fc`: 5.1.1(v) + 2.1(b).** NOTE: reviewed
+    version = **1.1.0 (5)** (the OLD pre-fix binary), on iPad Air 11" (M3). Both are already addressed by
+    **build 6**: 5.1.1(v) account deletion is now in Settings (verified) + backend live; 2.1(b) — verified
+    build 6 renders NO premium/paid surface on iOS (trek `isPremiumGated = is_premium && !isPremium` is
+    always false since isPremium is forced true on iOS; premium menu hidden; premium screen redirects; only
+    "subscribe" left is the FREE newsletter). Remaining owner actions (ASC, not code): (a) 5.1.1 — add a
+    **screen recording** of the delete flow to App Review → Notes; (b) 2.1(b) — **reply in Resolution Center**
+    with the business-model answers (iOS has no paid subscriptions/IAP; all features free; nothing unlocked
+    by external purchase); (c) ensure the ASC **listing metadata/screenshots** don't mention Premium/
+    subscription/Ad-free; (d) confirm build **6** (not 5) is the build attached for review.
 - One version train (e.g. `1.1.0`) requires a **unique build number** per upload; a consumed build
   number can never be reused (why (4) → (5)).
 
