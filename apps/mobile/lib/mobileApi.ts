@@ -763,6 +763,10 @@ export const authMeApi = {
   getDataExportUrl: () => `${process.env.EXPO_PUBLIC_API_URL ?? "http://localhost:8000"}/api/v1/auth/me/data-export`,
 
   deleteMyData: () => apiDelete("/api/v1/auth/me/data"),
+
+  // Permanently delete the account (Apple 5.1.1). Anonymises PII + disables the account server-side;
+  // caller must clear local auth + sign out afterwards.
+  deleteAccount: () => apiDelete("/api/v1/auth/me"),
 };
 
 // ---------------------------------------------------------------------------

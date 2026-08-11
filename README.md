@@ -640,7 +640,8 @@ cd apps/web-next && npm run build
 | CDP admin — profiles | `POST /api/v1/admin/cdp/traits/recompute` (lifecycle/engagement/lead re-derive) | Admin auth |
 | CDP admin — gsc | `GET /api/v1/admin/cdp/gsc` | Admin auth |
 | CDP admin — suppressions | `GET /api/v1/admin/cdp/suppressions` | Admin auth |
-| DPDP compliance | `GET /api/v1/auth/me/data-export`, `DELETE /api/v1/auth/me/data` | User auth required |
+| DPDP compliance | `GET /api/v1/auth/me/data-export`, `DELETE /api/v1/auth/me/data` (data only) | User auth required |
+| Account deletion (Apple 5.1.1) | `DELETE /api/v1/auth/me` — anonymises PII + disables account + purges identities/sessions/CDP data | User auth required |
 | Trek intelligence | `GET /api/v1/treks/{slug}/profile`, `POST /api/v1/treks/compare`, `POST /api/v1/treks/{slug}/ask`, `GET /api/v1/treks/{slug}/content` | Public |
 | Operator-help lead | `POST /api/v1/leads/operator-help` | Public |
 | AI interaction logging | `POST /api/v1/ai/log` | Public (fire-and-forget) |
@@ -657,11 +658,11 @@ Full API docs available at http://localhost:8000/docs when the backend is runnin
 
 ## Database Overview
 
-**47 Alembic migrations applied.** Key table groups:
+**48 Alembic migrations applied.** Key table groups:
 
 | Domain | Tables |
 |--------|--------|
-| Auth | `users` (+`behavior_profile JSON` for cross-platform personalization sync), `sessions`, `roles`, `permissions`, `role_permissions` |
+| Auth | `users` (+`behavior_profile JSON` for cross-platform personalization sync, +`deleted_at` for in-app account deletion), `sessions`, `roles`, `permissions`, `role_permissions` |
 | Content pipeline | `topics`, `keyword_clusters`, `content_briefs`, `brief_versions`, `content_drafts`, `draft_claims` |
 | Pipeline tracking | `agent_runs`, `pipeline_runs`, `pipeline_stages` |
 | CMS | `cms_pages` (with `embedding vector(1536)`), `pages`, `page_links` |

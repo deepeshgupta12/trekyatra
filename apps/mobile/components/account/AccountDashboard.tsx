@@ -1,4 +1,4 @@
-import { View, Text, TouchableOpacity } from "react-native";
+import { View, Text, TouchableOpacity, Platform } from "react-native";
 import { useRouter } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { useTheme } from "@/hooks/useTheme";
@@ -28,6 +28,12 @@ const MENU_ROWS: MenuRow[] = [
 export function AccountDashboard({ savedCount, downloadCount }: AccountDashboardProps) {
   const { colors } = useTheme();
   const router = useRouter();
+
+  // iOS v1 ships without a paid tier (no StoreKit IAP) — hide the Premium entry so the app never
+  // surfaces a purchasable-looking premium/subscription concept on iOS (App Store Guideline 2.1.0).
+  const menuRows = MENU_ROWS.filter(
+    (row) => Platform.OS !== "ios" || row.route !== "/(tabs)/account/premium",
+  );
 
   return (
     <View>
@@ -93,7 +99,7 @@ export function AccountDashboard({ savedCount, downloadCount }: AccountDashboard
           overflow: "hidden",
         }}
       >
-        {MENU_ROWS.map((row, i) => (
+        {menuRows.map((row, i) => (
           <TouchableOpacity
             key={row.label}
             onPress={() => router.push(row.route as never)}
@@ -106,7 +112,7 @@ export function AccountDashboard({ savedCount, downloadCount }: AccountDashboard
               gap: 14,
               paddingHorizontal: 16,
               paddingVertical: 15,
-              borderBottomWidth: i < MENU_ROWS.length - 1 ? 1 : 0,
+              borderBottomWidth: i < menuRows.length - 1 ? 1 : 0,
               borderBottomColor: colors.border,
             }}
           >

@@ -1,9 +1,9 @@
-import { View, Text, TouchableOpacity, ScrollView, StyleSheet, Linking, ActivityIndicator } from "react-native";
+import { View, Text, TouchableOpacity, ScrollView, StyleSheet, Linking, ActivityIndicator, Platform } from "react-native";
 import { SafeArea } from "@/components/ui/SafeArea";
 import { useTheme } from "@/hooks/useTheme";
 import { useRouter } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { usePremium } from "@/hooks/usePremium";
 import { PremiumFeatureList } from "@/components/premium/PremiumFeatureList";
 import { SubscribeButton } from "@/components/premium/SubscribeButton";
@@ -26,6 +26,13 @@ export default function PremiumScreen() {
   } = usePremium();
 
   const [selectedInterval, setSelectedInterval] = useState<"monthly" | "annual">("annual");
+
+  // iOS v1 has no paid tier / IAP — the Premium screen must never be shown on iOS (Guideline 2.1.0).
+  // The menu entry is already hidden; this bounces any deep-link / direct navigation back to Account.
+  useEffect(() => {
+    if (Platform.OS === "ios") router.replace("/(tabs)/account");
+  }, [router]);
+  if (Platform.OS === "ios") return null;
 
   const monthlyProduct = products.find((p) => p.interval === "monthly");
   const annualProduct = products.find((p) => p.interval === "annual");

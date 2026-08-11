@@ -313,3 +313,36 @@ def login_or_register_apple_user(
         db.rollback()
         raise ValueError("Unable to create account with this Apple identity.") from exc
     return user
+
+
+def delete_account(db: Session, user: User) -> None:
+    """Permanently delete the user's own account in-app (Apple App Store Guideline 5.1.1).
+
+    Anonymises ALL personal data and disables the account (auth already rejects is_active=False, so
+    existing tokens stop working immediately and login is blocked). Removes OAuth identities + sessions
+    so the account can never be re-authenticated or re-linked — a subsequent Sign in with Apple/Google
+    creates a fresh account. The (now anonymised) user row is retained so referential integrity of any
+    orders/reports is preserved. Not just "data deletion" and not a deactivation — the account is gone.
+    """
+    # 1) Purge behavioural / CDP data (same scope as delete_my_data).
+    from app.modules.cdp.models import AnalyticsEvent, AnalyticsSession, AttributionTouchpoint, UserTrait
+    db.query(AnalyticsEvent).filter(AnalyticsEvent.user_id == user.id).delete()
+    db.query(AnalyticsSession).filter(AnalyticsSession.user_id == user.id).delete()
+    db.query(AttributionTouchpoint).filter(AttributionTouchpoint.user_id == user.id).delete()
+    db.query(UserTrait).filter(UserTrait.user_id == user.id).delete()
+
+    # 2) Remove auth identities + sessions (block re-auth / re-link).
+    db.query(AuthIdentity).filter(AuthIdentity.user_id == user.id).delete()
+    db.query(UserSession).filter(UserSession.user_id == user.id).delete()
+
+    # 3) Anonymise PII + disable the account.
+    user.email = None
+    user.password_hash = None
+    user.full_name = None
+    user.display_name = "Deleted user"
+    user.behavior_profile = {}
+    user.primary_auth_method = None
+    user.subscription_plan = "free"
+    user.is_active = False
+    user.deleted_at = datetime.now(timezone.utc)
+    db.commit()

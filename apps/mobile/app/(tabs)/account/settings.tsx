@@ -18,6 +18,7 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useAuth } from "@/hooks/useAuth";
 import { useAccountMe, useNewsletter } from "@/hooks/useAccount";
 import { getAnalyticsConsent, setAnalyticsConsent } from "@/lib/consent";
+import { authMeApi } from "@/lib/mobileApi";
 import Constants from "expo-constants";
 
 const APP_LANGUAGE_KEY = "app_language";
@@ -91,6 +92,37 @@ export default function SettingsScreen() {
       { text: "Cancel", style: "cancel" },
       { text: "Sign out", style: "destructive", onPress: signOut },
     ]);
+  }
+
+  const [isDeletingAccount, setIsDeletingAccount] = useState(false);
+
+  function handleDeleteAccount() {
+    // Apple App Store Guideline 5.1.1 — in-app account deletion. Permanently deletes the account,
+    // not just data (that's the separate "Delete my data" on the Privacy screen).
+    Alert.alert(
+      "Delete account",
+      "This permanently deletes your TrekYatra account and all associated personal data. This cannot be undone.",
+      [
+        { text: "Cancel", style: "cancel" },
+        {
+          text: "Delete account",
+          style: "destructive",
+          onPress: async () => {
+            setIsDeletingAccount(true);
+            try {
+              await authMeApi.deleteAccount();
+              await signOut();
+            } catch {
+              setIsDeletingAccount(false);
+              Alert.alert(
+                "Error",
+                "Could not delete your account. Please try again, or contact explore@trekyatra.co.in.",
+              );
+            }
+          },
+        },
+      ],
+    );
   }
 
   return (
@@ -416,6 +448,25 @@ export default function SettingsScreen() {
           <Text style={{ fontFamily: "Inter_600SemiBold", fontSize: 15, color: "#ef4444" }}>
             Sign out
           </Text>
+        </TouchableOpacity>
+
+        {/* Delete account (Apple 5.1.1 — permanent account deletion, distinct from Sign out) */}
+        <TouchableOpacity
+          onPress={handleDeleteAccount}
+          disabled={isDeletingAccount}
+          accessibilityRole="button"
+          accessibilityLabel="Delete account"
+          testID="delete-account-button"
+          activeOpacity={0.7}
+          style={{ marginHorizontal: 20, marginTop: 12, paddingVertical: 12, alignItems: "center" }}
+        >
+          {isDeletingAccount ? (
+            <ActivityIndicator size="small" color="#ef4444" />
+          ) : (
+            <Text style={{ fontFamily: "Inter_500Medium", fontSize: 13, color: colors.textSecondary, textDecorationLine: "underline" }}>
+              Delete account
+            </Text>
+          )}
         </TouchableOpacity>
       </ScrollView>
     </SafeArea>

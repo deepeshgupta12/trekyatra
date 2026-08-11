@@ -3022,3 +3022,18 @@ extended functions all LOW/0-upstream (gitnexus_impact on get_segments/get_cohor
 - `apps/web-next/app/(admin)/admin/cdp/funnels/page.tsx` — save/run/delete saved funnels.
 - `apps/web-next/app/(admin)/admin/cdp/segments/page.tsx` — unchanged (new segments render automatically).
 - Tests: `services/api/tests/test_cdp_p2.py` (NEW, 9); `test_cdp.py`/`test_cdp_step65.py` segment-count asserts 11→17.
+
+## 2026-08-11 — iOS account deletion (5.1.1) + remove premium surface on iOS (2.1.0)
+Shared backend + mobile. iOS App Store rejection fix. Impact of touched symbols LOW/0-upstream
+(User / AccountDashboard / PremiumScreen via gitnexus_impact). Requires a NEW iOS build (→ 6).
+- `services/api/alembic/versions/20260811_0060_user_deleted_at.py` — NEW migration: `users.deleted_at`.
+- `services/api/app/modules/auth/models.py` — `User.deleted_at` column (additive).
+- `services/api/app/modules/auth/service.py` — NEW `delete_account(db, user)`: anonymise PII + is_active=False
+  + deleted_at + purge AuthIdentity/UserSession + CDP data. blast radius LOW (new fn).
+- `services/api/app/api/routes/auth.py` — NEW `DELETE /auth/me` (imports delete_account); `delete_my_data`
+  docstring clarified (data-only, account stays active). blast radius LOW.
+- `apps/mobile/lib/mobileApi.ts` — `authMeApi.deleteAccount()` → `DELETE /api/v1/auth/me`.
+- `apps/mobile/app/(tabs)/account/settings.tsx` — "Delete account" button (confirm → deleteAccount → signOut).
+- `apps/mobile/components/account/AccountDashboard.tsx` — hide Premium menu row on iOS (Platform gate).
+- `apps/mobile/app/(tabs)/account/premium.tsx` — redirect to Account on iOS (screen unreachable).
+- Tests: `services/api/tests/test_auth.py` (+2: delete anonymises+blocks re-auth; delete requires auth).

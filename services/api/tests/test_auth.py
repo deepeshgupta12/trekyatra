@@ -177,3 +177,41 @@ def test_mobile_otp_placeholders_return_not_implemented() -> None:
 
     assert request_response.status_code == 501
     assert verify_response.status_code == 501
+
+
+# ── Account deletion (Apple 5.1.1) ────────────────────────────────────────────
+
+def test_delete_account_anonymizes_and_blocks_reauth() -> None:
+    email = f"user-{uuid.uuid4().hex[:8]}@example.com"
+    signup = client.post(
+        "/api/v1/auth/signup/email",
+        json={"email": email, "password": "strongpass123", "full_name": "Jane Doe"},
+    )
+    assert signup.status_code == 201
+    with SessionLocal() as db:
+        user_id = db.query(User).filter(User.email == email).first().id
+
+    # DELETE /me → 204
+    assert client.delete("/api/v1/auth/me").status_code == 204
+
+    # Existing token no longer authenticates (is_active=False)
+    assert client.get("/api/v1/auth/me").status_code == 401
+
+    # Can no longer log in with the old credentials
+    login = client.post("/api/v1/auth/login/email", json={"email": email, "password": "strongpass123"})
+    assert login.status_code in (400, 401)
+
+    # Row anonymised + disabled; identities/sessions purged
+    with SessionLocal() as db:
+        u = db.get(User, user_id)
+        assert u is not None                       # row retained for referential integrity
+        assert u.email is None and u.full_name is None
+        assert u.is_active is False
+        assert u.deleted_at is not None
+        assert db.query(AuthIdentity).filter(AuthIdentity.user_id == user_id).count() == 0
+        assert db.query(UserSession).filter(UserSession.user_id == user_id).count() == 0
+
+
+def test_delete_account_requires_auth() -> None:
+    client.cookies.clear()
+    assert client.delete("/api/v1/auth/me").status_code == 401

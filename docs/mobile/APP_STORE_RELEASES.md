@@ -71,6 +71,12 @@ Single source of truth for every EAS build and its App Store Connect (ASC) submi
       paid features as incomplete. FIX: remove the Premium/subscription surface entirely on iOS (menu entry,
       screen, auto-renew text, web-premium link) since everything ships free on iOS.
     Both require code changes + a NEW production build (→ build 6, EAS auto-increments) + resubmit.
+  - **2026-08-11 — FIXES IMPLEMENTED in repo (pending build 6).** 5.1.1: backend `DELETE /auth/me`
+    (`auth.service.delete_account` — anonymise PII + is_active=False + deleted_at + purge identities/
+    sessions/CDP; migration `20260811_0060`) + "Delete account" button in mobile Settings. 2.1.0: Premium
+    menu row hidden on iOS (AccountDashboard) + `premium.tsx` redirects away on iOS. Backend tests +2, tsc
+    ✅, full suite green. **Owner to run: `eas build --profile production --platform ios` (→ build 6) →
+    `eas submit` → resubmit.** Also run `alembic upgrade head` on the API (adds `users.deleted_at`).
 - One version train (e.g. `1.1.0`) requires a **unique build number** per upload; a consumed build
   number can never be reused (why (4) → (5)).
 

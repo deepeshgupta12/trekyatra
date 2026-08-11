@@ -18,6 +18,21 @@ Do not modify any code file without first:
 4. Checking impacted files and blast radius
 5. Updating the relevant step file in `docs/steps/`
 
+## 2026-08-11 — iOS App Store fixes: account deletion (5.1.1) + remove premium surface on iOS (2.1.0)
+Owner: build 1.1.0 (5) rejected — 5.1.1 (no in-app account deletion) + 2.1.0 (Premium shown with no
+purchasable IAP). Fixed (needs a NEW iOS build → 6):
+- **Backend — real account deletion** (Apple 5.1.1). Migration `20260811_0060` adds `users.deleted_at`;
+  `User.deleted_at` ORM col; `auth.service.delete_account()` anonymises ALL PII (email/name/password/…),
+  sets is_active=False (auth already blocks inactive), stamps deleted_at, and purges AuthIdentity +
+  UserSession + the user's CDP data (events/sessions/attribution/traits); new route `DELETE /auth/me`
+  (distinct from `/me/data` which only clears analytics + keeps the account). Row retained (anonymised)
+  for referential integrity; a later Sign in with Apple/Google creates a fresh account. 2 new tests.
+- **Mobile** — `authMeApi.deleteAccount()`; **Delete account** button in Settings (confirm → delete →
+  signOut); iOS premium removed: `AccountDashboard` hides the Premium menu row on iOS, `premium.tsx`
+  redirects to Account on iOS (AppDrawer already gated). tsc ✅.
+- Impact: User/AccountDashboard/PremiumScreen all LOW/0-upstream. Full backend suite green. Next: owner
+  runs `eas build -p ios` (→ build 6) + `eas submit` + resubmit. **iOS-only concern — web unaffected.**
+
 ## 2026-08-06 — CDP audit: deferred items (FUTURE PASS — not yet implemented)
 Explicitly deferred by owner after P1+P2 shipped. These are the remaining analytics-audit recommendations,
 parked for a later pass (no code exists for them yet — do not assume they are done):

@@ -475,6 +475,15 @@ Fourth review surfaced 6 issues; a shared backend auth root cause explained seve
 
 **Mobile Bug Fix Pass (2026-07-09) — DONE:** 7 production bugs resolved after simulator testing. **(1) Plan → sign-in → results auth break**: `mobileApi.ts` `getAccessToken()` now uses Zustand in-memory `accessToken` as primary (eliminates SecureStore async race post-login); `results.tsx` gates on `accessToken` dep in useEffect and handles auth errors by showing re-login instead of generic error screen. **(2a) Home tab tap doing nothing from About screen**: `CustomTabBar.tsx` — when home tab is already focused, calls `router.navigate("/(tabs)/(home)")` to pop inner stack to root. **(2b) Emoji logo on About screen**: `about.tsx` — replaced `🏔` `<Text>` with `<Image source={require("@/assets/logo.png")} />` (80×80 contain); added `top` safe area edge. **(3) Trek hero image breaking**: `CMSPage` interface in `mobileApi.ts` gets `route_image_url` field; `trek/[slug].tsx` falls back `hero_image_url ?? route_image_url ?? null`. **(3+4+7) Trek detail premium UI redesign**: `_layout.tsx` sets `headerShown: false` for trek detail; `TrekHero.tsx` rewritten — 360px tall, 4-stop gradient, state pill badge (saffron), text-shadow on title, custom circular back button + optional share button at safe-area-aware position. `TrekMetaStrip.tsx` rewritten — Ionicons with colored icon-wrap, card-style chips (border + shadow/elevation), dark/light adaptive. **(5) Tables breaking on mobile**: `TableBlock.tsx` rewritten using `StyleSheet.create()` replacing all NativeWind `className` — explicit `flexDirection: "row"` on every row, `COL_MIN_WIDTH = 120`, alternating row backgrounds, horizontal `ScrollView`. **(6) Shortlist/bookmark icon not working**: `TrekStickyBar.tsx` — `Ionicons bookmark/bookmark-outline` replaces heart icons; `Alert.alert()` on save failure (was silent); compare route fixed to `/(tabs)/(home)/compare?slug=…`. `npx tsc --noEmit` ✅ zero errors. Build succeeded on iPhone 17 Pro simulator.
 
+**App Store fix pass (2026-08-11) — build 1.1.0 (5) rejection (2.1.0 + 5.1.1):** (1) **Account deletion
+(5.1.1)** — backend `DELETE /api/v1/auth/me` (`auth.service.delete_account`: anonymise PII + is_active=False
++ `deleted_at` migration `20260811_0060` + purge AuthIdentity/UserSession/CDP), and a **Delete account**
+button in `settings.tsx` (confirm → `authMeApi.deleteAccount()` → `signOut`). (2) **Remove premium surface on
+iOS (2.1.0)** — `AccountDashboard` hides the Premium menu row on iOS; `premium.tsx` redirects to Account on
+iOS (AppDrawer "Go Premium" was already iOS-gated). tsc ✅, backend suite green. Requires a new iOS build
+(→ 6) + resubmit. (Earlier 5.1.2 ATT rejection was resolved via the ASC App Privacy label — Device ID/Precise
+Location/Browsing History removed — see APP_STORE_RELEASES.md.)
+
 **Current next step:** M21 — News Feed + Multilingual (Hindi).
 
 ---

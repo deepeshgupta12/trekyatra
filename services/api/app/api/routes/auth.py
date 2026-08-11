@@ -24,6 +24,7 @@ from app.modules.auth.models import User, UserSession
 from app.modules.auth.service import (
     authenticate_email_user,
     create_session_for_user,
+    delete_account,
     get_user_by_email,
     login_or_register_google_user,
     mark_email_verified,
@@ -560,7 +561,7 @@ def delete_my_data(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ) -> None:
-    """Delete all behavioural data for the authenticated user (DPDP Art. 12)."""
+    """Delete all behavioural data for the authenticated user (DPDP Art. 12). Account stays active."""
     from app.modules.cdp.models import AnalyticsEvent, AnalyticsSession, AttributionTouchpoint, UserTrait
 
     db.query(AnalyticsEvent).filter(AnalyticsEvent.user_id == current_user.id).delete()
@@ -568,3 +569,17 @@ def delete_my_data(
     db.query(AttributionTouchpoint).filter(AttributionTouchpoint.user_id == current_user.id).delete()
     db.query(UserTrait).filter(UserTrait.user_id == current_user.id).delete()
     db.commit()
+
+
+@router.delete("/me", status_code=204)
+def delete_my_account(
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+) -> None:
+    """Permanently delete the authenticated user's ACCOUNT in-app (Apple App Store Guideline 5.1.1).
+
+    Anonymises all PII, disables the account (auth blocks is_active=False), and removes OAuth identities,
+    sessions, and behavioural data. Distinct from `/me/data` (which only clears analytics and keeps the
+    account active). After this, the caller's token is invalid — the client must clear it and sign out.
+    """
+    delete_account(db, current_user)
