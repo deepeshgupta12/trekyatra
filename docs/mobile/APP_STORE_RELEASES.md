@@ -13,7 +13,7 @@ Single source of truth for every EAS build and its App Store Connect (ASC) submi
 
 | Version (build) | buildNumber | EAS Build ID | Submitted to ASC | ASC status | Date | Notes |
 |-----------------|-------------|--------------|------------------|-----------|------|-------|
-| 1.1.0 (5) | 5 | `1c4a8825-929b-4d58-bb79-3e29b15f090d` | ✅ Yes — resubmitted `6d0479fc-…` (orig `2b4bc63b-…`) | **Rejected again (2026-08-11)** — 5.1.2 ATT/App Privacy | 2026-07-31 → 2026-08-11 | Auto-rejected 08-07 AND 08-11 (same 5.1.2). ASC label still indicates tracking despite toggles set to No → label change didn't take. Binary is clean (`NSPrivacyTracking:false`, no ad/data-broker SDKs, no IDFA). **Next: verify+Publish label = "Data Not Used to Track You"; remove any advertising PURPOSE on data types; recheck Identifiers/Device ID toggle; Cancel Submission → resubmit (5); escalation reply asking Apple to name the tracking data element + request manual review. No rebuild.** |
+| 1.1.0 (5) | 5 | `1c4a8825-929b-4d58-bb79-3e29b15f090d` | ✅ Yes — resubmitted `6d0479fc-…` | **Rejected (2026-08-11)** — 2.1.0 + 5.1.1 (ATT now resolved) | 2026-07-31 → 2026-08-11 | ATT/tracking issue RESOLVED (Device ID removed from ASC label). NEW rejection needs a rebuild: **5.1.1** = no in-app account deletion (only Sign out + data-delete that keeps account active; no `DELETE /auth/me`). **2.1.0** = Premium shown ("You're Premium!") with no purchasable IAP (iOS forces isPremium=true but still surfaces premium/subscription UI). **Both need code + a NEW build (→ 6).** |
 | 1.1.0 (4) | 4 | `e4bdb9ab-8c33-4d01-97bb-4136a22b79f3` | ⚠️ Attempted — **failed** | Rejected at upload (duplicate build number) | 2026-07-31 | `eas submit` failed: "build number 4 already used". Its build number was consumed on ASC → superseded by (5). |
 | 1.1.0 (3) | 3 | `d216a1c6-a554-4e0c-9b95-6a735598fe2d` | ❌ No | — | 2026-07-31 | Built for owner device-test only (STEP-M30 N01–N13). |
 | 1.1.0 (2) | 2 | `84e2d0f9-e457-4ef7-86ad-580376e151b5` | ❌ No | — | 2026-07-30 | Built for owner device-test only (STEP-M29 fixes). Owner reported 15 issues → STEP-M30. |
@@ -57,6 +57,20 @@ Single source of truth for every EAS build and its App Store Connect (ASC) submi
     Search History, Crash/Performance/Other Diagnostic (Sentry). Action: delete those 3 types, set every
     remaining type "used to track"=No, Publish, Cancel+resubmit (5). FUTURE build: reconcile the binary
     privacy manifest (currently 3 types) to the real set (rebuild — not needed for this resubmit).
+  - **2026-08-11 — ATT RESOLVED, but NEW rejection (build 5): 2.1.0 + 5.1.1 (needs a rebuild).** The
+    tracking/ATT issue is gone (Device ID removal worked). Apple's 4 screenshots (Settings ×2, Premium,
+    Sign-in) point to two code issues:
+    • **5.1.1 (Privacy - Data Collection & Storage) = no in-app ACCOUNT deletion.** App supports account
+      creation (email/Google/Apple) but Settings only has Sign out + a "Delete my data" that keeps the
+      account active (privacy.tsx). Backend has only `DELETE /auth/me/data` (data), no account delete.
+      FIX: add backend `DELETE /auth/me` (delete/anonymize account) + a "Delete Account" button in Settings
+      (confirm → delete → sign out).
+    • **2.1.0 (App Completeness) = Premium shown with no purchasable IAP.** iOS forces isPremium=true for all
+      (usePremium.ts, deliberate "no paid on iOS v1") yet still shows the Premium menu + "You're Premium! …
+      Thank you for your support" card + subscription/auto-renew copy → Apple reads advertised-but-unbuyable
+      paid features as incomplete. FIX: remove the Premium/subscription surface entirely on iOS (menu entry,
+      screen, auto-renew text, web-premium link) since everything ships free on iOS.
+    Both require code changes + a NEW production build (→ build 6, EAS auto-increments) + resubmit.
 - One version train (e.g. `1.1.0`) requires a **unique build number** per upload; a consumed build
   number can never be reused (why (4) → (5)).
 
