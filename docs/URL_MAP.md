@@ -28,7 +28,10 @@ Last updated: 2026-08-12 (SEO/GSC cleanup: legacy 301 redirects + /plan,/treksag
 | `/packing/[slug]` | Packing guide | `packing_list` | CMS-powered |
 | `/permits` | Permits hub | — | Hub + CMSPageHub(permit_guide) |
 | `/permits/[slug]` | Permit guide | `permit_guide` | CMS-powered |
+| `/guides` | Guides index hub | — | **NEW (2026-08-12)** — lists guide topics (costs/permits/packing/gear/itineraries/safety/beginner) + trek-category chips + FAQ + schema. Static from taxonomy. In sitemap. |
 | `/guides/[slug]` | General guide | multiple | cost_guide, gear_guide, itinerary, beginner_guide, safety_guide, expert_guide |
+| `/regions` | Regions index hub | — | **NEW (2026-08-12)** — lists all region hubs (India + international Himalaya) from `lib/regions.REGIONS` + FAQ + CollectionPage/ItemList schema. In sitemap. |
+| `/seasons` | Seasons index hub | — | **NEW (2026-08-12)** — lists the 5 canonical seasons from `lib/seasons.SEASONS` with per-season picks + FAQ + schema. In sitemap. |
 | `/costs` | Cost guides hub | — | CMSPageHub(cost_guide) |
 | `/gear` | Gear hub | — | CMSPageHub(gear_guide) |
 | `/itineraries` | Itineraries hub | — | CMSPageHub(itinerary) |
@@ -175,7 +178,7 @@ All in `apps/web-next/next.config.mjs` `redirects()` unless noted. Added to clea
 | `/treks/:path*` | `/explore` | No `/treks/{slug}` route exists — it's `/trek/{slug}` (singular). Legacy plural URLs. |
 | `/destinations/:path*`, `/blog/:path*` | `/explore` | Route prefixes that never existed. |
 | `/health/:path*` | `/safety` | Old health/safety articles. |
-| `/guides`, `/seasons`, `/regions`, `/treks` (EXACT) | `/explore` | Bare hub-index pages don't exist (only `/[slug]` children). Also removed from `sitemap.ts`. |
+| `/treks` (EXACT) | `/explore` | No `/treks` page (treks live at `/trek/{slug}`). NOTE: `/guides`, `/seasons`, `/regions` are now REAL index hub pages (2026-08-12) — no longer redirected. |
 | `/regions/uttarakhandUttarakhand` | `/regions/uttarakhand` | Malformed duplicated-slug alias (stale crawl). |
 | ~15 dead root-slug articles (`/best-trekking-gear-india`, `/what-to-pack-for-a-himalayan-trek`, `/how-to-get-inner-line-permit-ladakh`, `/roopkund-trek-complete-guide`, …) | closest live hub (`/gear`,`/packing`,`/permits`,`/safety`,`/regions/ladakh`,`/operators`,`/trek/roopkund`,`/explore`) | Old blog/guide URLs. |
 

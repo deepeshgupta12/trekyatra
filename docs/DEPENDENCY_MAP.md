@@ -3048,3 +3048,17 @@ Shared backend + mobile. iOS App Store rejection fix. Impact of touched symbols 
 - `apps/web-next/app/(treksage)/treksage/page.tsx` — added `alternates.canonical=/treksage` (dedupe `?q=`).
 - `apps/web-next/app/(public)/plan/layout.tsx` — NEW: canonical `/plan` (client-page wizard has no metadata).
 - `apps/web-next/app/(public)/plan/results/layout.tsx` — NEW: canonical `/plan/results` + `noindex` (personalized).
+
+## 2026-08-12 — SEO follow-up: index hub pages + difficulty-page differentiation (web). blast radius LOW.
+- `apps/web-next/app/(public)/regions/page.tsx` — NEW index hub (lists REGIONS; CollectionPage/FAQ schema).
+- `apps/web-next/app/(public)/seasons/page.tsx` — NEW index hub (lists SEASONS + per-season picks; schema).
+- `apps/web-next/app/(public)/guides/page.tsx` — NEW index hub (guide topics + trek-category chips; FAQ schema).
+- `apps/web-next/components/content/DifficultyLadder.tsx` — NEW shared Beginner→Moderate→Challenging cross-link.
+- `apps/web-next/app/(public)/challenging/page.tsx` — REWRITE: unique sections (prerequisites, AMS, permits/
+  guides/insurance, fitness benchmarks table) + ladder + interlinks (fixes GSC "duplicate" thin-content).
+- `apps/web-next/app/(public)/moderate/page.tsx` — REWRITE: unique sections (readiness checklist, 6-week
+  training table, terrain) + ladder + interlinks.
+- `apps/web-next/app/(public)/beginner/page.tsx` — enhanced: ladder + FAQ + interlinks to /moderate,/regions,/seasons.
+- `apps/web-next/next.config.mjs` — REMOVED `/guides|/seasons|/regions` bare-index redirects (pages now exist;
+  they'd shadow the routes); kept `/treks`→`/explore`.
+- `apps/web-next/app/sitemap.ts` — re-added `/regions`,`/seasons`,`/guides` (now real pages).

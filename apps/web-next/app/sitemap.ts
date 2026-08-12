@@ -85,10 +85,10 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     url("/explore", 0.9, "daily"),
     url("/packing", 0.7, "weekly"),
     url("/permits", 0.7, "weekly"),
-    // NOTE: /guides, /seasons, /regions bare-index pages do NOT exist (only their /[slug] children
-    // do), so they must NOT be listed here — doing so previously made Google crawl them and report
-    // 404s. Guide/season/region CONTENT is covered by /guides/{slug}, /seasons/{slug}, /regions/{slug}
-    // (emitted below) + the trek/compare/news child sitemaps.
+    // Index hub pages (2026-08-12) — real pages that list their /[slug] children.
+    url("/regions", 0.8, "weekly"),
+    url("/seasons", 0.7, "monthly"),
+    url("/guides", 0.7, "weekly"),
     url("/compare", 0.7, "weekly"),
     url("/treksage", 0.8, "weekly"),
     url("/plan", 0.8, "monthly"),

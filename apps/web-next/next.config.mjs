@@ -46,11 +46,9 @@ const nextConfig = {
       { source: "/blog/:path*", destination: "/explore", permanent: true },
       { source: "/health/:path*", destination: "/safety", permanent: true },
     ];
-    // Bare hub-index pages that don't exist (only /[slug] children do) — EXACT source only.
+    // Bare hub-index: /guides, /seasons, /regions now EXIST as real index hub pages (2026-08-12) — do
+    // NOT redirect them. Only /treks has no page (it's /trek/{slug}).
     const bareIndexRedirects = [
-      { source: "/guides", destination: "/explore", permanent: true },
-      { source: "/seasons", destination: "/explore", permanent: true },
-      { source: "/regions", destination: "/explore", permanent: true },
       { source: "/treks", destination: "/explore", permanent: true },
     ];
     // Specific dead root-level article slugs + the malformed region slug → closest live hub.

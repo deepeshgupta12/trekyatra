@@ -18,6 +18,21 @@ Do not modify any code file without first:
 4. Checking impacted files and blast radius
 5. Updating the relevant step file in `docs/steps/`
 
+## 2026-08-12 — SEO follow-up: /regions,/seasons,/guides index hubs + difficulty-page differentiation
+Owner-approved follow-up to the GSC cleanup:
+- **3 new index hub pages** (real, indexable, in sitemap): `/regions` (all region hubs from `lib/regions`),
+  `/seasons` (5 seasons + per-season picks), `/guides` (guide topics + trek-category chips). Each has intro,
+  card grid linking to `/[slug]` children, FAQ + CollectionPage/ItemList/Breadcrumb schema, cross-links.
+  §17: these 3 URLs were explicitly requested by the owner. `next.config.mjs` bare-index redirects for them
+  REMOVED (would shadow the routes); re-added to `sitemap.ts`. URL_MAP updated.
+- **Difficulty-page differentiation** (fixes GSC "duplicate" on thin near-identical pages): new shared
+  `DifficultyLadder` (Beginner→Moderate→Challenging cross-link, current rung highlighted) on all three;
+  `/challenging` rewritten with unique sections (prerequisites, AMS, permits/guides/insurance, fitness
+  benchmarks table); `/moderate` rewritten (readiness checklist, 6-week training table, terrain); `/beginner`
+  enhanced (ladder + unique FAQ + interlinks). Each now has distinct structure + content + interlinking so
+  Google stops collapsing them as duplicates.
+- Impact LOW (leaf pages/config); next build clean (0 errors). Owner: deploy web + GSC Validate Fix.
+
 ## 2026-08-12 — SEO / Google Search Console cleanup (404s, duplicates, canonicals)
 Owner: GSC reported (a) "Duplicate without user-selected canonical", (b) "Alternate page with proper
 canonical" (informational — healthy), (c) 404s, (d) "Crawled - currently not indexed". Root-caused +

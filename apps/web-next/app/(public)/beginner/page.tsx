@@ -16,8 +16,16 @@ function cmsToTrek(page: CMSPage): Trek {
   };
 }
 import Breadcrumb from "@/components/content/Breadcrumb";
+import { DifficultyLadder } from "@/components/content/DifficultyLadder";
 import { buildBreadcrumbSchema } from "@/lib/schema";
+import Link from "next/link";
 import type { Metadata } from "next";
+
+const BEGINNER_FAQ = [
+  { q: "Which is the easiest trek in India for a first-timer?", a: "For a first Himalayan trek, Kedarkantha and Nag Tibba in Uttarakhand are ideal: graded trails, short approaches and reliable operators. Near Mumbai, the Sahyadri forts like Rajmachi make a gentle low-altitude start." },
+  { q: "How fit do I need to be for my first trek?", a: "Enough to walk 4 to 5 hours with a daypack and climb stairs without gasping. Four weeks of daily 30-minute walks or jogs before the trek is plenty for an easy route." },
+  { q: "What should I not do on my first trek?", a: "Do not buy brand new boots for the trek, skip the medical certificate, wear cotton, or book the cheapest operator blindly. Train for four weeks and buffer one extra day for weather." },
+];
 
 export const revalidate = 3600;
 const CRUMBS = [{ label: "Home", href: "/" }, { label: "Beginner Treks" }];
@@ -49,10 +57,16 @@ export default async function Beginner() {
     ? cmsBeginnerTreks
     : treks.filter((t) => t.beginner).slice(0, 3);
   const bcSchema = buildBreadcrumbSchema(CRUMBS);
+  const faqSchema = {
+    "@context": "https://schema.org",
+    "@type": "FAQPage",
+    mainEntity: BEGINNER_FAQ.map(({ q, a }) => ({ "@type": "Question", name: q, acceptedAnswer: { "@type": "Answer", text: a } })),
+  };
 
   return (
     <>
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(bcSchema) }} />
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(faqSchema) }} />
       <div className="container-wide pt-4 pb-0"><Breadcrumb items={CRUMBS} /></div>
       <section className="py-10 container-wide">
         <div className="text-xs uppercase tracking-[0.25em] text-accent mb-3">Beginner guides</div>
@@ -67,6 +81,7 @@ export default async function Beginner() {
             </div>
           </div>
         )}
+        <div className="max-w-3xl"><DifficultyLadder current="beginner" /></div>
       </section>
       <ContentPage
         eyebrow="Beginner"
@@ -82,6 +97,32 @@ export default async function Beginner() {
           ]},
         ]}
       />
+
+      <section className="py-12 container-wide border-t border-border">
+        <div className="max-w-3xl space-y-10">
+          <div>
+            <h2 className="font-display text-2xl font-semibold text-foreground mb-4">Where to next</h2>
+            <p className="text-foreground/80 leading-relaxed">
+              Once your first trek is behind you and altitude feels manageable, step up to a{" "}
+              <Link href="/moderate" className="text-accent hover:underline">moderate trek</Link>. Choose a friendly
+              starting region with the <Link href="/regions" className="text-accent hover:underline">regions guide</Link>,
+              and check the calendar with the <Link href="/seasons" className="text-accent hover:underline">seasons guide</Link>{" "}
+              so the weather is on your side.
+            </p>
+          </div>
+          <div>
+            <h2 className="font-display text-2xl font-semibold text-foreground mb-4">Frequently asked questions</h2>
+            <div className="space-y-5">
+              {BEGINNER_FAQ.map(({ q, a }) => (
+                <div key={q}>
+                  <h3 className="font-semibold text-foreground mb-2">{q}</h3>
+                  <p className="text-foreground/80 leading-relaxed text-sm">{a}</p>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+    </section>
     </>
   );
 }
