@@ -4,10 +4,13 @@ import { TrekCard, type Trek } from "@/components/trek/TrekCard";
 import { fetchTreks } from "@/lib/trekApi";
 import { fetchCMSPages, type CMSPage, type TrekFacts } from "@/lib/api";
 import Breadcrumb from "@/components/content/Breadcrumb";
+import FAQAccordion, { type FAQItem } from "@/components/content/FAQAccordion";
+import SchemaInjector from "@/components/seo/SchemaInjector";
 import { DifficultyLadder } from "@/components/content/DifficultyLadder";
-import { buildBreadcrumbSchema } from "@/lib/schema";
-import Link from "next/link";
-import { ArrowRight, Mountain, Clock, TrendingUp, CheckCircle2 } from "lucide-react";
+import { HubHero, HubSection, HubFAQSection } from "@/components/hub/HubLayout";
+import { createHubLinker } from "@/components/hub/internalLink";
+import { buildBreadcrumbSchema, buildCollectionPageSchema, buildFAQSchema } from "@/lib/schema";
+import { Mountain, Clock, TrendingUp, CheckCircle2 } from "lucide-react";
 
 function cmsToTrek(page: CMSPage): Trek {
   const tf = (page.content_json?.trek_facts ?? {}) as TrekFacts;
@@ -32,7 +35,7 @@ export const metadata: Metadata = {
   openGraph: { title: "Moderate Treks in India | TrekYatra", type: "website" },
 };
 
-const FAQ = [
+const FAQ: FAQItem[] = [
   { q: "What counts as a moderate trek in India?", a: "A moderate trek involves 5 to 8 hours of walking a day, altitudes between 8,000 and 14,000 ft, some rocky or steep sections, and consistent daily elevation gain. No technical climbing is needed, but prior trekking helps a lot." },
   { q: "Am I ready to move up from beginner treks?", a: "If you have finished one or two easy treks, can walk 6 hours with a daypack without heavy fatigue, and have slept a night above 9,000 ft comfortably, you are ready to step up. If not, start on the beginner routes first." },
   { q: "What is the best moderate trek to step up to?", a: "Kedarkantha and Brahmatal are ideal step-up treks: moderate grade, good infrastructure and stunning snow views. Hampta Pass adds a real valley crossing with more varied terrain." },
@@ -52,6 +55,7 @@ const READY = [
 ];
 
 export default async function ModeratePage() {
+  const ilink = createHubLinker();
   const [cmsPages, allCmsTrekGuides, treks] = await Promise.all([
     fetchCMSHubPages("trek_guide"),
     fetchCMSPages({ page_type: "trek_guide", status: "published", limit: 100 }).catch(() => []),
@@ -64,65 +68,59 @@ export default async function ModeratePage() {
       return d.includes("moderate") || d.includes("intermediate");
     })
     .map(cmsToTrek);
-  const staticModerateTreks = treks.filter((t) =>
-    t.difficulty === "Moderate" || t.difficulty.toLowerCase().includes("moderate")
-  );
+  const staticModerateTreks = treks.filter((t) => t.difficulty === "Moderate" || t.difficulty.toLowerCase().includes("moderate"));
   const moderateTreks = cmsModerateTreks.length > 0 ? cmsModerateTreks : staticModerateTreks;
-
-  const bcSchema = buildBreadcrumbSchema(CRUMBS);
-  const faqSchema = {
-    "@context": "https://schema.org",
-    "@type": "FAQPage",
-    mainEntity: FAQ.map(({ q, a }) => ({ "@type": "Question", name: q, acceptedAnswer: { "@type": "Answer", text: a } })),
-  };
 
   return (
     <>
-      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(bcSchema) }} />
-      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(faqSchema) }} />
+      <SchemaInjector
+        schemas={[
+          buildBreadcrumbSchema(CRUMBS),
+          buildCollectionPageSchema({
+            name: "Moderate Treks in India",
+            description: metadata.description as string,
+            url: "/moderate",
+            about: { type: "Thing", name: "Moderate difficulty trekking in India", description: "Intermediate-grade Himalayan and Indian treks: 8,000–14,000 ft, 5–8 hours a day." },
+            treks: moderateTreks.slice(0, 12).map((t) => ({ name: t.name, slug: t.slug, image: t.image, description: t.description, difficulty: t.difficulty, duration: t.duration, altitude: t.altitude, season: t.season })),
+            significantLinks: ["/beginner", "/challenging", "/regions", "/seasons"],
+            keywords: ["moderate treks india", "intermediate treks india", "best moderate himalayan treks"],
+          }),
+          buildFAQSchema(FAQ)!,
+        ]}
+      />
 
       <div className="container-wide pt-4 pb-0"><Breadcrumb items={CRUMBS} /></div>
 
-      <section className="py-12 container-wide">
-        <div className="max-w-2xl">
-          <div className="text-xs uppercase tracking-[0.25em] text-accent mb-3">Moderate treks</div>
-          <h1 className="font-display text-4xl md:text-5xl font-semibold text-foreground mb-4 leading-tight">
-            Moderate treks in India — step it up
-          </h1>
-          <p className="text-muted-foreground text-lg mb-6 leading-relaxed">
-            The sweet spot: bigger mountains and longer days, but no ropes or technical ground. This is where most
-            trekkers spend their best years. Below is how to know you are ready, a six-week plan to get there, and the
-            terrain to expect.
-          </p>
-          <div className="flex flex-wrap gap-6 text-sm text-muted-foreground mb-8">
-            <span className="flex items-center gap-2"><Mountain className="h-4 w-4 text-accent" /> 8,000 – 14,000 ft typical altitude</span>
-            <span className="flex items-center gap-2"><Clock className="h-4 w-4 text-accent" /> 5–8 hrs walking per day</span>
-            <span className="flex items-center gap-2"><TrendingUp className="h-4 w-4 text-accent" /> Some prior trek experience helpful</span>
-          </div>
-        </div>
-        <div className="max-w-3xl"><DifficultyLadder current="moderate" /></div>
-      </section>
+      <HubHero
+        eyebrow="Moderate treks"
+        title="Moderate treks in India — step it up"
+        intro="The sweet spot: bigger mountains and longer days, but no ropes or technical ground. This is where most trekkers spend their best years. Below is how to know you are ready, a six-week plan to get there, and the terrain to expect."
+        stats={[
+          { icon: Mountain, label: "8,000 – 14,000 ft typical altitude" },
+          { icon: Clock, label: "5–8 hrs walking per day" },
+          { icon: TrendingUp, label: "Some prior trek experience helpful" },
+        ]}
+      >
+        <DifficultyLadder current="moderate" />
+      </HubHero>
 
       {moderateTreks.length > 0 && (
         <section className="py-4 container-wide">
-          <h2 className="font-display text-2xl font-semibold text-foreground mb-6">Popular moderate treks</h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5 mb-8">
-            {moderateTreks.map((t) => <TrekCard key={t.slug} trek={t} />)}
-          </div>
-          <Link href="/explore" className="inline-flex items-center gap-1 text-sm text-accent hover:underline font-medium">
-            Explore all treks <ArrowRight className="h-3.5 w-3.5" />
-          </Link>
+          <HubSection title="Popular moderate treks">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5 mb-8 mt-2">
+              {moderateTreks.map((t) => <TrekCard key={t.slug} trek={t} />)}
+            </div>
+            {ilink("/explore", <span className="inline-flex items-center gap-1">Explore all treks →</span>, "text-sm text-accent hover:underline font-medium")}
+          </HubSection>
         </section>
       )}
 
       <section className="py-12 container-wide border-t border-border mt-8">
         <div className="max-w-3xl space-y-10">
-          <div>
-            <h2 className="font-display text-2xl font-semibold text-foreground mb-4">Are you ready for a moderate trek?</h2>
+          <HubSection title="Are you ready for a moderate trek?">
             <p className="text-foreground/80 leading-relaxed mb-4">
               The most common mistake is booking a moderate trek straight after a single easy one. Run through this
-              checklist honestly. If you cannot tick most of it, spend a season on the{" "}
-              <Link href="/beginner" className="text-accent hover:underline">beginner routes</Link> first.
+              checklist honestly. If you cannot tick most of it, spend a season on the {ilink("/beginner", "beginner routes")} first.
             </p>
             <ul className="space-y-2">
               {READY.map((item) => (
@@ -131,10 +129,9 @@ export default async function ModeratePage() {
                 </li>
               ))}
             </ul>
-          </div>
+          </HubSection>
 
-          <div>
-            <h2 className="font-display text-2xl font-semibold text-foreground mb-4">A six-week training plan</h2>
+          <HubSection title="A six-week training plan">
             <p className="text-foreground/80 leading-relaxed mb-4">
               You do not need a gym. Six weeks of consistent cardio and leg work is enough for most moderate Himalayan treks.
             </p>
@@ -150,39 +147,28 @@ export default async function ModeratePage() {
                 </tbody>
               </table>
             </div>
-          </div>
+          </HubSection>
 
-          <div>
-            <h2 className="font-display text-2xl font-semibold text-foreground mb-4">Terrain you will meet</h2>
+          <HubSection title="Terrain you will meet">
             <p className="text-foreground/80 leading-relaxed">
               Moderate treks add variety: forest climbs, open meadows, boulder fields and the odd snow patch near a pass.
               None of it is technical, but footing matters and days are longer. Pick your window with the{" "}
-              <Link href="/seasons" className="text-accent hover:underline">seasons guide</Link> and your mountains with the{" "}
-              <Link href="/regions" className="text-accent hover:underline">regions guide</Link>. When altitude climbs past
-              14,000 ft, you are stepping into <Link href="/challenging" className="text-accent hover:underline">challenging</Link> territory.
+              {ilink("/seasons", "seasons guide")} and your mountains with the {ilink("/regions", "regions guide")}. When
+              altitude climbs past 14,000 ft, you are stepping into {ilink("/challenging", "challenging")} territory.
             </p>
-          </div>
+          </HubSection>
 
           {cmsPages.length > 0 && (
-            <div>
-              <h2 className="font-display text-2xl font-semibold text-foreground mb-4">Guides for moderate trekkers</h2>
-              <CMSPageHub pages={cmsPages} pathPrefix="/trek" />
-            </div>
+            <HubSection title="Guides for moderate trekkers">
+              <div className="mt-2"><CMSPageHub pages={cmsPages} pathPrefix="/trek" /></div>
+            </HubSection>
           )}
-
-          <div>
-            <h2 className="font-display text-2xl font-semibold text-foreground mb-4">Frequently asked questions</h2>
-            <div className="space-y-5">
-              {FAQ.map(({ q, a }) => (
-                <div key={q}>
-                  <h3 className="font-semibold text-foreground mb-2">{q}</h3>
-                  <p className="text-foreground/80 leading-relaxed text-sm">{a}</p>
-                </div>
-              ))}
-            </div>
-          </div>
         </div>
       </section>
+
+      <HubFAQSection heading="Moderate treks, frequently asked questions">
+        <FAQAccordion items={FAQ} />
+      </HubFAQSection>
     </>
   );
 }

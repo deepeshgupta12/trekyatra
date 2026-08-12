@@ -1,9 +1,16 @@
-import { ContentPage } from "@/components/content/ContentPage";
+import type { Metadata } from "next";
 import CMSPageHub, { fetchCMSHubPages } from "@/components/content/CMSPageHub";
-import { Mountain } from "lucide-react";
-import { fetchTreks } from "@/lib/trekApi";
 import { TrekCard, type Trek } from "@/components/trek/TrekCard";
+import { fetchTreks } from "@/lib/trekApi";
 import { fetchCMSPages, type CMSPage, type TrekFacts } from "@/lib/api";
+import Breadcrumb from "@/components/content/Breadcrumb";
+import FAQAccordion, { type FAQItem } from "@/components/content/FAQAccordion";
+import SchemaInjector from "@/components/seo/SchemaInjector";
+import { DifficultyLadder } from "@/components/content/DifficultyLadder";
+import { HubHero, HubSection, HubFAQSection } from "@/components/hub/HubLayout";
+import { createHubLinker } from "@/components/hub/internalLink";
+import { buildBreadcrumbSchema, buildCollectionPageSchema, buildFAQSchema } from "@/lib/schema";
+import { Mountain, Clock, Footprints, CheckCircle2 } from "lucide-react";
 
 function cmsToTrek(page: CMSPage): Trek {
   const tf = (page.content_json?.trek_facts ?? {}) as TrekFacts;
@@ -15,114 +22,140 @@ function cmsToTrek(page: CMSPage): Trek {
     description: page.seo_description ?? "", beginner: true,
   };
 }
-import Breadcrumb from "@/components/content/Breadcrumb";
-import { DifficultyLadder } from "@/components/content/DifficultyLadder";
-import { buildBreadcrumbSchema } from "@/lib/schema";
-import Link from "next/link";
-import type { Metadata } from "next";
 
-const BEGINNER_FAQ = [
+export const revalidate = 3600;
+const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? "https://www.trekyatra.co.in";
+const CRUMBS = [{ label: "Home", href: "/" }, { label: "Beginner Treks" }];
+
+export const metadata: Metadata = {
+  title: "Beginner Treks in India — Easy First-Time Treks | TrekYatra",
+  description: "The best beginner-friendly treks in India for first-timers. What to expect, the mistakes to avoid, the best first treks by city, verified permits and realistic costs.",
+  alternates: { canonical: `${SITE_URL}/beginner` },
+  authors: [{ name: "TrekYatra Editorial Team" }],
+  openGraph: { title: "Beginner Treks in India | TrekYatra", type: "website" },
+};
+
+const FAQ: FAQItem[] = [
   { q: "Which is the easiest trek in India for a first-timer?", a: "For a first Himalayan trek, Kedarkantha and Nag Tibba in Uttarakhand are ideal: graded trails, short approaches and reliable operators. Near Mumbai, the Sahyadri forts like Rajmachi make a gentle low-altitude start." },
   { q: "How fit do I need to be for my first trek?", a: "Enough to walk 4 to 5 hours with a daypack and climb stairs without gasping. Four weeks of daily 30-minute walks or jogs before the trek is plenty for an easy route." },
   { q: "What should I not do on my first trek?", a: "Do not buy brand new boots for the trek, skip the medical certificate, wear cotton, or book the cheapest operator blindly. Train for four weeks and buffer one extra day for weather." },
 ];
 
-export const revalidate = 3600;
-const CRUMBS = [{ label: "Home", href: "/" }, { label: "Beginner Treks" }];
+const MISTAKES = [
+  "Booking the cheapest operator", "Not training for 4 weeks", "Wearing brand new boots", "Skipping the medical certificate",
+  "Underestimating altitude", "Cotton clothing", "A cheap rented sleeping bag", "Booking peak weekend dates",
+  "Trekking solo unprepared", "Skipping travel insurance", "Not buffering one extra day",
+];
 
-export const metadata: Metadata = {
-  title: "Beginner Treks in India — Easy First-Time Treks | TrekYatra",
-  description: "Discover the best beginner-friendly treks in India. Curated easy treks for first-timers, with verified permits, realistic cost breakdowns, and safe route profiles.",
-  alternates: { canonical: "https://www.trekyatra.co.in/beginner" },
-  authors: [{ name: "TrekYatra Editorial Team" }],
-};
+const CITY_PICKS = [
+  { city: "From Mumbai", picks: "Rajmachi, Kalsubai, Harishchandragad" },
+  { city: "From Bangalore", picks: "Kumara Parvatha, Tadiyandamol, Skandagiri" },
+  { city: "From Delhi", picks: "Kedarkantha, Brahmatal, Nag Tibba" },
+];
 
-export default async function Beginner() {
+export default async function BeginnerPage() {
+  const ilink = createHubLinker();
   const [cmsPages, allCmsTrekGuides, treks] = await Promise.all([
     fetchCMSHubPages("beginner_guide"),
     fetchCMSPages({ page_type: "trek_guide", status: "published", limit: 100 }).catch(() => []),
     fetchTreks(),
   ]);
 
-  // CMS trek_guide pages with easy/beginner difficulty — preferred
   const cmsBeginnerTreks = allCmsTrekGuides
     .filter((p) => {
       const d = ((p.content_json?.trek_facts as TrekFacts | undefined)?.difficulty ?? "").toLowerCase();
       return d.includes("easy") || d.includes("beginner");
     })
     .map(cmsToTrek)
-    .slice(0, 3);
-
-  const beginnerTreks = cmsBeginnerTreks.length > 0
-    ? cmsBeginnerTreks
-    : treks.filter((t) => t.beginner).slice(0, 3);
-  const bcSchema = buildBreadcrumbSchema(CRUMBS);
-  const faqSchema = {
-    "@context": "https://schema.org",
-    "@type": "FAQPage",
-    mainEntity: BEGINNER_FAQ.map(({ q, a }) => ({ "@type": "Question", name: q, acceptedAnswer: { "@type": "Answer", text: a } })),
-  };
+    .slice(0, 6);
+  const beginnerTreks = cmsBeginnerTreks.length > 0 ? cmsBeginnerTreks : treks.filter((t) => t.beginner).slice(0, 6);
 
   return (
     <>
-      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(bcSchema) }} />
-      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(faqSchema) }} />
-      <div className="container-wide pt-4 pb-0"><Breadcrumb items={CRUMBS} /></div>
-      <section className="py-10 container-wide">
-        <div className="text-xs uppercase tracking-[0.25em] text-accent mb-3">Beginner guides</div>
-        <h1 className="font-display text-3xl md:text-4xl font-semibold text-foreground mb-2">Your first trek — start here</h1>
-        <p className="text-muted-foreground text-lg mb-8">India-specific, no-nonsense guides for first-time trekkers.</p>
-        <CMSPageHub pages={cmsPages} pathPrefix="/guides" />
-        {beginnerTreks.length > 0 && (
-          <div className="mb-10">
-            <h2 className="font-display text-xl font-semibold text-foreground mb-4">Best beginner treks right now</h2>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
-              {beginnerTreks.map((t) => <TrekCard key={t.slug} trek={t} />)}
-            </div>
-          </div>
-        )}
-        <div className="max-w-3xl"><DifficultyLadder current="beginner" /></div>
-      </section>
-      <ContentPage
-        eyebrow="Beginner"
-        title="Your first trek — start here"
-        subtitle="If you've never trekked above 10,000 ft, read this before you book anything."
-        icon={Mountain}
-        blocks={[
-          { eyebrow: "Mistakes", title: "11 mistakes first-time Indian trekkers make", bullets: ["Booking the cheapest operator", "Not training for 4 weeks", "Wearing brand new boots", "Skipping the medical certificate", "Underestimating altitude", "Cotton clothing", "Cheap rented sleeping bag", "Booking peak weekend dates", "Solo trekking unprepared", "Skipping travel insurance", "Not buffering 1 extra day"] },
-          { eyebrow: "Picks", title: "Best first treks by city", cards: [
-            { title: "From Mumbai", body: "Rajmachi, Kalsubai, Harishchandragad" },
-            { title: "From Bangalore", body: "Kumara Parvatha, Tadiyandamol, Skandagiri" },
-            { title: "From Delhi", body: "Kedarkantha, Brahmatal, Nag Tibba" },
-          ]},
+      <SchemaInjector
+        schemas={[
+          buildBreadcrumbSchema(CRUMBS),
+          buildCollectionPageSchema({
+            name: "Beginner Treks in India",
+            description: metadata.description as string,
+            url: "/beginner",
+            about: { type: "Thing", name: "Beginner trekking in India", description: "Easy, first-timer friendly treks across India: low altitude, graded trails and short approaches." },
+            treks: beginnerTreks.map((t) => ({ name: t.name, slug: t.slug, image: t.image, description: t.description, difficulty: t.difficulty, duration: t.duration, altitude: t.altitude, season: t.season })),
+            significantLinks: ["/moderate", "/regions", "/seasons", "/packing"],
+            keywords: ["beginner treks india", "easy treks india", "first trek india", "treks for first timers india"],
+          }),
+          buildFAQSchema(FAQ)!,
         ]}
       />
 
-      <section className="py-12 container-wide border-t border-border">
+      <div className="container-wide pt-4 pb-0"><Breadcrumb items={CRUMBS} /></div>
+
+      <HubHero
+        eyebrow="Beginner treks"
+        title="Your first trek — start here"
+        intro="If you have never trekked above 10,000 ft, read this before you book anything. India-specific, no-nonsense guidance for first-time trekkers: what to expect, what to avoid, and the best first treks near your city."
+        stats={[
+          { icon: Mountain, label: "Low altitude, graded trails" },
+          { icon: Clock, label: "4–5 hrs walking per day" },
+          { icon: Footprints, label: "No prior experience needed" },
+        ]}
+      >
+        <DifficultyLadder current="beginner" />
+      </HubHero>
+
+      {beginnerTreks.length > 0 && (
+        <section className="py-4 container-wide">
+          <HubSection title="Best beginner treks right now">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5 mb-8 mt-2">
+              {beginnerTreks.map((t) => <TrekCard key={t.slug} trek={t} />)}
+            </div>
+            {ilink("/explore", <span className="inline-flex items-center gap-1">Explore all treks →</span>, "text-sm text-accent hover:underline font-medium")}
+          </HubSection>
+        </section>
+      )}
+
+      <section className="py-12 container-wide border-t border-border mt-8">
         <div className="max-w-3xl space-y-10">
-          <div>
-            <h2 className="font-display text-2xl font-semibold text-foreground mb-4">Where to next</h2>
-            <p className="text-foreground/80 leading-relaxed">
-              Once your first trek is behind you and altitude feels manageable, step up to a{" "}
-              <Link href="/moderate" className="text-accent hover:underline">moderate trek</Link>. Choose a friendly
-              starting region with the <Link href="/regions" className="text-accent hover:underline">regions guide</Link>,
-              and check the calendar with the <Link href="/seasons" className="text-accent hover:underline">seasons guide</Link>{" "}
-              so the weather is on your side.
-            </p>
-          </div>
-          <div>
-            <h2 className="font-display text-2xl font-semibold text-foreground mb-4">Frequently asked questions</h2>
-            <div className="space-y-5">
-              {BEGINNER_FAQ.map(({ q, a }) => (
-                <div key={q}>
-                  <h3 className="font-semibold text-foreground mb-2">{q}</h3>
-                  <p className="text-foreground/80 leading-relaxed text-sm">{a}</p>
+          <HubSection title="11 mistakes first-time Indian trekkers make">
+            <ul className="grid sm:grid-cols-2 gap-x-6 gap-y-2 mt-2">
+              {MISTAKES.map((m) => (
+                <li key={m} className="flex items-start gap-2 text-foreground/80 text-sm">
+                  <CheckCircle2 className="h-4 w-4 text-accent mt-0.5 shrink-0" /> {m}
+                </li>
+              ))}
+            </ul>
+          </HubSection>
+
+          <HubSection title="Best first treks by city">
+            <div className="grid sm:grid-cols-3 gap-4 mt-2">
+              {CITY_PICKS.map(({ city, picks }) => (
+                <div key={city} className="p-4 bg-card border border-border rounded-xl">
+                  <h3 className="font-semibold text-sm text-foreground mb-1">{city}</h3>
+                  <p className="text-muted-foreground text-sm">{picks}</p>
                 </div>
               ))}
             </div>
-          </div>
+          </HubSection>
+
+          <HubSection title="Where to next">
+            <p className="text-foreground/80 leading-relaxed">
+              Once your first trek is behind you and altitude feels manageable, step up to a {ilink("/moderate", "moderate trek")}.
+              Choose a friendly starting region with the {ilink("/regions", "regions guide")}, and check the calendar with
+              the {ilink("/seasons", "seasons guide")} so the weather is on your side.
+            </p>
+          </HubSection>
+
+          {cmsPages.length > 0 && (
+            <HubSection title="First-timer guides">
+              <div className="mt-2"><CMSPageHub pages={cmsPages} pathPrefix="/guides" /></div>
+            </HubSection>
+          )}
         </div>
-    </section>
+      </section>
+
+      <HubFAQSection heading="Beginner treks, frequently asked questions">
+        <FAQAccordion items={FAQ} />
+      </HubFAQSection>
     </>
   );
 }

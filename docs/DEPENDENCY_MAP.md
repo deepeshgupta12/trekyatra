@@ -3062,3 +3062,17 @@ Shared backend + mobile. iOS App Store rejection fix. Impact of touched symbols 
 - `apps/web-next/next.config.mjs` — REMOVED `/guides|/seasons|/regions` bare-index redirects (pages now exist;
   they'd shadow the routes); kept `/treks`→`/explore`.
 - `apps/web-next/app/sitemap.ts` — re-added `/regions`,`/seasons`,`/guides` (now real pages).
+
+## 2026-08-12 — Hub/difficulty pages: UI consistency + rich schema + internal-link dedup (web). LOW/0-upstream.
+- NEW shared components (all reused across the 6 pages):
+  - `apps/web-next/components/hub/JsLink.tsx` — JS-navigated (role=link, no `<a href>`) for 2nd+ occurrences of a URL.
+  - `apps/web-next/components/hub/internalLink.tsx` — `createHubLinker()` → `ilink(href,label)`: first occurrence
+    renders `<a href>`, later occurrences render `<JsLink>` (one crawlable link per URL per page).
+  - `apps/web-next/components/hub/HubLayout.tsx` — `HubHero` (single H1 + `.hub-intro` + stat chips),
+    `HubSection` (uniform H2), `HubFAQSection` (`.hub-faq` speakable container).
+- REFACTORED to use the shared components + `FAQAccordion` (common FAQ UI, H3 questions) + `TrekCard` +
+  `SchemaInjector` with `buildBreadcrumbSchema` + rich `buildCollectionPageSchema` (about, treks ItemList of
+  TouristAttraction, significantLink, keywords, speakable `.hub-intro`/`.hub-faq`) + `buildFAQSchema`, plus a
+  standalone `ItemList` on the index hubs; clean H1→H2→H3 hierarchy; link dedup via `ilink`:
+  `app/(public)/{regions,seasons,guides,moderate,challenging,beginner}/page.tsx`.
+- No route/URL changes. next build clean. detect_changes LOW/0-affected.

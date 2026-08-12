@@ -18,6 +18,21 @@ Do not modify any code file without first:
 4. Checking impacted files and blast radius
 5. Updating the relevant step file in `docs/steps/`
 
+## 2026-08-12 — Hub/difficulty pages: UI consistency + rich schema + internal-link dedup
+Owner asked to improve the UI of the 6 SEO pages (/regions,/seasons,/guides,/moderate,/challenging,/beginner)
+with common CSS components, richer schema + heading hierarchy, and a first-href/rest-JS internal-link rule.
+- **Common components** (new, reused across all 6): `HubHero` (single H1 + `.hub-intro` + stat chips),
+  `HubSection` (uniform H2), `HubFAQSection` (`.hub-faq`); plus existing `FAQAccordion` (FAQ UI, H3 questions),
+  `TrekCard` (cards). Consistent look across every page.
+- **Rich schema (schema.org + Google)**: each page now emits `BreadcrumbList` + `CollectionPage`
+  (via `buildCollectionPageSchema`: `about` entity, `ItemList` of treks as `TouristAttraction` with fact
+  PropertyValues, `significantLink` interlinks, `keywords`, `SpeakableSpecification` on `.hub-intro`/`.hub-faq`)
+  + a standalone `ItemList` on the index hubs + `FAQPage`. Clean H1 → H2 → H3 hierarchy throughout.
+- **Internal-link dedup**: new `JsLink` (JS-navigated, no `<a href>`) + `createHubLinker()` → `ilink(href,label)`.
+  The FIRST occurrence of any URL on a page renders a crawlable `<a href>`; every later occurrence renders a
+  JsLink — exactly one crawlable link per destination per page (per the owner's rule).
+- No route/URL changes; next build clean (0 errors); impact LOW/0-upstream. Owner: deploy web.
+
 ## 2026-08-12 — SEO follow-up: /regions,/seasons,/guides index hubs + difficulty-page differentiation
 Owner-approved follow-up to the GSC cleanup:
 - **3 new index hub pages** (real, indexable, in sitemap): `/regions` (all region hubs from `lib/regions`),
