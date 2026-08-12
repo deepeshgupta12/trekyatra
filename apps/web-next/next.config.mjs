@@ -35,7 +35,53 @@ const nextConfig = {
       { source: "/seasons/december", destination: "/seasons/winter", permanent: true },
       { source: "/seasons/may", destination: "/seasons/summer", permanent: true },
     ];
-    return [...sitemapRedirects, ...regionAliasRedirects, ...seasonMonthRedirects];
+    // ── GSC 404 cleanup (2026-08-12) ──
+    // Legacy/dead URL prefixes that never existed as routes (old sitemaps/backlinks) → 301 to a live
+    // hub so Google stops reporting 404s and any link equity is preserved. `:path*` catches all depths.
+    // (These are wildcards; the bare-index redirects below use EXACT sources so they don't shadow the
+    // real /guides/{slug}, /seasons/{slug}, /regions/{slug} children.)
+    const legacyPrefixRedirects = [
+      { source: "/treks/:path*", destination: "/explore", permanent: true },       // no /treks/{slug} route (it's /trek/{slug})
+      { source: "/destinations/:path*", destination: "/explore", permanent: true },
+      { source: "/blog/:path*", destination: "/explore", permanent: true },
+      { source: "/health/:path*", destination: "/safety", permanent: true },
+    ];
+    // Bare hub-index pages that don't exist (only /[slug] children do) — EXACT source only.
+    const bareIndexRedirects = [
+      { source: "/guides", destination: "/explore", permanent: true },
+      { source: "/seasons", destination: "/explore", permanent: true },
+      { source: "/regions", destination: "/explore", permanent: true },
+      { source: "/treks", destination: "/explore", permanent: true },
+    ];
+    // Specific dead root-level article slugs + the malformed region slug → closest live hub.
+    const legacyArticleRedirects = [
+      { source: "/regions/uttarakhandUttarakhand", destination: "/regions/uttarakhand", permanent: true },
+      { source: "/roopkund-trek-complete-guide", destination: "/trek/roopkund", permanent: true },
+      { source: "/best-treks-uttarakhand", destination: "/regions/uttarakhand", permanent: true },
+      { source: "/best-trekking-gear-india", destination: "/gear", permanent: true },
+      { source: "/high-altitude-trekking-gear-india", destination: "/gear", permanent: true },
+      { source: "/what-to-pack-for-a-himalayan-trek", destination: "/packing", permanent: true },
+      { source: "/trekking-packing-list-india", destination: "/packing", permanent: true },
+      { source: "/himachal-pradesh-trekking-permits-guide", destination: "/permits", permanent: true },
+      { source: "/how-to-get-inner-line-permit-ladakh", destination: "/permits", permanent: true },
+      { source: "/altitude-sickness-prevention-guide", destination: "/safety", permanent: true },
+      { source: "/high-altitude-trekking-tips", destination: "/safety", permanent: true },
+      { source: "/high-altitude-trekking-fitness-guide", destination: "/safety", permanent: true },
+      { source: "/leh-acclimatisation-guide", destination: "/regions/ladakh", permanent: true },
+      { source: "/ladakh-winter-travel-tips", destination: "/regions/ladakh", permanent: true },
+      { source: "/alchi-monastery-guide", destination: "/regions/ladakh", permanent: true },
+      { source: "/stok-kangri-trek-guide", destination: "/regions/ladakh", permanent: true },
+      { source: "/best-trekking-operators-india", destination: "/operators", permanent: true },
+      { source: "/how-to-reach-chopta-from-delhi", destination: "/explore", permanent: true },
+    ];
+    return [
+      ...sitemapRedirects,
+      ...regionAliasRedirects,
+      ...seasonMonthRedirects,
+      ...legacyPrefixRedirects,
+      ...bareIndexRedirects,
+      ...legacyArticleRedirects,
+    ];
   },
   async rewrites() {
     // Read the public API base. DO App Platform encrypted vars (EV[...]) are not

@@ -4,7 +4,7 @@
 > must be listed here and confirmed by the user. No new URL structures should be introduced
 > without updating this file and getting confirmation.
 
-Last updated: 2026-08-03 (region hubs made fully dynamic + SEO/AEO schema + sitemap-indexed)
+Last updated: 2026-08-12 (SEO/GSC cleanup: legacy 301 redirects + /plan,/treksage canonicals + sitemap 404 removal)
 
 ---
 
@@ -164,6 +164,25 @@ Last updated: 2026-08-03 (region hubs made fully dynamic + SEO/AEO schema + site
 | `/treks-sitemap.xml` | **Single catch-all trek sitemap** | Dynamic XML listing **ALL** published `/trek/{slug}` pages, **any region (India or international), auto-included with ZERO per-region code** → `generateTrekSitemap()` → `GET /public/sitemap-treks` (no state; limit 50000). Replaced the old 10 per-state/region sitemaps (`/{region}-treks-sitemap.xml`), which now **301-redirect** here (next.config.mjs). This is the future-proof design: publish a trek in any new region and it appears automatically. (2026-08-03) |
 | `/llms.txt` | LLM site guide (llmstxt.org) | Static curated `apps/web-next/public/llms.txt` — markdown overview + key **public** URLs (start-here, treks, guides, regions/seasons, compare, news, operators, about, programmatic access, sitemaps) for AI/LLM consumers. Meta-file like robots.txt — **NOT indexed** (excluded from sitemap). Lists only public pages + public API/MCP endpoints (no admin/account/auth). Added 2026-07-27 |
 | `/api/revalidate` | Next.js cache revalidate | POST, internal |
+
+## Legacy 301 Redirects & Canonicalization (SEO / GSC cleanup — 2026-08-12)
+
+All in `apps/web-next/next.config.mjs` `redirects()` unless noted. Added to clear Google Search Console
+404s + duplicate-canonical reports. **No new indexable URLs** — these only fold dead/param URLs into live ones.
+
+| Source (old / crawled) | → Destination | Why |
+|---|---|---|
+| `/treks/:path*` | `/explore` | No `/treks/{slug}` route exists — it's `/trek/{slug}` (singular). Legacy plural URLs. |
+| `/destinations/:path*`, `/blog/:path*` | `/explore` | Route prefixes that never existed. |
+| `/health/:path*` | `/safety` | Old health/safety articles. |
+| `/guides`, `/seasons`, `/regions`, `/treks` (EXACT) | `/explore` | Bare hub-index pages don't exist (only `/[slug]` children). Also removed from `sitemap.ts`. |
+| `/regions/uttarakhandUttarakhand` | `/regions/uttarakhand` | Malformed duplicated-slug alias (stale crawl). |
+| ~15 dead root-slug articles (`/best-trekking-gear-india`, `/what-to-pack-for-a-himalayan-trek`, `/how-to-get-inner-line-permit-ladakh`, `/roopkund-trek-complete-guide`, …) | closest live hub (`/gear`,`/packing`,`/permits`,`/safety`,`/regions/ladakh`,`/operators`,`/trek/roopkund`,`/explore`) | Old blog/guide URLs. |
+
+**Canonical tags (dedupe query-param variants):** `/treksage` → self-canonical (`page.tsx` metadata);
+`/plan` → self-canonical via `app/(public)/plan/layout.tsx` (the wizard is a client component);
+`/plan/results` → own canonical + `noindex` (personalized output). These resolve GSC "duplicate without
+user-selected canonical" for `/treksage?q=…` and `/plan?region=…`.
 
 ## TrekSage MCP Server & Datacenter Subdomain (Step 72)
 

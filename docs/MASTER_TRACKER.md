@@ -18,6 +18,28 @@ Do not modify any code file without first:
 4. Checking impacted files and blast radius
 5. Updating the relevant step file in `docs/steps/`
 
+## 2026-08-12 — SEO / Google Search Console cleanup (404s, duplicates, canonicals)
+Owner: GSC reported (a) "Duplicate without user-selected canonical", (b) "Alternate page with proper
+canonical" (informational — healthy), (c) 404s, (d) "Crawled - currently not indexed". Root-caused +
+fixed the code-actionable items (web only):
+- **Sitemap 404s**: `app/sitemap.ts` listed bare `/guides`, `/seasons`, `/regions` index pages that don't
+  exist (only their `/[slug]` children do) → Google crawled them as 404. Removed from the sitemap.
+- **Legacy/dead-URL 404s** (old sitemaps/backlinks) → 301s in `next.config.mjs`: wildcard prefixes
+  `/treks/:path*`→`/explore` (no `/treks/{slug}` route — it's `/trek/{slug}`), `/destinations/:path*`,
+  `/blog/:path*`→`/explore`, `/health/:path*`→`/safety`; exact bare-index redirects `/guides|/seasons|
+  /regions|/treks`→`/explore`; the malformed `/regions/uttarakhandUttarakhand`→`/regions/uttarakhand`;
+  and ~15 specific dead root-slug article URLs → closest live hub (gear→/gear, packing→/packing,
+  permits→/permits, altitude/fitness→/safety, ladakh guides→/regions/ladakh, operators→/operators, etc.).
+- **Duplicate without canonical** (query-param pages): `/plan?region=…` and `/treksage?q=…` had no
+  canonical. Added self-canonical to `/treksage` metadata + a scoped `plan/layout.tsx` canonical=`/plan`
+  (both are client components); `/plan/results` gets its own layout (canonical + `noindex` — personalized).
+- **Not fixed in code (explained to owner)**: (b) compare `?slugs=` "alternate w/ proper canonical" is
+  HEALTHY (working canonical → `/compare/{pair}`); sitemap `.xml` "crawled not indexed" is NORMAL; real
+  trek pages "crawled not indexed" + real pages flagged "duplicate" (they already self-canonical, e.g.
+  `/challenging`) are Google-discretion/thin-content signals → improve internal linking + content depth,
+  then Request Indexing / Validate Fix in GSC.
+Impact LOW/0-upstream (sitemap). next build validated. Owner: deploy web + in GSC "Validate Fix" per report.
+
 ## 2026-08-11 — iOS App Store fixes: account deletion (5.1.1) + remove premium surface on iOS (2.1.0)
 Owner: build 1.1.0 (5) rejected — 5.1.1 (no in-app account deletion) + 2.1.0 (Premium shown with no
 purchasable IAP). Fixed (needs a NEW iOS build → 6):

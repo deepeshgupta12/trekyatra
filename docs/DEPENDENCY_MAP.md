@@ -3037,3 +3037,14 @@ Shared backend + mobile. iOS App Store rejection fix. Impact of touched symbols 
 - `apps/mobile/components/account/AccountDashboard.tsx` — hide Premium menu row on iOS (Platform gate).
 - `apps/mobile/app/(tabs)/account/premium.tsx` — redirect to Account on iOS (screen unreachable).
 - Tests: `services/api/tests/test_auth.py` (+2: delete anonymises+blocks re-auth; delete requires auth).
+
+## 2026-08-12 — SEO / GSC cleanup (web only). blast radius LOW (leaf sitemap/config/metadata; 0 upstream).
+- `apps/web-next/app/sitemap.ts` — removed non-existent bare `/guides`,`/seasons`,`/regions` index URLs
+  (were 404s). `/[slug]` children + trek/compare/news child sitemaps unchanged.
+- `apps/web-next/next.config.mjs` — added 301 redirects: legacy prefixes (`/treks/:path*`,
+  `/destinations/:path*`,`/blog/:path*`→`/explore`; `/health/:path*`→`/safety`), exact bare indexes
+  (`/guides|/seasons|/regions|/treks`→`/explore`), `/regions/uttarakhandUttarakhand`→`/regions/uttarakhand`,
+  and ~15 dead root-slug articles → closest hub. Wildcards can't shadow `/…/[slug]` (exact bare-index sources).
+- `apps/web-next/app/(treksage)/treksage/page.tsx` — added `alternates.canonical=/treksage` (dedupe `?q=`).
+- `apps/web-next/app/(public)/plan/layout.tsx` — NEW: canonical `/plan` (client-page wizard has no metadata).
+- `apps/web-next/app/(public)/plan/results/layout.tsx` — NEW: canonical `/plan/results` + `noindex` (personalized).
