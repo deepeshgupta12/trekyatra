@@ -3076,3 +3076,12 @@ Shared backend + mobile. iOS App Store rejection fix. Impact of touched symbols 
   standalone `ItemList` on the index hubs; clean H1→H2→H3 hierarchy; link dedup via `ilink`:
   `app/(public)/{regions,seasons,guides,moderate,challenging,beginner}/page.tsx`.
 - No route/URL changes. next build clean. detect_changes LOW/0-affected.
+
+## 2026-08-15 — Home iOS download section (app live). blast radius LOW/0-upstream.
+- `apps/web-next/components/home/AppDownload.tsx` — NEW. `AppStoreBadge` + `AppDownloadButton` (client):
+  iOS mobile web deep-links `trekyatra://` with an App Store fallback; desktop/Android link straight to the
+  App Store. Exports `APP_STORE_URL`. Fires `trackEvent("conversion","app_download_click")`.
+- `apps/web-next/components/home/IOSAppBanner.tsx` — rewritten: waitlist email form removed; live pill +
+  badge CTA + desktop-only scan QR + phone mockup. Rendered at `app/(public)/page.tsx:473` (unchanged import).
+- `apps/web-next/public/images/app-store-qr.svg` — NEW static QR asset (→ App Store URL).
+- Consumers of `IOSAppBanner`: only the home page (`app/(public)/page.tsx`). No API/route/schema change.

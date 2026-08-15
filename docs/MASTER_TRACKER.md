@@ -18,6 +18,22 @@ Do not modify any code file without first:
 4. Checking impacted files and blast radius
 5. Updating the relevant step file in `docs/steps/`
 
+## 2026-08-15 — Home section: iOS app is LIVE (download CTA replaces waitlist)
+The app went live on the App Store, so the home "Coming to the App Store / Notify me" section
+(`components/home/IOSAppBanner.tsx`) is now a **download** section (desktop + mobile web):
+- New `components/home/AppDownload.tsx`: `AppStoreBadge` (Apple-style black badge) + `AppDownloadButton`
+  (smart open) — on **iOS mobile web** it tries the app via the `trekyatra://` scheme and falls back to the
+  App Store after ~1.4s if not installed (visibilitychange/pagehide cancels the fallback when the app opens);
+  on **desktop/Android** it follows the App Store link directly. Progressive-enhanced (real `<a href>`).
+- `IOSAppBanner` rewritten: removed the newsletter/waitlist email form; "Now live on the App Store" pill with
+  a pulsing dot; badge CTA on all viewports; **scan-to-download QR (desktop only, `hidden lg:flex`)**; phone
+  mockup caption → "Now available" + a floating rating chip. Keeps the impression analytics event.
+- New static asset `public/images/app-store-qr.svg` (QR → App Store URL; generated offline with segno, which
+  was then removed from the venv — no runtime/requirements change). Analytics: new `app_download_click`
+  conversion event; `ios_banner_view` source renamed `ios_app_live`.
+- App Store URL: https://apps.apple.com/in/app/trekyatra/id6795408094. Impact LOW/0-upstream. next build clean.
+  No route/URL change (§17 not triggered). Owner: deploy web.
+
 ## 2026-08-12 — Hub/difficulty pages: UI consistency + rich schema + internal-link dedup
 Owner asked to improve the UI of the 6 SEO pages (/regions,/seasons,/guides,/moderate,/challenging,/beginner)
 with common CSS components, richer schema + heading hierarchy, and a first-href/rest-JS internal-link rule.
