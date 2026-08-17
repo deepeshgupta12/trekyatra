@@ -2334,9 +2334,19 @@ export interface NewsArticle {
   updated_at: string;
 }
 
-/** List all published news articles (newest first). */
+/** List all published news articles (newest first).
+ *
+ * PERF: the `/public/news` list endpoint returns each article's FULL `content_html` body, but every
+ * list consumer (home "Recent News", /news index) renders only cards (title/slug/date/trek tab). Left
+ * intact, 60 full article bodies were serialized into the home page's RSC/HTML payload (~640 KB brotli,
+ * the dominant first-load cost for new users). We blank `content_html` here so the bodies never enter
+ * the payload — the single-article page (`fetchNewsArticle`) still returns the full body. This is a pure
+ * field-blank on the already-fetched array: it does NOT touch the fetch/timeout/error path, so it cannot
+ * cause the empty-section behaviour a fetch change could. `content_json` (which carries `trek_slug` for
+ * the news tabs) is kept as-is. */
 export async function fetchNewsArticles(limit = 20): Promise<NewsArticle[]> {
-  return apiFetch<NewsArticle[]>(`/public/news?limit=${limit}`);
+  const list = await apiFetch<NewsArticle[]>(`/public/news?limit=${limit}`);
+  return list.map((a) => ({ ...a, content_html: "" }));
 }
 
 /** Fetch news articles for a specific trek. */

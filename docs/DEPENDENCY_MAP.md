@@ -3085,3 +3085,11 @@ Shared backend + mobile. iOS App Store rejection fix. Impact of touched symbols 
   badge CTA + desktop-only scan QR + phone mockup. Rendered at `app/(public)/page.tsx:473` (unchanged import).
 - `apps/web-next/public/images/app-store-qr.svg` — NEW static QR asset (→ App Store URL).
 - Consumers of `IOSAppBanner`: only the home page (`app/(public)/page.tsx`). No API/route/schema change.
+
+## 2026-08-17 — PERF: slim news content_html from the home payload. blast radius LOW (1 caller).
+- `apps/web-next/lib/api.ts` — `fetchNewsArticles` now blanks `content_html` on the list result (home +
+  /news index render cards only). Single-article `fetchNewsArticle` unchanged (full body for /news/[slug]).
+  Reason: home doc was ~642 KB brotli from 60 full news bodies inlined in the RSC payload (the recurred
+  first-load bloat). Pure post-fetch `.map` — no fetch/timeout/error change → no empty-section risk.
+- Not changed: backend `/public/news` (`news.py:_to_response` still returns full content_html — shared API,
+  left intact to avoid mobile risk); Next image config (AVIF already served in prod via sharp).

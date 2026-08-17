@@ -18,6 +18,23 @@ Do not modify any code file without first:
 4. Checking impacted files and blast radius
 5. Updating the relevant step file in `docs/steps/`
 
+## 2026-08-17 — PERF: home first-load — slim news content_html out of the payload (recurrence fix)
+Owner: new users saw slow first loads (repeat users fine → uncached first-visit payload). Measured the
+live home doc at ~4.42 MB uncompressed / 642 KB brotli, with 159 `content_html` blobs in the RSC flight
+data. Root cause of the RECURRENCE: the earlier slim-down covered the CMS trek list (`/cms/pages` →
+`cms_page_card` blanks content_html), but the **news list endpoint `/public/news` still returns each
+article's full `content_html`** (`news.py:_to_response`), and the home fetches 60 of them for the
+"Recent News" section — none of which render the body (`RecentNewsSection` reads only trek_slug/slug/title).
+- FIX (safe, frontend, LOW risk): `apps/web-next/lib/api.ts fetchNewsArticles` now blanks `content_html`
+  on the fetched list before returning (single-article `fetchNewsArticle` untouched → /news/[slug] full).
+  Pure `.map` field-blank; does NOT touch the fetch/timeout/`.catch(()=>[])` path, so it cannot cause the
+  empty-home-section outage a fetch change could. Impact LOW (1 caller: home getHomeData). next build clean.
+- AVIF: VERIFIED already served in prod — `/_next/image` returns `content-type: image/avif` with a real
+  browser Accept header (sharp ^0.33.5 is in package.json and working). No image change needed; the old
+  "prod lacks sharp" note is stale.
+- Skipped per owner: CDN caching of `/_next/image` (cf-cache-status MISS) — not picked up now.
+- Owner: deploy web; re-measure the home doc size (expect ~640 KB → well under 100 KB brotli). Desktop + mobile web.
+
 ## 2026-08-15 — Home section: iOS app is LIVE (download CTA replaces waitlist)
 The app went live on the App Store, so the home "Coming to the App Store / Notify me" section
 (`components/home/IOSAppBanner.tsx`) is now a **download** section (desktop + mobile web):
