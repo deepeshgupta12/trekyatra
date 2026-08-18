@@ -3093,3 +3093,11 @@ Shared backend + mobile. iOS App Store rejection fix. Impact of touched symbols 
   first-load bloat). Pure post-fetch `.map` — no fetch/timeout/error change → no empty-section risk.
 - Not changed: backend `/public/news` (`news.py:_to_response` still returns full content_html — shared API,
   left intact to avoid mobile risk); Next image config (AVIF already served in prod via sharp).
+
+## 2026-08-18 — SEO: malformed /regions/{slug}{Name} 404 generator fixed. blast radius LOW.
+- `apps/web-next/components/hub/HubInterlinks.tsx` — `<li>` key changed from `l.href + l.label` (produced
+  URL-like strings like `/regions/himachalHimachal Pradesh` in the RSC payload → Google-crawled 404s) to a
+  group-scoped non-URL key `${g.title}:${l.label}`. React-key only — no render/href/API change. Consumers
+  (regions/[slug], seasons/[slug], trek-types/[slug]) unaffected.
+- `apps/web-next/next.config.mjs` — added generated `malformedRegionRedirects` (301 `/regions/{slug}{Name}`
+  → `/regions/{slug}` for all 10 regions); removed the earlier one-off `uttarakhandUttarakhand` redirect.

@@ -29,7 +29,11 @@ export function HubInterlinks({ groups }: { groups: HubLinkGroup[] }) {
               <h3 className="text-sm font-semibold text-foreground/90 mb-3">{g.title}</h3>
               <ul className="space-y-2.5">
                 {g.links.map((l) => (
-                  <li key={l.href + l.label}>
+                  // key MUST NOT be `href + label` — that produced URL-like strings such as
+                  // "/regions/himachalHimachal Pradesh" in the serialized RSC payload, which Google
+                  // harvested and crawled as malformed 404 URLs (/regions/{slug}{Name}). Use a
+                  // group-scoped, non-URL key instead.
+                  <li key={`${g.title}:${l.label}`}>
                     <Link href={l.href} className="group inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-accent transition-colors">
                       {l.label}
                       <ArrowRight className="h-3 w-3 opacity-0 group-hover:opacity-100 transition-opacity" />

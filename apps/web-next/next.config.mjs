@@ -51,9 +51,17 @@ const nextConfig = {
     const bareIndexRedirects = [
       { source: "/treks", destination: "/explore", permanent: true },
     ];
-    // Specific dead root-level article slugs + the malformed region slug → closest live hub.
+    // Malformed region URLs `/regions/{slug}{Name}` — these leaked from a bad React key in
+    // HubInterlinks (`key={l.href + l.label}`, now fixed) into the serialized RSC payload, and Google
+    // harvested + crawled them as 404s (e.g. /regions/kashmirKashmir, /regions/uttarakhandUttarakhand).
+    // 301 each to its canonical region hub so the already-crawled 404s resolve. Generated for every region.
+    const malformedRegionRedirects = [
+      ["uttarakhand", "Uttarakhand"], ["himachal", "Himachal"], ["kashmir", "Kashmir"],
+      ["ladakh", "Ladakh"], ["maharashtra", "Maharashtra"], ["sikkim", "Sikkim"],
+      ["karnataka", "Karnataka"], ["nepal", "Nepal"], ["pakistan", "Pakistan"], ["tibet", "Tibet"],
+    ].map(([slug, name]) => ({ source: `/regions/${slug}${name}`, destination: `/regions/${slug}`, permanent: true }));
+    // Specific dead root-level article slugs → closest live hub.
     const legacyArticleRedirects = [
-      { source: "/regions/uttarakhandUttarakhand", destination: "/regions/uttarakhand", permanent: true },
       { source: "/roopkund-trek-complete-guide", destination: "/trek/roopkund", permanent: true },
       { source: "/best-treks-uttarakhand", destination: "/regions/uttarakhand", permanent: true },
       { source: "/best-trekking-gear-india", destination: "/gear", permanent: true },
@@ -78,6 +86,7 @@ const nextConfig = {
       ...seasonMonthRedirects,
       ...legacyPrefixRedirects,
       ...bareIndexRedirects,
+      ...malformedRegionRedirects,
       ...legacyArticleRedirects,
     ];
   },

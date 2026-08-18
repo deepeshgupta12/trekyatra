@@ -18,6 +18,26 @@ Do not modify any code file without first:
 4. Checking impacted files and blast radius
 5. Updating the relevant step file in `docs/steps/`
 
+## 2026-08-18 — SEO: root-cause fix for malformed /regions/{slug}{Name} 404s (recurring)
+Owner: GSC kept flagging 404s like `/regions/kashmirKashmir`, `/regions/uttarakhandUttarakhand`
+(and `/regions/himachalHimachal`, ...). Earlier passes only redirected individual outputs; the GENERATOR
+was never found. ROOT CAUSE: `components/hub/HubInterlinks.tsx` rendered each interlink `<li>` with
+`key={l.href + l.label}` — for the "Nearby regions" group that is `/regions/himachal` + `Himachal Pradesh`
+= `/regions/himachalHimachal Pradesh`. The `<Link href>` itself was always correct, but the malformed
+React **key** is serialized into the RSC flight data (`__next_f`), and Google harvests URL-like strings
+from the page source → discovers `/regions/{slug}{Name}` → crawls → 404. HubInterlinks renders on every
+`/regions/[slug]`, `/seasons/[slug]`, `/trek-types/[slug]` page, so it produced a malformed link per region
+on every hub page (hence the steady stream of new ones, e.g. kashmirKashmir on Aug 8).
+- FIX #1 (generator): `HubInterlinks` key → `` `${g.title}:${l.label}` `` (group-scoped, non-URL). Keys are
+  React-internal — zero effect on rendering or the real hrefs. Stops all new malformed URLs at the source.
+- FIX #2 (cleanup): `next.config.mjs` now 301s `/regions/{slug}{Name}` → `/regions/{slug}` for ALL 10 regions
+  (generated), so the already-crawled 404s resolve and Google drops them faster. Replaced the earlier
+  one-off `uttarakhandUttarakhand` redirect.
+- Verified live: earlier redirects ARE deployed (`/treks/*`,`/blog/*`,`/destinations/*` 308; `/seasons`,
+  `/guides` 200) — the other flagged rows are historical pre-deploy crawls; owner should "Validate Fix" in GSC.
+  GitNexus MCP was down this session → manual blast-radius (leaf key change + additive redirects, LOW).
+  next build clean. Owner: deploy web + GSC Validate Fix on the "not found (404)" report.
+
 ## 2026-08-17 — PERF: home first-load — slim news content_html out of the payload (recurrence fix)
 Owner: new users saw slow first loads (repeat users fine → uncached first-visit payload). Measured the
 live home doc at ~4.42 MB uncompressed / 642 KB brotli, with 159 `content_html` blobs in the RSC flight
