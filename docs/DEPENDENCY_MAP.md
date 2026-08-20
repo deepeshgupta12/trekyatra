@@ -3101,3 +3101,13 @@ Shared backend + mobile. iOS App Store rejection fix. Impact of touched symbols 
   (regions/[slug], seasons/[slug], trek-types/[slug]) unaffected.
 - `apps/web-next/next.config.mjs` — added generated `malformedRegionRedirects` (301 `/regions/{slug}{Name}`
   → `/regions/{slug}` for all 10 regions); removed the earlier one-off `uttarakhandUttarakhand` redirect.
+
+## 2026-08-20 — App SEO/AEO: /app page + MobileApplication schema + Smart App Banner + llms.txt. blast radius LOW.
+- `apps/web-next/app/(public)/app/page.tsx` — NEW /app landing/AEO page (reuses HubHero/HubSection/HubFAQSection,
+  FAQAccordion, AppDownloadButton, SchemaInjector). Consumer: none (leaf route).
+- `apps/web-next/lib/schema.ts` — NEW `buildMobileAppSchema()` (MobileApplication, no aggregateRating);
+  App Store URL added to Organization `sameAs` in `buildWebSiteSchema`. Additive.
+- `apps/web-next/app/layout.tsx` — `metadata.itunes = { appId, appArgument }` → `apple-itunes-app` meta. Additive.
+- `apps/web-next/app/llms.txt/route.ts` — NEW `/llms.txt` (text/plain app+site summary for AI crawlers).
+- `apps/web-next/app/sitemap.ts` — `/app` added. `docs/URL_MAP.md` — `/app` row added (§17 owner-confirmed).
+- Build: /app prerendered static + /llms.txt route built (verified in .next manifests). Next image config unchanged.

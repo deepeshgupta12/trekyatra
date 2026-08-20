@@ -73,6 +73,8 @@ export const metadata: Metadata = {
     images: [`${SITE_URL}/images/og-default.jpg`],
   },
   robots: { index: true, follow: true },
+  // iOS Safari Smart App Banner ("Open in the TrekYatra app") + ties the site to the App Store app.
+  itunes: { appId: "6795408094", appArgument: `${SITE_URL}/app` },
   ...(process.env.NEXT_PUBLIC_GOOGLE_SITE_VERIFICATION
     ? { verification: { google: process.env.NEXT_PUBLIC_GOOGLE_SITE_VERIFICATION } }
     : {}),

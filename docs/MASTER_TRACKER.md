@@ -18,6 +18,25 @@ Do not modify any code file without first:
 4. Checking impacted files and blast radius
 5. Updating the relevant step file in `docs/steps/`
 
+## 2026-08-20 — App SEO/AEO: /app landing page + MobileApplication schema + Smart App Banner + llms.txt
+Owner: make the live iOS app show in Google SERP + get cited by AI answer engines (AEO). Code-side delivered
+(§17: `/app` URL owner-confirmed):
+- **`/app` landing page** (`app/(public)/app/page.tsx`) — canonical page for "TrekYatra app" queries: hero +
+  smart App Store download button (reuses AppDownloadButton), 6 feature cards, app-vs-web section, and an
+  **AEO FAQ** (the questions people/AI ask: "is there a TrekYatra app?", "best app to plan treks in India?",
+  "is it free?", "does it work offline?", "what is TrekSage AI?"). Self-canonical; in sitemap.
+- **Schema** (`lib/schema.ts`): new `buildMobileAppSchema()` (`MobileApplication`: iOS, TravelApplication,
+  free Offer, downloadUrl, screenshot, featureList, publisher) emitted on /app via SchemaInjector, with
+  `FAQPage` + `BreadcrumbList`. **No aggregateRating** — deliberately omitted until genuine App Store reviews
+  exist (fake/unsourced ratings risk a manual action). Also added the App Store URL to Organization `sameAs`.
+- **`apple-itunes-app` Smart App Banner** meta via `layout.tsx metadata.itunes` (iOS Safari "Open in app").
+- **`/llms.txt`** (`app/llms.txt/route.ts`) — concise factual summary of the app + key pages for AI crawlers
+  (they're already allowed in robots.ts). URL_MAP + sitemap updated.
+- OWNER SIDE (not code): App Store ASO (title/subtitle/keywords/screenshots), genuine ratings via an in-app
+  SKStoreReviewController prompt, Wikidata entity, third-party listicles/Product Hunt, Apple Search Ads,
+  Universal Links (AASA — needs an app build). aggregateRating schema to be added once real reviews land.
+- GitNexus MCP down this session → manual blast radius (all additive/leaf, LOW). next build clean. Owner: deploy web.
+
 ## 2026-08-18 — SEO: root-cause fix for malformed /regions/{slug}{Name} 404s (recurring)
 Owner: GSC kept flagging 404s like `/regions/kashmirKashmir`, `/regions/uttarakhandUttarakhand`
 (and `/regions/himachalHimachal`, ...). Earlier passes only redirected individual outputs; the GENERATOR

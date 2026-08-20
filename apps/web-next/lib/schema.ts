@@ -394,7 +394,52 @@ export function buildWebSiteSchema() {
         "https://instagram.com/trekyatra",
         "https://youtube.com/trekyatra",
         "https://www.trekyatra.co.in",
+        // App Store listing — ties the iOS app to the brand entity (knowledge panel / AEO).
+        "https://apps.apple.com/in/app/trekyatra/id6795408094",
       ],
+    },
+  };
+}
+
+const APP_STORE_URL = "https://apps.apple.com/in/app/trekyatra/id6795408094";
+
+/**
+ * MobileApplication (SoftwareApplication) schema for the TrekYatra iOS app. Powers Google's app
+ * rich result + AEO entity understanding. NOTE: no `aggregateRating` is emitted — Google requires
+ * ratings to be genuine and sourced, and manufactured/unsourced ratings risk a manual action. Add it
+ * ONLY once real App Store reviews exist, populated from the actual rating value + count.
+ */
+export function buildMobileAppSchema() {
+  return {
+    "@context": "https://schema.org",
+    "@type": "MobileApplication",
+    name: "TrekYatra",
+    alternateName: "TrekYatra — Trek Planning & Guides",
+    operatingSystem: "iOS",
+    applicationCategory: "TravelApplication",
+    url: `${SITE_URL}/app`,
+    downloadUrl: APP_STORE_URL,
+    installUrl: APP_STORE_URL,
+    inLanguage: ["en-IN", "hi-IN"],
+    description:
+      "TrekYatra is a trek planning and discovery app for India and the Himalaya. Plan a full trek in about 60 seconds with the TrekSage AI assistant, browse 250+ deep trek guides with route maps, permits, packing lists and honest cost breakdowns, check live weather and trail conditions, and save guides to open offline on the trail.",
+    image: `${SITE_URL}/images/app-preview.png`,
+    screenshot: `${SITE_URL}/images/app-preview.png`,
+    offers: { "@type": "Offer", price: "0", priceCurrency: "INR" },
+    featureList: [
+      "TrekSage AI — plan a full trek in ~60 seconds",
+      "250+ trek guides: route maps, permits, packing and costs",
+      "Live weather, trail conditions and trip reports",
+      "Offline access to saved trek guides",
+      "GPS nearby treks",
+      "English and Hindi",
+    ],
+    author: { "@type": "Organization", name: SITE_NAME, url: SITE_URL },
+    publisher: {
+      "@type": "Organization",
+      name: SITE_NAME,
+      url: SITE_URL,
+      logo: { "@type": "ImageObject", url: LOGO_URL, width: 512, height: 512 },
     },
   };
 }
