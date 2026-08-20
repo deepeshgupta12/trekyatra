@@ -70,6 +70,10 @@ Owner: make the live iOS app show in Google SERP + get cited by AI answer engine
     next deploy's old entry is already past-window → regenerates on first request. `/app` itunes Smart App
     Banner meta + Organization `sameAs` App Store URL both verified LIVE (on `/app` and homepage). Owner:
     redeploy web-next to publish the app-aware llms.txt.
+- **GitNexus re-index 2026-08-20** (`analyze --force`, ~66 min): index now up-to-date at `de09832` —
+  **517,374 nodes | 757,491 edges | 3,626 clusters | 300 flows** (was 503,733 / 747,855 at `5d48d6d`).
+  Note: the full re-index is memory/time-heavy on this repo; a concurrent second `analyze` must never be
+  launched (index-write conflict) — run exactly one at a time.
 - OWNER SIDE (not code): App Store ASO (title/subtitle/keywords/screenshots), genuine ratings via an in-app
   SKStoreReviewController prompt, Wikidata entity, third-party listicles/Product Hunt, Apple Search Ads,
   Universal Links (AASA — needs an app build). aggregateRating schema to be added once real reviews land.
