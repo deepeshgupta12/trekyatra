@@ -62,6 +62,14 @@ Owner: make the live iOS app show in Google SERP + get cited by AI answer engine
 - **`apple-itunes-app` Smart App Banner** meta via `layout.tsx metadata.itunes` (iOS Safari "Open in app").
 - **`/llms.txt`** (`app/llms.txt/route.ts`) — concise factual summary of the app + key pages for AI crawlers
   (they're already allowed in robots.ts). URL_MAP + sitemap updated.
+  - **2026-08-20 follow-up:** live `/llms.txt` was serving a stale copy WITHOUT the `## iOS app` section
+    even though the deployed source had it. Root cause: the route is `force-static` and was `revalidate=86400`
+    (24h), and DO App Platform reused the persisted `.next` cache entry across the deploy (still < 24h old →
+    Next considered it fresh → never regenerated). NOT a CDN cache (`cf-cache-status: BYPASS`; cache-busted
+    origin still stale). Fix: **revalidate 86400 → 3600 (1h)** so a stale entry can't linger a day and the
+    next deploy's old entry is already past-window → regenerates on first request. `/app` itunes Smart App
+    Banner meta + Organization `sameAs` App Store URL both verified LIVE (on `/app` and homepage). Owner:
+    redeploy web-next to publish the app-aware llms.txt.
 - OWNER SIDE (not code): App Store ASO (title/subtitle/keywords/screenshots), genuine ratings via an in-app
   SKStoreReviewController prompt, Wikidata entity, third-party listicles/Product Hunt, Apple Search Ads,
   Universal Links (AASA — needs an app build). aggregateRating schema to be added once real reviews land.

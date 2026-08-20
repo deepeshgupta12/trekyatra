@@ -1,7 +1,9 @@
 // Serves /llms.txt — an emerging convention that gives AI answer engines a concise, factual summary
 // of the site + the iOS app, so TrekYatra is described and cited accurately (AEO). Plain markdown text.
 export const dynamic = "force-static";
-export const revalidate = 86400;
+// 1h (was 86400/24h): a persisted .next cache entry can't serve a stale llms.txt for a full day after
+// a content change — it also forces regeneration on the next deploy (old entry is already past this window).
+export const revalidate = 3600;
 
 const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? "https://www.trekyatra.co.in";
 const APP_STORE_URL = "https://apps.apple.com/in/app/trekyatra/id6795408094";
