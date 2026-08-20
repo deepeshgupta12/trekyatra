@@ -47,6 +47,15 @@ Return a JSON object with EXACTLY this structure (no extra keys, raw JSON only):
   ]
 }}
 
+## Internal linking (STRICT)
+- Only insert internal links (markdown `[text](/path)`) to paths listed under "Internal link targets" above.
+- NEVER invent internal URLs or slugs. Do NOT link to invented paths like `/kedarkantha-trek-guide`,
+  `/best-trek-operators-india`, `/blog/...`, `/treks/...`, or any path not in that list. If there is no
+  matching target, write plain text with no link.
+- Links to reputable EXTERNAL sources (full https:// URLs) are allowed.
+(Note: a deterministic publish-time gate removes any internal link that does not resolve to a live page,
+so invented links are stripped anyway — but do not rely on it; follow the rule above.)
+
 ## MANDATORY SECTIONS — Trek guides MUST contain ALL of these H2 sections
 Every trek guide article MUST include ALL of the following H2 headings.
 Do NOT skip any section — write what you know and flag uncertain facts for review.

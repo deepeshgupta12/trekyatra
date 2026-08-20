@@ -3111,3 +3111,22 @@ Shared backend + mobile. iOS App Store rejection fix. Impact of touched symbols 
 - `apps/web-next/app/llms.txt/route.ts` — NEW `/llms.txt` (text/plain app+site summary for AI crawlers).
 - `apps/web-next/app/sitemap.ts` — `/app` added. `docs/URL_MAP.md` — `/app` row added (§17 owner-confirmed).
 - Build: /app prerendered static + /llms.txt route built (verified in .next manifests). Next image config unchanged.
+
+### 2026-08-20 — Internal-link sanitizer (trek pages) — GSC 404 root-cause
+- `services/api/app/modules/cms/link_sanitizer.py` — NEW leaf module. `build_live_url_set(db)` (allow-list:
+  `_STATIC_ROUTES` + hub taxonomies via `hubs.region_meta.REGIONS` / `hubs.season_meta.SEASONS` /
+  `hubs.category_meta.CATEGORIES` + published `CMSPage.page_type/slug` mapped through `_PAGE_PREFIX`);
+  `sanitize_html_links` / `sanitize_content_json_links` / `sanitize_trek_page(page, live, *, apply)` unwrap
+  dead internal anchors (keep text). Importers: publish/service.py + scripts/sanitize_trek_links.py + tests.
+  Blast radius: LOW (new module, no existing caller changes). MUST stay in sync with `apps/web-next/app/sitemap.ts`
+  PAGE_PREFIX and the public route list — if a new public route/page_type is added there, mirror it here or the
+  sanitizer will wrongly strip valid links.
+- `services/api/app/modules/publish/service.py:publish_to_cms` — UPDATED: after `upsert_page_from_draft`, for
+  `page_type == "trek_guide"` calls `sanitize_trek_page(cms_page, build_live_url_set(db))` inside try/except
+  (never blocks a publish). Blast radius: LOW (additive, same transaction; both callers — publish route +
+  PipelineOrchestrator — benefit).
+- `services/api/app/modules/agents/content_writing/prompts.py` — UPDATED: additive "Internal linking (STRICT)"
+  block in CONTENT_WRITING_PROMPT. Blast radius: LOW (prompt text only; no code path change).
+- `services/api/scripts/sanitize_trek_links.py` — NEW one-off backfill (dry-run default, `--apply` commits +
+  `cache_invalidate`). Run against the PRODUCTION DB (local dev DB is a different, already-clean dataset).
+- `services/api/tests/test_link_sanitizer.py` — NEW, 8 tests (pure sanitiser + DB allow-list + page mutate/dry-run).

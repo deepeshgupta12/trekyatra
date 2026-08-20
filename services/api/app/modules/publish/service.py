@@ -71,6 +71,18 @@ def publish_to_cms(db: Session, *, draft_id: uuid.UUID) -> DraftPublishResponse:
         db.flush()
         raise ValueError(f"CMS publish failed: {exc}") from exc
 
+    # Link gate: strip agent-inserted internal links that don't resolve to a live URL (they cause GSC
+    # 404s). Trek detail pages only. Deterministic — runs regardless of what the LLM emitted. Never
+    # blocks the publish; only removes dead <a> wrappers (keeps the text).
+    if cms_page.page_type == "trek_guide":
+        try:
+            from app.modules.cms.link_sanitizer import build_live_url_set, sanitize_trek_page
+            removed = sanitize_trek_page(cms_page, build_live_url_set(db))
+            if removed:
+                db.flush()
+        except Exception:  # noqa: BLE001 — link sanitising must never break a publish
+            pass
+
     published_url = f"/trek/{cms_page.slug}"
 
     log.status = "succeeded"

@@ -18,6 +18,30 @@ Do not modify any code file without first:
 4. Checking impacted files and blast radius
 5. Updating the relevant step file in `docs/steps/`
 
+## 2026-08-20 — SEO: strip agent-inserted dead internal links from trek pages (GSC 404 root-cause)
+Owner: content agents (content_writing) sometimes write internal markdown links to invented slugs
+(`/brahmatal-trek-guide`, `/best-trek-operators-india`, `/himalayan-trek-gear-list`,
+`/trekking-permits-uttarakhand`, `/{name}-travel-guide`, plural `/treks/…`) that were never published →
+`_md_to_html` turns them into `<a href>` in `content_html` → Google crawls them → GSC "Not found (404)".
+Same failure class as the `/regions/{slug}{Name}` fix, but this one lives inside published content, so it
+needs both a **forward gate** and a **backfill**. User-approved decisions: **unwrap** dead links (keep the
+visible text, drop the `<a>`), **trek detail pages only**, **dry-run before apply**.
+- **`app/modules/cms/link_sanitizer.py`** (NEW) — `build_live_url_set(db)` = static routes + curated hub
+  taxonomies (REGIONS/SEASONS/CATEGORIES) + every PUBLISHED CMSPage mapped to its public path
+  (`_PAGE_PREFIX`, mirrors sitemap.ts + `/trek/{slug}`). `sanitize_html_links` / `sanitize_content_json_links`
+  / `sanitize_trek_page(page, live, *, apply)` unwrap internal anchors whose path ∉ live; external / mailto /
+  `#anchor` / protocol-relative untouched; trailing-slash + query/fragment + absolute-own-host normalised.
+- **Forward gate** wired into `publish/service.py::publish_to_cms` after `upsert_page_from_draft`, guarded to
+  `page_type == "trek_guide"`, wrapped in try/except (link-cleaning must never break a publish).
+- **Prompt hardening** (`agents/content_writing/prompts.py`) — new "Internal linking (STRICT)" rule: only link
+  to provided `internal_link_targets`, never invent slugs (belt-and-suspenders behind the deterministic gate).
+- **Backfill** `scripts/sanitize_trek_links.py` — dry-run by default (reports per-page dead links + totals),
+  `--apply` commits + `cache_invalidate(changed_slugs)`. **Must run against the PRODUCTION DB** — the local dev
+  DB is a different dataset (7,130 different trek slugs, 0 dead links; prod pages like `/trek/roopkund` render
+  the dead links). Owner runs it on the DO box the same way as `alembic upgrade head`.
+- 8 new tests (`tests/test_link_sanitizer.py`) — all pass; full backend suite green. GitNexus MCP down →
+  manual blast radius (new leaf module + one guarded call site + additive prompt text; LOW).
+
 ## 2026-08-20 — App SEO/AEO: /app landing page + MobileApplication schema + Smart App Banner + llms.txt
 Owner: make the live iOS app show in Google SERP + get cited by AI answer engines (AEO). Code-side delivered
 (§17: `/app` URL owner-confirmed):
