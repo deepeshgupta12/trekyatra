@@ -39,6 +39,12 @@ visible text, drop the `<a>`), **trek detail pages only**, **dry-run before appl
   `--apply` commits + `cache_invalidate(changed_slugs)`. **Must run against the PRODUCTION DB** — the local dev
   DB is a different dataset (7,130 different trek slugs, 0 dead links; prod pages like `/trek/roopkund` render
   the dead links). Owner runs it on the DO box the same way as `alembic upgrade head`.
+- **APPLIED ON PROD 2026-08-20** (`api-57f5cb7c44-s5w5k`, `cd /app && python scripts/sanitize_trek_links.py --apply`):
+  62 published trek pages → **61 cleaned, 1,346 dead internal links unwrapped** + CMS cache invalidated. Verified
+  live: `/trek/{roopkund,kedarkantha,dayara-bugyal,ali-bedni-bugyal,pindari-glacier,auden-s-col,mount-everest,
+  chadar,tarsar-marsar}` now render 0 dead links (ISR `revalidate=60` self-healed from clean DB), prose text
+  preserved (e.g. brahmatal keeps "Kedarkantha Trek" as plain text). Remaining owner step: GSC → Validate Fix on
+  the affected "Not found (404)" URLs.
 - 8 new tests (`tests/test_link_sanitizer.py`) — all pass; full backend suite green. GitNexus MCP down →
   manual blast radius (new leaf module + one guarded call site + additive prompt text; LOW).
 
