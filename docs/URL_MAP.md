@@ -4,7 +4,7 @@
 > must be listed here and confirmed by the user. No new URL structures should be introduced
 > without updating this file and getting confirmation.
 
-Last updated: 2026-08-12 (SEO/GSC cleanup: legacy 301 redirects + /plan,/treksage canonicals + sitemap 404 removal)
+Last updated: 2026-08-24 (durable 410 Gone catch-all for hallucinated root URLs + /trek-news 301s + sub-page 308s; see §"410 Gone catch-all")
 
 ---
 
@@ -182,6 +182,24 @@ All in `apps/web-next/next.config.mjs` `redirects()` unless noted. Added to clea
 | `/treks` (EXACT) | `/explore` | No `/treks` page (treks live at `/trek/{slug}`). NOTE: `/guides`, `/seasons`, `/regions` are now REAL index hub pages (2026-08-12) — no longer redirected. |
 | `/regions/uttarakhandUttarakhand` | `/regions/uttarakhand` | Malformed duplicated-slug alias (stale crawl). |
 | ~15 dead root-slug articles (`/best-trekking-gear-india`, `/what-to-pack-for-a-himalayan-trek`, `/how-to-get-inner-line-permit-ladakh`, `/roopkund-trek-complete-guide`, …) | closest live hub (`/gear`,`/packing`,`/permits`,`/safety`,`/regions/ladakh`,`/operators`,`/trek/roopkund`,`/explore`) | Old blog/guide URLs. |
+
+### 410 Gone catch-all + extra redirects (2026-08-24)
+
+The curated per-slug redirect list above is **frozen** — new dead root slugs are now handled by a durable
+**410 Gone catch-all in `middleware.ts`** (no more per-slug maintenance). Core cause of the recurring GSC
+404s: a finite backlog of agent-hallucinated URLs Google discovered months ago and keeps re-retrying; a
+plain 404 tells Google "try later", a 410 tells it "drop permanently".
+
+| Source (old / crawled) | → Result | Why |
+|---|---|---|
+| Any single-segment root slug that is content-shaped (**≥2 hyphens**), not a real route, not a curated redirect source (e.g. `/pahalgam-travel-guide`, `/budget-trekking-india`, `/parvati-valley-trek`) | **410 Gone** (`middleware.ts`) | Hallucinated root URLs; ≥2-hyphen gate provably excludes every real root route (only `hi-trek-sitemap.xml`, a file, matches — excluded by the matcher). Durable: covers current + future. |
+| `/trek/{news-slug}` (4 headlines historically crawled under wrong prefix) | **301 → `/news/{slug}`** (`next.config.mjs`) | The article exists at `/news/{slug}` (200) — redirect beats 410. |
+| `/trek/kedarkantha-trek-complete-guide` | **301 → `/trek/kedarkantha`** | Invented `-trek-complete-guide` suffix. |
+| `/trek/{slug}/{costs,packing,permits}` when no dedicated sub-guide exists | **308 → `/trek/{slug}`** (route-level `permanentRedirect`) | Sub-page info is inline on the main trek page; kills the `/trek/{slug}/{sub}` 404s. |
+
+Middleware `matcher` broadened to site-wide (`/((?!api|_next/static|_next/image|favicon.ico|.*\.).*)`) so
+the catch-all runs on all page paths; API, `_next`, and any file-with-extension (sitemaps/robots/llms.txt)
+pass through untouched. Auth + datacenter-subdomain logic verified still correct under the broader matcher.
 
 **Canonical tags (dedupe query-param variants):** `/treksage` → self-canonical (`page.tsx` metadata);
 `/plan` → self-canonical via `app/(public)/plan/layout.tsx` (the wizard is a client component);

@@ -35,6 +35,45 @@ function checkDeletedRoute(pathname: string): { action: "301" | "410"; redirectT
   }
   return { action: "410" };
 }
+// ── SEO: 410 Gone catch-all for agent-hallucinated dead root URLs ──────────────
+// Content agents historically emitted invented internal links to root-level slugs that were never
+// real pages (/pahalgam-travel-guide, /budget-trekking-india, /parvati-valley-trek, …). The content
+// is now cleaned, but Google permanently remembers those URLs and keeps re-retrying the 404s, so they
+// linger in Search Console. A plain 404 says "try again later"; a 410 says "gone — drop it", which
+// de-indexes fastest. This is a DURABLE catch-all (chosen 2026-08-24) so we no longer hand-curate a
+// redirect per slug: any single-segment root path that is "content-shaped" (>=2 hyphens — verified that
+// NO real root route matches this; the only >=2-hyphen route is the hi-trek-sitemap.xml FILE, excluded
+// by the matcher) and is neither a real route nor a curated 301 source → 410.
+//
+// Real single-segment root routes (0–1 hyphens; belt-and-suspenders, the hyphen gate already spares them).
+const REAL_ROOT_ROUTES = new Set([
+  "/about", "/account", "/admin", "/affiliate-disclosure", "/app", "/auth", "/beginner", "/challenging",
+  "/checkout", "/compare", "/contact", "/costs", "/datacenter", "/empty-saved", "/explore", "/gear",
+  "/guides", "/hi", "/itineraries", "/maintenance", "/methodology", "/moderate", "/news", "/newsletter",
+  "/no-results", "/operators", "/packing", "/permits", "/plan", "/premium", "/privacy", "/products",
+  "/regions", "/safety", "/safety-disclaimer", "/saved", "/search", "/seasons", "/success", "/terms",
+  "/trek", "/trek-types", "/trekker", "/treksage", "/under-review",
+]);
+// Root slugs that next.config.mjs 301-redirects (legacyArticleRedirects + bareIndexRedirects). Middleware
+// runs BEFORE next.config redirects, so the 410 catch-all MUST skip these or it would 410 them before the
+// redirect fires. FROZEN: new dead root slugs are handled by the 410 catch-all — do NOT keep growing the
+// next.config list. If a root-slug redirect IS ever added to next.config.mjs, add its source here too.
+const REDIRECTED_ROOT_SLUGS = new Set([
+  "/roopkund-trek-complete-guide", "/best-treks-uttarakhand", "/best-trekking-gear-india",
+  "/high-altitude-trekking-gear-india", "/what-to-pack-for-a-himalayan-trek", "/trekking-packing-list-india",
+  "/himachal-pradesh-trekking-permits-guide", "/how-to-get-inner-line-permit-ladakh",
+  "/altitude-sickness-prevention-guide", "/high-altitude-trekking-tips", "/high-altitude-trekking-fitness-guide",
+  "/leh-acclimatisation-guide", "/ladakh-winter-travel-tips", "/alchi-monastery-guide", "/stok-kangri-trek-guide",
+  "/best-trekking-operators-india", "/how-to-reach-chopta-from-delhi", "/treks",
+]);
+
+function isHallucinatedRootSlug(pathname: string): boolean {
+  if (!/^\/[^/]+$/.test(pathname)) return false;              // single root segment only
+  if (REAL_ROOT_ROUTES.has(pathname)) return false;           // real page
+  if (REDIRECTED_ROOT_SLUGS.has(pathname)) return false;      // let next.config 301 it
+  return (pathname.match(/-/g)?.length ?? 0) >= 2;            // content-shaped ⇒ hallucination
+}
+
 const ADMIN_PREFIXES = ["/admin"];
 const ADMIN_PUBLIC_PATHS = ["/admin/sign-in"]; // exempt from admin auth check
 const GUEST_ONLY_PREFIXES = ["/auth/sign-in", "/auth/sign-up"];
@@ -70,6 +109,15 @@ export function middleware(request: NextRequest) {
       return NextResponse.redirect(url, { status: 301 });
     }
   }
+
+  // ── SEO: 410 Gone for agent-hallucinated dead root-level URLs (see notes above) ──
+  if (isHallucinatedRootSlug(pathname)) {
+    return new NextResponse("Gone — this page does not exist.", {
+      status: 410,
+      headers: { "content-type": "text/plain; charset=utf-8" },
+    });
+  }
+
   const userToken = request.cookies.get(USER_COOKIE)?.value;
   const adminToken = request.cookies.get(ADMIN_COOKIE)?.value;
 
@@ -117,12 +165,8 @@ export function middleware(request: NextRequest) {
 }
 
 export const config = {
-  matcher: [
-    "/account/:path*",
-    "/admin/:path*",
-    "/auth/sign-in",
-    "/auth/sign-up",
-    "/",
-    "/trek-guide/:path*",
-  ],
+  // Run on all page paths (the 410 catch-all + datacenter rewrite + auth all need site-wide coverage),
+  // but never on API routes, Next internals, or any file with an extension (sitemaps, robots, llms.txt,
+  // images, _next assets) — those must pass straight through.
+  matcher: ["/((?!api|_next/static|_next/image|favicon.ico|.*\\.).*)"],
 };

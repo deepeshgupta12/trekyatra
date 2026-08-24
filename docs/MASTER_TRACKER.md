@@ -18,6 +18,31 @@ Do not modify any code file without first:
 4. Checking impacted files and blast radius
 5. Updating the relevant step file in `docs/steps/`
 
+## 2026-08-24 — SEO: durable 410 catch-all + redirects for the GSC 404 long-tail (recurrence root-cause)
+User kept seeing waves of "Not found (404)" in GSC despite prior fixes. **Core cause (diagnosed, not guessed):**
+every one of the 80 flagged URLs is a *historical* agent-hallucinated link (wrong prefixes `/treks/`,
+`/blog/`, `/destinations/`; invented root slugs `-travel-guide`/`-trek-guide`; malformed `/regions/{x}{X}`;
+news headlines under `/trek/`) — verified NONE are linked from any live page (trek/news/hub content + all
+3 sitemaps are clean). Google permanently remembers discovered URLs and re-retries 404s for months. Prior
+fixes used **pattern redirects** (durable — 52/80 already 308) + a **hand-curated per-slug redirect list**
+(reactive). The "recurrence" was that **curated list losing a whack-a-mole**: GSC only shows a sample, so
+each report surfaces a new wave of the finite historical backlog not yet in the list.
+- **Fix — end the whack-a-mole (user chose 410 + durable catch-all):**
+  - `middleware.ts`: **410 Gone catch-all** — any single-segment root path that is content-shaped (≥2
+    hyphens; verified NO real root route matches — only `hi-trek-sitemap.xml`, a file, does) and is neither
+    a real route (`REAL_ROOT_ROUTES`) nor a curated 301 source (`REDIRECTED_ROOT_SLUGS`, frozen) → 410. This
+    covers the current 9 root hallucinations AND all future ones with no per-slug maintenance. Matcher
+    broadened from 6 patterns to site-wide `/((?!api|_next/static|_next/image|favicon.ico|.*\.).*)`.
+  - `next.config.mjs`: `/trek/{news-slug}` → **301 `/news/{slug}`** (article exists there — better than 410)
+    ×4; `/trek/kedarkantha-trek-complete-guide` → 301 `/trek/kedarkantha`.
+  - Trek sub-pages `app/(public)/trek/[slug]/{costs,packing,permits}/page.tsx`: `notFound()` →
+    **`permanentRedirect('/trek/{slug}')`** (308) when no dedicated sub-guide exists (info is inline on the
+    main trek page). Kills the 12 `/trek/{slug}/{sub}` 404s + all future ones.
+- **Validated on a local prod server** (`next start`): 9/9 hallucinations→410; 5/5 curated→308 (incl. 3+
+  hyphen sources NOT false-410'd — skip-set works); real routes never 410; `/trek` news+alias→308;
+  sub-pages→308; auth (`/account`,`/admin`) still 307. `next build` clean (130/130, Middleware 27.5 kB).
+- Owner: **redeploy web-next** to activate; then GSC → Validate Fix on the "Not found (404)" report.
+
 ## 2026-08-20 — SEO: strip agent-inserted dead internal links from trek pages (GSC 404 root-cause)
 Owner: content agents (content_writing) sometimes write internal markdown links to invented slugs
 (`/brahmatal-trek-guide`, `/best-trek-operators-india`, `/himalayan-trek-gear-list`,

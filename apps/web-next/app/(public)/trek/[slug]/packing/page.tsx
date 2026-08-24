@@ -1,4 +1,4 @@
-import { notFound } from "next/navigation";
+import { permanentRedirect } from "next/navigation";
 import type { Metadata } from "next";
 import { fetchCMSPage, type CMSPage, type FAQItem } from "@/lib/api";
 import Breadcrumb from "@/components/content/Breadcrumb";
@@ -47,7 +47,9 @@ export async function generateMetadata({ params }: { params: { slug: string } })
 
 export default async function TrekPackingPage({ params }: { params: { slug: string } }) {
   const page = await findPackingPage(params.slug);
-  if (!page) notFound();
+  // No dedicated packing guide for this trek → the packing info lives inline on the main trek page.
+  // 308 there instead of 404 (kills the historical GSC 404s for /trek/{slug}/packing).
+  if (!page) permanentRedirect(`/trek/${params.slug}`);
 
   const sec = (page.content_json?.sections ?? {}) as Record<string, string>;
   const faqItems: FAQItem[] = page.content_json?.faqs ?? [];
