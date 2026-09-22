@@ -3176,3 +3176,20 @@ had 11 live 404s. Full root-cause table in `docs/MASTER_TRACKER.md` (2026-09-22)
   forms) and a per-page-type dead-link breakdown in the output. DRY-RUN remains the default; `--apply`
   persists + `cache_invalidate`. Blast radius: LOW (standalone script, no importers). MUST be run against
   the PRODUCTION DB — the local dev DB is a different, fixture-heavy dataset.
+
+## 2026-09-22 — News agent: cross-month headline dedupe (content-freeze + duplicate-content fix). LOW.
+- `services/api/app/modules/agents/news/agent.py` — UPDATED: new `_YM_SUFFIX_RE`, `_headline_stem()`
+  and `_headline_already_published(db, news_slug)`. The dedupe in `write_and_store_articles` changed
+  from `get_page_by_slug(db, news_slug)` (exact match → deduped only WITHIN a calendar month) to a
+  headline-stem match scoped to `page_type == "news_article"`. `get_page_by_slug` import dropped;
+  `sqlalchemy.or_/select` imported. **`_slug_from_title` is deliberately UNCHANGED** — live news URLs
+  keep their `{headline}-{YYYY-MM}` format, so nothing already indexed moves.
+  Blast radius: LOW (1 direct caller, `write_and_store_articles`; gitnexus impact = LOW/1 direct).
+  Behavioural change: the weekly run now publishes every genuinely-new headline instead of only the
+  first run of each month, and never re-publishes a headline it has already covered.
+  ⚠️ The LIKE pattern is `{stem}-____-__` (SQL `_` = exactly one char) so it matches only a literal
+  `-YYYY-MM` suffix and cannot over-match a longer slug sharing the stem — covered by a test.
+- `services/api/tests/test_news.py` — UPDATED: +5 tests (stem stripping incl. an invalid month-13
+  case, cross-month match, over-match guard, page_type scoping). Also de-timebombed: `_MOCK_RSS`
+  pubDates and the `_is_recent` assertion are now generated relative to `now()` instead of the
+  hardcoded "Mon, 26 May 2026", which had silently gone red once it fell outside the 90-day window.

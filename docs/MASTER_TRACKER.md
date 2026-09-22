@@ -18,6 +18,42 @@ Do not modify any code file without first:
 4. Checking impacted files and blast radius
 5. Updating the relevant step file in `docs/steps/`
 
+## 2026-09-22 — SEO: news content-freeze + duplicate-content root cause (crawl-rate drop)
+User reported GSC crawl requests falling off. Traced to a real 15-day **content freeze**: the newest
+`updated_at` in the live news sitemap was **2026-09-07**, and all 79 September articles shared that one
+timestamp. News is 280 of ~350 indexable pages and **85% of Googlebot's crawl purpose is "Refresh"**
+(re-crawling pages that change), so when writes stop, crawl demand decays.
+
+**Root cause — NOT the Celery beat schedule.** An earlier hypothesis (relative `604800` interval +
+default `PersistentScheduler` shelve on an ephemeral DO filesystem → timer resets on restart) was
+**disproved**: `git log` shows NO deploys between 2026-08-24 and 2026-09-22, so the beat container never
+restarted in the window where the 2026-09-14 and 2026-09-21 runs were missed. (That reset risk is real
+but latent — it did not cause this. See "Remaining" below.)
+
+The actual cause is in `agents/news/agent.py`:
+- `_slug_from_title` appends `-{YYYY-MM}`, and the dedupe check was `get_page_by_slug(db, news_slug)` —
+  an **exact** slug match. So dedupe only applied **within a calendar month**.
+- `_fetch_rss` uses a **90-day** recency window, so each run sees a largely stable headline pool.
+- Consequence 1 — **content freeze**: the first weekly run of a month published the whole window; every
+  later run that month re-derived the SAME slugs and skipped everything. Freshness arrived in one
+  monthly burst, then silence. Exactly matches "79 articles, all `updated_at` 2026-09-07".
+- Consequence 2 — **duplicate content**: the same headline was re-published under a NEW URL each month.
+  Measured on the live sitemap: **57 headlines live under 2–3 month-suffixed URLs = 64 duplicate URLs
+  out of 200 (32%)**.
+- **Fix:** dedupe on the headline STEM (slug minus `-YYYY-MM`) via new `_headline_stem()` +
+  `_headline_already_published()` (LIKE `{stem}-____-__`, scoped to `page_type == "news_article"`).
+  `_slug_from_title` is UNCHANGED, so existing live URLs keep their format. Every weekly run now
+  publishes exactly the genuinely-new stories and never re-publishes one — steady weekly freshness,
+  no new duplicates, and *lower* LLM spend (no monthly regeneration of the same story).
+- Also fixed (separate commit, pre-existing): two **time-bombed** tests in `test_news.py` hardcoded
+  "Mon, 26 May 2026" and silently went red once that fell outside the 90-day window. Now generated
+  relative to `now()`. Suite is **861 passed / 0 failed** (was 852 / 4).
+- **Remaining (NOT done — needs an owner decision on timing):** convert the relative beat intervals to
+  absolute `crontab()` schedules. `quarterly-seasonal-hub-regeneration` (`7776000` = 90 days) almost
+  certainly never fires, and the weekly ones are vulnerable whenever deploys land more often than 7 days.
+- **Remaining:** the 64 pre-existing duplicate news URLs are still live; decide whether to 301 the newer
+  duplicates onto the earliest URL for each headline.
+
 ## 2026-09-22 — SEO: deep-path 410 layer + killed the JSON-LD source of the /trek/{slug}/{sub} 404s
 User reported the GSC "Not found (404)" count had RISEN again, with 12 screenshots (108 URLs across two
 reports). **Every URL was status-checked against production first — no guessing:**

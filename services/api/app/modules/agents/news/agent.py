@@ -19,11 +19,12 @@ from xml.etree import ElementTree as ET
 
 import httpx
 from langgraph.graph import StateGraph, END
+from sqlalchemy import or_, select
 from sqlalchemy.orm import Session
 
 from app.core.config import settings
 from app.modules.cms.models import CMSPage
-from app.modules.cms.service import create_page, get_page_by_slug
+from app.modules.cms.service import create_page
 from app.schemas.cms import CMSPageCreate
 
 log = logging.getLogger(__name__)
@@ -69,6 +70,32 @@ def _slug_from_title(trek_slug: str, title: str) -> str:
         slug = slug[:60].rsplit("-", 1)[0]
     ym = datetime.now(timezone.utc).strftime("%Y-%m")
     return f"{slug}-{ym}"
+
+
+_YM_SUFFIX_RE = re.compile(r"-20\d{2}-(?:0[1-9]|1[0-2])$")
+
+
+def _headline_stem(news_slug: str) -> str:
+    """A news slug with its trailing -YYYY-MM stripped — i.e. the headline identity."""
+    return _YM_SUFFIX_RE.sub("", news_slug)
+
+
+def _headline_already_published(db: Session, news_slug: str) -> bool:
+    """True if this headline exists as a news article under ANY month suffix.
+
+    Slugs are `[a-z0-9-]` only (see `_slug_from_title`), so the stem can be used in a LIKE pattern
+    without escaping. `_` matches exactly one character in SQL LIKE, so `{stem}-____-__` matches only
+    a literal -YYYY-MM suffix and cannot over-match a longer slug that merely starts with the stem.
+    """
+    stem = _headline_stem(news_slug)
+    return db.scalar(
+        select(CMSPage.id)
+        .where(
+            CMSPage.page_type == "news_article",
+            or_(CMSPage.slug == stem, CMSPage.slug.like(f"{stem}-____-__")),
+        )
+        .limit(1)
+    ) is not None
 
 
 def _clean_title(title: str) -> str:
@@ -258,8 +285,22 @@ def write_and_store_articles(state: NewsState) -> NewsState:
         news_slug = _slug_from_title(trek_slug, item["title"])
         clean_title = _clean_title(item["title"])
 
-        # Idempotent — skip if already published this month
-        if get_page_by_slug(db, news_slug):
+        # Idempotent — skip if this HEADLINE was ever published, in any month.
+        #
+        # This used to be `get_page_by_slug(db, news_slug)`, an exact match on
+        # "{headline}-{YYYY-MM}". Because the slug carries the current year-month, that check only
+        # deduplicated WITHIN a calendar month, which caused two problems (diagnosed 2026-09-22):
+        #   1. Content freeze — the first weekly run of a month published the whole 90-day RSS window,
+        #      and every later run that month re-derived the SAME slugs and skipped everything. Site
+        #      freshness arrived in one monthly burst (all 79 September articles share updated_at
+        #      2026-09-07), then nothing for weeks, so Google's Refresh crawling decayed.
+        #   2. Duplicate content — the same headline re-published under a NEW url each month. 57
+        #      headlines were live under 2–3 month-suffixed URLs (64 duplicate URLs of 200 in the
+        #      news sitemap).
+        # Matching on the headline stem instead fixes both: every weekly run now publishes exactly the
+        # stories that are genuinely new, and never re-publishes one. `_slug_from_title` is unchanged,
+        # so existing live URLs keep their format.
+        if _headline_already_published(db, news_slug):
             articles.append({"slug": news_slug, "title": clean_title, "skipped": True})
             continue
 

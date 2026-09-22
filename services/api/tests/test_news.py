@@ -5,7 +5,8 @@ Rewritten for per-item article architecture: one CMS page per RSS item.
 from __future__ import annotations
 
 import uuid
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
+from email.utils import format_datetime
 from unittest.mock import MagicMock, patch
 
 import pytest
@@ -100,21 +101,26 @@ def news_page(db: Session) -> CMSPage:
     return page
 
 
-_MOCK_RSS = """<?xml version="1.0" encoding="UTF-8"?>
+# pubDate must stay inside `_fetch_rss`'s `_is_recent(..., days=90)` window, so it is generated
+# RELATIVE to now. It was hardcoded to "Mon, 26 May 2026", which silently started failing once that
+# date fell outside 90 days — a time-bomb that left the suite permanently red.
+_RECENT_PUBDATE = format_datetime(datetime.now(timezone.utc) - timedelta(days=2))
+
+_MOCK_RSS = f"""<?xml version="1.0" encoding="UTF-8"?>
 <rss version="2.0">
   <channel>
     <title>Google News</title>
     <item>
       <title>Kedarkantha Trek Trail Opens for Winter Season</title>
       <link>https://example.com/kedarkantha-opens</link>
-      <pubDate>Mon, 26 May 2026 10:00:00 GMT</pubDate>
+      <pubDate>{_RECENT_PUBDATE}</pubDate>
       <description>The Kedarkantha trail is now open for the winter season with fresh snowfall.</description>
       <source url="https://example.com">Hiking India</source>
     </item>
     <item>
       <title>Unrelated Article About Cricket</title>
       <link>https://example.com/cricket</link>
-      <pubDate>Mon, 26 May 2026 09:00:00 GMT</pubDate>
+      <pubDate>{_RECENT_PUBDATE}</pubDate>
       <description>India wins cricket match.</description>
       <source url="https://example.com">Sports News</source>
     </item>
@@ -415,8 +421,9 @@ def test_current_week_label_format():
 # TC-B19: _is_recent accepts items within 90-day window
 # ---------------------------------------------------------------------------
 def test_is_recent_recent_date():
-    # RFC 2822 date within last 30 days — should be kept
-    assert _is_recent("Mon, 26 May 2026 10:00:00 GMT", days=90) is True
+    # Generated relative to now — a hardcoded date here expires and turns the suite red.
+    recent = format_datetime(datetime.now(timezone.utc) - timedelta(days=2))
+    assert _is_recent(recent, days=90) is True
 
 
 # ---------------------------------------------------------------------------
@@ -433,3 +440,76 @@ def test_is_recent_old_date():
 def test_is_recent_missing_date():
     assert _is_recent("", days=90) is True
     assert _is_recent("not-a-date", days=90) is True
+
+
+# ---------------------------------------------------------------------------
+# Cross-month headline dedupe (2026-09-22 content-freeze / duplicate-content fix)
+# ---------------------------------------------------------------------------
+def test_headline_stem_strips_month_suffix():
+    from app.modules.agents.news.agent import _headline_stem
+    assert _headline_stem("valley-of-flowers-reopens-2026-09") == "valley-of-flowers-reopens"
+    assert _headline_stem("valley-of-flowers-reopens-2026-12") == "valley-of-flowers-reopens"
+
+
+def test_headline_stem_leaves_non_suffixed_slug_alone():
+    """A trailing number that is not a -YYYY-MM must not be stripped."""
+    from app.modules.agents.news.agent import _headline_stem
+    assert _headline_stem("top-10-treks-2026-13") == "top-10-treks-2026-13"   # month 13 invalid
+    assert _headline_stem("sar-pass-trek-13-800-ft") == "sar-pass-trek-13-800-ft"
+
+
+def test_headline_already_published_matches_a_different_month(db: Session):
+    """The core fix: a headline published in ANY month blocks a re-publish in a later month.
+
+    Before this, dedupe was an exact slug match, so the same story was re-published under a new
+    -YYYY-MM URL every month (57 headlines were live under 2-3 URLs in production).
+    """
+    from app.modules.agents.news.agent import _headline_already_published
+    stem = f"test-headline-{uuid.uuid4().hex[:8]}"
+    page = CMSPage(
+        slug=f"{stem}-2026-08", page_type="news_article", title="T",
+        content_html="<p>x</p>", status="published",
+    )
+    db.add(page)
+    db.commit()
+    try:
+        assert _headline_already_published(db, f"{stem}-2026-09") is True   # later month -> skip
+        assert _headline_already_published(db, f"{stem}-2026-08") is True   # same month -> skip
+        assert _headline_already_published(db, f"other-{stem}-2026-09") is False
+    finally:
+        db.delete(page)
+        db.commit()
+
+
+def test_headline_already_published_does_not_over_match_longer_slugs(db: Session):
+    """`{stem}-____-__` must not match a slug that merely STARTS with the stem."""
+    from app.modules.agents.news.agent import _headline_already_published
+    stem = f"test-stem-{uuid.uuid4().hex[:8]}"
+    page = CMSPage(
+        slug=f"{stem}-extra-words-here-2026-08", page_type="news_article", title="T",
+        content_html="<p>x</p>", status="published",
+    )
+    db.add(page)
+    db.commit()
+    try:
+        assert _headline_already_published(db, f"{stem}-2026-09") is False
+    finally:
+        db.delete(page)
+        db.commit()
+
+
+def test_headline_already_published_ignores_non_news_page_types(db: Session):
+    """A trek_guide sharing the stem must not block a news article."""
+    from app.modules.agents.news.agent import _headline_already_published
+    stem = f"test-tg-{uuid.uuid4().hex[:8]}"
+    page = CMSPage(
+        slug=f"{stem}-2026-08", page_type="trek_guide", title="T",
+        content_html="<p>x</p>", status="published",
+    )
+    db.add(page)
+    db.commit()
+    try:
+        assert _headline_already_published(db, f"{stem}-2026-09") is False
+    finally:
+        db.delete(page)
+        db.commit()
