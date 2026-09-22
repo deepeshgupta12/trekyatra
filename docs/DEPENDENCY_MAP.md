@@ -3170,3 +3170,9 @@ had 11 live 404s. Full root-cause table in `docs/MASTER_TRACKER.md` (2026-09-22)
   (same try/except, never blocks a publish; both callers — publish route + PipelineOrchestrator — benefit).
 - `services/api/tests/test_link_sanitizer.py` — UPDATED: +6 tests (5 × `public_path_for` incl. a loop over
   every `_PAGE_PREFIX` entry, 1 × sanitizer applied to a `news_article` page). 23/23 pass in this file.
+- `services/api/scripts/sanitize_trek_links.py` — UPDATED (2026-09-22): scope widened from
+  `page_type == "trek_guide"` to **ALL published page types**, to match the now-un-gated publish gate in
+  `publish/service.py`. New optional `--page-type <type>` filter (both `--page-type X` and `--page-type=X`
+  forms) and a per-page-type dead-link breakdown in the output. DRY-RUN remains the default; `--apply`
+  persists + `cache_invalidate`. Blast radius: LOW (standalone script, no importers). MUST be run against
+  the PRODUCTION DB — the local dev DB is a different, fixture-heavy dataset.

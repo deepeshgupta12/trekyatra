@@ -70,7 +70,20 @@ reports). **Every URL was status-checked against production first — no guessin
 - GitNexus re-indexed after the change: **519,480 nodes | 779,162 edges | 4,286 clusters | 300 flows**
   (was 517,374 / 757,491 / 300 at `de09832`). `detect_changes` before commit: 19 files, 54 symbols,
   **risk LOW, 0 affected processes** — matches the intended scope exactly.
-- Owner: **redeploy web-next + api**, then GSC → Validate Fix on both reports.
+- **Backfill required (prod DB).** `scripts/sanitize_trek_links.py` was gated to `trek_guide`, matching
+  the old publish gate — so the 280 published news articles had NEVER been sanitized. Audit of live prod
+  content found **12 dead internal links** in news content, all wrong-plural `/treks/{slug}` (they 308 to
+  `/explore`), including `/treks/sandakphu` — the origin of the `/trek/sandakphu` 404. Script now covers
+  **all published page types** (`--page-type` to restrict) and reports a per-type breakdown.
+  Run dry-run first, then `--apply`, against the PRODUCTION DB.
+- **DO deploy note (2026-09-22):** the first deploy of `f344954` FAILED in the DO build container with
+  ``next/font`` `TypeError: Cannot read properties of null (reading '1')` on `JetBrains_Mono`
+  (`app/layout.tsx`). **Not a code regression** — a cold local build (`.next` + `node_modules/.cache`
+  cleared, same Next 14.2.35) passes 130/130, and `fonts.googleapis.com` returns valid CSS. Cause:
+  `next/font/google` fetches Google Fonts **at build time** with no retry, so any egress hiccup in the
+  build container hard-fails the deploy. Retry the deploy; if it recurs, self-host via `next/font/local`
+  to remove the build-time network dependency.
+- Owner: **redeploy web-next + api**, run the sanitizer backfill, then GSC → Validate Fix on both reports.
 
 ## 2026-08-24 — SEO: durable 410 catch-all + redirects for the GSC 404 long-tail (recurrence root-cause)
 User kept seeing waves of "Not found (404)" in GSC despite prior fixes. **Core cause (diagnosed, not guessed):**
