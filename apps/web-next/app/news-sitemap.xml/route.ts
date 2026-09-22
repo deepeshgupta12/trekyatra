@@ -47,9 +47,37 @@ function escapeXml(str: string): string {
     .replace(/'/g, "&apos;");
 }
 
+/** A news slug without its trailing -YYYY-MM, i.e. the headline identity. */
+function headlineStem(slug: string): string {
+  return slug.replace(/-20\d{2}-(?:0[1-9]|1[0-2])$/, "");
+}
+
+/**
+ * Keep only the EARLIEST article per headline.
+ *
+ * The news agent used to dedupe only within a calendar month (the slug carries -YYYY-MM), so the
+ * same headline was re-published under a new URL each month — 57 headlines under 2–3 URLs = 64
+ * duplicate URLs here. `next.config.mjs` now 301s each duplicate onto the earliest URL, so emitting
+ * them here would put 64 redirects INSIDE the sitemap (a sitemap must only contain canonical 200s).
+ *
+ * Mirrors `_headline_already_published` in services/api/app/modules/agents/news/agent.py, which
+ * stops new cross-month duplicates being created. This filter stays as the guard for the ones
+ * already published, and is harmless once they age out.
+ */
+function dropDuplicateHeadlines(articles: NewsEntry[]): NewsEntry[] {
+  const earliest = new Map<string, NewsEntry>();
+  for (const a of articles) {
+    const stem = headlineStem(a.slug);
+    const held = earliest.get(stem);
+    // -YYYY-MM sorts chronologically as a string, so the smaller slug is the earlier article.
+    if (!held || a.slug < held.slug) earliest.set(stem, a);
+  }
+  return articles.filter((a) => earliest.get(headlineStem(a.slug))?.slug === a.slug);
+}
+
 export async function GET() {
   const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? "https://www.trekyatra.co.in";
-  const articles = await fetchNewsPages();
+  const articles = dropDuplicateHeadlines(await fetchNewsPages());
 
   // Google News sitemap only indexes articles published within the last 2 days
   // for the <news:news> element, but we include all for standard <url> entries.

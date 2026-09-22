@@ -3210,3 +3210,29 @@ Found by status-checking ALL 459 URLs in the 5 live sitemaps (446 → 200, 13 �
   `public_path_for()` is the single source of truth — use it rather than re-implementing the join.
 - `services/api/tests/test_link_sanitizer.py` — +3 tests (no doubling; a BARE hub slug still gets its
   prefix so the de-doubling can't over-trigger; live-URL set holds the real URL not the doubled one).
+
+## 2026-09-22 — Beat schedule → absolute crontab + 64 duplicate-news 301s. blast radius LOW.
+- `services/api/app/worker/celery_app.py` — UPDATED: all **19** beat entries converted from relative
+  intervals (`86400`/`604800`/`7776000`) to absolute `crontab()` times, staggered across the low-traffic
+  window (`timezone="UTC"`; IST = UTC+5:30). Relative intervals reset on every container restart because
+  Celery's default `PersistentScheduler` stores "last run" in a shelve file on DO's **ephemeral**
+  filesystem — weekly jobs could go unfired indefinitely and the 90-day quarterly job realistically
+  never ran. Verified: 19 in → 19 out, zero task-name drift, all 19 resolve to registered tasks.
+  ⚠️ TRADE-OFF: crontab does **not** catch up a missed window — if beat is down at the scheduled
+  minute the run is skipped, not deferred. Three entries had comments claiming fixed times
+  ("daily 09:00 UTC", "weekly Monday 10:00 UTC", "00:30 UTC") that were never implemented; those
+  intents are now real. Blast radius: LOW (schedule data only, no task code touched).
+- `services/api/tests/test_beat_schedule.py` — NEW, 5 tests: every entry is a `crontab` (no relative
+  interval can be reintroduced), timezone is UTC, every scheduled task name resolves to a registered
+  task (a typo otherwise fails silently), news agent is scheduled, quarterly job pins month_of_year.
+- `apps/web-next/next.config.mjs` — `duplicateNewsRedirects`: 64 × 301 from each duplicate news URL to
+  the EARLIEST URL for that headline. Generated from live production data; all 57 targets verified
+  live 200; no chains (no target is also a source). A hand-listed set is acceptable here ONLY because
+  it is **closed** — `agents/news/agent.py` now dedupes on the headline stem across months, so no new
+  cross-month duplicate can be created. **Do NOT extend this list**; needing to extend it means the
+  stem dedupe regressed, and that is the bug to fix.
+- `apps/web-next/app/news-sitemap.xml/route.ts` — `headlineStem()` + `dropDuplicateHeadlines()` keep
+  only the earliest article per headline. REQUIRED alongside the redirects above: without it the
+  sitemap would advertise 64 URLs that 301, and a sitemap must contain only canonical 200s. Verified
+  against real production data: 200 in → 136 out, exactly 64 dropped (matching the 64 redirects), and
+  every kept slug is the earliest of its group.
