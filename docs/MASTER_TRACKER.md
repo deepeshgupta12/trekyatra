@@ -18,6 +18,57 @@ Do not modify any code file without first:
 4. Checking impacted files and blast radius
 5. Updating the relevant step file in `docs/steps/`
 
+## 2026-09-22 — SEO: deep-path 410 layer + killed the JSON-LD source of the /trek/{slug}/{sub} 404s
+User reported the GSC "Not found (404)" count had RISEN again, with 12 screenshots (108 URLs across two
+reports). **Every URL was status-checked against production first — no guessing:**
+- **Report A (76 URLs, Jun–Aug crawls): already fixed by the 2026-08-24 work.** 66 → 308, 29 → 410,
+  and `/seasons` + `/guides` are real live 200 pages (the GSC rows predate the fix). No action needed
+  beyond a GSC "Validate Fix" — this is stale reporting, not a regression.
+- **Report B (32 URLs, Aug 26–Sep 19 crawls): 11 were genuinely live 404s.** Root causes, each traced:
+
+| Dead URLs | Root cause |
+|---|---|
+| 5 × `/trek/{news-slug}` | The 2026-08-24 fix used a **hand-curated 4-slug list** in `next.config.mjs`. There are **280 published news articles**, so the list could never keep up — the same whack-a-mole the root-slug catch-all was meant to end. |
+| 2 × `/hi/trek/{slug}` | `/hi/**` routes exist but **zero Hindi pages are published** (`hi-trek-sitemap.xml` is empty), so every `/hi/*` URL 404'd. Google had them from historical `hreflang` tags. |
+| 2 × `/gear/{slug}`, 1 × `/trail-conditions/{slug}` | Prefixes with **no child route at all**. The 2026-08-24 catch-all only covered SINGLE-SEGMENT root slugs, so every multi-segment dead URL still fell through to a plain 404. |
+| 1 × `/trek/sandakphu` | Trek slug that never existed. |
+
+- **The active generator the user was right about.** `trek/[slug]/page.tsx` `SiteNavigationElement`
+  JSON-LD unconditionally advertised `${trekUrl}/packing`, `/permits` and `/costs` for **every** trek,
+  and `news/[slug]/page.tsx` linked 2 more in its sidebar. Verified against the live API: there are
+  **ZERO published `packing_list` / `permit_guide` / `cost_guide` pages** — so all three 308 back to the
+  trek page. That fed Google **189 dead URLs** (63 treks × 3) plus 2 × 280 news-page links, and is why
+  `/trek/{slug}/{sub}` kept reappearing in GSC. Both removed.
+- **Interlinking audit (the user's "links must point to 200s" requirement):** crawled 52 live pages and
+  status-checked all 185 unique internal links — **176 → 200**, 8 → the 308 sub-guide links above (now
+  removed), 1 → Cloudflare's own `/cdn-cgi/` path. **No live page emits `/trek/{news-slug}`, `/treks/*`,
+  `/gear/*` or `/hi/trek/*`** — those 404s are purely Google's historical crawl backlog, so the fix is
+  server-side status codes, not content cleanup.
+- **Fixes (durable patterns, no curated lists):**
+  - `middleware.ts` — new `checkDeepPath()`: (a) `/trek/{slug ending -YYYY-MM}` → **301 `/news/{slug}`**
+    (verified 200/200 news slugs match, 0/63 trek slugs do — replaces the curated list, which was
+    deleted from `next.config.mjs`); (b) multi-segment path whose head is not a real route → **410**;
+    (c) head is a real route with **no child route** (`ROUTE_CHILDREN` mirrors `app/(public)`) → **410**;
+    (d) `/trek/{slug}/{sub}` where sub ∉ {costs,packing,permits} → **410**; (e) `GONE_PATHS` for
+    bare-word dead trek slugs (middleware cannot infer those — kept deliberately tiny).
+  - `hi/{trek,packing,guides}/[slug]/page.tsx` — `notFound()` → **`permanentRedirect`** to the English
+    page, so `/hi/*` never 404s; `ROUTE_CHILDREN.hi` 410s anything outside those three sub-trees.
+  - `trek/[slug]/page.tsx` + `news/[slug]/page.tsx` — dead sub-guide links/JSON-LD removed.
+  - `publish/service.py` — link sanitizer now runs for **every** page type (was gated to `trek_guide`,
+    leaving news + all other types free to emit dead links); `published_url` no longer hardcodes
+    `/trek/{slug}` (it mislabelled every news article) — new `link_sanitizer.public_path_for()`.
+- **Also fixed (pre-existing, separate commit): unbounded soft-404s.** `/packing/{slug}`,
+  `/permits/{slug}` and `/guides/{slug}` returned **200 for ANY slug** (generic "static fallback"), an
+  infinite soft-404 surface that also let a trek slug render duplicate content under a `/packing/` URL.
+  Now `notFound()`. **Known remaining:** `/products/[slug]` is a client component so it still returns a
+  200 shell for any slug — needs a server-component refactor, deliberately out of scope here.
+- **Validated on a local prod server** (`next start` + live API): 11/11 dead URLs fixed (5→301, 2→308,
+  4→410); real routes, trek pages, trek sub-pages, curated 301/308s, auth gates (307) and all 5
+  sitemaps/robots/llms.txt unaffected; JSON-LD dead-URL count 0. `next build` clean (130/130).
+  Backend 852 passed (4 pre-existing failures on clean HEAD: 2 time-bombed date asserts in
+  `test_news.py`, 2 ordering-dependent in `test_refresh.py` — both unrelated).
+- Owner: **redeploy web-next + api**, then GSC → Validate Fix on both reports.
+
 ## 2026-08-24 — SEO: durable 410 catch-all + redirects for the GSC 404 long-tail (recurrence root-cause)
 User kept seeing waves of "Not found (404)" in GSC despite prior fixes. **Core cause (diagnosed, not guessed):**
 every one of the 80 flagged URLs is a *historical* agent-hallucinated link (wrong prefixes `/treks/`,

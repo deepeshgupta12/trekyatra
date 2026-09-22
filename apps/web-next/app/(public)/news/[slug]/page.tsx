@@ -265,24 +265,10 @@ export default async function NewsArticlePage({ params }: { params: { slug: stri
                     </span>
                     <ChevronRight className="h-4 w-4 text-muted-foreground" />
                   </Link>
-                  <Link
-                    href={`/trek/${trekSlug}/packing`}
-                    className="flex items-center justify-between p-3 rounded-xl hover:bg-muted transition-colors group"
-                  >
-                    <span className="text-sm font-medium group-hover:text-accent transition-colors">
-                      Packing checklist
-                    </span>
-                    <ChevronRight className="h-4 w-4 text-muted-foreground" />
-                  </Link>
-                  <Link
-                    href={`/trek/${trekSlug}/permits`}
-                    className="flex items-center justify-between p-3 rounded-xl hover:bg-muted transition-colors group"
-                  >
-                    <span className="text-sm font-medium group-hover:text-accent transition-colors">
-                      Permit guide
-                    </span>
-                    <ChevronRight className="h-4 w-4 text-muted-foreground" />
-                  </Link>
+                  {/* The /trek/{slug}/packing and /permits links that used to sit here were removed
+                      (2026-09-22): ZERO packing_list / permit_guide CMS pages exist, so both 308'd
+                      straight back to /trek/{slug} — 2 redirect links on every one of 280 news pages.
+                      That packing and permit content is already inline on the trek guide above. */}
                 </div>
               )}
 

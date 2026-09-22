@@ -3130,3 +3130,43 @@ Shared backend + mobile. iOS App Store rejection fix. Impact of touched symbols 
 - `services/api/scripts/sanitize_trek_links.py` — NEW one-off backfill (dry-run default, `--apply` commits +
   `cache_invalidate`). Run against the PRODUCTION DB (local dev DB is a different, already-clean dataset).
 - `services/api/tests/test_link_sanitizer.py` — NEW, 8 tests (pure sanitiser + DB allow-list + page mutate/dry-run).
+
+## 2026-09-22 — SEO: deep-path 410 layer + dead-interlink removal + sanitizer un-gated. blast radius LOW.
+Diagnosed from 108 GSC URLs status-checked against production. Report A (76) was already fixed; Report B
+had 11 live 404s. Full root-cause table in `docs/MASTER_TRACKER.md` (2026-09-22); URL rules in `docs/URL_MAP.md`
+(§"Deep-path 410 layer").
+
+- `apps/web-next/middleware.ts` — UPDATED: new `ROUTE_CHILDREN`, `REDIRECTED_PREFIXES`, `TREK_SUBPAGES`,
+  `GONE_PATHS`, `NEWS_SLUG_UNDER_TREK`, `gone()` and `checkDeepPath(pathname)`, invoked right after the
+  existing root-slug 410. Handles MULTI-segment dead URLs (the 2026-08-24 catch-all was root-slug only).
+  Blast radius: **site-wide** (middleware runs on every page path) — but additive: it only returns 410/301
+  for paths that already 404'd. ⚠️ **`ROUTE_CHILDREN` MUST be kept in sync with `app/(public)`**: a new
+  child route without an entry here (`"any"` for a `[slug]` child, or added to its `Set`) will be 410'd.
+  Verified on a local prod server: real routes, trek pages, sub-pages, curated 301/308s, auth 307s and all
+  5 sitemaps + robots + llms.txt are unaffected.
+- `apps/web-next/next.config.mjs` — UPDATED: `trekNewsRedirects` (4 hand-curated news slugs) DELETED —
+  superseded by the durable `NEWS_SLUG_UNDER_TREK` middleware pattern. Middleware runs before
+  `redirects()`, so per-slug entries there would be dead code. Blast radius: LOW.
+- `apps/web-next/app/(public)/hi/{trek,packing,guides}/[slug]/page.tsx` — UPDATED: `notFound()` →
+  `permanentRedirect()` to the English equivalent (zero Hindi pages published, so all three always 404'd).
+  Blast radius: LOW.
+- `apps/web-next/app/(public)/trek/[slug]/page.tsx` — UPDATED: `siteNavSchema.hasPart` no longer advertises
+  `${trekUrl}/{packing,permits,costs}`. **This was the largest active 404 generator** — zero such CMS pages
+  exist, so it fed Google 3 dead URLs per trek (189 total). Blast radius: LOW (JSON-LD only, no UI change).
+- `apps/web-next/app/(public)/news/[slug]/page.tsx` — UPDATED: removed the sidebar `/trek/{slug}/packing`
+  and `/permits` links (2 redirect links on each of 280 news pages). Blast radius: LOW (UI only).
+- `apps/web-next/app/(public)/{packing,permits,guides}/[slug]/page.tsx` — UPDATED (separate commit,
+  pre-existing bug): added `if (!cmsPage) notFound()`. These rendered a generic fallback and returned
+  **200 for ANY slug** — an unbounded soft-404 surface. Blast radius: LOW (zero CMS pages of these types
+  are published, nothing links to them, none are in any sitemap). **Known remaining:** `/products/[slug]`
+  is a client component and still 200s for any slug (needs a server-component refactor; out of scope).
+- `services/api/app/modules/cms/link_sanitizer.py` — UPDATED: new `public_path_for(page_type, slug)` —
+  single source of truth for page_type → public URL (`editorial` → `/{slug}`, else `_PAGE_PREFIX`).
+  Callers MUST use it instead of hardcoding `/trek/{slug}`. Blast radius: LOW (additive).
+- `services/api/app/modules/publish/service.py:publish_to_cms` — UPDATED: link sanitizer **un-gated** — was
+  `if cms_page.page_type == "trek_guide"`, now runs for EVERY page type (news_article and all others could
+  previously emit dead internal links freely). `published_url` now uses `public_path_for(...)` instead of
+  the hardcoded `f"/trek/{slug}"`, which mislabelled every published news article. Blast radius: LOW
+  (same try/except, never blocks a publish; both callers — publish route + PipelineOrchestrator — benefit).
+- `services/api/tests/test_link_sanitizer.py` — UPDATED: +6 tests (5 × `public_path_for` incl. a loop over
+  every `_PAGE_PREFIX` entry, 1 × sanitizer applied to a `news_article` page). 23/23 pass in this file.

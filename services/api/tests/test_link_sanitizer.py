@@ -126,3 +126,54 @@ def test_sanitize_trek_page_mutates_and_dry_run(db):
     finally:
         db.execute(delete(CMSPage).where(CMSPage.slug == slug))
         db.commit()
+
+
+# ── public_path_for: page_type → public URL (2026-09-22 GSC 404 fix) ──────────
+# publish/service.py used to hardcode "/trek/{slug}" for EVERY published page, which labelled news
+# articles (real URL /news/{slug}) as /trek/{slug}. These lock the mapping in.
+def test_public_path_for_news_article_is_news_prefix():
+    from app.modules.cms.link_sanitizer import public_path_for
+    assert public_path_for("news_article", "kareri-lake-reopens-2026-09") == "/news/kareri-lake-reopens-2026-09"
+
+
+def test_public_path_for_trek_guide_is_trek_prefix():
+    from app.modules.cms.link_sanitizer import public_path_for
+    assert public_path_for("trek_guide", "kedarkantha") == "/trek/kedarkantha"
+
+
+def test_public_path_for_editorial_is_site_root():
+    from app.modules.cms.link_sanitizer import public_path_for
+    assert public_path_for("editorial", "privacy") == "/privacy"
+
+
+def test_public_path_for_covers_every_known_page_type():
+    """Every page_type in _PAGE_PREFIX must resolve to its own prefix — never silently to /trek."""
+    from app.modules.cms.link_sanitizer import _PAGE_PREFIX, public_path_for
+    for page_type, prefix in _PAGE_PREFIX.items():
+        assert public_path_for(page_type, "s") == f"{prefix}/s", page_type
+
+
+def test_public_path_for_unknown_type_falls_back_to_trek():
+    from app.modules.cms.link_sanitizer import public_path_for
+    assert public_path_for("totally-unknown-type", "s") == "/trek/s"
+
+
+def test_sanitizer_unwraps_dead_links_on_non_trek_page_types(db):
+    """The publish link gate now runs for EVERY page type, not just trek_guide. A news article with a
+    hallucinated /gear/… link must have it unwrapped exactly like a trek page."""
+    slug = f"ls-news-{uuid.uuid4().hex[:8]}"
+    page = CMSPage(
+        slug=slug, page_type="news_article", title="N", status="published",
+        content_html='See the <a href="/gear/trekking-gear-checklist">gear checklist</a> and <a href="/explore">explore</a>.',
+    )
+    db.add(page)
+    db.commit()
+    try:
+        removed = sanitize_trek_page(page, build_live_url_set(db), apply=True)
+        assert removed == ["/gear/trekking-gear-checklist"]
+        assert "gear checklist" in page.content_html          # text kept
+        assert 'href="/gear/' not in page.content_html        # dead link unwrapped
+        assert 'href="/explore"' in page.content_html         # live link untouched
+    finally:
+        db.execute(delete(CMSPage).where(CMSPage.slug == slug))
+        db.commit()

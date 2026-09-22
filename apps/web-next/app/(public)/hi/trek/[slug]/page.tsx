@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { notFound } from "next/navigation";
+import { permanentRedirect } from "next/navigation";
 import { fetchCMSPage, type CMSPage, type FAQItem } from "@/lib/api";
 import FAQAccordion from "@/components/content/FAQAccordion";
 import Breadcrumb from "@/components/content/Breadcrumb";
@@ -67,7 +67,12 @@ export default async function HiTrekDetailPage({ params }: { params: { slug: str
     if (page.status === "published" && page.language === "hi") cmsPage = page;
   } catch { /* not found */ }
 
-  if (!cmsPage) notFound();
+  // No Hindi translation for this trek → 308 to the English page instead of 404. There are currently
+  // ZERO published Hindi pages (hi-trek-sitemap.xml is empty), so every /hi/trek/{slug} used to 404 —
+  // Google had crawled /hi/trek/kareri-lake and /hi/trek/indrahar-pass from historical hreflang tags.
+  // The English trek page is the correct target; when a Hindi translation is published this route
+  // serves it normally and the redirect stops firing.
+  if (!cmsPage) permanentRedirect(`/trek/${params.slug}`);
 
   const faqs: FAQItem[] = cmsPage.content_json?.faqs ?? [];
   const canonicalHi = `${siteUrl}/hi/trek/${params.slug}`;

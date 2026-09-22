@@ -72,18 +72,22 @@ def publish_to_cms(db: Session, *, draft_id: uuid.UUID) -> DraftPublishResponse:
         raise ValueError(f"CMS publish failed: {exc}") from exc
 
     # Link gate: strip agent-inserted internal links that don't resolve to a live URL (they cause GSC
-    # 404s). Trek detail pages only. Deterministic — runs regardless of what the LLM emitted. Never
-    # blocks the publish; only removes dead <a> wrappers (keeps the text).
-    if cms_page.page_type == "trek_guide":
-        try:
-            from app.modules.cms.link_sanitizer import build_live_url_set, sanitize_trek_page
-            removed = sanitize_trek_page(cms_page, build_live_url_set(db))
-            if removed:
-                db.flush()
-        except Exception:  # noqa: BLE001 — link sanitising must never break a publish
-            pass
+    # 404s). Deterministic — runs regardless of what the LLM emitted. Never blocks the publish; only
+    # removes dead <a> wrappers (keeps the text). Runs for EVERY page type as of 2026-09-22: it was
+    # gated to `trek_guide`, which left news_article and every other type free to emit dead internal
+    # links (the 2026-09 GSC wave included /gear/… and /trail-conditions/… hallucinations).
+    try:
+        from app.modules.cms.link_sanitizer import build_live_url_set, sanitize_trek_page
+        removed = sanitize_trek_page(cms_page, build_live_url_set(db))
+        if removed:
+            db.flush()
+    except Exception:  # noqa: BLE001 — link sanitising must never break a publish
+        pass
 
-    published_url = f"/trek/{cms_page.slug}"
+    # The public URL depends on page_type — this used to hardcode "/trek/{slug}", which labelled every
+    # published news_article as /trek/{slug} (its real URL is /news/{slug}) in the pipeline UI.
+    from app.modules.cms.link_sanitizer import public_path_for
+    published_url = public_path_for(cms_page.page_type, cms_page.slug)
 
     log.status = "succeeded"
     log.cms_page_id = cms_page.id

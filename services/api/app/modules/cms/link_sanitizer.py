@@ -45,6 +45,19 @@ _PAGE_PREFIX: dict[str, str] = {
     "cluster_hub": "/trek-types",
 }
 
+def public_path_for(page_type: str, slug: str) -> str:
+    """The public URL a published CMS page is served at. Single source of truth for the page_type →
+    prefix mapping (`editorial` lives at the site root; everything else under its `_PAGE_PREFIX`).
+
+    Falls back to `/trek/{slug}` only for genuinely unknown types — callers must NOT hardcode
+    "/trek/{slug}", which silently mislabels news_article (real URL: /news/{slug}) and every other
+    non-trek page type.
+    """
+    if page_type == "editorial":
+        return f"/{slug}"
+    return f"{_PAGE_PREFIX.get(page_type, '/trek')}/{slug}"
+
+
 # Always-live static routes (mirrors apps/web-next public routes + sitemap core list).
 _STATIC_ROUTES: set[str] = {
     "/", "/explore", "/search", "/compare", "/treksage", "/plan", "/plan/results", "/app",

@@ -80,16 +80,13 @@ const nextConfig = {
       { source: "/best-trekking-operators-india", destination: "/operators", permanent: true },
       { source: "/how-to-reach-chopta-from-delhi", destination: "/explore", permanent: true },
     ];
-    // ── GSC 404 cleanup (2026-08-24) ──
-    // News articles were historically crawled under the WRONG prefix /trek/{slug}; the real article is
-    // /news/{slug} (live, 200). 301 the wrong-prefix URLs to the real article (better than 410 — the
-    // content exists). Handled here (not the middleware 410 catch-all, which only fires on ROOT slugs).
-    const trekNewsRedirects = [
-      "cloudy-conditions-across-most-trekking-slopes-afternoon-2026-07",
-      "uttarakhand-s-valley-of-flowers-national-park-reopens-how-2026-07",
-      "trekkers-urge-reopening-of-great-lakes-routes-say-2026-07",
-      "indian-travellers-adopting-the-trek-first-travel-planning-2026-06",
-    ].map((s) => ({ source: `/trek/${s}`, destination: `/news/${s}`, permanent: true }));
+    // ── GSC 404 cleanup (2026-08-24, superseded 2026-09-22) ──
+    // News articles are crawled under the WRONG prefix /trek/{slug}; the real article is /news/{slug}.
+    // This used to be a hand-curated 4-slug list here, which promptly fell behind — the 2026-09-22 GSC
+    // wave surfaced 5 MORE such URLs (there are 280 published news articles, so the list could never
+    // keep up). It is now a DURABLE pattern in middleware.ts (`NEWS_SLUG_UNDER_TREK`): any /trek/{slug}
+    // whose slug ends in -YYYY-MM → 301 /news/{slug}. Middleware runs before these redirects, so adding
+    // per-slug entries here would be dead code. Do NOT reintroduce a curated list.
     // Invented /trek/ slug (hallucinated "-trek-complete-guide" suffix) → canonical trek page.
     const trekAliasRedirects = [
       { source: "/trek/kedarkantha-trek-complete-guide", destination: "/trek/kedarkantha", permanent: true },
@@ -102,7 +99,6 @@ const nextConfig = {
       ...bareIndexRedirects,
       ...malformedRegionRedirects,
       ...legacyArticleRedirects,
-      ...trekNewsRedirects,
       ...trekAliasRedirects,
     ];
   },

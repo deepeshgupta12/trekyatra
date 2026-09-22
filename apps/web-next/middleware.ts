@@ -54,6 +54,72 @@ const REAL_ROOT_ROUTES = new Set([
   "/regions", "/safety", "/safety-disclaimer", "/saved", "/search", "/seasons", "/success", "/terms",
   "/trek", "/trek-types", "/trekker", "/treksage", "/under-review",
 ]);
+
+// ── SEO: 410/301 handling for DEEP (multi-segment) dead URLs ──────────────────
+// The 2026-08-24 catch-all only covered single-segment ROOT slugs. The 2026-09-22 GSC wave was
+// dominated by multi-segment dead URLs (/gear/trekking-gear-checklist, /trail-conditions/beas-kund,
+// /hi/trek/kareri-lake, /trek/{news-slug}), which fell through to a plain 404 → Google keeps retrying.
+//
+// `ROUTE_CHILDREN` mirrors the real app/(public) route tree: which top-level segments accept a child
+// path, and which children are valid. "any" = the segment has a dynamic [slug] child. A Set = only
+// those literal children exist. ABSENT from this map = the route has NO child route, so every
+// sub-path under it is permanently dead. Derived from `find app/(public) -name page.tsx` — keep in
+// sync when a route is added (a missing "any" entry would wrongly 410 a real new child route).
+const ROUTE_CHILDREN: Record<string, "any" | Set<string>> = {
+  // Dynamic-segment routes ([slug]/[pair]/[signalId]) + auth//admin/success trees.
+  account: "any", admin: "any", auth: "any", compare: "any", datacenter: "any", guides: "any",
+  news: "any", operators: "any", packing: "any", permits: "any", products: "any",
+  regions: "any", seasons: "any", success: "any", trek: "any", "trek-types": "any", trekker: "any",
+  // Routes with a FIXED set of children.
+  about: new Set(["authors"]),
+  plan: new Set(["results"]),
+  // Only these three Hindi sub-trees exist. Each 308s to its English equivalent when the page has no
+  // Hindi translation, so /hi/{trek,packing,guides}/{slug} never 404s; anything else under /hi is dead.
+  hi: new Set(["trek", "packing", "guides"]),
+};
+// Dead top-level prefixes that next.config.mjs `legacyPrefixRedirects` 301s to a live hub. Middleware
+// runs BEFORE next.config redirects, so these must pass through or we would 410 them first.
+const REDIRECTED_PREFIXES = new Set(["treks", "blog", "destinations", "health"]);
+// The only real children of /trek/{slug}. They 308 to /trek/{slug} when no sub-guide exists.
+const TREK_SUBPAGES = new Set(["costs", "packing", "permits"]);
+// Bare-word dead /trek/{slug} URLs. A one-word slug is indistinguishable from a real (or not-yet-
+// published) trek, so middleware cannot infer these — they must be listed explicitly. Everything
+// PATTERN-shaped is handled durably above, so this list should stay very short.
+const GONE_PATHS = new Set(["/trek/sandakphu"]);
+
+// News articles live at /news/{slug} and every slug ends in -YYYY-MM. Google historically crawled
+// them under the wrong /trek/ prefix. Verified 2026-09-22 against the live sitemaps: 200/200 news
+// slugs match this pattern and 0/63 trek slugs do — so this is a safe, DURABLE replacement for the
+// hand-curated 4-slug list that was in next.config.mjs (which had already fallen behind by 5 URLs).
+// `[^/]+` (not `.+`) so it can only ever match a SINGLE path segment — a deeper path like
+// /trek/{slug}/{sub-2026-07} must fall through to the segment checks, not redirect into /news/.
+const NEWS_SLUG_UNDER_TREK = /^\/trek\/([^/]+-20\d{2}-(?:0[1-9]|1[0-2]))$/;
+
+/** Dead multi-segment URL → 410, or a news article crawled under /trek/ → its real /news/ URL. */
+function checkDeepPath(pathname: string): { gone: true } | { redirectTo: string } | null {
+  if (GONE_PATHS.has(pathname)) return { gone: true };
+
+  const newsMatch = NEWS_SLUG_UNDER_TREK.exec(pathname);
+  if (newsMatch) return { redirectTo: `/news/${newsMatch[1]}` };
+
+  const segments = pathname.split("/").filter(Boolean);
+  if (segments.length < 2) return null;             // root slugs handled by isHallucinatedRootSlug
+  const [head, child, ...rest] = segments;
+  if (REDIRECTED_PREFIXES.has(head)) return null;   // let next.config 301 it
+
+  // Top-level segment that is not a real route at all (e.g. /trail-conditions/beas-kund).
+  if (!REAL_ROOT_ROUTES.has(`/${head}`)) return { gone: true };
+
+  const children = ROUTE_CHILDREN[head];
+  if (children === undefined) return { gone: true };          // no child route exists (e.g. /gear/*)
+  if (children !== "any" && !children.has(child)) return { gone: true };
+
+  // /trek/{slug}/{sub} — only costs|packing|permits exist; anything deeper is dead.
+  if (head === "trek" && rest.length > 0) {
+    if (rest.length > 1 || !TREK_SUBPAGES.has(rest[0])) return { gone: true };
+  }
+  return null;
+}
 // Root slugs that next.config.mjs 301-redirects (legacyArticleRedirects + bareIndexRedirects). Middleware
 // runs BEFORE next.config redirects, so the 410 catch-all MUST skip these or it would 410 them before the
 // redirect fires. FROZEN: new dead root slugs are handled by the 410 catch-all — do NOT keep growing the
@@ -66,6 +132,14 @@ const REDIRECTED_ROOT_SLUGS = new Set([
   "/leh-acclimatisation-guide", "/ladakh-winter-travel-tips", "/alchi-monastery-guide", "/stok-kangri-trek-guide",
   "/best-trekking-operators-india", "/how-to-reach-chopta-from-delhi", "/treks",
 ]);
+
+/** 410 Gone — tells Google to drop the URL permanently (a 404 only says "try again later"). */
+function gone(): NextResponse {
+  return new NextResponse("Gone — this page does not exist.", {
+    status: 410,
+    headers: { "content-type": "text/plain; charset=utf-8" },
+  });
+}
 
 function isHallucinatedRootSlug(pathname: string): boolean {
   if (!/^\/[^/]+$/.test(pathname)) return false;              // single root segment only
@@ -112,10 +186,18 @@ export function middleware(request: NextRequest) {
 
   // ── SEO: 410 Gone for agent-hallucinated dead root-level URLs (see notes above) ──
   if (isHallucinatedRootSlug(pathname)) {
-    return new NextResponse("Gone — this page does not exist.", {
-      status: 410,
-      headers: { "content-type": "text/plain; charset=utf-8" },
-    });
+    return gone();
+  }
+
+  // ── SEO: deep (multi-segment) dead URLs — 410, or 301 for news crawled under /trek/ ──
+  const deep = checkDeepPath(pathname);
+  if (deep) {
+    if ("redirectTo" in deep) {
+      const url = request.nextUrl.clone();
+      url.pathname = deep.redirectTo;
+      return NextResponse.redirect(url, { status: 301 });
+    }
+    return gone();
   }
 
   const userToken = request.cookies.get(USER_COOKIE)?.value;

@@ -4,7 +4,7 @@
 > must be listed here and confirmed by the user. No new URL structures should be introduced
 > without updating this file and getting confirmation.
 
-Last updated: 2026-08-24 (durable 410 Gone catch-all for hallucinated root URLs + /trek-news 301s + sub-page 308s; see §"410 Gone catch-all")
+Last updated: 2026-09-22 (deep-path 410 layer + durable /trek/{news-slug} 301 pattern + /hi/* 308s; see §"Deep-path 410 layer")
 
 ---
 
@@ -200,6 +200,32 @@ plain 404 tells Google "try later", a 410 tells it "drop permanently".
 Middleware `matcher` broadened to site-wide (`/((?!api|_next/static|_next/image|favicon.ico|.*\.).*)`) so
 the catch-all runs on all page paths; API, `_next`, and any file-with-extension (sitemaps/robots/llms.txt)
 pass through untouched. Auth + datacenter-subdomain logic verified still correct under the broader matcher.
+
+### Deep-path 410 layer (2026-09-22)
+
+The 2026-08-24 catch-all only covered **single-segment root slugs**, so every *multi-segment* dead URL
+still returned a plain 404 and Google kept retrying. `middleware.ts` `checkDeepPath()` now handles them.
+**All rules are patterns — do NOT reintroduce hand-curated per-slug lists; that is what kept failing.**
+
+| Source (crawled) | → Result | Why |
+|---|---|---|
+| `/trek/{slug}` where the slug ends in **`-YYYY-MM`** | **301 → `/news/{slug}`** | News-article slugs all carry a date suffix. Verified against the live sitemaps: **200/200** news slugs match, **0/63** trek slugs do. Replaces the 4-slug list deleted from `next.config.mjs` (280 news articles exist — a list can never keep up). |
+| Multi-segment path whose **first segment is not a real route** (e.g. `/trail-conditions/beas-kund`) | **410 Gone** | No such route tree exists or ever will. Skips `REDIRECTED_PREFIXES` (`/treks`, `/blog`, `/destinations`, `/health`) so their `next.config.mjs` 301s still fire — middleware runs first. |
+| Sub-path of a real route that has **no child route** (e.g. `/gear/*`, `/costs/*`, `/explore/*`) | **410 Gone** | `ROUTE_CHILDREN` mirrors the `app/(public)` tree: `"any"` = has a `[slug]` child, a `Set` = only those literal children, **absent = no children at all**. ⚠️ Add an entry here when a new child route is created, or it will be wrongly 410'd. |
+| `/trek/{slug}/{sub}` where sub ∉ `{costs, packing, permits}`, or any deeper path | **410 Gone** | Only those three sub-routes exist. |
+| `/hi/{trek,packing,guides}/{slug}` with no Hindi translation | **308 → the English page** (route-level `permanentRedirect`) | Zero Hindi pages are published, so these all used to 404. Anything under `/hi/` outside those three sub-trees → **410**. |
+| `/trek/sandakphu` (and any future bare-word dead trek slug) | **410 Gone** (`GONE_PATHS`) | A one-word slug is indistinguishable from a real or not-yet-published trek, so middleware cannot infer it. This is the **only** curated list left and must stay tiny. |
+
+**Interlinking rule (enforced 2026-09-22):** internal links and structured data must point only at URLs
+that return **200** — never at a redirect or a page that may not exist. The `SiteNavigationElement`
+JSON-LD in `trek/[slug]/page.tsx` used to advertise `/packing`, `/permits`, `/costs` for every trek and
+`news/[slug]/page.tsx` linked 2 more, but **zero** `packing_list`/`permit_guide`/`cost_guide` pages are
+published — 189 dead URLs handed to Google. Both were removed. If those sub-guides are ever published,
+link them **conditionally on the page existing**, never unconditionally.
+
+**Soft-404s fixed (2026-09-22):** `/packing/{slug}`, `/permits/{slug}` and `/guides/{slug}` returned
+**200 for any slug** (generic fallback render) — now `notFound()`. **Known remaining:** `/products/{slug}`
+is a client component and still returns a 200 shell for any slug (needs a server-component refactor).
 
 **Canonical tags (dedupe query-param variants):** `/treksage` → self-canonical (`page.tsx` metadata);
 `/plan` → self-canonical via `app/(public)/plan/layout.tsx` (the wizard is a client component);

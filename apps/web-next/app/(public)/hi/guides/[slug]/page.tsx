@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { notFound } from "next/navigation";
+import { permanentRedirect } from "next/navigation";
 import { fetchCMSPage, type CMSPage, type FAQItem } from "@/lib/api";
 import FAQAccordion from "@/components/content/FAQAccordion";
 import Breadcrumb from "@/components/content/Breadcrumb";
@@ -63,7 +63,8 @@ export default async function HiGuidePage({ params }: { params: { slug: string }
     if (page.status === "published" && page.language === "hi") cmsPage = page;
   } catch { /* not found */ }
 
-  if (!cmsPage) notFound();
+  // No Hindi translation → 308 to the English page rather than 404 (see hi/trek/[slug]/page.tsx).
+  if (!cmsPage) permanentRedirect(`/guides/${params.slug}`);
 
   const faqs: FAQItem[] = cmsPage.content_json?.faqs ?? [];
   const canonicalEn = `${siteUrl}/guides/${params.slug}`;

@@ -354,9 +354,12 @@ export default async function TrekDetailPage({ params }: { params: { slug: strin
     url: trekUrl,
     hasPart: [
       { "@type": "WebPage", name: "Trek Guide", url: trekUrl },
-      { "@type": "WebPage", name: "Packing Checklist", url: `${trekUrl}/packing` },
-      { "@type": "WebPage", name: "Permit Guide", url: `${trekUrl}/permits` },
-      { "@type": "WebPage", name: "Cost Guide", url: `${trekUrl}/costs` },
+      // NOTE: do NOT advertise ${trekUrl}/{packing,permits,costs} here. There are ZERO published
+      // packing_list / permit_guide / cost_guide CMS pages, so all three 308 back to this page —
+      // this schema was handing Google 3 dead URLs per trek (189 site-wide) and was the single
+      // largest source of the recurring GSC "/trek/{slug}/{sub}" 404s. The packing, permit and cost
+      // content is already inline on this page. If those sub-guides are ever published, re-add them
+      // CONDITIONALLY on the page actually existing — never unconditionally.
       ...(trekNewsArticles.length > 0
         ? trekNewsArticles.map((n) => ({
             "@type": "WebPage",
