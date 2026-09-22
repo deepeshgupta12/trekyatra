@@ -52,10 +52,17 @@ def public_path_for(page_type: str, slug: str) -> str:
     Falls back to `/trek/{slug}` only for genuinely unknown types — callers must NOT hardcode
     "/trek/{slug}", which silently mislabels news_article (real URL: /news/{slug}) and every other
     non-trek page type.
+
+    Hub page types (`regional_hub`, `seasonal_hub`, `cluster_hub`) store their slug WITH the prefix
+    already in it ("regions/himachal"), unlike every other type which stores a bare slug. Prepending
+    the prefix blindly yields /regions/regions/himachal — the exact bug that put 13 hard 404s inside
+    sitemap.xml (found 2026-09-22). Strip the prefix when the slug already carries it.
     """
     if page_type == "editorial":
         return f"/{slug}"
-    return f"{_PAGE_PREFIX.get(page_type, '/trek')}/{slug}"
+    prefix = _PAGE_PREFIX.get(page_type, "/trek")
+    bare = slug[len(prefix):] if slug.startswith(f"{prefix[1:]}/") else slug
+    return f"{prefix}/{bare}"
 
 
 # Always-live static routes (mirrors apps/web-next public routes + sitemap core list).
@@ -127,7 +134,11 @@ def build_live_url_set(db: Session) -> set[str]:
             continue
         prefix = _PAGE_PREFIX.get(page_type)
         if prefix:
-            live.add(f"{prefix}/{slug}")
+            # Unknown page types stay OUT of the live set (hence `.get` with no default), so this
+            # cannot use public_path_for's "/trek" fallback — but it must de-double hub slugs the
+            # same way (see public_path_for).
+            bare = slug[len(prefix):] if slug.startswith(f"{prefix[1:]}/") else slug
+            live.add(f"{prefix}/{bare}")
     return live
 
 

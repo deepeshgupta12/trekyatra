@@ -95,12 +95,21 @@ const GONE_PATHS = new Set(["/trek/sandakphu"]);
 // /trek/{slug}/{sub-2026-07} must fall through to the segment checks, not redirect into /news/.
 const NEWS_SLUG_UNDER_TREK = /^\/trek\/([^/]+-20\d{2}-(?:0[1-9]|1[0-2]))$/;
 
+// Hub CMS pages store their slug WITH the prefix in it ("regions/himachal"), and app/sitemap.ts used
+// to prepend the prefix a second time — so sitemap.xml itself advertised /regions/regions/himachal,
+// /seasons/seasons/winter … (13 hard 404s, found 2026-09-22). sitemap.ts is fixed, but Google already
+// crawled them from the sitemap, so 301 the doubled form onto the canonical single-prefix URL.
+const DOUBLED_PREFIX = /^\/(regions|seasons|trek-types)\/\1\/(.+)$/;
+
 /** Dead multi-segment URL → 410, or a news article crawled under /trek/ → its real /news/ URL. */
 function checkDeepPath(pathname: string): { gone: true } | { redirectTo: string } | null {
   if (GONE_PATHS.has(pathname)) return { gone: true };
 
   const newsMatch = NEWS_SLUG_UNDER_TREK.exec(pathname);
   if (newsMatch) return { redirectTo: `/news/${newsMatch[1]}` };
+
+  const doubled = DOUBLED_PREFIX.exec(pathname);
+  if (doubled) return { redirectTo: `/${doubled[1]}/${doubled[2]}` };
 
   const segments = pathname.split("/").filter(Boolean);
   if (segments.length < 2) return null;             // root slugs handled by isHallucinatedRootSlug

@@ -164,9 +164,17 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   for (const p of cmsPages) {
     const base = PAGE_PREFIX[p.page_type];
     if (base !== undefined) {
+      // Hub CMS pages store their slug WITH the prefix already in it ("regions/himachal",
+      // "seasons/summer", "trek-types/lake-treks"), unlike every other page_type which stores a bare
+      // slug. Blindly prepending `base` produced doubled paths — /regions/regions/himachal,
+      // /seasons/seasons/winter — 13 hard 404s emitted INSIDE sitemap.xml (found 2026-09-22). Strip
+      // the prefix when the slug already carries it so the URL is built once, not twice.
+      const bareSlug = p.slug.startsWith(`${base.slice(1)}/`)
+        ? p.slug.slice(base.length)        // "regions/himachal" (base "/regions", len 8) -> "himachal"
+        : p.slug;
       const pageUrl = p.page_type === "editorial"
         ? `${SITE_URL}/${p.slug}`
-        : `${SITE_URL}${base}/${p.slug}`;
+        : `${SITE_URL}${base}/${bareSlug}`;
       entries.push({
         url: pageUrl,
         lastModified: new Date(p.updated_at),

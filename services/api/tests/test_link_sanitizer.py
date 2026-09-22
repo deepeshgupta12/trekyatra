@@ -177,3 +177,35 @@ def test_sanitizer_unwraps_dead_links_on_non_trek_page_types(db):
     finally:
         db.execute(delete(CMSPage).where(CMSPage.slug == slug))
         db.commit()
+
+
+# ── Hub slugs already carry their prefix — must not be doubled (2026-09-22 sitemap 404 fix) ──
+def test_public_path_for_does_not_double_hub_prefixes():
+    """regional_hub/seasonal_hub/cluster_hub slugs are stored WITH the prefix in them.
+    Prepending it again produced /regions/regions/himachal — 13 hard 404s inside sitemap.xml."""
+    from app.modules.cms.link_sanitizer import public_path_for
+    assert public_path_for("regional_hub", "regions/himachal") == "/regions/himachal"
+    assert public_path_for("seasonal_hub", "seasons/winter") == "/seasons/winter"
+    assert public_path_for("cluster_hub", "trek-types/lake-treks") == "/trek-types/lake-treks"
+
+
+def test_public_path_for_still_prefixes_a_bare_hub_slug():
+    """A hub slug WITHOUT the prefix must still get one (the de-doubling must not over-trigger)."""
+    from app.modules.cms.link_sanitizer import public_path_for
+    assert public_path_for("regional_hub", "himachal") == "/regions/himachal"
+    assert public_path_for("seasonal_hub", "winter") == "/seasons/winter"
+
+
+def test_build_live_url_set_does_not_double_hub_prefixes(db):
+    """The live-URL allow-list must contain the REAL hub URL, not the doubled one."""
+    slug = f"regions/ls-hub-{uuid.uuid4().hex[:8]}"
+    page = CMSPage(slug=slug, page_type="regional_hub", title="H", status="published")
+    db.add(page)
+    db.commit()
+    try:
+        live = build_live_url_set(db)
+        assert f"/{slug}" in live                       # "/regions/ls-hub-xxxx"
+        assert f"/regions/{slug}" not in live           # NOT "/regions/regions/ls-hub-xxxx"
+    finally:
+        db.execute(delete(CMSPage).where(CMSPage.slug == slug))
+        db.commit()

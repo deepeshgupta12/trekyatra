@@ -3193,3 +3193,20 @@ had 11 live 404s. Full root-cause table in `docs/MASTER_TRACKER.md` (2026-09-22)
   case, cross-month match, over-match guard, page_type scoping). Also de-timebombed: `_MOCK_RSS`
   pubDates and the `_is_recent` assertion are now generated relative to `now()` instead of the
   hardcoded "Mon, 26 May 2026", which had silently gone red once it fell outside the 90-day window.
+
+## 2026-09-22 — Sitemap emitted 13 hard 404s (doubled hub prefixes). blast radius LOW.
+Found by status-checking ALL 459 URLs in the 5 live sitemaps (446 → 200, 13 → 404).
+- **Cause:** `regional_hub` / `seasonal_hub` / `cluster_hub` CMS pages store their slug WITH the prefix
+  in it (`regions/himachal`, `seasons/winter`, `trek-types/lake-treks`), unlike every other page_type
+  which stores a bare slug. Code that prepends the page_type prefix therefore doubled it.
+- `apps/web-next/app/sitemap.ts` — FIXED: strips the prefix when the slug already carries it before
+  building the URL. This is what put `/regions/regions/himachal` + `/seasons/seasons/winter` (8+5=13)
+  INSIDE `sitemap.xml`. Blast radius: LOW (sitemap generation only).
+- `apps/web-next/middleware.ts` — `DOUBLED_PREFIX` regex `^/(regions|seasons|trek-types)/\1/(.+)$`
+  → **301** to the single-prefix URL, since Google already crawled the doubled form from the sitemap.
+- `services/api/app/modules/cms/link_sanitizer.py` — `public_path_for()` and `build_live_url_set()`
+  had the SAME doubling bug: the allow-list contained `/regions/regions/himachal` instead of the real
+  `/regions/himachal`. Both de-double now. ⚠️ Any future code mapping page_type → URL must handle this;
+  `public_path_for()` is the single source of truth — use it rather than re-implementing the join.
+- `services/api/tests/test_link_sanitizer.py` — +3 tests (no doubling; a BARE hub slug still gets its
+  prefix so the de-doubling can't over-trigger; live-URL set holds the real URL not the doubled one).
