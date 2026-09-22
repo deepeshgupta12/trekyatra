@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { notFound } from "next/navigation";
 import { fetchCMSPage, type CMSPage, type FAQItem } from "@/lib/api";
 import { fetchTreks } from "@/lib/trekApi";
 import Breadcrumb from "@/components/content/Breadcrumb";
@@ -42,7 +43,10 @@ export default async function PermitPage({ params }: { params: { slug: string } 
   try {
     const page = await fetchCMSPage(params.slug);
     if (page.status === "published") cmsPage = page;
-  } catch { /* static fallback */ }
+  } catch { /* fall through to notFound below */ }
+
+  // SOFT-404 FIX (2026-09-22) — see packing/[slug]/page.tsx: /permits/{anything} used to return 200.
+  if (!cmsPage) notFound();
 
   const sec = (cmsPage?.content_json?.sections ?? {}) as Record<string, string>;
   const faqItems: FAQItem[] = cmsPage?.content_json?.faqs ?? [];

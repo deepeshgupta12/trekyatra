@@ -47,7 +47,13 @@ export default async function PackingPage({ params }: { params: { slug: string }
   try {
     const page = await fetchCMSPage(params.slug);
     if (page.status === "published") cmsPage = page;
-  } catch { /* render static fallback */ }
+  } catch { /* fall through to notFound below */ }
+
+  // SOFT-404 FIX (2026-09-22): this used to render a generic "static fallback" for ANY slug, so
+  // /packing/{anything} returned 200 — an unbounded soft-404 surface that Google reports as
+  // "Soft 404" and that also let a trek_guide slug render duplicate content under a /packing/ URL.
+  // There is no such thing as a packing page without a published CMS page behind it.
+  if (!cmsPage) notFound();
 
   const sec = (cmsPage?.content_json?.sections ?? {}) as Record<string, string>;
   const faqItems: FAQItem[] = cmsPage?.content_json?.faqs ?? [];
