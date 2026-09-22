@@ -67,6 +67,9 @@ reports). **Every URL was status-checked against production first — no guessin
   sitemaps/robots/llms.txt unaffected; JSON-LD dead-URL count 0. `next build` clean (130/130).
   Backend 852 passed (4 pre-existing failures on clean HEAD: 2 time-bombed date asserts in
   `test_news.py`, 2 ordering-dependent in `test_refresh.py` — both unrelated).
+- GitNexus re-indexed after the change: **519,480 nodes | 779,162 edges | 4,286 clusters | 300 flows**
+  (was 517,374 / 757,491 / 300 at `de09832`). `detect_changes` before commit: 19 files, 54 symbols,
+  **risk LOW, 0 affected processes** — matches the intended scope exactly.
 - Owner: **redeploy web-next + api**, then GSC → Validate Fix on both reports.
 
 ## 2026-08-24 — SEO: durable 410 catch-all + redirects for the GSC 404 long-tail (recurrence root-cause)
