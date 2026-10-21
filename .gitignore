@@ -50,3 +50,11 @@ services/api/data/
 
 # Generated docs
 AGENTS.md
+
+# GSC MCP — defence in depth. The real secret lives OUTSIDE the repo at
+# ~/.config/gsc-mcp/client_secret.json (referenced by path from .mcp.json, which holds no secret).
+# These patterns exist only so a stray download into the repo can never be committed.
+client_secret*.json
+gsc-oauth*.json
+*-oauth-secrets.json
+.gsc-mcp/
