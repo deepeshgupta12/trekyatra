@@ -72,6 +72,19 @@ If it is a URL-prefix property, change that one line in `.mcp.json`.
 
 ---
 
+## Status
+
+Done (2026-10-21): client `445487374089-8q2ga2mo…` (Desktop app, `"installed"`, redirect
+`http://localhost`) created in `project-b7146baf-9c06-4071-8e9` and saved to
+`~/.config/gsc-mcp/client_secret.json` (mode `600`, outside the repo, untracked).
+
+Smoke-tested over stdio: `initialize` → `{"name":"gsc-mcp","version":"2.5.1"}`, `tools/list` → **29
+tools**, with `inspect_url`, `list_sitemaps`, `site_snapshot` and `traffic_drops` all present.
+
+Remaining: the browser OAuth consent (Step 3) — must be done interactively.
+
+---
+
 ## Step 3 — Activate
 
 1. Restart Claude Code in this directory. It picks up `.mcp.json` and asks you to approve the `gsc`
@@ -87,9 +100,13 @@ If it is a URL-prefix property, change that one line in `.mcp.json`.
 - **Version is pinned** (`suganthan-gsc-mcp@2.5.1`). Plain `npx -y suganthan-gsc-mcp` resolves to
   *latest on every launch* — a third-party package (~850 weekly downloads) holding an OAuth token to your
   Search Console. Pinning means a future compromised release cannot auto-run. Bump deliberately.
-- **`GSC_SCOPES=readonly`** blocks the write tools (`submit_url`, `submit_batch`, `submit_sitemap`).
-  Switch to `full` only if you want to force re-crawl of fixed URLs; that also needs the Web Search
-  Indexing API enabled and owner-level GSC access.
+- **`GSC_SCOPES=readonly` — what it actually does.** Verified by an MCP handshake against v2.5.1: all
+  **29** tools stay registered, including `submit_url`, `submit_batch` and `submit_sitemap`. `readonly`
+  controls the **OAuth scope requested at consent**, not the tool list — so the write tools are still
+  *listed*, but a call fails at Google because the token lacks the write scope. The protection is real
+  (it is enforced by Google, not by the package), but do not expect the write tools to be hidden.
+  Switch to `full` only to force re-crawl of fixed URLs; that also needs the Web Search Indexing API
+  enabled and owner-level GSC access, and requires re-consenting.
 - The secret never enters the repo. `.gitignore` additionally guards `client_secret*.json`,
   `gsc-oauth*.json`, `*-oauth-secrets.json` and `.gsc-mcp/` as defence in depth.
 - To revoke: delete the OAuth client in Google Cloud, or remove
