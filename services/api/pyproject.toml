@@ -38,7 +38,14 @@ dependencies = [
   "json-repair>=0.30.0,<1.0.0",
   "mcp>=1.2.0,<2.0.0",
   "slowapi>=0.1.9,<1.0.0",
-  "Pillow>=10.0.0,<11.0.0"
+  "Pillow>=10.0.0,<11.0.0",
+  # Google Search Console import (cdp.import_gsc_data -> gsc_performance -> /admin/cdp/gsc).
+  # These were NEVER declared, so the task's `except ImportError` branch always fired and it
+  # silently returned {"skipped": true, "reason": "package_not_installed"} — the /admin/cdp/gsc
+  # page would have stayed empty even with GSC_SERVICE_ACCOUNT_JSON set, while blaming the
+  # credentials. Declared directly so a clean deploy cannot drop them.
+  "google-api-python-client>=2.100.0,<3.0.0",
+  "google-auth>=2.23.0,<3.0.0"
 ]
 
 [tool.setuptools]
