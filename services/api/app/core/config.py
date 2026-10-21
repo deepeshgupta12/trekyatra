@@ -106,6 +106,11 @@ class Settings(BaseSettings):
     ga4_api_secret: str | None = None            # GA4 Admin > Data Streams > Measurement Protocol API secrets
     # Google Search Console API (service account JSON, base64 or raw JSON string)
     gsc_service_account_json: str | None = None  # JSON string from GSC service account key file
+    # The Search Console property identifier. trekyatra.co.in is a URL-PREFIX property (verified
+    # 2026-10-21 against the live API): "sc-domain:trekyatra.co.in" returns "User does not have
+    # sufficient permission". The trailing slash is required. Override per-environment if the
+    # property is ever migrated to a Domain property (then use "sc-domain:trekyatra.co.in").
+    gsc_site_url: str = "https://www.trekyatra.co.in/"
 
     # Step M03 — Mobile token expiry
     mobile_token_expire_days: int = 30

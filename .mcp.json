@@ -6,7 +6,7 @@
       "env": {
         "GSC_AUTH_MODE": "oauth",
         "GSC_OAUTH_SECRETS_FILE": "/Users/deepeshgupta/.config/gsc-mcp/client_secret.json",
-        "GSC_SITE_URL": "sc-domain:trekyatra.co.in",
+        "GSC_SITE_URL": "https://www.trekyatra.co.in/",
         "GSC_SCOPES": "readonly"
       }
     }

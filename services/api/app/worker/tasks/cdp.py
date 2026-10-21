@@ -96,7 +96,11 @@ def import_gsc_data(self, days_back: int = 3) -> dict:
         )
         service = build("searchconsole", "v1", credentials=creds)
 
-        site_url = "sc-domain:trekyatra.co.in"
+        # Was hardcoded to "sc-domain:trekyatra.co.in", which the Search Console API rejects with
+        # "User does not have sufficient permission" — trekyatra.co.in is a URL-PREFIX property, not
+        # a Domain property (verified 2026-10-21 against the live API). This import would therefore
+        # have failed for every row even once GSC_SERVICE_ACCOUNT_JSON was set.
+        site_url = settings.gsc_site_url
         today = datetime.now(timezone.utc).date()
         rows_inserted = 0
 
